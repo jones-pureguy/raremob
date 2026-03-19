@@ -643,23 +643,48 @@ function renderGrid() {
 }
 
 // ─── Drag Interaction ───
-function getCellFromEvent(e) {
-  let clientX, clientY;
-  if (e.touches) {
-    clientX = e.touches[0].clientX;
-    clientY = e.touches[0].clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
+function getEventCoords(e) {
+  if (e.touches && e.touches.length > 0) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   }
-  const el = document.elementFromPoint(clientX, clientY);
-  if (!el) return null;
-  const cardEl = el.closest('.card');
-  if (!cardEl || cardEl.classList.contains('empty')) return null;
-  const row = parseInt(cardEl.dataset.row);
-  const col = parseInt(cardEl.dataset.col);
-  if (isNaN(row) || isNaN(col)) return null;
-  return [row, col];
+  if (e.changedTouches && e.changedTouches.length > 0) {
+    return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
+function getCellFromEvent(e) {
+  const { x, y } = getEventCoords(e);
+  // Find card by checking grid cell positions directly
+  const gridEl = document.getElementById('grid');
+  const children = gridEl.children;
+  for (let i = 0; i < children.length; i++) {
+    const cardEl = children[i];
+    if (cardEl.classList.contains('empty')) continue;
+    const rect = cardEl.getBoundingClientRect();
+    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+      const row = parseInt(cardEl.dataset.row);
+      const col = parseInt(cardEl.dataset.col);
+      if (isNaN(row) || isNaN(col)) return null;
+      return [row, col];
+    }
+  }
+  return null;
+}
+
+// Update selection visuals without rebuilding DOM (safe for touch)
+function updateSelectionVisuals() {
+  const gridEl = document.getElementById('grid');
+  const children = gridEl.children;
+  for (let i = 0; i < children.length; i++) {
+    const el = children[i];
+    const r = parseInt(el.dataset.row);
+    const c = parseInt(el.dataset.col);
+    const isSelected = state.selectedPath.some(p => p[0] === r && p[1] === c);
+    el.classList.toggle('selected', isSelected);
+  }
+  updateDragLine();
+  updateHandPreview();
 }
 
 function startDrag(row, col) {
@@ -667,8 +692,7 @@ function startDrag(row, col) {
   if (!state.grid[row][col].card) return;
   state.isDragging = true;
   state.selectedPath = [[row, col]];
-  renderGrid();
-  updateHandPreview();
+  updateSelectionVisuals();
 }
 
 function extendPath(row, col) {
@@ -683,8 +707,7 @@ function extendPath(row, col) {
       const prev = state.selectedPath[state.selectedPath.length - 2];
       if (prev[0] === row && prev[1] === col) {
         state.selectedPath.pop();
-        renderGrid();
-        updateHandPreview();
+        updateSelectionVisuals();
       }
     }
     return;
@@ -741,8 +764,7 @@ function extendPath(row, col) {
   }
 
   state.selectedPath.push([row, col]);
-  renderGrid();
-  updateHandPreview();
+  updateSelectionVisuals();
 }
 
 function finalizePath() {
@@ -789,8 +811,7 @@ function finalizePath() {
 
 function clearSelection() {
   state.selectedPath = [];
-  renderGrid();
-  updateHandPreview();
+  updateSelectionVisuals();
 }
 
 function updateDragLine() {
@@ -863,7 +884,8 @@ gridEl.addEventListener('touchstart', e => {
   if (cell) startDrag(cell[0], cell[1]);
 }, { passive: false });
 
-gridEl.addEventListener('touchmove', e => {
+document.addEventListener('touchmove', e => {
+  if (!state.isDragging) return;
   e.preventDefault();
   const cell = getCellFromEvent(e);
   if (cell) extendPath(cell[0], cell[1]);
@@ -873,6 +895,13 @@ document.addEventListener('touchend', e => {
   if (state.isDragging) {
     e.preventDefault();
     finalizePath();
+  }
+}, { passive: false });
+
+document.addEventListener('touchcancel', () => {
+  if (state.isDragging) {
+    state.isDragging = false;
+    clearSelection();
   }
 });
 
