@@ -453,10 +453,10 @@ body.debug-mode .card .debug-info { display: block; }
   <div style="display:flex;align-items:center;gap:8px;">
   <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
   <select class="mode-selector" id="modeSelector">
-    <option value="1">Mode 1 · 가로세로</option>
-    <option value="2">Mode 2 · 직선</option>
-    <option value="3">Mode 3 · 자유</option>
-    <option value="4">Mode 4 · 자유+점프</option>
+    <option value="1">Mode 1 · 자유+점프</option>
+    <option value="2">Mode 2 · 자유</option>
+    <option value="3">Mode 3 · 직선</option>
+    <option value="4">Mode 4 · 가로세로</option>
   </select>
   </div>
 </div>
@@ -655,14 +655,17 @@ function getEventCoords(e) {
 
 function getCellFromEvent(e) {
   const { x, y } = getEventCoords(e);
-  // Find card by checking grid cell positions directly
   const gridEl = document.getElementById('grid');
   const children = gridEl.children;
+  const inset = 0.15; // shrink hit area to center 70% to help diagonal drags
   for (let i = 0; i < children.length; i++) {
     const cardEl = children[i];
     if (cardEl.classList.contains('empty')) continue;
     const rect = cardEl.getBoundingClientRect();
-    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+    const mx = rect.width * inset;
+    const my = rect.height * inset;
+    if (x >= rect.left + mx && x <= rect.right - mx &&
+        y >= rect.top + my && y <= rect.bottom - my) {
       const row = parseInt(cardEl.dataset.row);
       const col = parseInt(cardEl.dataset.col);
       if (isNaN(row) || isNaN(col)) return null;
@@ -697,12 +700,10 @@ function startDrag(row, col) {
 
 function extendPath(row, col) {
   if (!state.isDragging) return;
-  if (state.selectedPath.length >= HAND_SIZE) return;
   if (!state.grid[row][col].card) return;
 
-  // Already in path?
+  // Already in path? Allow backtracking even at 5 cards
   if (state.selectedPath.some(p => p[0] === row && p[1] === col)) {
-    // Allow backtracking: if this is the second-to-last card, pop the last
     if (state.selectedPath.length >= 2) {
       const prev = state.selectedPath[state.selectedPath.length - 2];
       if (prev[0] === row && prev[1] === col) {
@@ -713,22 +714,39 @@ function extendPath(row, col) {
     return;
   }
 
+  // Can't add beyond 5
+  if (state.selectedPath.length >= HAND_SIZE) return;
+
   const last = state.selectedPath[state.selectedPath.length - 1];
 
   if (state.selectionMode === 1) {
-    // Orthogonal only, adjacent
+    // Mode 1: 자유+점프 — 8방향 + 빈칸 건너뛰기
+    const dr = row - last[0];
+    const dc = col - last[1];
+    if (dr === 0 && dc === 0) return;
+    if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
+    const stepR = Math.sign(dr);
+    const stepC = Math.sign(dc);
+    let cr = last[0] + stepR;
+    let cc = last[1] + stepC;
+    while (cr !== row || cc !== col) {
+      if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
+      if (state.grid[cr][cc].card !== null) return;
+      cr += stepR;
+      cc += stepC;
+    }
+  } else if (state.selectionMode === 2) {
+    // Mode 2: 자유 — 8방향 인접
     const dr = Math.abs(row - last[0]);
     const dc = Math.abs(col - last[1]);
-    if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
-  } else if (state.selectionMode === 2) {
-    // Straight line: all cards must be collinear
+    if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
+  } else if (state.selectionMode === 3) {
+    // Mode 3: 직선 — 일직선으로만
     if (state.selectedPath.length === 1) {
-      // Second card: must be adjacent (8 directions)
       const dr = Math.abs(row - last[0]);
       const dc = Math.abs(col - last[1]);
       if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
     } else {
-      // Must continue same direction
       const first = state.selectedPath[0];
       const second = state.selectedPath[1];
       const dirR = Math.sign(second[0] - first[0]);
@@ -738,29 +756,11 @@ function extendPath(row, col) {
       const expectedC = prevEnd[1] + dirC;
       if (row !== expectedR || col !== expectedC) return;
     }
-  } else if (state.selectionMode === 3) {
-    // Any direction, adjacent (8 directions)
+  } else if (state.selectionMode === 4) {
+    // Mode 4: 가로세로 — 상하좌우만
     const dr = Math.abs(row - last[0]);
     const dc = Math.abs(col - last[1]);
-    if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
-  } else if (state.selectionMode === 4) {
-    // Free 8-direction + skip empty cells in a straight line
-    const dr = row - last[0];
-    const dc = col - last[1];
-    // Must be on a straight line (horizontal, vertical, or 45° diagonal)
-    if (dr === 0 && dc === 0) return;
-    if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
-    // Check that all cells between last and target are empty
-    const stepR = Math.sign(dr);
-    const stepC = Math.sign(dc);
-    let cr = last[0] + stepR;
-    let cc = last[1] + stepC;
-    while (cr !== row || cc !== col) {
-      if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
-      if (state.grid[cr][cc].card !== null) return; // non-empty cell in between = blocked
-      cr += stepR;
-      cc += stepC;
-    }
+    if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
   }
 
   state.selectedPath.push([row, col]);
