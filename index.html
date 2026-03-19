@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>POKE-R ♠</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --gold: #C9A84C;
+  --gold-glow: rgba(201, 168, 76, 0.5);
+  --felt-dark: #0d2818;
+  --felt-mid: #14532d;
+  --card-spade: #1A1A1A;
+  --card-heart: #2E7D32;
+  --card-diamond: #D32F2F;
+  --card-club: #1565C0;
+  --empty-slot: #1a3a22;
+  --bg: #0a1f14;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
+body {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 50% 40%, var(--felt-mid) 0%, var(--felt-dark) 60%, var(--bg) 100%);
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Noise overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header */
+.header {
+  width: 100%;
+  max-width: 500px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 2px 8px rgba(201,168,76,0.3);
+  letter-spacing: 2px;
+}
+
+.restart-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+  font-size: 1.1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.restart-btn:hover { background: rgba(201,168,76,0.15); }
+.restart-btn:active { transform: scale(0.95); }
+
+.mode-selector {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+.mode-selector option {
+  background: #1a3a22;
+  color: #e0e0e0;
+}
+
+/* Status bar */
+.status-bar {
+  width: 100%;
+  max-width: 500px;
+  padding: 4px 16px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-ring {
+  width: 36px;
+  height: 36px;
+}
+.timer-ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 3; }
+.timer-ring-fg { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+
+.timer-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  transition: color 0.3s;
+}
+.timer-num.warning { color: orange; }
+.timer-num.urgent { color: #ff3333; animation: pulse 0.5s infinite alternate; }
+
+.hand-counter {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+}
+.hand-counter span { color: var(--gold); font-weight: 700; }
+
+/* Grid */
+.grid-container {
+  position: relative;
+  z-index: 1;
+  padding: 4px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* Card */
+.card {
+  width: 44px;
+  height: 44px;
+  background: white;
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.card .card-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.card .card-suit {
+  font-size: 0.85rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.card.suit-s { color: var(--card-spade); }
+.card.suit-h { color: var(--card-heart); }
+.card.suit-d { color: var(--card-diamond); }
+.card.suit-c { color: var(--card-club); }
+
+.card.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow), 0 2px 6px rgba(0,0,0,0.4);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.card.hovered {
+  border-color: rgba(201,168,76,0.5);
+  transform: scale(1.03);
+}
+
+.card.empty {
+  background: var(--empty-slot);
+  border: 2px dashed rgba(255,255,255,0.12);
+  box-shadow: none;
+  cursor: default;
+}
+
+.card.removing {
+  animation: cardRemove 0.5s forwards;
+  pointer-events: none;
+}
+@keyframes cardRemove {
+  0%   { transform: scale(1); opacity: 1; background: white; }
+  30%  { transform: scale(1.1); background: var(--gold); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.card.falling {
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card.invalid-shake {
+  animation: shake 0.3s;
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25%     { transform: translateX(-6px); }
+  75%     { transform: translateX(6px); }
+}
+
+@keyframes pulse {
+  to { transform: scale(1.05); color: #ff3333; }
+}
+
+/* SVG overlay for drag line */
+.drag-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+.drag-line {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+}
+
+/* Hand preview */
+.hand-preview {
+  width: 100%;
+  max-width: 500px;
+  padding: 6px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  min-height: 28px;
+  position: relative;
+  z-index: 1;
+}
+.hand-preview.valid { color: #4CAF50; }
+.hand-preview.invalid { color: #ff5252; }
+
+/* Hand panel */
+.hand-panel {
+  width: 100%;
+  max-width: 500px;
+  padding: 8px 16px 16px;
+  position: relative;
+  z-index: 1;
+}
+.hand-panel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.85rem;
+  color: var(--gold);
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+.hand-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hand-badge {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.hand-badge.empty-slot {
+  border-style: dashed;
+  color: rgba(255,255,255,0.2);
+  min-width: 70px;
+  text-align: center;
+}
+.hand-badge.royal-flush { background: linear-gradient(135deg, #C9A84C, #a07c2e); color: #000; font-weight: 700; }
+.hand-badge.straight-flush { background: linear-gradient(135deg, #888, #555); color: #fff; font-weight: 700; }
+.hand-badge.four-kind { background: rgba(201,168,76,0.2); border-color: var(--gold); color: var(--gold); }
+.hand-badge.full-house { background: rgba(156,39,176,0.2); border-color: #9c27b0; color: #ce93d8; }
+.hand-badge.flush { background: rgba(33,150,243,0.15); border-color: #2196f3; color: #90caf9; }
+.hand-badge.straight { background: rgba(76,175,80,0.15); border-color: #4caf50; color: #a5d6a7; }
+.hand-badge.three-kind { background: rgba(255,152,0,0.15); border-color: #ff9800; color: #ffcc80; }
+.hand-badge.two-pair { background: rgba(0,188,212,0.15); border-color: #00bcd4; color: #80deea; }
+.hand-badge.one-pair { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); color: #ccc; }
+
+/* Debug overlay */
+.card .debug-info {
+  display: none;
+  position: absolute;
+  bottom: 1px;
+  left: 1px;
+  font-size: 0.4rem;
+  color: rgba(0,0,0,0.4);
+  font-family: monospace;
+}
+body.debug-mode .card .debug-info { display: block; }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+}
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: linear-gradient(145deg, #1a3a22, #0d2818);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(201,168,76,0.2);
+}
+.modal h2 {
+  font-family: 'Playfair Display', serif;
+  color: var(--gold);
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+.modal .subtitle {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+.modal .best-hand {
+  font-size: 1.2rem;
+  color: var(--gold);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.modal .score {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 16px;
+}
+.modal .hand-list {
+  text-align: left;
+  margin-bottom: 20px;
+}
+.modal .hand-list-item {
+  padding: 3px 0;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.modal .hand-list-item .rank-label { color: var(--gold); }
+.modal .hand-list-item .cards-str { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+
+.btn-play-again {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  padding: 12px 32px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-play-again:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+
+/* Message toast */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: #ff5252;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 400px) {
+  .card { width: 38px; height: 38px; }
+  .card .card-value { font-size: 0.85rem; }
+  .card .card-suit { font-size: 0.7rem; }
+  .grid { gap: 3px; }
+}
+@media (min-width: 500px) {
+  .card { width: 52px; height: 52px; }
+  .card .card-value { font-size: 1.2rem; }
+  .card .card-suit { font-size: 0.9rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">POKE-R ♠</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+  <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
+  <select class="mode-selector" id="modeSelector">
+    <option value="1">Mode 1 · 가로세로</option>
+    <option value="2">Mode 2 · 직선</option>
+    <option value="3">Mode 3 · 자유</option>
+    <option value="4">Mode 4 · 자유+점프</option>
+  </select>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="timer-wrap">
+    <svg class="timer-ring" viewBox="0 0 40 40">
+      <circle class="timer-ring-bg" cx="20" cy="20" r="16" />
+      <circle class="timer-ring-fg" id="timerRing" cx="20" cy="20" r="16"
+        stroke-dasharray="100.53" stroke-dashoffset="0"
+        transform="rotate(-90 20 20)" />
+    </svg>
+    <div class="timer-num" id="timerNum">100</div>
+  </div>
+  <div class="hand-counter"><span id="handCount">0</span>/9 🃏</div>
+</div>
+
+<div class="grid-container" id="gridContainer">
+  <div class="grid" id="grid"></div>
+  <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+</div>
+
+<div class="hand-preview" id="handPreview"></div>
+
+<div class="hand-panel">
+  <div class="hand-panel-title">BEST HANDS</div>
+  <div class="hand-slots" id="handSlots"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Constants ───
+const TIMER_SECONDS = 200;
+const GRID_SIZE = 7;
+const MAX_HANDS = 9;
+const HAND_SIZE = 5;
+
+const SUITS = ['♠', '♥', '♦', '♣'];
+const SUIT_NAMES = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
+const VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
+
+const RANK = {
+  HIGH_CARD: 0,
+  ONE_PAIR: 1,
+  TWO_PAIR: 2,
+  THREE_KIND: 3,
+  STRAIGHT: 4,
+  FLUSH: 5,
+  FULL_HOUSE: 6,
+  FOUR_KIND: 7,
+  STRAIGHT_FLUSH: 8,
+  ROYAL_FLUSH: 9,
+};
+
+const RANK_LABELS = {
+  [RANK.HIGH_CARD]: 'High Card',
+  [RANK.ONE_PAIR]: 'One Pair',
+  [RANK.TWO_PAIR]: 'Two Pair',
+  [RANK.THREE_KIND]: 'Three of a Kind',
+  [RANK.STRAIGHT]: 'Straight',
+  [RANK.FLUSH]: 'Flush',
+  [RANK.FULL_HOUSE]: 'Full House',
+  [RANK.FOUR_KIND]: 'Four of a Kind',
+  [RANK.STRAIGHT_FLUSH]: 'Straight Flush',
+  [RANK.ROYAL_FLUSH]: 'Royal Flush',
+};
+
+const RANK_CSS = {
+  [RANK.ONE_PAIR]: 'one-pair',
+  [RANK.TWO_PAIR]: 'two-pair',
+  [RANK.THREE_KIND]: 'three-kind',
+  [RANK.STRAIGHT]: 'straight',
+  [RANK.FLUSH]: 'flush',
+  [RANK.FULL_HOUSE]: 'full-house',
+  [RANK.FOUR_KIND]: 'four-kind',
+  [RANK.STRAIGHT_FLUSH]: 'straight-flush',
+  [RANK.ROYAL_FLUSH]: 'royal-flush',
+};
+
+// ─── Game State ───
+let state = {};
+
+function initState() {
+  state = {
+    grid: [],
+    hands: [],
+    selectionMode: 1,
+    selectedPath: [],
+    isDragging: false,
+    timer: TIMER_SECONDS,
+    phase: 'playing',
+    timerInterval: null,
+    debugMode: false,
+  };
+}
+
+// ─── Card / Deck Utilities ───
+function createDeck() {
+  const deck = [];
+  for (const suit of SUITS) {
+    for (let v = 2; v <= 14; v++) {
+      deck.push({ suit, value: v, id: VALUE_NAMES[v] + SUIT_NAMES[suit] });
+    }
+  }
+  return deck;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function cardDisplay(card) {
+  return VALUE_NAMES[card.value] + card.suit;
+}
+
+function isRedSuit(suit) {
+  return suit === '♥' || suit === '♦';
+}
+
+// ─── Grid Init & Render ───
+function initGrid() {
+  const deck = shuffle(createDeck());
+  // Remove 3 random cards
+  deck.splice(0, 3);
+  const cards = deck.slice(0, 49);
+
+  state.grid = [];
+  let idx = 0;
+  for (let r = 0; r < GRID_SIZE; r++) {
+    const row = [];
+    for (let c = 0; c < GRID_SIZE; c++) {
+      row.push({ card: cards[idx++], row: r, col: c });
+    }
+    state.grid.push(row);
+  }
+}
+
+function renderGrid() {
+  const gridEl = document.getElementById('grid');
+  gridEl.innerHTML = '';
+
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const cell = state.grid[r][c];
+      const div = document.createElement('div');
+      div.dataset.row = r;
+      div.dataset.col = c;
+
+      if (cell.card) {
+        const card = cell.card;
+        const suitClass = 'suit-' + SUIT_NAMES[card.suit];
+        div.className = `card ${suitClass}`;
+
+        const vn = VALUE_NAMES[card.value];
+        div.innerHTML = `
+          <span class="card-value">${vn}</span>
+          <span class="card-suit">${card.suit}</span>
+          <span class="debug-info">${r},${c}</span>
+        `;
+
+        // Check selected
+        if (state.selectedPath.some(p => p[0] === r && p[1] === c)) {
+          div.classList.add('selected');
+        }
+      } else {
+        div.className = 'card empty';
+        div.innerHTML = `<span class="debug-info">${r},${c}</span>`;
+      }
+
+      gridEl.appendChild(div);
+    }
+  }
+
+  updateDragLine();
+}
+
+// ─── Drag Interaction ───
+function getCellFromEvent(e) {
+  let clientX, clientY;
+  if (e.touches) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  } else {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  }
+  const el = document.elementFromPoint(clientX, clientY);
+  if (!el) return null;
+  const cardEl = el.closest('.card');
+  if (!cardEl || cardEl.classList.contains('empty')) return null;
+  const row = parseInt(cardEl.dataset.row);
+  const col = parseInt(cardEl.dataset.col);
+  if (isNaN(row) || isNaN(col)) return null;
+  return [row, col];
+}
+
+function startDrag(row, col) {
+  if (state.phase !== 'playing') return;
+  if (!state.grid[row][col].card) return;
+  state.isDragging = true;
+  state.selectedPath = [[row, col]];
+  renderGrid();
+  updateHandPreview();
+}
+
+function extendPath(row, col) {
+  if (!state.isDragging) return;
+  if (state.selectedPath.length >= HAND_SIZE) return;
+  if (!state.grid[row][col].card) return;
+
+  // Already in path?
+  if (state.selectedPath.some(p => p[0] === row && p[1] === col)) {
+    // Allow backtracking: if this is the second-to-last card, pop the last
+    if (state.selectedPath.length >= 2) {
+      const prev = state.selectedPath[state.selectedPath.length - 2];
+      if (prev[0] === row && prev[1] === col) {
+        state.selectedPath.pop();
+        renderGrid();
+        updateHandPreview();
+      }
+    }
+    return;
+  }
+
+  const last = state.selectedPath[state.selectedPath.length - 1];
+
+  if (state.selectionMode === 1) {
+    // Orthogonal only, adjacent
+    const dr = Math.abs(row - last[0]);
+    const dc = Math.abs(col - last[1]);
+    if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
+  } else if (state.selectionMode === 2) {
+    // Straight line: all cards must be collinear
+    if (state.selectedPath.length === 1) {
+      // Second card: must be adjacent (8 directions)
+      const dr = Math.abs(row - last[0]);
+      const dc = Math.abs(col - last[1]);
+      if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
+    } else {
+      // Must continue same direction
+      const first = state.selectedPath[0];
+      const second = state.selectedPath[1];
+      const dirR = Math.sign(second[0] - first[0]);
+      const dirC = Math.sign(second[1] - first[1]);
+      const prevEnd = state.selectedPath[state.selectedPath.length - 1];
+      const expectedR = prevEnd[0] + dirR;
+      const expectedC = prevEnd[1] + dirC;
+      if (row !== expectedR || col !== expectedC) return;
+    }
+  } else if (state.selectionMode === 3) {
+    // Any direction, adjacent (8 directions)
+    const dr = Math.abs(row - last[0]);
+    const dc = Math.abs(col - last[1]);
+    if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
+  } else if (state.selectionMode === 4) {
+    // Free 8-direction + skip empty cells in a straight line
+    const dr = row - last[0];
+    const dc = col - last[1];
+    // Must be on a straight line (horizontal, vertical, or 45° diagonal)
+    if (dr === 0 && dc === 0) return;
+    if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
+    // Check that all cells between last and target are empty
+    const stepR = Math.sign(dr);
+    const stepC = Math.sign(dc);
+    let cr = last[0] + stepR;
+    let cc = last[1] + stepC;
+    while (cr !== row || cc !== col) {
+      if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
+      if (state.grid[cr][cc].card !== null) return; // non-empty cell in between = blocked
+      cr += stepR;
+      cc += stepC;
+    }
+  }
+
+  state.selectedPath.push([row, col]);
+  renderGrid();
+  updateHandPreview();
+}
+
+function finalizePath() {
+  if (!state.isDragging) return;
+  state.isDragging = false;
+
+  if (state.selectedPath.length < HAND_SIZE) {
+    showToast('카드 5장을 선택해주세요!');
+    clearSelection();
+    return;
+  }
+
+  const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card);
+  const hand = evaluateHand(cards);
+
+  if (!isValidHand(hand)) {
+    // Invalid: shake + message
+    const gridEl = document.getElementById('grid');
+    state.selectedPath.forEach(([r, c]) => {
+      const idx = r * GRID_SIZE + c;
+      const el = gridEl.children[idx];
+      el.classList.add('invalid-shake');
+      el.style.borderColor = '#ff5252';
+      setTimeout(() => {
+        el.classList.remove('invalid-shake');
+        el.style.borderColor = '';
+      }, 400);
+    });
+    showToast('10 이상의 원페어가 필요합니다!');
+    setTimeout(() => clearSelection(), 400);
+    return;
+  }
+
+  // Valid hand!
+  state.hands.push({
+    cards: [...cards],
+    rank: hand.rank,
+    rankValue: hand.rankValue,
+    label: hand.label,
+  });
+
+  removeCardsAndApplyGravity();
+}
+
+function clearSelection() {
+  state.selectedPath = [];
+  renderGrid();
+  updateHandPreview();
+}
+
+function updateDragLine() {
+  const line = document.getElementById('dragLine');
+  if (state.selectedPath.length < 2) {
+    line.setAttribute('points', '');
+    return;
+  }
+
+  const gridEl = document.getElementById('grid');
+  const containerEl = document.getElementById('gridContainer');
+  const containerRect = containerEl.getBoundingClientRect();
+
+  const points = state.selectedPath.map(([r, c]) => {
+    const idx = r * GRID_SIZE + c;
+    const cardEl = gridEl.children[idx];
+    if (!cardEl) return '0,0';
+    const rect = cardEl.getBoundingClientRect();
+    const x = rect.left + rect.width / 2 - containerRect.left;
+    const y = rect.top + rect.height / 2 - containerRect.top;
+    return `${x},${y}`;
+  }).join(' ');
+
+  line.setAttribute('points', points);
+}
+
+function updateHandPreview() {
+  const previewEl = document.getElementById('handPreview');
+  if (state.selectedPath.length === 0) {
+    previewEl.textContent = '';
+    previewEl.className = 'hand-preview';
+    return;
+  }
+
+  const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
+  if (cards.length < 2) {
+    previewEl.textContent = `${cards.length}/5 선택 중...`;
+    previewEl.className = 'hand-preview';
+    return;
+  }
+
+  const hand = evaluateHand(cards);
+  const valid = cards.length === 5 && isValidHand(hand);
+  const mark = cards.length === 5 ? (valid ? '✓' : '✗') : '';
+
+  previewEl.textContent = `${hand.label} ${mark}`;
+  previewEl.className = 'hand-preview ' + (cards.length === 5 ? (valid ? 'valid' : 'invalid') : '');
+}
+
+// ─── Event Listeners ───
+const gridEl = document.getElementById('grid');
+
+gridEl.addEventListener('mousedown', e => {
+  const cell = getCellFromEvent(e);
+  if (cell) startDrag(cell[0], cell[1]);
+});
+
+gridEl.addEventListener('mousemove', e => {
+  const cell = getCellFromEvent(e);
+  if (cell) extendPath(cell[0], cell[1]);
+});
+
+document.addEventListener('mouseup', () => {
+  if (state.isDragging) finalizePath();
+});
+
+gridEl.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const cell = getCellFromEvent(e);
+  if (cell) startDrag(cell[0], cell[1]);
+}, { passive: false });
+
+gridEl.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const cell = getCellFromEvent(e);
+  if (cell) extendPath(cell[0], cell[1]);
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (state.isDragging) {
+    e.preventDefault();
+    finalizePath();
+  }
+});
+
+document.getElementById('modeSelector').addEventListener('change', e => {
+  const mode = parseInt(e.target.value);
+  resetGame();
+  state.selectionMode = mode;
+  document.getElementById('modeSelector').value = mode;
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  resetGame();
+});
+
+// ─── Hand Evaluation (Poker Logic) ───
+function evaluateHand(cards) {
+  if (cards.length < 5) {
+    // Partial eval for preview
+    return partialEval(cards);
+  }
+
+  const values = cards.map(c => c.value).sort((a, b) => a - b);
+  const suits = cards.map(c => c.suit);
+
+  const isFlush = suits.every(s => s === suits[0]);
+
+  // Straight check
+  let isStraight = false;
+  const unique = [...new Set(values)];
+  if (unique.length === 5) {
+    if (unique[4] - unique[0] === 4) {
+      isStraight = true;
+    }
+    // Ace-low straight: A,2,3,4,5
+    if (unique[0] === 2 && unique[1] === 3 && unique[2] === 4 && unique[3] === 5 && unique[4] === 14) {
+      isStraight = true;
+    }
+  }
+
+  // Count values
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const countValues = Object.values(counts).sort((a, b) => b - a);
+  const countKeys = Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+
+  let rank, label;
+
+  if (isFlush && isStraight) {
+    if (values[0] === 10 && values[4] === 14) {
+      rank = RANK.ROYAL_FLUSH;
+      label = 'Royal Flush';
+    } else {
+      rank = RANK.STRAIGHT_FLUSH;
+      label = 'Straight Flush';
+    }
+  } else if (countValues[0] === 4) {
+    rank = RANK.FOUR_KIND;
+    label = `Four ${VALUE_NAMES[countKeys[0][0]]}s`;
+  } else if (countValues[0] === 3 && countValues[1] === 2) {
+    rank = RANK.FULL_HOUSE;
+    label = `Full House`;
+  } else if (isFlush) {
+    rank = RANK.FLUSH;
+    label = 'Flush';
+  } else if (isStraight) {
+    rank = RANK.STRAIGHT;
+    label = 'Straight';
+  } else if (countValues[0] === 3) {
+    rank = RANK.THREE_KIND;
+    label = `Three ${VALUE_NAMES[countKeys[0][0]]}s`;
+  } else if (countValues[0] === 2 && countValues[1] === 2) {
+    rank = RANK.TWO_PAIR;
+    label = 'Two Pair';
+  } else if (countValues[0] === 2) {
+    const pairVal = parseInt(countKeys[0][0]);
+    rank = RANK.ONE_PAIR;
+    label = `Pair of ${VALUE_NAMES[pairVal]}s`;
+  } else {
+    rank = RANK.HIGH_CARD;
+    label = 'High Card';
+  }
+
+  return { rank, rankValue: rank, label, pairValue: countValues[0] === 2 ? parseInt(countKeys[0][0]) : 0 };
+}
+
+function partialEval(cards) {
+  if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
+
+  const values = cards.map(c => c.value);
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const countValues = Object.values(counts).sort((a, b) => b - a);
+  const countKeys = Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+
+  if (countValues[0] >= 4) return { rank: RANK.FOUR_KIND, rankValue: RANK.FOUR_KIND, label: `Four ${VALUE_NAMES[countKeys[0][0]]}s`, pairValue: 0 };
+  if (countValues[0] === 3 && countValues[1] === 2) return { rank: RANK.FULL_HOUSE, rankValue: RANK.FULL_HOUSE, label: 'Full House', pairValue: 0 };
+  if (countValues[0] === 3) return { rank: RANK.THREE_KIND, rankValue: RANK.THREE_KIND, label: `Three ${VALUE_NAMES[countKeys[0][0]]}s`, pairValue: 0 };
+  if (countValues[0] === 2 && countValues[1] === 2) return { rank: RANK.TWO_PAIR, rankValue: RANK.TWO_PAIR, label: 'Two Pair', pairValue: 0 };
+  if (countValues[0] === 2) {
+    const pv = parseInt(countKeys[0][0]);
+    return { rank: RANK.ONE_PAIR, rankValue: RANK.ONE_PAIR, label: `Pair of ${VALUE_NAMES[pv]}s`, pairValue: pv };
+  }
+
+  return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
+}
+
+function isValidHand(hand) {
+  if (hand.rank >= RANK.TWO_PAIR) return true;
+  if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
+  return false;
+}
+
+// ─── Card Removal + Gravity ───
+function removeCardsAndApplyGravity() {
+  const gridEl = document.getElementById('grid');
+  const positions = [...state.selectedPath];
+
+  // Animate removal
+  positions.forEach(([r, c]) => {
+    const idx = r * GRID_SIZE + c;
+    gridEl.children[idx].classList.add('removing');
+  });
+
+  setTimeout(() => {
+    // Remove cards from state
+    positions.forEach(([r, c]) => {
+      state.grid[r][c].card = null;
+    });
+
+    // Apply gravity per column
+    const affectedCols = [...new Set(positions.map(p => p[1]))];
+    affectedCols.forEach(col => {
+      applyGravityToColumn(col);
+    });
+
+    state.selectedPath = [];
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+
+    // Check game end
+    if (state.hands.length >= MAX_HANDS) {
+      endGame('complete');
+    }
+  }, 500);
+}
+
+function applyGravityToColumn(col) {
+  // Collect non-null cards from bottom to top
+  const cards = [];
+  for (let r = GRID_SIZE - 1; r >= 0; r--) {
+    if (state.grid[r][col].card) {
+      cards.push(state.grid[r][col].card);
+    }
+  }
+
+  // Place them at bottom, nulls at top
+  for (let r = GRID_SIZE - 1; r >= 0; r--) {
+    const idx = GRID_SIZE - 1 - r;
+    state.grid[r][col].card = idx < cards.length ? cards[idx] : null;
+  }
+}
+
+// ─── Timer ───
+function startTimer() {
+  state.timer = TIMER_SECONDS;
+  updateTimerDisplay();
+
+  state.timerInterval = setInterval(() => {
+    if (state.phase !== 'playing') return;
+    state.timer--;
+    updateTimerDisplay();
+    if (state.timer <= 0) {
+      endGame('gameover');
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const numEl = document.getElementById('timerNum');
+  const ringEl = document.getElementById('timerRing');
+  const circumference = 2 * Math.PI * 16; // r=16
+
+  numEl.textContent = Math.max(0, state.timer);
+  const offset = circumference * (1 - state.timer / TIMER_SECONDS);
+  ringEl.style.strokeDashoffset = offset;
+
+  numEl.classList.remove('warning', 'urgent');
+  if (state.timer <= 10) {
+    numEl.classList.add('urgent');
+    ringEl.style.stroke = '#ff3333';
+  } else if (state.timer <= 30) {
+    numEl.classList.add('warning');
+    ringEl.style.stroke = 'orange';
+  } else {
+    ringEl.style.stroke = 'var(--gold)';
+  }
+}
+
+// ─── Hand Panel ───
+function updateHandPanel() {
+  const slotsEl = document.getElementById('handSlots');
+  const countEl = document.getElementById('handCount');
+  countEl.textContent = state.hands.length;
+
+  // Sort by rank descending
+  const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
+
+  let html = '';
+  for (let i = 0; i < MAX_HANDS; i++) {
+    if (i < sorted.length) {
+      const h = sorted[i];
+      const css = RANK_CSS[h.rank] || '';
+      html += `<div class="hand-badge ${css}">${h.label}</div>`;
+    } else {
+      html += `<div class="hand-badge empty-slot">—</div>`;
+    }
+  }
+  slotsEl.innerHTML = html;
+}
+
+// ─── Game End ───
+function endGame(reason) {
+  state.phase = reason === 'complete' ? 'complete' : 'gameover';
+  clearInterval(state.timerInterval);
+
+  const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
+  const score = state.hands.reduce((sum, h) => sum + h.rankValue, 0);
+  const best = sorted[0];
+
+  const modal = document.getElementById('modal');
+  const title = reason === 'complete' ? 'COMPLETE!' : "TIME'S UP!";
+
+  let handListHTML = '';
+  sorted.forEach((h, i) => {
+    const cardsStr = h.cards.map(c => cardDisplay(c)).join(' ');
+    handListHTML += `<div class="hand-list-item">
+      <span class="rank-label">${i === 0 ? '🏆 ' : ''}${h.label}</span>
+      <span class="cards-str">${cardsStr}</span>
+    </div>`;
+  });
+
+  modal.innerHTML = `
+    <h2>${title}</h2>
+    <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
+    ${best ? `<div class="best-hand">Best: ${best.label}</div>` : ''}
+    <div class="score">Score: ${score}</div>
+    <div class="hand-list">${handListHTML}</div>
+    <button class="btn-play-again" onclick="resetGame()">Play Again</button>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+// ─── Game Reset ───
+function resetGame() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  clearInterval(state.timerInterval);
+  initState();
+  initGrid();
+  renderGrid();
+  updateHandPanel();
+  updateHandPreview();
+  startTimer();
+  document.getElementById('modeSelector').value = '1';
+}
+
+// ─── Toast ───
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ─── Debug Mode ───
+document.addEventListener('keydown', e => {
+  if (e.key === 'd' || e.key === 'D') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    state.debugMode = !state.debugMode;
+    document.body.classList.toggle('debug-mode', state.debugMode);
+    if (state.debugMode) {
+      console.log('Debug mode ON');
+      console.log('Selected path:', state.selectedPath);
+      console.log('Current hand eval:', state.selectedPath.length >= 2 ?
+        evaluateHand(state.selectedPath.map(([r,c]) => state.grid[r][c].card).filter(Boolean)) : 'N/A');
+    } else {
+      console.log('Debug mode OFF');
+    }
+  }
+});
+
+window.validateGrid = function() {
+  const ids = new Set();
+  let count = 0;
+  let duplicates = [];
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const card = state.grid[r][c].card;
+      if (card) {
+        count++;
+        if (ids.has(card.id)) {
+          duplicates.push(card.id);
+        }
+        ids.add(card.id);
+      }
+    }
+  }
+  if (duplicates.length > 0) {
+    console.error(`DUPLICATES FOUND: ${duplicates.join(', ')}`);
+    return `${count} cards, ${duplicates.length} duplicates: ${duplicates.join(', ')}`;
+  }
+  console.log(`${count} unique cards, no duplicates`);
+  return `${count} unique cards, no duplicates`;
+};
+
+// ─── Init ───
+initState();
+initGrid();
+renderGrid();
+updateHandPanel();
+startTimer();
+</script>
+</body>
+</html>
