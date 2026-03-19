@@ -149,6 +149,50 @@ body::before {
 }
 .hand-counter span { color: var(--gold); font-weight: 700; }
 
+.score-display {
+  text-align: center;
+}
+.current-score {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.high-score {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 1px;
+}
+.high-score span { color: rgba(201,168,76,0.6); }
+
+/* Floating score popup */
+.score-popup {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  text-align: center;
+  animation: scorePopup 1.5s forwards;
+}
+.score-popup .popup-rank {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+.score-popup .popup-pts {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #4CAF50;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+@keyframes scorePopup {
+  0%   { opacity: 1; top: 45%; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; top: 25%; }
+}
+
 /* Grid */
 .grid-container {
   position: relative;
@@ -316,6 +360,7 @@ body::before {
   text-align: center;
 }
 .hand-badge.royal-flush { background: linear-gradient(135deg, #C9A84C, #a07c2e); color: #000; font-weight: 700; }
+.hand-badge.broadway-straight { background: linear-gradient(135deg, #66BB6A, #388E3C); color: #fff; font-weight: 700; }
 .hand-badge.straight-flush { background: linear-gradient(135deg, #888, #555); color: #fff; font-weight: 700; }
 .hand-badge.four-kind { background: rgba(201,168,76,0.2); border-color: var(--gold); color: var(--gold); }
 .hand-badge.full-house { background: rgba(156,39,176,0.2); border-color: #9c27b0; color: #ce93d8; }
@@ -471,6 +516,10 @@ body.debug-mode .card .debug-info { display: block; }
     </svg>
     <div class="timer-num" id="timerNum">100</div>
   </div>
+  <div class="score-display">
+    <div class="current-score" id="currentScore">0</div>
+    <div class="high-score">HI <span id="highScoreDisplay">0</span></div>
+  </div>
   <div class="hand-counter"><span id="handCount">0</span>/9 🃏</div>
 </div>
 
@@ -509,12 +558,47 @@ const RANK = {
   TWO_PAIR: 2,
   THREE_KIND: 3,
   STRAIGHT: 4,
-  FLUSH: 5,
-  FULL_HOUSE: 6,
-  FOUR_KIND: 7,
-  STRAIGHT_FLUSH: 8,
-  ROYAL_FLUSH: 9,
+  BROADWAY_STRAIGHT: 5,
+  FLUSH: 6,
+  FULL_HOUSE: 7,
+  FOUR_KIND: 8,
+  STRAIGHT_FLUSH: 9,
+  ROYAL_FLUSH: 10,
 };
+
+const DEFAULT_SCORES = {
+  [RANK.HIGH_CARD]: 0,
+  [RANK.ONE_PAIR]: 1,
+  [RANK.TWO_PAIR]: 2,
+  [RANK.THREE_KIND]: 5,
+  [RANK.STRAIGHT]: 10,
+  [RANK.BROADWAY_STRAIGHT]: 15,
+  [RANK.FLUSH]: 15,
+  [RANK.FULL_HOUSE]: 20,
+  [RANK.FOUR_KIND]: 50,
+  [RANK.STRAIGHT_FLUSH]: 75,
+  [RANK.ROYAL_FLUSH]: 100,
+};
+
+const DEFAULT_PENALTY = 100;
+
+function getScoreSettings() {
+  try {
+    const saved = localStorage.getItem('poker_scores');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return { scores: { ...DEFAULT_SCORES }, penalty: DEFAULT_PENALTY };
+}
+
+function getRankScore(rank) {
+  const settings = getScoreSettings();
+  return settings.scores[rank] !== undefined ? settings.scores[rank] : (DEFAULT_SCORES[rank] || 0);
+}
+
+function getPenaltyPerCard() {
+  const settings = getScoreSettings();
+  return settings.penalty !== undefined ? settings.penalty : DEFAULT_PENALTY;
+}
 
 const RANK_LABELS = {
   [RANK.HIGH_CARD]: 'High Card',
@@ -522,6 +606,7 @@ const RANK_LABELS = {
   [RANK.TWO_PAIR]: 'Two Pair',
   [RANK.THREE_KIND]: 'Three of a Kind',
   [RANK.STRAIGHT]: 'Straight',
+  [RANK.BROADWAY_STRAIGHT]: 'Broadway Straight',
   [RANK.FLUSH]: 'Flush',
   [RANK.FULL_HOUSE]: 'Full House',
   [RANK.FOUR_KIND]: 'Four of a Kind',
@@ -534,6 +619,7 @@ const RANK_CSS = {
   [RANK.TWO_PAIR]: 'two-pair',
   [RANK.THREE_KIND]: 'three-kind',
   [RANK.STRAIGHT]: 'straight',
+  [RANK.BROADWAY_STRAIGHT]: 'broadway-straight',
   [RANK.FLUSH]: 'flush',
   [RANK.FULL_HOUSE]: 'full-house',
   [RANK.FOUR_KIND]: 'four-kind',
@@ -555,6 +641,7 @@ function initState() {
     phase: 'playing',
     timerInterval: null,
     debugMode: false,
+    currentScore: 0,
   };
 }
 
@@ -799,6 +886,8 @@ function finalizePath() {
   }
 
   // Valid hand!
+  const earnedScore = getRankScore(hand.rank);
+  state.currentScore += earnedScore;
   state.hands.push({
     cards: [...cards],
     rank: hand.rank,
@@ -806,6 +895,8 @@ function finalizePath() {
     label: hand.label,
   });
 
+  updateScoreDisplay();
+  showScorePopup(hand.label, earnedScore);
   removeCardsAndApplyGravity();
 }
 
@@ -910,6 +1001,7 @@ document.getElementById('modeSelector').addEventListener('change', e => {
   resetGame();
   state.selectionMode = mode;
   document.getElementById('modeSelector').value = mode;
+  updateScoreDisplay();
 });
 
 document.getElementById('restartBtn').addEventListener('click', () => {
@@ -949,8 +1041,10 @@ function evaluateHand(cards) {
 
   let rank, label;
 
+  const isRoyal = (values[0] === 10 && values[1] === 11 && values[2] === 12 && values[3] === 13 && values[4] === 14);
+
   if (isFlush && isStraight) {
-    if (values[0] === 10 && values[4] === 14) {
+    if (isRoyal) {
       rank = RANK.ROYAL_FLUSH;
       label = 'Royal Flush';
     } else {
@@ -966,6 +1060,9 @@ function evaluateHand(cards) {
   } else if (isFlush) {
     rank = RANK.FLUSH;
     label = 'Flush';
+  } else if (isStraight && isRoyal) {
+    rank = RANK.BROADWAY_STRAIGHT;
+    label = 'Broadway Straight';
   } else if (isStraight) {
     rank = RANK.STRAIGHT;
     label = 'Straight';
@@ -1123,14 +1220,62 @@ function updateHandPanel() {
   slotsEl.innerHTML = html;
 }
 
+// ─── High Score ───
+function getHighScores() {
+  try {
+    const saved = localStorage.getItem('poker_highscores');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return {};
+}
+
+function saveHighScore(mode, score) {
+  const highscores = getHighScores();
+  const key = 'mode_' + mode;
+  if (!highscores[key] || score > highscores[key]) {
+    highscores[key] = score;
+    localStorage.setItem('poker_highscores', JSON.stringify(highscores));
+    return true;
+  }
+  return false;
+}
+
+function getHighScore(mode) {
+  const highscores = getHighScores();
+  return highscores['mode_' + mode] || 0;
+}
+
+// ─── Remaining Cards Count ───
+function countRemainingCards() {
+  let count = 0;
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (state.grid[r][c].card) count++;
+    }
+  }
+  return count;
+}
+
 // ─── Game End ───
 function endGame(reason) {
   state.phase = reason === 'complete' ? 'complete' : 'gameover';
   clearInterval(state.timerInterval);
 
   const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
-  const score = state.hands.reduce((sum, h) => sum + h.rankValue, 0);
+  const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
   const best = sorted[0];
+
+  // Remaining cards penalty
+  const remainingCards = countRemainingCards();
+  const penaltyPerCard = getPenaltyPerCard();
+  const penalty = remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
+  const score = Math.max(0, handScore - penalty);
+
+  // High score
+  const currentMode = state.selectionMode;
+  const prevHighScore = getHighScore(currentMode);
+  const isNewHighScore = saveHighScore(currentMode, score);
+  const highScore = Math.max(prevHighScore, score);
 
   const modal = document.getElementById('modal');
   const title = reason === 'complete' ? 'COMPLETE!' : "TIME'S UP!";
@@ -1138,17 +1283,32 @@ function endGame(reason) {
   let handListHTML = '';
   sorted.forEach((h, i) => {
     const cardsStr = h.cards.map(c => cardDisplay(c)).join(' ');
+    const pts = getRankScore(h.rank);
     handListHTML += `<div class="hand-list-item">
       <span class="rank-label">${i === 0 ? '🏆 ' : ''}${h.label}</span>
-      <span class="cards-str">${cardsStr}</span>
+      <span class="cards-str">${cardsStr} (+${pts})</span>
     </div>`;
   });
+
+  let penaltyHTML = '';
+  if (penalty > 0) {
+    penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">남은 카드 ${remainingCards}장 (4장 초과 ${remainingCards - 4}장 × -${penaltyPerCard}) = -${penalty}</div>`;
+  }
+
+  let highScoreHTML = '';
+  if (isNewHighScore && score > 0) {
+    highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:8px;">🏆 NEW HIGH SCORE!</div>`;
+  } else {
+    highScoreHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">High Score (Mode ${currentMode}): ${highScore}</div>`;
+  }
 
   modal.innerHTML = `
     <h2>${title}</h2>
     <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
     ${best ? `<div class="best-hand">Best: ${best.label}</div>` : ''}
     <div class="score">Score: ${score}</div>
+    ${penaltyHTML}
+    ${highScoreHTML}
     <div class="hand-list">${handListHTML}</div>
     <button class="btn-play-again" onclick="resetGame()">Play Again</button>
   `;
@@ -1160,13 +1320,31 @@ function endGame(reason) {
 function resetGame() {
   document.getElementById('modalOverlay').classList.remove('active');
   clearInterval(state.timerInterval);
+  const prevMode = state.selectionMode || 1;
   initState();
+  state.selectionMode = prevMode;
   initGrid();
   renderGrid();
   updateHandPanel();
   updateHandPreview();
+  updateScoreDisplay();
   startTimer();
-  document.getElementById('modeSelector').value = '1';
+  document.getElementById('modeSelector').value = prevMode;
+}
+
+// ─── Score Display ───
+function updateScoreDisplay() {
+  document.getElementById('currentScore').textContent = state.currentScore;
+  const hi = getHighScore(state.selectionMode);
+  document.getElementById('highScoreDisplay').textContent = hi;
+}
+
+function showScorePopup(label, pts) {
+  const popup = document.createElement('div');
+  popup.className = 'score-popup';
+  popup.innerHTML = `<div class="popup-rank">${label}</div><div class="popup-pts">+${pts}</div>`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1600);
 }
 
 // ─── Toast ───
@@ -1223,6 +1401,7 @@ initState();
 initGrid();
 renderGrid();
 updateHandPanel();
+updateScoreDisplay();
 startTimer();
 </script>
 </body>
