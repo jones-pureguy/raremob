@@ -543,7 +543,7 @@ body.debug-mode .card .debug-info { display: block; }
 
 <script>
 // ─── Constants ───
-const TIMER_SECONDS = 200;
+const TIMER_SECONDS = 100;
 const GRID_SIZE = 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;
@@ -1174,7 +1174,7 @@ function startTimer() {
     if (state.timer <= 0) {
       endGame('gameover');
     }
-  }, 1000);
+  }, 2000);
 }
 
 function updateTimerDisplay() {
@@ -1265,11 +1265,14 @@ function endGame(reason) {
   const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
   const best = sorted[0];
 
+  // Time bonus
+  const timeBonus = Math.max(0, state.timer);
+
   // Remaining cards penalty
   const remainingCards = countRemainingCards();
   const penaltyPerCard = getPenaltyPerCard();
   const penalty = remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
-  const score = Math.max(0, handScore - penalty);
+  const score = Math.max(0, handScore + timeBonus - penalty);
 
   // High score
   const currentMode = state.selectionMode;
@@ -1290,6 +1293,11 @@ function endGame(reason) {
     </div>`;
   });
 
+  let timeBonusHTML = '';
+  if (timeBonus > 0) {
+    timeBonusHTML = `<div style="color:#4CAF50;font-size:0.85rem;margin-bottom:4px;">남은 시간 보너스: +${timeBonus}</div>`;
+  }
+
   let penaltyHTML = '';
   if (penalty > 0) {
     penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">남은 카드 ${remainingCards}장 (4장 초과 ${remainingCards - 4}장 × -${penaltyPerCard}) = -${penalty}</div>`;
@@ -1307,6 +1315,7 @@ function endGame(reason) {
     <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
     ${best ? `<div class="best-hand">Best: ${best.label}</div>` : ''}
     <div class="score">Score: ${score}</div>
+    ${timeBonusHTML}
     ${penaltyHTML}
     ${highScoreHTML}
     <div class="hand-list">${handListHTML}</div>
