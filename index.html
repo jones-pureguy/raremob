@@ -1160,6 +1160,9 @@ function partialEval(cards) {
 
 function isValidHand(hand) {
   if (hand.rank >= RANK.TWO_PAIR) return true;
+  if (state.selectionMode >= 3) {
+    return hand.rank >= RANK.ONE_PAIR;
+  }
   if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
   return false;
 }
