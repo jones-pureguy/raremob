@@ -1318,6 +1318,8 @@ function endGame(reason) {
   const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
   const best = sorted[0];
 
+  const currentMode = state.selectionMode;
+
   // Time bonus
   const timeBonus = Math.max(0, state.timer);
 
@@ -1329,7 +1331,6 @@ function endGame(reason) {
   const score = Math.max(0, handScore + timeBonus - penalty);
 
   // High score
-  const currentMode = state.selectionMode;
   const prevHighScore = getHighScore(currentMode);
   const isNewHighScore = saveHighScore(currentMode, score);
   const highScore = Math.max(prevHighScore, score);
