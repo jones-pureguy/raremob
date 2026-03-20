@@ -359,6 +359,60 @@ body::before {
   min-width: 70px;
   text-align: center;
 }
+
+/* Removed cards */
+.removed-panel {
+  width: 100%;
+  max-width: 500px;
+  padding: 4px 16px 12px;
+  position: relative;
+  z-index: 1;
+}
+.removed-panel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+.removed-cards {
+  display: flex;
+  gap: 6px;
+}
+.removed-card {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.35;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.removed-card .card-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.removed-card .card-suit {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+.removed-card::after {
+  content: '✕';
+  position: absolute;
+  font-size: 1.4rem;
+  color: rgba(255,82,82,0.7);
+  font-weight: 700;
+}
+.removed-card.suit-s { color: var(--card-spade); }
+.removed-card.suit-h { color: var(--card-heart); }
+.removed-card.suit-d { color: var(--card-diamond); }
+.removed-card.suit-c { color: var(--card-club); }
 .hand-badge.royal-flush { background: linear-gradient(135deg, #C9A84C, #a07c2e); color: #000; font-weight: 700; }
 .hand-badge.broadway-straight { background: linear-gradient(135deg, #66BB6A, #388E3C); color: #fff; font-weight: 700; }
 .hand-badge.straight-flush { background: linear-gradient(135deg, #888, #555); color: #fff; font-weight: 700; }
@@ -535,6 +589,11 @@ body.debug-mode .card .debug-info { display: block; }
   <div class="hand-slots" id="handSlots"></div>
 </div>
 
+<div class="removed-panel">
+  <div class="removed-panel-title">REMOVED</div>
+  <div class="removed-cards" id="removedCards"></div>
+</div>
+
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modal"></div>
 </div>
@@ -642,6 +701,7 @@ function initState() {
     timerInterval: null,
     debugMode: false,
     currentScore: 0,
+    removedCards: [],
   };
 }
 
@@ -676,7 +736,7 @@ function isRedSuit(suit) {
 function initGrid() {
   const deck = shuffle(createDeck());
   // Remove 3 random cards
-  deck.splice(0, 3);
+  state.removedCards = deck.splice(0, 3);
   const cards = deck.slice(0, 49);
 
   state.grid = [];
@@ -1268,10 +1328,11 @@ function endGame(reason) {
   // Time bonus
   const timeBonus = Math.max(0, state.timer);
 
-  // Remaining cards penalty
+  // Remaining cards penalty (modes 1 & 2 only)
   const remainingCards = countRemainingCards();
   const penaltyPerCard = getPenaltyPerCard();
-  const penalty = remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
+  const applyPenalty = (currentMode <= 2);
+  const penalty = applyPenalty && remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
   const score = Math.max(0, handScore + timeBonus - penalty);
 
   // High score
@@ -1337,6 +1398,7 @@ function resetGame() {
   updateHandPanel();
   updateHandPreview();
   updateScoreDisplay();
+  renderRemovedCards();
   startTimer();
   document.getElementById('modeSelector').value = prevMode;
 }
@@ -1354,6 +1416,18 @@ function showScorePopup(label, pts) {
   popup.innerHTML = `<div class="popup-rank">${label}</div><div class="popup-pts">+${pts}</div>`;
   document.body.appendChild(popup);
   setTimeout(() => popup.remove(), 1600);
+}
+
+// ─── Removed Cards ───
+function renderRemovedCards() {
+  const container = document.getElementById('removedCards');
+  container.innerHTML = state.removedCards.map(card => {
+    const suitClass = 'suit-' + SUIT_NAMES[card.suit];
+    return `<div class="removed-card ${suitClass}">
+      <span class="card-value">${VALUE_NAMES[card.value]}</span>
+      <span class="card-suit">${card.suit}</span>
+    </div>`;
+  }).join('');
 }
 
 // ─── Toast ───
@@ -1411,6 +1485,7 @@ initGrid();
 renderGrid();
 updateHandPanel();
 updateScoreDisplay();
+renderRemovedCards();
 startTimer();
 </script>
 </body>
