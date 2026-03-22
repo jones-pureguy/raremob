@@ -252,6 +252,7 @@ function applyAction(actionIdx) {
 
 function goToStep(targetStep) {
   // Rebuild from scratch up to targetStep
+  clearDragLine();
   resetToInitial();
   for (let i = 0; i <= targetStep && i < replay.actions.length; i++) {
     applyAction(i);
@@ -262,35 +263,112 @@ function goToStep(targetStep) {
   renderActionLog();
 }
 
+let stepBusy = false; // prevent overlapping animations
+
 function stepNext() {
-  if (!replay) return;
+  if (!replay || stepBusy) return;
   const nextStep = currentStep + 1;
   if (nextStep >= replay.actions.length) {
     stopPlay();
     return;
   }
 
-  // Show path highlight briefly, then apply
   const action = replay.actions[nextStep];
-  renderGrid(action.path);
+  const path = action.path;
 
-  setTimeout(() => {
+  if (speed >= 4) {
+    // Fast mode: instant apply
     applyAction(nextStep);
     currentStep = nextStep;
-    cumulativeScore = 0;
-    for (let i = 0; i <= currentStep; i++) cumulativeScore += replay.actions[i].score;
+    recalcScore();
     renderGrid();
     updateDisplay();
     renderActionLog();
+    if (currentStep >= replay.actions.length - 1) stopPlay();
+    return;
+  }
 
-    if (currentStep >= replay.actions.length - 1) {
-      stopPlay();
+  // Animated drag: reveal path card by card
+  stepBusy = true;
+  const cardDelay = speed >= 2 ? 80 : 200; // ms per card
+  const holdDelay = speed >= 2 ? 200 : 500; // hold full selection before removing
+  const removeDelay = speed >= 2 ? 300 : 600; // removal animation
+
+  let revealed = 0;
+
+  function revealNext() {
+    if (!stepBusy) return; // cancelled
+    if (revealed >= path.length) {
+      // All cards revealed — hold, then remove
+      renderGrid(path);
+      updateDragLine(path);
+      setTimeout(() => {
+        // Show removing animation
+        const gridEl = document.getElementById('grid');
+        path.forEach(([r, c]) => {
+          const idx = r * GRID_SIZE + c;
+          if (gridEl.children[idx]) gridEl.children[idx].classList.add('removing');
+        });
+        clearDragLine();
+
+        setTimeout(() => {
+          applyAction(nextStep);
+          currentStep = nextStep;
+          recalcScore();
+          renderGrid();
+          updateDisplay();
+          renderActionLog();
+          stepBusy = false;
+          if (currentStep >= replay.actions.length - 1) stopPlay();
+        }, removeDelay);
+      }, holdDelay);
+      return;
     }
-  }, 600 / speed);
+
+    revealed++;
+    const partial = path.slice(0, revealed);
+    renderGrid(partial);
+    updateDragLine(partial);
+    setTimeout(revealNext, cardDelay);
+  }
+
+  revealNext();
+}
+
+function recalcScore() {
+  cumulativeScore = 0;
+  for (let i = 0; i <= currentStep; i++) cumulativeScore += replay.actions[i].score;
+}
+
+function updateDragLine(pathCoords) {
+  const line = document.getElementById('dragLine');
+  if (!pathCoords || pathCoords.length < 2) { line.setAttribute('points', ''); return; }
+
+  const gridEl = document.getElementById('grid');
+  const containerEl = document.getElementById('gridContainer');
+  const containerRect = containerEl.getBoundingClientRect();
+
+  const points = pathCoords.map(([r, c]) => {
+    const idx = r * GRID_SIZE + c;
+    const cardEl = gridEl.children[idx];
+    if (!cardEl) return '0,0';
+    const rect = cardEl.getBoundingClientRect();
+    const x = rect.left + rect.width / 2 - containerRect.left;
+    const y = rect.top + rect.height / 2 - containerRect.top;
+    return x + ',' + y;
+  }).join(' ');
+
+  line.setAttribute('points', points);
+}
+
+function clearDragLine() {
+  document.getElementById('dragLine').setAttribute('points', '');
 }
 
 function stepPrev() {
   if (!replay || currentStep < 0) return;
+  stepBusy = false;
+  clearDragLine();
   goToStep(currentStep - 1 < 0 ? -1 : currentStep - 1);
   if (currentStep < 0) {
     currentStep = -1;
@@ -329,13 +407,26 @@ function playNext() {
     return;
   }
   stepNext();
-  const delay = Math.max(200, 1200 / speed);
-  playTimer = setTimeout(playNext, delay);
+  // Wait for animation to finish before scheduling next
+  const nextAction = replay.actions[currentStep + 2]; // peek ahead
+  let totalAnimTime;
+  if (speed >= 4) {
+    totalAnimTime = 200;
+  } else {
+    const cardDelay = speed >= 2 ? 80 : 200;
+    const holdDelay = speed >= 2 ? 200 : 500;
+    const removeDelay = speed >= 2 ? 300 : 600;
+    const pathLen = replay.actions[currentStep + 1] ? replay.actions[currentStep + 1].path.length : 5;
+    totalAnimTime = (pathLen * cardDelay) + holdDelay + removeDelay + 200;
+  }
+  playTimer = setTimeout(playNext, totalAnimTime);
 }
 
 function stopPlay() {
   isPlaying = false;
+  stepBusy = false;
   clearTimeout(playTimer);
+  clearDragLine();
   document.getElementById('btnPlay').textContent = '▶ Play';
   document.getElementById('btnPlay').classList.remove('active');
 }
