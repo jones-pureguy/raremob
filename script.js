@@ -780,7 +780,7 @@ function endGame(reason) {
       timeRemaining: Math.max(0, state.timer),
     };
     localStorage.setItem('poker_last_replay', JSON.stringify(replayLog));
-    console.log('[POKE-R] Replay saved to localStorage');
+    console.log('[DragON] Replay saved to localStorage');
   }
 
   const modal = document.getElementById('modal');
@@ -858,9 +858,9 @@ function endGame(reason) {
     const modalClass = reason === 'nomoves' ? ' nomoves' : '';
     modal.className = 'modal' + modalClass;
 
-    // Auto-save replay to DB if leaderboard updated
+    // Auto-save replay to DB if leaderboard updated (link to leaderboard)
     if (leaderboardUpdated) {
-      saveReplayToDB();
+      saveReplayToDB(true);
     }
 
     // Buttons
@@ -1011,7 +1011,7 @@ async function getOrCreatePlayer(username) {
       .eq('username', username)
       .maybeSingle();
 
-    if (fetchErr) { console.error('[POKE-R] Player fetch error:', fetchErr); return null; }
+    if (fetchErr) { console.error('[DragON] Player fetch error:', fetchErr); return null; }
 
     if (existing) {
       currentPlayerId = existing.id;
@@ -1026,27 +1026,27 @@ async function getOrCreatePlayer(username) {
       .select('id')
       .single();
 
-    if (insertErr) { console.error('[POKE-R] Player insert error:', insertErr); return null; }
+    if (insertErr) { console.error('[DragON] Player insert error:', insertErr); return null; }
 
     currentPlayerId = newPlayer.id;
     localStorage.setItem('poker_player_username', username);
-    console.log('[POKE-R] New player created:', username, newPlayer.id);
+    console.log('[DragON] New player created:', username, newPlayer.id);
     return newPlayer.id;
   } catch (err) {
-    console.error('[POKE-R] Player error:', err);
+    console.error('[DragON] Player error:', err);
     return null;
   }
 }
 
 // Returns { leaderboardUpdated: boolean, topScore: number }
 async function saveSessionAndGetStatus(data) {
-  console.log('[POKE-R] Saving session...', data);
+  console.log('[DragON] Saving session...', data);
   let leaderboardUpdated = false;
   let topScore = 0;
 
   try {
     const playerId = await getOrCreatePlayer(data.username);
-    if (!playerId) { console.error('[POKE-R] No player ID, skipping save'); return { leaderboardUpdated, topScore }; }
+    if (!playerId) { console.error('[DragON] No player ID, skipping save'); return { leaderboardUpdated, topScore }; }
 
     // Insert game session
     const { data: sessionData, error: sessionError } = await sb
@@ -1061,9 +1061,9 @@ async function saveSessionAndGetStatus(data) {
       })
       .select();
     if (sessionError) {
-      console.error('[POKE-R] Session save error:', sessionError);
+      console.error('[DragON] Session save error:', sessionError);
     } else {
-      console.log('[POKE-R] Session saved:', sessionData);
+      console.log('[DragON] Session saved:', sessionData);
     }
 
     // Upsert leaderboard — keep highest score per player
@@ -1073,7 +1073,7 @@ async function saveSessionAndGetStatus(data) {
       .eq('player_id', playerId)
       .maybeSingle();
 
-    if (fetchError) console.error('[POKE-R] Leaderboard fetch error:', fetchError);
+    if (fetchError) console.error('[DragON] Leaderboard fetch error:', fetchError);
 
     if (!existing || data.score > existing.score) {
       const { data: lbData, error: lbError } = await sb
@@ -1086,9 +1086,9 @@ async function saveSessionAndGetStatus(data) {
         }, { onConflict: 'player_id' })
         .select();
       if (lbError) {
-        console.error('[POKE-R] Leaderboard upsert error:', lbError);
+        console.error('[DragON] Leaderboard upsert error:', lbError);
       } else {
-        console.log('[POKE-R] Leaderboard updated:', lbData);
+        console.log('[DragON] Leaderboard updated:', lbData);
         leaderboardUpdated = true;
       }
     }
@@ -1103,7 +1103,7 @@ async function saveSessionAndGetStatus(data) {
     if (topRow) topScore = topRow.score;
 
   } catch (err) {
-    console.error('[POKE-R] Save error:', err);
+    console.error('[DragON] Save error:', err);
   }
   return { leaderboardUpdated, topScore };
 }
@@ -1122,35 +1122,54 @@ async function fetchTopScore() {
 }
 
 // ─── Replay Save to DB ───
-async function saveReplayToDB() {
+// Returns replay id on success, null on failure
+async function saveReplayToDB(linkToLeaderboard) {
   const raw = localStorage.getItem('poker_last_replay');
-  if (!raw) { console.warn('[POKE-R] No replay data to save'); return false; }
+  if (!raw) { console.warn('[DragON] No replay data to save'); return null; }
 
   try {
     const data = JSON.parse(raw);
     const username = data.username || (localStorage.getItem('poker_username') || '').trim();
-    if (!username) return false;
+    if (!username) return null;
 
     const playerId = await getOrCreatePlayer(username);
-    if (!playerId) return false;
+    if (!playerId) return null;
 
-    const { error } = await sb
+    const { data: inserted, error } = await sb
       .from('game_replays')
       .insert({
         player_id: playerId,
         replay_data: data,
         score: data.result ? data.result.finalScore : 0,
-      });
+      })
+      .select('id')
+      .single();
 
     if (error) {
-      console.error('[POKE-R] Replay save error:', error);
-      return false;
+      console.error('[DragON] Replay save error:', error);
+      return null;
     }
-    console.log('[POKE-R] Replay saved to DB');
-    return true;
+
+    const replayId = inserted.id;
+    console.log('[DragON] Replay saved to DB:', replayId);
+
+    // Link replay to leaderboard entry
+    if (linkToLeaderboard) {
+      const { error: linkErr } = await sb
+        .from('leaderboard')
+        .update({ replay_id: replayId })
+        .eq('player_id', playerId);
+      if (linkErr) {
+        console.error('[DragON] Replay link error:', linkErr);
+      } else {
+        console.log('[DragON] Replay linked to leaderboard');
+      }
+    }
+
+    return replayId;
   } catch (err) {
-    console.error('[POKE-R] Replay save error:', err);
-    return false;
+    console.error('[DragON] Replay save error:', err);
+    return null;
   }
 }
 
@@ -1160,8 +1179,8 @@ async function saveReplayFromButton() {
   btn.disabled = true;
   btn.textContent = '저장 중...';
 
-  const ok = await saveReplayToDB();
-  if (ok) {
+  const replayId = await saveReplayToDB(false);
+  if (replayId) {
     btn.textContent = '저장 완료';
     btn.style.color = '#4CAF50';
     btn.style.borderColor = '#4CAF50';
@@ -1177,17 +1196,20 @@ async function showLeaderboard(currentUser) {
   try {
     const { data: rows, error } = await sb
       .from('leaderboard')
-      .select('username, score, best_hand')
+      .select('username, score, best_hand, replay_id')
       .order('score', { ascending: false })
       .limit(10);
 
     if (error) { console.error('Leaderboard error:', error); return; }
 
     let tableHTML = `<table class="leaderboard-table">
-      <thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th></tr></thead><tbody>`;
+      <thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th><th></th></tr></thead><tbody>`;
     (rows || []).forEach((row, i) => {
       const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
-      tableHTML += `<tr${hl}><td>${i + 1}</td><td>${escapeHTML(row.username)}</td><td>${row.score}</td><td>${escapeHTML(row.best_hand || '-')}</td></tr>`;
+      const replayBtn = row.replay_id
+        ? `<a href="replay.html?id=${row.replay_id}" class="lb-replay-btn" title="Replay">▶</a>`
+        : '';
+      tableHTML += `<tr${hl}><td>${i + 1}</td><td>${escapeHTML(row.username)}</td><td>${row.score}</td><td>${escapeHTML(row.best_hand || '-')}</td><td>${replayBtn}</td></tr>`;
     });
     tableHTML += '</tbody></table>';
 
@@ -1233,7 +1255,7 @@ startTimer();
 // Sanity check on start
 setTimeout(() => {
   if (!scanForValidMoves()) {
-    console.warn('[POKE-R] No valid moves at game start — reshuffling');
+    console.warn('[DragON] No valid moves at game start — reshuffling');
     resetGame();
   }
 }, 100);

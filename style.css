@@ -609,6 +609,25 @@ body.debug-mode .card .debug-info { display: block; }
 }
 .btn-close-lb:hover { background: rgba(255,255,255,0.15); }
 
+.lb-replay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0.65rem;
+  color: var(--gold);
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lb-replay-btn:hover {
+  background: rgba(201,168,76,0.3);
+}
+
 /* Menu page */
 .menu-container {
   display: flex;

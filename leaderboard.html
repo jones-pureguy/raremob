@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>POKE-R ♠ Leaderboard</title>
+<title>DragON POKER - Leaderboard</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -37,17 +37,20 @@
     try {
       const { data: rows, error } = await sb
         .from('leaderboard')
-        .select('username, score, best_hand')
+        .select('username, score, best_hand, replay_id')
         .order('score', { ascending: false })
         .limit(20);
 
       if (error) { wrap.innerHTML = '<div class="loading" style="color:#ff5252;">오류: ' + error.message + '</div>'; return; }
       if (!rows || rows.length === 0) { wrap.innerHTML = '<div class="loading">아직 기록이 없습니다</div>'; return; }
 
-      let html = '<table class="leaderboard-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th></tr></thead><tbody>';
+      let html = '<table class="leaderboard-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th><th></th></tr></thead><tbody>';
       rows.forEach((row, i) => {
         const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
-        html += '<tr' + hl + '><td>' + (i + 1) + '</td><td>' + escapeHTML(row.username) + '</td><td>' + row.score + '</td><td>' + escapeHTML(row.best_hand || '-') + '</td></tr>';
+        const replayBtn = row.replay_id
+          ? '<a href="replay.html?id=' + row.replay_id + '" class="lb-replay-btn" title="Replay">▶</a>'
+          : '';
+        html += '<tr' + hl + '><td>' + (i + 1) + '</td><td>' + escapeHTML(row.username) + '</td><td>' + row.score + '</td><td>' + escapeHTML(row.best_hand || '-') + '</td><td>' + replayBtn + '</td></tr>';
       });
       html += '</tbody></table>';
       wrap.innerHTML = html;
