@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>POKE-R ♠ Replay</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .replay-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .replay-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .replay-btn:hover { background: rgba(201,168,76,0.15); }
+  .replay-btn:disabled { opacity: 0.3; pointer-events: none; }
+  .replay-btn.active { background: rgba(201,168,76,0.25); border-color: var(--gold); }
+  .replay-speed {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+  }
+  .replay-info {
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+    padding: 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .replay-info .gold { color: var(--gold); font-weight: 700; }
+  .replay-list {
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+    z-index: 1;
+    padding: 0 16px;
+  }
+  .replay-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .replay-item:hover { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.3); }
+  .replay-item .ri-score { color: var(--gold); font-weight: 700; font-size: 1.1rem; }
+  .replay-item .ri-meta { color: rgba(255,255,255,0.4); font-size: 0.75rem; }
+  .replay-action-log {
+    width: 100%;
+    max-width: 500px;
+    padding: 8px 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .action-entry {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .action-entry.current { color: var(--gold); font-weight: 700; }
+  .action-entry.played { color: rgba(255,255,255,0.6); }
+</style>
+</head>
+<body class="game-page">
+
+<div class="header">
+  <div class="title">REPLAY</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="username-display" id="replayUser"></div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="timer-wrap">
+    <svg class="timer-ring" viewBox="0 0 40 40">
+      <circle class="timer-ring-bg" cx="20" cy="20" r="16" />
+      <circle class="timer-ring-fg" id="timerRing" cx="20" cy="20" r="16"
+        stroke-dasharray="100.53" stroke-dashoffset="0"
+        transform="rotate(-90 20 20)" />
+    </svg>
+    <div class="timer-num" id="timerNum">100</div>
+  </div>
+  <div class="score-display">
+    <div class="current-score" id="currentScore">0</div>
+  </div>
+  <div class="hand-counter"><span id="handCount">0</span>/<span id="totalHands">0</span> 🃏</div>
+</div>
+
+<div class="grid-container" id="gridContainer">
+  <div class="grid" id="grid"></div>
+  <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+</div>
+
+<div class="replay-controls">
+  <button class="replay-btn" id="btnPrev" onclick="stepPrev()" disabled>◀</button>
+  <button class="replay-btn" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+  <button class="replay-btn" id="btnNext" onclick="stepNext()">▶▏</button>
+  <button class="replay-btn" id="btnSpeed" onclick="cycleSpeed()">1x</button>
+</div>
+
+<div class="replay-info" id="replayInfo"></div>
+
+<div class="replay-action-log" id="actionLog"></div>
+
+<div class="removed-panel">
+  <div class="removed-panel-title">REMOVED</div>
+  <div class="removed-cards" id="removedCards"></div>
+</div>
+
+<div style="text-align:center;padding:12px;position:relative;z-index:1;">
+  <a href="index.html" class="menu-btn small">메인메뉴</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script>
+// ─── Replay Engine ───
+const GRID_SIZE = 7;
+const SUITS = ['♠', '♥', '♦', '♣'];
+const SUIT_NAMES = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
+const SUIT_BY_CODE = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
+const VALUE_BY_NAME = {}; for (const [k,v] of Object.entries(VALUE_NAMES)) VALUE_BY_NAME[v] = parseInt(k);
+const TIMER_SECONDS = 100;
+
+let replay = null;
+let grid = [];
+let currentStep = -1; // -1 = initial state, 0..N-1 = after action N
+let cumulativeScore = 0;
+let isPlaying = false;
+let playTimer = null;
+let speed = 1; // 1, 2, 4
+
+function cardFromId(id) {
+  // id like "As", "10h", "Kd"
+  const suitCode = id[id.length - 1];
+  const valueName = id.slice(0, -1);
+  return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
+}
+
+function loadReplay(data) {
+  replay = data;
+  document.getElementById('replayUser').textContent = data.username || '';
+  document.getElementById('totalHands').textContent = data.actions.length;
+  resetToInitial();
+  renderActionLog();
+  updateInfo();
+}
+
+function resetToInitial() {
+  currentStep = -1;
+  cumulativeScore = 0;
+
+  // Build grid from initialDeck
+  const cards = replay.initialDeck.map(id => cardFromId(id));
+  // First 3 are removed cards
+  const removed = cards.slice(0, 3);
+  const gridCards = cards.slice(3, 52);
+
+  grid = [];
+  let idx = 0;
+  for (let r = 0; r < GRID_SIZE; r++) {
+    const row = [];
+    for (let c = 0; c < GRID_SIZE; c++) {
+      row.push({ card: gridCards[idx++] });
+    }
+    grid.push(row);
+  }
+
+  renderRemovedCards(removed);
+  renderGrid();
+  updateDisplay();
+}
+
+function renderGrid(highlightPath) {
+  const gridEl = document.getElementById('grid');
+  gridEl.innerHTML = '';
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const cell = grid[r][c];
+      const div = document.createElement('div');
+      div.dataset.row = r;
+      div.dataset.col = c;
+      if (cell.card) {
+        const card = cell.card;
+        const suitClass = 'suit-' + card.id[card.id.length - 1];
+        div.className = 'card ' + suitClass;
+        const vn = VALUE_NAMES[card.value];
+        div.innerHTML = '<span class="card-value">' + vn + '</span><span class="card-suit">' + card.suit + '</span>';
+        if (highlightPath && highlightPath.some(p => p[0] === r && p[1] === c)) {
+          div.classList.add('selected');
+        }
+      } else {
+        div.className = 'card empty';
+      }
+      gridEl.appendChild(div);
+    }
+  }
+}
+
+function renderRemovedCards(cards) {
+  const container = document.getElementById('removedCards');
+  container.innerHTML = cards.map(card => {
+    const suitClass = 'suit-' + card.id[card.id.length - 1];
+    return '<div class="removed-card ' + suitClass + '"><span class="card-value">' + VALUE_NAMES[card.value] + '</span><span class="card-suit">' + card.suit + '</span></div>';
+  }).join('');
+}
+
+function applyAction(actionIdx) {
+  const action = replay.actions[actionIdx];
+  // Remove cards at path positions
+  action.path.forEach(([r, c]) => {
+    grid[r][c].card = null;
+  });
+  // Apply gravity
+  const affectedCols = [...new Set(action.path.map(p => p[1]))];
+  affectedCols.forEach(col => {
+    const cards = [];
+    for (let r = GRID_SIZE - 1; r >= 0; r--) {
+      if (grid[r][col].card) cards.push(grid[r][col].card);
+    }
+    for (let r = GRID_SIZE - 1; r >= 0; r--) {
+      const idx = GRID_SIZE - 1 - r;
+      grid[r][col].card = idx < cards.length ? cards[idx] : null;
+    }
+  });
+  cumulativeScore += action.score;
+}
+
+function goToStep(targetStep) {
+  // Rebuild from scratch up to targetStep
+  resetToInitial();
+  for (let i = 0; i <= targetStep && i < replay.actions.length; i++) {
+    applyAction(i);
+    currentStep = i;
+  }
+  renderGrid();
+  updateDisplay();
+  renderActionLog();
+}
+
+function stepNext() {
+  if (!replay) return;
+  const nextStep = currentStep + 1;
+  if (nextStep >= replay.actions.length) {
+    stopPlay();
+    return;
+  }
+
+  // Show path highlight briefly, then apply
+  const action = replay.actions[nextStep];
+  renderGrid(action.path);
+
+  setTimeout(() => {
+    applyAction(nextStep);
+    currentStep = nextStep;
+    cumulativeScore = 0;
+    for (let i = 0; i <= currentStep; i++) cumulativeScore += replay.actions[i].score;
+    renderGrid();
+    updateDisplay();
+    renderActionLog();
+
+    if (currentStep >= replay.actions.length - 1) {
+      stopPlay();
+    }
+  }, 600 / speed);
+}
+
+function stepPrev() {
+  if (!replay || currentStep < 0) return;
+  goToStep(currentStep - 1 < 0 ? -1 : currentStep - 1);
+  if (currentStep < 0) {
+    currentStep = -1;
+    cumulativeScore = 0;
+    renderGrid();
+    updateDisplay();
+    renderActionLog();
+  }
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    stopPlay();
+  } else {
+    startPlay();
+  }
+}
+
+function startPlay() {
+  if (!replay) return;
+  if (currentStep >= replay.actions.length - 1) {
+    // Reset if at end
+    resetToInitial();
+    renderActionLog();
+  }
+  isPlaying = true;
+  document.getElementById('btnPlay').textContent = '⏸ Pause';
+  document.getElementById('btnPlay').classList.add('active');
+  playNext();
+}
+
+function playNext() {
+  if (!isPlaying || !replay) return;
+  if (currentStep >= replay.actions.length - 1) {
+    stopPlay();
+    return;
+  }
+  stepNext();
+  const delay = Math.max(200, 1200 / speed);
+  playTimer = setTimeout(playNext, delay);
+}
+
+function stopPlay() {
+  isPlaying = false;
+  clearTimeout(playTimer);
+  document.getElementById('btnPlay').textContent = '▶ Play';
+  document.getElementById('btnPlay').classList.remove('active');
+}
+
+function cycleSpeed() {
+  const speeds = [1, 2, 4];
+  const idx = speeds.indexOf(speed);
+  speed = speeds[(idx + 1) % speeds.length];
+  document.getElementById('btnSpeed').textContent = speed + 'x';
+}
+
+function updateDisplay() {
+  document.getElementById('currentScore').textContent = cumulativeScore;
+  document.getElementById('handCount').textContent = currentStep + 1;
+
+  // Timer display
+  const timer = currentStep >= 0 && replay.actions[currentStep]
+    ? replay.actions[currentStep].t
+    : TIMER_SECONDS;
+  document.getElementById('timerNum').textContent = timer;
+  const circumference = 2 * Math.PI * 16;
+  const offset = circumference * (1 - timer / TIMER_SECONDS);
+  const ring = document.getElementById('timerRing');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = timer <= 10 ? '#ff3333' : timer <= 30 ? 'orange' : 'var(--gold)';
+
+  // Button states
+  document.getElementById('btnPrev').disabled = currentStep < 0;
+  document.getElementById('btnNext').disabled = !replay || currentStep >= replay.actions.length - 1;
+}
+
+function renderActionLog() {
+  if (!replay) return;
+  const el = document.getElementById('actionLog');
+  let html = '';
+  replay.actions.forEach((a, i) => {
+    let cls = 'action-entry';
+    if (i === currentStep) cls += ' current';
+    else if (i < currentStep) cls += ' played';
+    html += '<div class="' + cls + '">' + (i + 1) + '. ' + a.hand + ' (+' + a.score + ') t=' + a.t + '</div>';
+  });
+  if (replay.result) {
+    let cls = 'action-entry';
+    if (currentStep >= replay.actions.length - 1) cls += ' current';
+    html += '<div class="' + cls + '" style="margin-top:4px;color:var(--gold);">' + replay.result.reason.toUpperCase() + ' — Final: ' + replay.result.finalScore + '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function updateInfo() {
+  if (!replay) return;
+  const el = document.getElementById('replayInfo');
+  const date = new Date(replay.timestamp).toLocaleString('ko-KR');
+  el.innerHTML = '<span class="gold">' + (replay.username || '?') + '</span> · ' + date + ' · Score: <span class="gold">' + (replay.result ? replay.result.finalScore : '?') + '</span>';
+}
+
+// ─── Init: load from URL param or localStorage ───
+const params = new URLSearchParams(window.location.search);
+const replayId = params.get('id');
+const source = params.get('source'); // 'local' or 'db'
+
+if (source === 'local' || (!source && !replayId)) {
+  // Load from localStorage
+  const raw = localStorage.getItem('poker_last_replay');
+  if (raw) {
+    try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
+  } else {
+    document.getElementById('replayInfo').textContent = '리플레이 데이터가 없습니다';
+  }
+} else if (replayId) {
+  // Load from DB
+  document.getElementById('replayInfo').textContent = '불러오는 중...';
+  (async () => {
+    try {
+      const { data, error } = await sb
+        .from('game_replays')
+        .select('replay_data')
+        .eq('id', replayId)
+        .single();
+      if (error || !data) {
+        document.getElementById('replayInfo').textContent = '리플레이를 찾을 수 없습니다';
+        return;
+      }
+      loadReplay(data.replay_data);
+    } catch(e) {
+      document.getElementById('replayInfo').textContent = '오류 발생';
+    }
+  })();
+}
+</script>
+</body>
+</html>

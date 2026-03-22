@@ -86,6 +86,7 @@ const RANK_CSS = {
 // ─── Game State ───
 let state = {};
 let currentPlayerId = null; // cached player uuid
+let replayLog = null; // current game replay data
 
 function initState() {
   state = {
@@ -145,6 +146,16 @@ function initGrid() {
     }
     state.grid.push(row);
   }
+
+  // Init replay log with initial deck
+  replayLog = {
+    version: 1,
+    timestamp: new Date().toISOString(),
+    username: (localStorage.getItem('poker_username') || '').trim(),
+    initialDeck: [...state.removedCards, ...cards].map(c => c.id),
+    actions: [],
+    result: null,
+  };
 }
 
 function renderGrid() {
@@ -323,6 +334,16 @@ function finalizePath() {
     rankValue: hand.rankValue,
     label: hand.label,
   });
+
+  // Record action for replay
+  if (replayLog) {
+    replayLog.actions.push({
+      t: state.timer,
+      path: state.selectedPath.map(([r, c]) => [r, c]),
+      hand: hand.label,
+      score: earnedScore,
+    });
+  }
 
   updateScoreDisplay();
   showScorePopup(hand.label, earnedScore);
@@ -749,6 +770,19 @@ function endGame(reason) {
   const isNewHighScore = saveHighScore(score);
   const highScore = Math.max(prevHighScore, score);
 
+  // Finalize replay log
+  if (replayLog) {
+    replayLog.result = {
+      reason,
+      finalScore: score,
+      handsCollected: state.hands.length,
+      bestHand: best ? best.label : null,
+      timeRemaining: Math.max(0, state.timer),
+    };
+    localStorage.setItem('poker_last_replay', JSON.stringify(replayLog));
+    console.log('[POKE-R] Replay saved to localStorage');
+  }
+
   const modal = document.getElementById('modal');
   let title;
   if (reason === 'complete') title = 'COMPLETE!';
@@ -824,12 +858,19 @@ function endGame(reason) {
     const modalClass = reason === 'nomoves' ? ' nomoves' : '';
     modal.className = 'modal' + modalClass;
 
-    // Buttons: always Play Again + Menu, add Leaderboard only when NOT auto-showing
+    // Auto-save replay to DB if leaderboard updated
+    if (leaderboardUpdated) {
+      saveReplayToDB();
+    }
+
+    // Buttons
+    const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
     let buttonsHTML = `
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">Play Again</button>
-        <a href="index.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">Menu</a>
-        ${!leaderboardUpdated ? '<button class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;" onclick="showLeaderboard()">Leader Board</button>' : ''}
+        <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">Menu</a>
+        ${!leaderboardUpdated ? `<button class="btn-play-again" style="${btnSecondary}" onclick="showLeaderboard()">Leader Board</button>` : ''}
+        ${!leaderboardUpdated ? `<button class="btn-play-again" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay</button>` : ''}
       </div>`;
 
     modal.innerHTML = `
@@ -1078,6 +1119,57 @@ async function fetchTopScore() {
       .maybeSingle();
     return topRow ? topRow.score : 0;
   } catch (err) { return 0; }
+}
+
+// ─── Replay Save to DB ───
+async function saveReplayToDB() {
+  const raw = localStorage.getItem('poker_last_replay');
+  if (!raw) { console.warn('[POKE-R] No replay data to save'); return false; }
+
+  try {
+    const data = JSON.parse(raw);
+    const username = data.username || (localStorage.getItem('poker_username') || '').trim();
+    if (!username) return false;
+
+    const playerId = await getOrCreatePlayer(username);
+    if (!playerId) return false;
+
+    const { error } = await sb
+      .from('game_replays')
+      .insert({
+        player_id: playerId,
+        replay_data: data,
+        score: data.result ? data.result.finalScore : 0,
+      });
+
+    if (error) {
+      console.error('[POKE-R] Replay save error:', error);
+      return false;
+    }
+    console.log('[POKE-R] Replay saved to DB');
+    return true;
+  } catch (err) {
+    console.error('[POKE-R] Replay save error:', err);
+    return false;
+  }
+}
+
+async function saveReplayFromButton() {
+  const btn = document.getElementById('btnSaveReplay');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+
+  const ok = await saveReplayToDB();
+  if (ok) {
+    btn.textContent = '저장 완료';
+    btn.style.color = '#4CAF50';
+    btn.style.borderColor = '#4CAF50';
+  } else {
+    btn.textContent = '저장 실패';
+    btn.style.color = '#ff5252';
+    btn.disabled = false;
+  }
 }
 
 async function showLeaderboard(currentUser) {
