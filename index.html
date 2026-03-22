@@ -11,6 +11,7 @@
 <div class="header">
   <div class="title">POKE-R ♠</div>
   <div style="display:flex;align-items:center;gap:8px;">
+  <input class="username-input" id="usernameInput" type="text" placeholder="NAME" maxlength="12" spellcheck="false">
   <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
   <select class="mode-selector" id="modeSelector">
     <option value="1">Mode 1 · 자유+점프</option>
@@ -59,8 +60,18 @@
   <div class="modal" id="modal"></div>
 </div>
 
+<div class="modal-overlay" id="leaderboardOverlay">
+  <div class="modal leaderboard-modal" id="leaderboardModal"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://xxxxxxxxxxx.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxx';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
 <script src="script.js"></script>
 </body>
 </html>

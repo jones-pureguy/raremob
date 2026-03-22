@@ -785,6 +785,19 @@ function endGame(reason) {
   `;
 
   document.getElementById('modalOverlay').classList.add('active');
+
+  // Save to server and show leaderboard
+  const username = (document.getElementById('usernameInput').value || '').trim();
+  if (username) {
+    saveSessionAndShowLeaderboard({
+      username,
+      score,
+      best_hand: best ? best.label : null,
+      hands_collected: state.hands.length,
+      time_remaining: Math.max(0, state.timer),
+      mode: currentMode,
+    });
+  }
 }
 
 // ─── Game Reset ───
@@ -879,6 +892,98 @@ window.validateGrid = function() {
   console.log(`${count} unique cards, no duplicates`);
   return `${count} unique cards, no duplicates`;
 };
+
+// ─── Supabase / Leaderboard ───
+async function saveSessionAndShowLeaderboard(data) {
+  try {
+    // Insert game session
+    const { error: sessionError } = await supabase
+      .from('game_sessions')
+      .insert({
+        username: data.username,
+        score: data.score,
+        best_hand: data.best_hand || null,
+        hands_collected: data.hands_collected || 0,
+        time_remaining: data.time_remaining || 0,
+        mode: data.mode || 1,
+      });
+    if (sessionError) console.error('Session save error:', sessionError);
+
+    // Upsert leaderboard — keep highest score per username+mode
+    const { data: existing } = await supabase
+      .from('leaderboard')
+      .select('score')
+      .eq('username', data.username)
+      .eq('mode', data.mode)
+      .single();
+
+    if (!existing || data.score > existing.score) {
+      await supabase
+        .from('leaderboard')
+        .upsert({
+          username: data.username,
+          score: data.score,
+          best_hand: data.best_hand || null,
+          mode: data.mode || 1,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'username,mode' });
+    }
+  } catch (err) {
+    console.error('Save error:', err);
+  }
+  showLeaderboard(data.mode, data.username);
+}
+
+async function showLeaderboard(mode, currentUser) {
+  try {
+    const { data: rows, error } = await supabase
+      .from('leaderboard')
+      .select('username, score, best_hand, mode, updated_at')
+      .eq('mode', mode)
+      .order('score', { ascending: false })
+      .limit(10);
+
+    if (error) { console.error('Leaderboard error:', error); return; }
+
+    let tableHTML = `<table class="leaderboard-table">
+      <thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th></tr></thead><tbody>`;
+    (rows || []).forEach((row, i) => {
+      const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
+      tableHTML += `<tr${hl}><td>${i + 1}</td><td>${escapeHTML(row.username)}</td><td>${row.score}</td><td>${escapeHTML(row.best_hand || '-')}</td></tr>`;
+    });
+    tableHTML += '</tbody></table>';
+
+    if (!rows || rows.length === 0) {
+      tableHTML = '<div style="padding:16px;color:rgba(255,255,255,0.5);">No scores yet</div>';
+    }
+
+    const modal = document.getElementById('leaderboardModal');
+    modal.innerHTML = `
+      <h2>LEADERBOARD</h2>
+      <div class="subtitle">Mode ${mode} · Top 10</div>
+      ${tableHTML}
+      <button class="btn-close-lb" onclick="document.getElementById('leaderboardOverlay').classList.remove('active')">CLOSE</button>
+    `;
+    document.getElementById('leaderboardOverlay').classList.add('active');
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+  }
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ─── Load saved username ───
+(function() {
+  const saved = localStorage.getItem('poker_username');
+  if (saved) document.getElementById('usernameInput').value = saved;
+  document.getElementById('usernameInput').addEventListener('change', function() {
+    localStorage.setItem('poker_username', this.value.trim());
+  });
+})();
 
 // ─── Init ───
 initState();

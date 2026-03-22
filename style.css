@@ -102,6 +102,21 @@ body::before {
   color: #e0e0e0;
 }
 
+.username-input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  width: 90px;
+  outline: none;
+  text-transform: uppercase;
+}
+.username-input::placeholder { color: rgba(201,168,76,0.4); }
+.username-input:focus { border-color: var(--gold); }
+
 /* Status bar */
 .status-bar {
   width: 100%;
@@ -529,3 +544,39 @@ body.debug-mode .card .debug-info { display: block; }
   .card .card-value { font-size: 1.2rem; }
   .card .card-suit { font-size: 0.9rem; }
 }
+
+/* Leaderboard */
+.leaderboard-modal { max-width: 420px; max-height: 80vh; overflow-y: auto; }
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.8rem;
+}
+.leaderboard-table th {
+  color: var(--gold);
+  font-weight: 700;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(201,168,76,0.3);
+  text-align: left;
+}
+.leaderboard-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.leaderboard-table tr.highlight td {
+  color: var(--gold);
+  font-weight: 700;
+}
+.btn-close-lb {
+  background: rgba(255,255,255,0.1);
+  color: #e0e0e0;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 8px 24px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.btn-close-lb:hover { background: rgba(255,255,255,0.15); }
