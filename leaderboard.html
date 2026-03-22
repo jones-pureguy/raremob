@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>POKE-R ♠ Leaderboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menu-container">
+  <div class="menu-title">LEADERBOARD</div>
+  <div class="leaderboard-wrap" id="leaderboardWrap">
+    <div class="loading">불러오는 중...</div>
+  </div>
+  <div style="margin-top:20px;">
+    <a href="index.html" class="menu-btn small">메인메뉴</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const currentUser = localStorage.getItem('poker_username') || '';
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function loadLeaderboard() {
+    const wrap = document.getElementById('leaderboardWrap');
+    try {
+      const { data: rows, error } = await sb
+        .from('leaderboard')
+        .select('username, score, best_hand')
+        .order('score', { ascending: false })
+        .limit(20);
+
+      if (error) { wrap.innerHTML = '<div class="loading" style="color:#ff5252;">오류: ' + error.message + '</div>'; return; }
+      if (!rows || rows.length === 0) { wrap.innerHTML = '<div class="loading">아직 기록이 없습니다</div>'; return; }
+
+      let html = '<table class="leaderboard-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th></tr></thead><tbody>';
+      rows.forEach((row, i) => {
+        const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
+        html += '<tr' + hl + '><td>' + (i + 1) + '</td><td>' + escapeHTML(row.username) + '</td><td>' + row.score + '</td><td>' + escapeHTML(row.best_hand || '-') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    } catch (err) {
+      wrap.innerHTML = '<div class="loading" style="color:#ff5252;">오류 발생</div>';
+    }
+  }
+
+  loadLeaderboard();
+</script>
+</body>
+</html>

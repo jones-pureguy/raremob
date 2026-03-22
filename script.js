@@ -563,6 +563,13 @@ function removeCardsAndApplyGravity() {
     // Check game end
     if (state.hands.length >= MAX_HANDS) {
       endGame('complete');
+    } else {
+      // Check for valid moves after gravity settles
+      setTimeout(() => {
+        if (state.phase === 'playing' && !scanForValidMoves()) {
+          endGame('nomoves');
+        }
+      }, 500);
     }
   }, 500);
 }
@@ -581,6 +588,59 @@ function applyGravityToColumn(col) {
     const idx = GRID_SIZE - 1 - r;
     state.grid[r][col].card = idx < cards.length ? cards[idx] : null;
   }
+}
+
+// ─── No More Moves Scanner (8방향 + 빈칸 건너뛰기) ───
+
+function scanForValidMoves() {
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (!state.grid[r][c].card) continue;
+      const visited = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(false));
+      if (dfsScan(r, c, [state.grid[r][c].card], visited)) return true;
+    }
+  }
+  return false;
+}
+
+// 8방향에서 빈칸을 건너뛰어 도달 가능한 카드 좌표 목록 반환
+function getReachableCards(r, c, visited) {
+  const results = [];
+  // 8방향: 상하좌우 + 대각선
+  const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+  for (const [dr, dc] of dirs) {
+    let nr = r + dr;
+    let nc = c + dc;
+    // 빈칸은 건너뛰고, 카드가 있는 첫 칸을 찾는다
+    while (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+      if (state.grid[nr][nc].card) {
+        if (!visited[nr][nc]) results.push([nr, nc]);
+        break; // 카드가 있으면 그 뒤는 볼 수 없음
+      }
+      nr += dr;
+      nc += dc;
+    }
+  }
+  return results;
+}
+
+function dfsScan(r, c, cards, visited) {
+  visited[r][c] = true;
+
+  if (cards.length === HAND_SIZE) {
+    const hand = evaluateHand(cards);
+    visited[r][c] = false;
+    return isValidHand(hand);
+  }
+
+  for (const [nr, nc] of getReachableCards(r, c, visited)) {
+    cards.push(state.grid[nr][nc].card);
+    if (dfsScan(nr, nc, cards, visited)) return true;
+    cards.pop();
+  }
+
+  visited[r][c] = false;
+  return false;
 }
 
 // ─── Timer ───
@@ -668,7 +728,7 @@ function countRemainingCards() {
 
 // ─── Game End ───
 function endGame(reason) {
-  state.phase = reason === 'complete' ? 'complete' : 'gameover';
+  state.phase = reason === 'complete' ? 'complete' : (reason === 'nomoves' ? 'nomoves' : 'gameover');
   clearInterval(state.timerInterval);
 
   const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
@@ -690,7 +750,10 @@ function endGame(reason) {
   const highScore = Math.max(prevHighScore, score);
 
   const modal = document.getElementById('modal');
-  const title = reason === 'complete' ? 'COMPLETE!' : "TIME'S UP!";
+  let title;
+  if (reason === 'complete') title = 'COMPLETE!';
+  else if (reason === 'nomoves') title = 'NO MORE MOVES';
+  else title = "TIME'S UP!";
 
   let handListHTML = '';
   sorted.forEach((h, i) => {
@@ -712,43 +775,88 @@ function endGame(reason) {
     penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">남은 카드 ${remainingCards}장 (4장 초과 ${remainingCards - 4}장 × -${penaltyPerCard}) = -${penalty}</div>`;
   }
 
-  let highScoreHTML = '';
-  if (isNewHighScore && score > 0) {
-    highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:8px;">🏆 NEW HIGH SCORE!</div>`;
+  // NO MORE MOVES: special animated sequence
+  if (reason === 'nomoves') {
+    const gridContainer = document.getElementById('gridContainer');
+    gridContainer.classList.add('no-moves-dim');
+
+    const noMovesOverlay = document.getElementById('noMovesOverlay');
+    setTimeout(() => {
+      noMovesOverlay.classList.add('active');
+    }, 300);
+
+    setTimeout(() => {
+      noMovesOverlay.classList.remove('active');
+      gridContainer.classList.remove('no-moves-dim');
+      buildAndShowEndModal();
+    }, 1200);
   } else {
-    highScoreHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">High Score: ${highScore}</div>`;
+    buildAndShowEndModal();
   }
 
-  modal.innerHTML = `
-    <h2>${title}</h2>
-    <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
-    ${best ? `<div class="best-hand">Best: ${best.label}</div>` : ''}
-    <div class="score">Score: ${score}</div>
-    ${timeBonusHTML}
-    ${penaltyHTML}
-    ${highScoreHTML}
-    <div class="hand-list">${handListHTML}</div>
-    <button class="btn-play-again" onclick="resetGame()">Play Again</button>
-  `;
+  async function buildAndShowEndModal() {
+    const username = (localStorage.getItem('poker_username') || '').trim();
+    let leaderboardUpdated = false;
+    let allUserTopScore = 0;
 
-  document.getElementById('modalOverlay').classList.add('active');
+    // Save to server and get status
+    if (username) {
+      const result = await saveSessionAndGetStatus({
+        username,
+        score,
+        best_hand: best ? best.label : null,
+        hands_collected: state.hands.length,
+        time_remaining: Math.max(0, state.timer),
+      });
+      leaderboardUpdated = result.leaderboardUpdated;
+      allUserTopScore = result.topScore;
+    } else {
+      allUserTopScore = await fetchTopScore();
+    }
 
-  // Save to server and show leaderboard
-  const username = (document.getElementById('usernameInput').value || '').trim();
-  if (username) {
-    saveSessionAndShowLeaderboard({
-      username,
-      score,
-      best_hand: best ? best.label : null,
-      hands_collected: state.hands.length,
-      time_remaining: Math.max(0, state.timer),
-    });
+    let highScoreHTML = '';
+    if (isNewHighScore && score > 0) {
+      highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:4px;">🏆 NEW HIGH SCORE!</div>`;
+    }
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">My High Score: ${highScore}</div>`;
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">All User High Score: ${allUserTopScore}</div>`;
+
+    const modalClass = reason === 'nomoves' ? ' nomoves' : '';
+    modal.className = 'modal' + modalClass;
+
+    // Buttons: always Play Again + Menu, add Leaderboard only when NOT auto-showing
+    let buttonsHTML = `
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-play-again" onclick="resetGame()">Play Again</button>
+        <a href="index.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">Menu</a>
+        ${!leaderboardUpdated ? '<button class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;" onclick="showLeaderboard()">Leader Board</button>' : ''}
+      </div>`;
+
+    modal.innerHTML = `
+      <h2>${title}</h2>
+      <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
+      ${best ? `<div class="best-hand">Best: ${best.label}</div>` : ''}
+      <div class="score">Score: ${score}</div>
+      ${timeBonusHTML}
+      ${penaltyHTML}
+      ${highScoreHTML}
+      <div class="hand-list">${handListHTML}</div>
+      ${buttonsHTML}
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+
+    // Auto-show leaderboard only if updated
+    if (leaderboardUpdated && username) {
+      showLeaderboard(username);
+    }
   }
 }
 
 // ─── Game Reset ───
 function resetGame() {
   document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('gridContainer').classList.remove('no-moves-dim');
+  document.getElementById('noMovesOverlay').classList.remove('active');
   clearInterval(state.timerInterval);
   initState();
   initGrid();
@@ -796,8 +904,9 @@ function showToast(msg) {
 
 // ─── Debug Mode ───
 document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
   if (e.key === 'd' || e.key === 'D') {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     state.debugMode = !state.debugMode;
     document.body.classList.toggle('debug-mode', state.debugMode);
     if (state.debugMode) {
@@ -805,9 +914,18 @@ document.addEventListener('keydown', e => {
       console.log('Selected path:', state.selectedPath);
       console.log('Current hand eval:', state.selectedPath.length >= 2 ?
         evaluateHand(state.selectedPath.map(([r,c]) => state.grid[r][c].card).filter(Boolean)) : 'N/A');
+      const hasValid = scanForValidMoves();
+      console.log('Valid moves remaining:', hasValid ? 'YES' : 'NO');
     } else {
       console.log('Debug mode OFF');
     }
+  }
+
+  if (e.key === 's' || e.key === 'S') {
+    const t0 = performance.now();
+    const result = scanForValidMoves();
+    const elapsed = (performance.now() - t0).toFixed(2);
+    console.log(`[SCAN] Valid moves: ${result ? 'YES' : 'NO'} (${elapsed}ms)`);
   }
 });
 
@@ -879,11 +997,15 @@ async function getOrCreatePlayer(username) {
   }
 }
 
-async function saveSessionAndShowLeaderboard(data) {
+// Returns { leaderboardUpdated: boolean, topScore: number }
+async function saveSessionAndGetStatus(data) {
   console.log('[POKE-R] Saving session...', data);
+  let leaderboardUpdated = false;
+  let topScore = 0;
+
   try {
     const playerId = await getOrCreatePlayer(data.username);
-    if (!playerId) { console.error('[POKE-R] No player ID, skipping save'); return; }
+    if (!playerId) { console.error('[POKE-R] No player ID, skipping save'); return { leaderboardUpdated, topScore }; }
 
     // Insert game session
     const { data: sessionData, error: sessionError } = await sb
@@ -903,7 +1025,7 @@ async function saveSessionAndShowLeaderboard(data) {
       console.log('[POKE-R] Session saved:', sessionData);
     }
 
-    // Upsert leaderboard — keep highest score per username
+    // Upsert leaderboard — keep highest score per player
     const { data: existing, error: fetchError } = await sb
       .from('leaderboard')
       .select('score')
@@ -926,15 +1048,40 @@ async function saveSessionAndShowLeaderboard(data) {
         console.error('[POKE-R] Leaderboard upsert error:', lbError);
       } else {
         console.log('[POKE-R] Leaderboard updated:', lbData);
+        leaderboardUpdated = true;
       }
     }
+
+    // Fetch #1 score
+    const { data: topRow } = await sb
+      .from('leaderboard')
+      .select('score')
+      .order('score', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (topRow) topScore = topRow.score;
+
   } catch (err) {
     console.error('[POKE-R] Save error:', err);
   }
-  showLeaderboard(data.username);
+  return { leaderboardUpdated, topScore };
+}
+
+// Fetch only the #1 leaderboard score (no save)
+async function fetchTopScore() {
+  try {
+    const { data: topRow } = await sb
+      .from('leaderboard')
+      .select('score')
+      .order('score', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return topRow ? topRow.score : 0;
+  } catch (err) { return 0; }
 }
 
 async function showLeaderboard(currentUser) {
+  if (!currentUser) currentUser = (localStorage.getItem('poker_username') || '').trim();
   try {
     const { data: rows, error } = await sb
       .from('leaderboard')
@@ -975,13 +1122,11 @@ function escapeHTML(str) {
   return div.innerHTML;
 }
 
-// ─── Load saved username ───
+// ─── Display saved username (read-only) ───
 (function() {
-  const saved = localStorage.getItem('poker_username');
-  if (saved) document.getElementById('usernameInput').value = saved;
-  document.getElementById('usernameInput').addEventListener('change', function() {
-    localStorage.setItem('poker_username', this.value.trim());
-  });
+  const saved = localStorage.getItem('poker_username') || '';
+  const el = document.getElementById('usernameDisplay');
+  if (el) el.textContent = saved;
 })();
 
 // ─── Init ───
@@ -992,3 +1137,11 @@ updateHandPanel();
 updateScoreDisplay();
 renderRemovedCards();
 startTimer();
+
+// Sanity check on start
+setTimeout(() => {
+  if (!scanForValidMoves()) {
+    console.warn('[POKE-R] No valid moves at game start — reshuffling');
+    resetGame();
+  }
+}, 100);

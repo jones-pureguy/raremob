@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>POKE-R ♠ ID</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menu-container">
+  <div class="menu-title">POKE-R ♠</div>
+
+  <!-- 기존 아이디가 있을 때 -->
+  <div class="id-section" id="existingSection" style="display:none;">
+    <div class="id-label">현재 아이디</div>
+    <div class="id-current" id="currentId"></div>
+    <button class="menu-btn small" onclick="changeId()" style="margin-top:16px;">아이디 변경</button>
+  </div>
+
+  <!-- 아이디 등록 -->
+  <div class="id-section" id="registerSection" style="display:none;">
+    <div class="id-label">아이디 등록</div>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px;">
+      <input class="username-input" id="idInput" type="text" placeholder="NAME" maxlength="12" spellcheck="false" style="width:160px;font-size:1rem;padding:10px 14px;">
+      <button class="menu-btn small" onclick="registerPlayer()">등록</button>
+    </div>
+    <div class="id-message" id="idMessage"></div>
+  </div>
+
+  <div style="margin-top:24px;">
+    <a href="index.html" class="menu-btn small">메인메뉴</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const saved = localStorage.getItem('poker_username');
+
+  function showState() {
+    if (saved) {
+      document.getElementById('existingSection').style.display = '';
+      document.getElementById('registerSection').style.display = 'none';
+      document.getElementById('currentId').textContent = saved;
+    } else {
+      document.getElementById('existingSection').style.display = 'none';
+      document.getElementById('registerSection').style.display = '';
+    }
+  }
+
+  function changeId() {
+    document.getElementById('existingSection').style.display = 'none';
+    document.getElementById('registerSection').style.display = '';
+    document.getElementById('idInput').value = '';
+    document.getElementById('idMessage').textContent = '';
+  }
+
+  async function registerPlayer() {
+    const username = document.getElementById('idInput').value.trim();
+    const msgEl = document.getElementById('idMessage');
+
+    if (!username) { msgEl.textContent = '아이디를 입력하세요'; msgEl.style.color = '#ff5252'; return; }
+
+    msgEl.textContent = '확인 중...';
+    msgEl.style.color = 'rgba(255,255,255,0.5)';
+
+    try {
+      // 중복 체크
+      const { data: existing, error: fetchErr } = await sb
+        .from('players')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (fetchErr) { msgEl.textContent = '오류: ' + fetchErr.message; msgEl.style.color = '#ff5252'; return; }
+
+      if (existing) {
+        // 기존 유저 — 로그인 처리
+        localStorage.setItem('poker_username', username);
+        localStorage.setItem('poker_player_id', existing.id);
+        msgEl.textContent = '기존 아이디로 로그인되었습니다';
+        msgEl.style.color = '#4CAF50';
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        return;
+      }
+
+      // 신규 등록
+      const { data: newPlayer, error: insertErr } = await sb
+        .from('players')
+        .insert({ username })
+        .select('id')
+        .single();
+
+      if (insertErr) { msgEl.textContent = '등록 실패: ' + insertErr.message; msgEl.style.color = '#ff5252'; return; }
+
+      localStorage.setItem('poker_username', username);
+      localStorage.setItem('poker_player_id', newPlayer.id);
+      msgEl.textContent = '등록 완료!';
+      msgEl.style.color = '#4CAF50';
+      setTimeout(() => { window.location.href = 'index.html'; }, 800);
+    } catch (err) {
+      msgEl.textContent = '오류 발생';
+      msgEl.style.color = '#ff5252';
+    }
+  }
+
+  // Enter 키 지원
+  document.getElementById('idInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') registerPlayer();
+  });
+
+  showState();
+</script>
+</body>
+</html>
