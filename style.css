@@ -86,21 +86,6 @@ body::before {
 .restart-btn:hover { background: rgba(201,168,76,0.15); }
 .restart-btn:active { transform: scale(0.95); }
 
-.mode-selector {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(201,168,76,0.3);
-  color: var(--gold);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.75rem;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  outline: none;
-}
-.mode-selector option {
-  background: #1a3a22;
-  color: #e0e0e0;
-}
 
 .username-input {
   background: rgba(255,255,255,0.08);

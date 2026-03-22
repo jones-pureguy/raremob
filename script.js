@@ -85,12 +85,12 @@ const RANK_CSS = {
 
 // ─── Game State ───
 let state = {};
+let currentPlayerId = null; // cached player uuid
 
 function initState() {
   state = {
     grid: [],
     hands: [],
-    selectionMode: 1,
     selectedPath: [],
     isDragging: false,
     timer: TIMER_SECONDS,
@@ -263,48 +263,20 @@ function extendPath(row, col) {
 
   const last = state.selectedPath[state.selectedPath.length - 1];
 
-  if (state.selectionMode === 1) {
-    // Mode 1: 자유+점프 — 8방향 + 빈칸 건너뛰기
-    const dr = row - last[0];
-    const dc = col - last[1];
-    if (dr === 0 && dc === 0) return;
-    if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
-    const stepR = Math.sign(dr);
-    const stepC = Math.sign(dc);
-    let cr = last[0] + stepR;
-    let cc = last[1] + stepC;
-    while (cr !== row || cc !== col) {
-      if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
-      if (state.grid[cr][cc].card !== null) return;
-      cr += stepR;
-      cc += stepC;
-    }
-  } else if (state.selectionMode === 2) {
-    // Mode 2: 자유 — 8방향 인접
-    const dr = Math.abs(row - last[0]);
-    const dc = Math.abs(col - last[1]);
-    if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
-  } else if (state.selectionMode === 3) {
-    // Mode 3: 직선 — 일직선으로만
-    if (state.selectedPath.length === 1) {
-      const dr = Math.abs(row - last[0]);
-      const dc = Math.abs(col - last[1]);
-      if (dr > 1 || dc > 1 || (dr === 0 && dc === 0)) return;
-    } else {
-      const first = state.selectedPath[0];
-      const second = state.selectedPath[1];
-      const dirR = Math.sign(second[0] - first[0]);
-      const dirC = Math.sign(second[1] - first[1]);
-      const prevEnd = state.selectedPath[state.selectedPath.length - 1];
-      const expectedR = prevEnd[0] + dirR;
-      const expectedC = prevEnd[1] + dirC;
-      if (row !== expectedR || col !== expectedC) return;
-    }
-  } else if (state.selectionMode === 4) {
-    // Mode 4: 가로세로 — 상하좌우만
-    const dr = Math.abs(row - last[0]);
-    const dc = Math.abs(col - last[1]);
-    if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
+  // 8방향 + 빈칸 건너뛰기
+  const dr = row - last[0];
+  const dc = col - last[1];
+  if (dr === 0 && dc === 0) return;
+  if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
+  const stepR = Math.sign(dr);
+  const stepC = Math.sign(dc);
+  let cr = last[0] + stepR;
+  let cc = last[1] + stepC;
+  while (cr !== row || cc !== col) {
+    if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
+    if (state.grid[cr][cc].card !== null) return;
+    cr += stepR;
+    cc += stepC;
   }
 
   state.selectedPath.push([row, col]);
@@ -453,14 +425,6 @@ document.addEventListener('touchcancel', () => {
   }
 });
 
-document.getElementById('modeSelector').addEventListener('change', e => {
-  const mode = parseInt(e.target.value);
-  resetGame();
-  state.selectionMode = mode;
-  document.getElementById('modeSelector').value = mode;
-  updateScoreDisplay();
-});
-
 document.getElementById('restartBtn').addEventListener('click', () => {
   resetGame();
 });
@@ -564,9 +528,6 @@ function partialEval(cards) {
 
 function isValidHand(hand) {
   if (hand.rank >= RANK.TWO_PAIR) return true;
-  if (state.selectionMode >= 3) {
-    return hand.rank >= RANK.ONE_PAIR;
-  }
   if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
   return false;
 }
@@ -681,28 +642,17 @@ function updateHandPanel() {
 }
 
 // ─── High Score ───
-function getHighScores() {
-  try {
-    const saved = localStorage.getItem('poker_highscores');
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
-  return {};
-}
-
-function saveHighScore(mode, score) {
-  const highscores = getHighScores();
-  const key = 'mode_' + mode;
-  if (!highscores[key] || score > highscores[key]) {
-    highscores[key] = score;
-    localStorage.setItem('poker_highscores', JSON.stringify(highscores));
+function saveHighScore(score) {
+  const current = parseInt(localStorage.getItem('poker_highscore') || '0', 10);
+  if (score > current) {
+    localStorage.setItem('poker_highscore', score);
     return true;
   }
   return false;
 }
 
-function getHighScore(mode) {
-  const highscores = getHighScores();
-  return highscores['mode_' + mode] || 0;
+function getHighScore() {
+  return parseInt(localStorage.getItem('poker_highscore') || '0', 10);
 }
 
 // ─── Remaining Cards Count ───
@@ -725,21 +675,18 @@ function endGame(reason) {
   const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
   const best = sorted[0];
 
-  const currentMode = state.selectionMode;
-
   // Time bonus
   const timeBonus = Math.max(0, state.timer);
 
-  // Remaining cards penalty (modes 1 & 2 only)
+  // Remaining cards penalty
   const remainingCards = countRemainingCards();
   const penaltyPerCard = getPenaltyPerCard();
-  const applyPenalty = (currentMode <= 2);
-  const penalty = applyPenalty && remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
+  const penalty = remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
   const score = Math.max(0, handScore + timeBonus - penalty);
 
   // High score
-  const prevHighScore = getHighScore(currentMode);
-  const isNewHighScore = saveHighScore(currentMode, score);
+  const prevHighScore = getHighScore();
+  const isNewHighScore = saveHighScore(score);
   const highScore = Math.max(prevHighScore, score);
 
   const modal = document.getElementById('modal');
@@ -769,7 +716,7 @@ function endGame(reason) {
   if (isNewHighScore && score > 0) {
     highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:8px;">🏆 NEW HIGH SCORE!</div>`;
   } else {
-    highScoreHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">High Score (Mode ${currentMode}): ${highScore}</div>`;
+    highScoreHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">High Score: ${highScore}</div>`;
   }
 
   modal.innerHTML = `
@@ -795,7 +742,6 @@ function endGame(reason) {
       best_hand: best ? best.label : null,
       hands_collected: state.hands.length,
       time_remaining: Math.max(0, state.timer),
-      mode: currentMode,
     });
   }
 }
@@ -804,9 +750,7 @@ function endGame(reason) {
 function resetGame() {
   document.getElementById('modalOverlay').classList.remove('active');
   clearInterval(state.timerInterval);
-  const prevMode = state.selectionMode || 1;
   initState();
-  state.selectionMode = prevMode;
   initGrid();
   renderGrid();
   updateHandPanel();
@@ -814,14 +758,12 @@ function resetGame() {
   updateScoreDisplay();
   renderRemovedCards();
   startTimer();
-  document.getElementById('modeSelector').value = prevMode;
 }
 
 // ─── Score Display ───
 function updateScoreDisplay() {
   document.getElementById('currentScore').textContent = state.currentScore;
-  const hi = getHighScore(state.selectionMode);
-  document.getElementById('highScoreDisplay').textContent = hi;
+  document.getElementById('highScoreDisplay').textContent = getHighScore();
 }
 
 function showScorePopup(label, pts) {
@@ -893,53 +835,110 @@ window.validateGrid = function() {
   return `${count} unique cards, no duplicates`;
 };
 
-// ─── Supabase / Leaderboard ───
-async function saveSessionAndShowLeaderboard(data) {
+// ─── Supabase / Players / Leaderboard ───
+
+// Get or create player, returns player uuid
+async function getOrCreatePlayer(username) {
+  // Return cached id if same username
+  if (currentPlayerId && localStorage.getItem('poker_player_username') === username) {
+    return currentPlayerId;
+  }
+
   try {
+    // Check if player exists
+    const { data: existing, error: fetchErr } = await sb
+      .from('players')
+      .select('id')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (fetchErr) { console.error('[POKE-R] Player fetch error:', fetchErr); return null; }
+
+    if (existing) {
+      currentPlayerId = existing.id;
+      localStorage.setItem('poker_player_username', username);
+      return existing.id;
+    }
+
+    // Insert new player
+    const { data: newPlayer, error: insertErr } = await sb
+      .from('players')
+      .insert({ username })
+      .select('id')
+      .single();
+
+    if (insertErr) { console.error('[POKE-R] Player insert error:', insertErr); return null; }
+
+    currentPlayerId = newPlayer.id;
+    localStorage.setItem('poker_player_username', username);
+    console.log('[POKE-R] New player created:', username, newPlayer.id);
+    return newPlayer.id;
+  } catch (err) {
+    console.error('[POKE-R] Player error:', err);
+    return null;
+  }
+}
+
+async function saveSessionAndShowLeaderboard(data) {
+  console.log('[POKE-R] Saving session...', data);
+  try {
+    const playerId = await getOrCreatePlayer(data.username);
+    if (!playerId) { console.error('[POKE-R] No player ID, skipping save'); return; }
+
     // Insert game session
-    const { error: sessionError } = await supabase
+    const { data: sessionData, error: sessionError } = await sb
       .from('game_sessions')
       .insert({
-        username: data.username,
+        player_id: playerId,
         score: data.score,
         best_hand: data.best_hand || null,
         hands_collected: data.hands_collected || 0,
         time_remaining: data.time_remaining || 0,
-        mode: data.mode || 1,
-      });
-    if (sessionError) console.error('Session save error:', sessionError);
+        completed: true,
+      })
+      .select();
+    if (sessionError) {
+      console.error('[POKE-R] Session save error:', sessionError);
+    } else {
+      console.log('[POKE-R] Session saved:', sessionData);
+    }
 
-    // Upsert leaderboard — keep highest score per username+mode
-    const { data: existing } = await supabase
+    // Upsert leaderboard — keep highest score per username
+    const { data: existing, error: fetchError } = await sb
       .from('leaderboard')
       .select('score')
-      .eq('username', data.username)
-      .eq('mode', data.mode)
-      .single();
+      .eq('player_id', playerId)
+      .maybeSingle();
+
+    if (fetchError) console.error('[POKE-R] Leaderboard fetch error:', fetchError);
 
     if (!existing || data.score > existing.score) {
-      await supabase
+      const { data: lbData, error: lbError } = await sb
         .from('leaderboard')
         .upsert({
+          player_id: playerId,
           username: data.username,
           score: data.score,
           best_hand: data.best_hand || null,
-          mode: data.mode || 1,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'username,mode' });
+        }, { onConflict: 'player_id' })
+        .select();
+      if (lbError) {
+        console.error('[POKE-R] Leaderboard upsert error:', lbError);
+      } else {
+        console.log('[POKE-R] Leaderboard updated:', lbData);
+      }
     }
   } catch (err) {
-    console.error('Save error:', err);
+    console.error('[POKE-R] Save error:', err);
   }
-  showLeaderboard(data.mode, data.username);
+  showLeaderboard(data.username);
 }
 
-async function showLeaderboard(mode, currentUser) {
+async function showLeaderboard(currentUser) {
   try {
-    const { data: rows, error } = await supabase
+    const { data: rows, error } = await sb
       .from('leaderboard')
-      .select('username, score, best_hand, mode, updated_at')
-      .eq('mode', mode)
+      .select('username, score, best_hand')
       .order('score', { ascending: false })
       .limit(10);
 
@@ -960,7 +959,7 @@ async function showLeaderboard(mode, currentUser) {
     const modal = document.getElementById('leaderboardModal');
     modal.innerHTML = `
       <h2>LEADERBOARD</h2>
-      <div class="subtitle">Mode ${mode} · Top 10</div>
+      <div class="subtitle">Top 10</div>
       ${tableHTML}
       <button class="btn-close-lb" onclick="document.getElementById('leaderboardOverlay').classList.remove('active')">CLOSE</button>
     `;

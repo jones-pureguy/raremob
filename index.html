@@ -13,12 +13,6 @@
   <div style="display:flex;align-items:center;gap:8px;">
   <input class="username-input" id="usernameInput" type="text" placeholder="NAME" maxlength="12" spellcheck="false">
   <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
-  <select class="mode-selector" id="modeSelector">
-    <option value="1">Mode 1 · 자유+점프</option>
-    <option value="2">Mode 2 · 자유</option>
-    <option value="3">Mode 3 · 직선</option>
-    <option value="4">Mode 4 · 가로세로</option>
-  </select>
   </div>
 </div>
 
@@ -68,9 +62,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const SUPABASE_URL = 'https://xxxxxxxxxxx.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxx';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 <script src="script.js"></script>
 </body>
