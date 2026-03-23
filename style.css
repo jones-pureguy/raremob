@@ -642,7 +642,7 @@ body.debug-mode .card .debug-info { display: block; }
   z-index: 1;
 }
 .menu-logo {
-  width: 300px;
+  width: 293px;
   height: auto;
   object-fit: contain;
   border-radius: 16px;
