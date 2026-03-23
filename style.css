@@ -13,6 +13,7 @@
   --card-club: #1565C0;
   --empty-slot: #1a3a22;
   --bg: #0a1f14;
+  --menu-width: 220px;
 }
 
 html, body {
@@ -641,8 +642,8 @@ body.debug-mode .card .debug-info { display: block; }
   z-index: 1;
 }
 .menu-logo {
-  width: 120px;
-  height: 120px;
+  width: var(--menu-width);
+  height: auto;
   object-fit: contain;
   border-radius: 16px;
   margin-bottom: 8px;
@@ -665,7 +666,7 @@ body.debug-mode .card .debug-info { display: block; }
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 220px;
+  width: var(--menu-width);
 }
 .menu-btn {
   display: block;
