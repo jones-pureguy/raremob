@@ -419,15 +419,15 @@ body::before {
 .removed-card {
   width: 36px;
   height: 36px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.04);
   border-radius: 4px;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  opacity: 0.35;
-  border: 1px solid rgba(255,255,255,0.1);
+  opacity: 0.7;
+  border: 1px solid rgba(255,255,255,0.08);
 }
 .removed-card .card-value {
   font-family: 'IBM Plex Mono', monospace;
@@ -444,7 +444,7 @@ body::before {
 .removed-card.suit-d { color: var(--card-diamond); }
 .removed-card.suit-c { color: var(--card-club); }
 .hand-badge.royal-flush { background: linear-gradient(135deg, #C9A84C, #a07c2e); color: #000; font-weight: 700; }
-.hand-badge.broadway-straight { background: linear-gradient(135deg, #66BB6A, #388E3C); color: #fff; font-weight: 700; }
+.hand-badge.royal-flush-plus { background: linear-gradient(135deg, #FFD700, #FF6B00, #FF0000); color: #fff; font-weight: 700; text-shadow: 0 0 8px rgba(255,215,0,0.8); }
 .hand-badge.straight-flush { background: linear-gradient(135deg, #888, #555); color: #fff; font-weight: 700; }
 .hand-badge.four-kind { background: rgba(201,168,76,0.2); border-color: var(--gold); color: var(--gold); }
 .hand-badge.full-house { background: rgba(156,39,176,0.2); border-color: #9c27b0; color: #ce93d8; }

@@ -14,12 +14,12 @@ const RANK = {
   TWO_PAIR: 2,
   THREE_KIND: 3,
   STRAIGHT: 4,
-  BROADWAY_STRAIGHT: 5,
-  FLUSH: 6,
-  FULL_HOUSE: 7,
-  FOUR_KIND: 8,
-  STRAIGHT_FLUSH: 9,
-  ROYAL_FLUSH: 10,
+  FLUSH: 5,
+  FULL_HOUSE: 6,
+  FOUR_KIND: 7,
+  STRAIGHT_FLUSH: 8,
+  ROYAL_FLUSH: 9,
+  ROYAL_FLUSH_PLUS: 10,
 };
 
 const DEFAULT_SCORES = {
@@ -28,12 +28,12 @@ const DEFAULT_SCORES = {
   [RANK.TWO_PAIR]: 2,
   [RANK.THREE_KIND]: 5,
   [RANK.STRAIGHT]: 10,
-  [RANK.BROADWAY_STRAIGHT]: 15,
   [RANK.FLUSH]: 15,
   [RANK.FULL_HOUSE]: 20,
   [RANK.FOUR_KIND]: 50,
   [RANK.STRAIGHT_FLUSH]: 75,
   [RANK.ROYAL_FLUSH]: 100,
+  [RANK.ROYAL_FLUSH_PLUS]: 200,
 };
 
 const DEFAULT_PENALTY = 10;
@@ -62,12 +62,12 @@ const RANK_LABELS = {
   [RANK.TWO_PAIR]: 'Two Pair',
   [RANK.THREE_KIND]: 'Three of a Kind',
   [RANK.STRAIGHT]: 'Straight',
-  [RANK.BROADWAY_STRAIGHT]: 'Broadway Straight',
   [RANK.FLUSH]: 'Flush',
   [RANK.FULL_HOUSE]: 'Full House',
   [RANK.FOUR_KIND]: 'Four of a Kind',
   [RANK.STRAIGHT_FLUSH]: 'Straight Flush',
   [RANK.ROYAL_FLUSH]: 'Royal Flush',
+  [RANK.ROYAL_FLUSH_PLUS]: 'Royal Flush+',
 };
 
 const RANK_CSS = {
@@ -75,12 +75,12 @@ const RANK_CSS = {
   [RANK.TWO_PAIR]: 'two-pair',
   [RANK.THREE_KIND]: 'three-kind',
   [RANK.STRAIGHT]: 'straight',
-  [RANK.BROADWAY_STRAIGHT]: 'broadway-straight',
   [RANK.FLUSH]: 'flush',
   [RANK.FULL_HOUSE]: 'full-house',
   [RANK.FOUR_KIND]: 'four-kind',
   [RANK.STRAIGHT_FLUSH]: 'straight-flush',
   [RANK.ROYAL_FLUSH]: 'royal-flush',
+  [RANK.ROYAL_FLUSH_PLUS]: 'royal-flush-plus',
 };
 
 // ─── Game State ───
@@ -307,6 +307,16 @@ function finalizePath() {
   const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card);
   const hand = evaluateHand(cards);
 
+  // Royal Flush+ : Royal Flush with perfect drag order (10→J→Q→K→A)
+  if (hand.rank === RANK.ROYAL_FLUSH) {
+    const dragValues = cards.map(c => c.value);
+    if (dragValues[0] === 10 && dragValues[1] === 11 && dragValues[2] === 12 && dragValues[3] === 13 && dragValues[4] === 14) {
+      hand.rank = RANK.ROYAL_FLUSH_PLUS;
+      hand.rankValue = RANK.ROYAL_FLUSH_PLUS;
+      hand.label = 'Royal Flush+';
+    }
+  }
+
   if (!isValidHand(hand)) {
     // Invalid: shake + message
     const gridEl = document.getElementById('grid');
@@ -502,9 +512,6 @@ function evaluateHand(cards) {
   } else if (isFlush) {
     rank = RANK.FLUSH;
     label = 'Flush';
-  } else if (isStraight && isRoyal) {
-    rank = RANK.BROADWAY_STRAIGHT;
-    label = 'Broadway Straight';
   } else if (isStraight) {
     rank = RANK.STRAIGHT;
     label = 'Straight';
