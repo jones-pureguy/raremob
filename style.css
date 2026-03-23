@@ -640,6 +640,13 @@ body.debug-mode .card .debug-info { display: block; }
   position: relative;
   z-index: 1;
 }
+.menu-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 16px;
+  margin-bottom: 8px;
+}
 .menu-title {
   font-family: 'Playfair Display', serif;
   font-size: 2.4rem;
