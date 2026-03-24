@@ -134,7 +134,7 @@
 </div>
 
 <div style="text-align:center;padding:12px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
-  <button class="replay-btn" id="btnRetry" onclick="gameRetry()" style="width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY</button>
+  <button class="replay-btn" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY</button>
   <a href="index.html" class="menu-btn small">메인메뉴</a>
 </div>
 
@@ -173,6 +173,12 @@ function loadReplay(data) {
   replay = data;
   document.getElementById('replayUser').textContent = data.username || '';
   document.getElementById('totalHands').textContent = data.actions.length;
+
+  // Show GAME RETRY only if replay belongs to current user
+  const myUsername = (localStorage.getItem('poker_username') || '').trim().toLowerCase();
+  const replayUsername = (data.username || '').trim().toLowerCase();
+  const btnRetry = document.getElementById('btnRetry');
+  btnRetry.style.display = (myUsername && myUsername === replayUsername) ? 'inline-block' : 'none';
   resetToInitial();
   renderActionLog();
   updateInfo();
