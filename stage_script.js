@@ -72,6 +72,7 @@ const FAIL_MESSAGES = {
 // ─── Game State ───
 let state = {};
 let stageConfig = null;
+let allStages = null;
 let stageTimer = null;
 let stageTimerInterval = null;
 let resetUsed = 0;
@@ -799,7 +800,7 @@ function endGame(reason) {
 }
 
 // ─── Stage Complete ───
-function triggerStageComplete() {
+async function triggerStageComplete() {
   if (stageCleared) return;
   stageCleared = true;
   state.phase = 'complete';
@@ -843,11 +844,15 @@ function triggerStageComplete() {
 
   const totalGold = goldBase + bonuses.reduce((s, b) => s + b.gold, 0);
 
+  // Check if first clear before saving
+  const isFirstClear = await checkFirstClear(stageConfig.id);
+  const actualGold = isFirstClear ? totalGold : 0;
+
   // Save to DB
-  saveStageResult(stageConfig.id, { success: true, finalScore }, totalGold);
+  saveStageResult(stageConfig.id, { success: true, finalScore }, actualGold);
 
   // Show clear popup
-  showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold });
+  showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, isFirstClear });
 }
 
 // ─── Stage Fail ───
@@ -862,14 +867,59 @@ function triggerStageFail(reason) {
 }
 
 // ─── Popups ───
-function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold }) {
+function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, isFirstClear }) {
   const modal = document.getElementById('modal');
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-  const newGold = currentGold + totalGold;
+  const actualGold = isFirstClear ? totalGold : 0;
+  const newGold = currentGold + actualGold;
 
-  let bonusHTML = '';
-  if (bonuses.length > 0) {
-    bonusHTML = bonuses.map(b => `<div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#4CAF50;"><span>${b.description}</span><span>+${b.gold} Gold</span></div>`).join('');
+  let rewardHTML = '';
+  if (isFirstClear) {
+    let bonusHTML = '';
+    if (bonuses.length > 0) {
+      bonusHTML = bonuses.map(b => `<div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#4CAF50;"><span>${b.description}</span><span>+${b.gold} Gold</span></div>`).join('');
+    }
+    rewardHTML = `
+      <div style="margin:12px 0;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:rgba(255,255,255,0.7);"><span>기본 보상</span><span>+${goldBase} Gold</span></div>
+        ${bonusHTML}
+        <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);"><span>합계</span><span>+${totalGold} Gold</span></div>
+      </div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:12px;">보유 골드: ${currentGold.toLocaleString()} → ${newGold.toLocaleString()}</div>
+    `;
+  } else {
+    rewardHTML = `
+      <div style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.08);">
+        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-align:center;">이미 클리어한 스테이지입니다.<br>골드 보상은 첫 클리어 시에만 지급됩니다.</div>
+      </div>
+    `;
+  }
+
+  // Next stage preview
+  const nextId = stageConfig.id + 1;
+  const nextStage = allStages ? allStages.find(s => s.id === nextId) : null;
+  let nextStageHTML = '';
+  if (nextStage) {
+    let metaItems = [];
+    if (nextStage.timers.gameTime !== 100) metaItems.push(`⏱ ${nextStage.timers.gameTime}초`);
+    if (nextStage.timers.stageTime) metaItems.push(`⏳ ${nextStage.timers.stageTime}초`);
+    if (nextStage.constraints.resetLimit === 0) metaItems.push('↺ 리셋불가');
+    else if (nextStage.constraints.resetLimit !== null) metaItems.push(`↺ ${nextStage.constraints.resetLimit}회`);
+    if (!nextStage.constraints.jumpAllowed) metaItems.push('점프불가');
+    if (nextStage.constraints.diagonalOnly) metaItems.push('대각선만');
+    else if (!nextStage.constraints.diagonalAllowed) metaItems.push('직교만');
+    if (nextStage.constraints.forbiddenHands.length > 0) metaItems.push(`금지: ${nextStage.constraints.forbiddenHands.join(', ')}`);
+    const metaStr = metaItems.length > 0 ? `<div style="color:rgba(255,255,255,0.35);font-size:0.7rem;margin-top:4px;">${metaItems.join(' · ')}</div>` : '';
+
+    nextStageHTML = `
+      <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;text-align:left;">
+        <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">NEXT STAGE</div>
+        <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Stage ${nextStage.id}: ${nextStage.title}</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${nextStage.description}</div>
+        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">보상: ${nextStage.rewards.gold} Gold</div>
+        ${metaStr}
+      </div>
+    `;
   }
 
   modal.innerHTML = `
@@ -877,16 +927,12 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold })
     <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
     ${best ? `<div style="color:var(--gold);font-size:0.9rem;margin:8px 0;">Best: ${best.label}</div>` : ''}
     <div class="score">Score: ${finalScore}pts</div>
-    <div style="margin:12px 0;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:rgba(255,255,255,0.7);"><span>기본 보상</span><span>+${goldBase} Gold</span></div>
-      ${bonusHTML}
-      <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);"><span>합계</span><span>+${totalGold} Gold</span></div>
-    </div>
-    <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:12px;">보유 골드: ${currentGold.toLocaleString()} → ${newGold.toLocaleString()}</div>
+    ${rewardHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn-play-again" onclick="goNextStage()">다음 스테이지</button>
+      ${nextStage ? `<button class="btn-play-again" onclick="goNextStage()">다음 스테이지</button>` : ''}
       <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">스테이지 선택</a>
     </div>
+    ${nextStageHTML}
   `;
   document.getElementById('modalOverlay').classList.add('active');
 }
@@ -993,6 +1039,17 @@ async function loadStageProgress() {
   return cached;
 }
 
+async function checkFirstClear(stageId) {
+  const playerId = localStorage.getItem('poker_player_id');
+  if (!playerId) return true;
+  try {
+    const { data } = await sb.from('player_stages')
+      .select('cleared')
+      .eq('player_id', playerId).eq('stage_id', stageId).maybeSingle();
+    return !data || !data.cleared;
+  } catch(e) { return true; }
+}
+
 async function saveStageResult(stageId, result, goldEarned) {
   const playerId = localStorage.getItem('poker_player_id');
   if (!playerId) return;
@@ -1000,7 +1057,7 @@ async function saveStageResult(stageId, result, goldEarned) {
   try {
     // Check existing record for clear_count increment
     const { data: existing } = await sb.from('player_stages')
-      .select('clear_count, best_score')
+      .select('clear_count, best_score, gold_earned')
       .eq('player_id', playerId).eq('stage_id', stageId).maybeSingle();
 
     const clearCount = existing ? existing.clear_count + (result.success ? 1 : 0) : (result.success ? 1 : 0);
@@ -1012,7 +1069,7 @@ async function saveStageResult(stageId, result, goldEarned) {
       cleared: result.success || (existing && existing.clear_count > 0),
       best_score: bestScore,
       clear_count: clearCount,
-      gold_earned: goldEarned,
+      gold_earned: existing ? (existing.gold_earned || 0) + goldEarned : goldEarned,
       cleared_at: result.success ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'player_id,stage_id' });
@@ -1022,7 +1079,7 @@ async function saveStageResult(stageId, result, goldEarned) {
         player_id: playerId,
         amount: goldEarned,
         reason: `stage_clear_${stageId}`,
-        meta: { stageId, finalScore: result.finalScore },
+        meta: { stageId, finalScore: result.finalScore, firstClear: true },
       });
 
       // Update player gold
@@ -1052,6 +1109,7 @@ async function initStage() {
   try {
     const res = await fetch('stages.json');
     const stages = await res.json();
+    allStages = stages;
     stageConfig = stages.find(s => s.id === stageId);
     if (!stageConfig) { showToast('스테이지를 찾을 수 없습니다'); return; }
   } catch(e) { showToast('스테이지 데이터 로드 실패'); return; }
