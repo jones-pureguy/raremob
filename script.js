@@ -87,6 +87,7 @@ const RANK_CSS = {
 let state = {};
 let currentPlayerId = null; // cached player uuid
 let replayLog = null; // current game replay data
+let isRetryMode = false; // true when game started via GAME RETRY
 
 function initState() {
   state = {
@@ -148,8 +149,10 @@ function initGrid() {
     localStorage.removeItem('poker_retry_deck');
     const deckIds = JSON.parse(retryRaw);
     deck = deckIds.map(id => cardFromId(id));
+    isRetryMode = true;
   } else {
     deck = shuffle(createDeck());
+    isRetryMode = false;
   }
 
   // Remove 3 random cards
@@ -939,6 +942,8 @@ function resetGame() {
 function updateScoreDisplay() {
   document.getElementById('currentScore').textContent = state.currentScore;
   document.getElementById('highScoreDisplay').textContent = getHighScore();
+  const retryLabel = document.getElementById('retryLabel');
+  if (retryLabel) retryLabel.style.display = isRetryMode ? 'inline' : 'none';
 }
 
 function showScorePopup(label, pts) {
@@ -1093,8 +1098,9 @@ async function saveSessionAndGetStatus(data) {
     }
 
     // Upsert leaderboard — keep highest score per player
+    const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
     const { data: existing, error: fetchError } = await sb
-      .from('leaderboard')
+      .from(lbTable)
       .select('score')
       .eq('player_id', playerId)
       .maybeSingle();
@@ -1103,7 +1109,7 @@ async function saveSessionAndGetStatus(data) {
 
     if (!existing || data.score > existing.score) {
       const { data: lbData, error: lbError } = await sb
-        .from('leaderboard')
+        .from(lbTable)
         .upsert({
           player_id: playerId,
           username: data.username,
@@ -1114,14 +1120,14 @@ async function saveSessionAndGetStatus(data) {
       if (lbError) {
         console.error('[DragON] Leaderboard upsert error:', lbError);
       } else {
-        console.log('[DragON] Leaderboard updated:', lbData);
+        console.log(`[DragON] ${lbTable} updated:`, lbData);
         leaderboardUpdated = true;
       }
     }
 
-    // Fetch #1 score
+    // Fetch #1 score from same table
     const { data: topRow } = await sb
-      .from('leaderboard')
+      .from(lbTable)
       .select('score')
       .order('score', { ascending: false })
       .limit(1)
@@ -1137,8 +1143,9 @@ async function saveSessionAndGetStatus(data) {
 // Fetch only the #1 leaderboard score (no save)
 async function fetchTopScore() {
   try {
+    const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
     const { data: topRow } = await sb
-      .from('leaderboard')
+      .from(lbTable)
       .select('score')
       .order('score', { ascending: false })
       .limit(1)
@@ -1181,8 +1188,9 @@ async function saveReplayToDB(linkToLeaderboard) {
 
     // Link replay to leaderboard entry
     if (linkToLeaderboard) {
+      const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
       const { error: linkErr } = await sb
-        .from('leaderboard')
+        .from(lbTable)
         .update({ replay_id: replayId })
         .eq('player_id', playerId);
       if (linkErr) {
@@ -1220,8 +1228,10 @@ async function saveReplayFromButton() {
 async function showLeaderboard(currentUser) {
   if (!currentUser) currentUser = (localStorage.getItem('poker_username') || '').trim();
   try {
+    const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
+    const lbTitle = isRetryMode ? 'LEADERBOARD (RETRY)' : 'LEADERBOARD';
     const { data: rows, error } = await sb
-      .from('leaderboard')
+      .from(lbTable)
       .select('username, score, best_hand, replay_id')
       .order('score', { ascending: false })
       .limit(10);
@@ -1245,7 +1255,7 @@ async function showLeaderboard(currentUser) {
 
     const modal = document.getElementById('leaderboardModal');
     modal.innerHTML = `
-      <h2>LEADERBOARD</h2>
+      <h2>${lbTitle}</h2>
       <div class="subtitle">Top 10</div>
       ${tableHTML}
       <button class="btn-close-lb" onclick="document.getElementById('leaderboardOverlay').classList.remove('active')">CLOSE</button>

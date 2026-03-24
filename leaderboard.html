@@ -5,11 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>DragON POKER - Leaderboard</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  .lb-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+  .lb-tab {
+    flex: 1;
+    padding: 10px 0;
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.5);
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lb-tab:not(:last-child) { border-right: 1px solid rgba(201,168,76,0.3); }
+  .lb-tab:hover { background: rgba(201,168,76,0.1); }
+  .lb-tab.active {
+    background: rgba(201,168,76,0.2);
+    color: var(--gold);
+  }
+</style>
 </head>
 <body>
 
 <div class="menu-container">
   <div class="menu-title">LEADERBOARD</div>
+  <div class="lb-tabs">
+    <button class="lb-tab active" id="tabNormal" onclick="switchTab('normal')">일반점수</button>
+    <button class="lb-tab" id="tabRetry" onclick="switchTab('retry')">재시도점수</button>
+  </div>
   <div class="leaderboard-wrap" id="leaderboardWrap">
     <div class="loading">불러오는 중...</div>
   </div>
@@ -25,6 +57,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const currentUser = localStorage.getItem('poker_username') || '';
+  let currentTab = 'normal';
 
   function escapeHTML(str) {
     const div = document.createElement('div');
@@ -32,11 +65,20 @@
     return div.innerHTML;
   }
 
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabNormal').classList.toggle('active', tab === 'normal');
+    document.getElementById('tabRetry').classList.toggle('active', tab === 'retry');
+    loadLeaderboard();
+  }
+
   async function loadLeaderboard() {
     const wrap = document.getElementById('leaderboardWrap');
+    const table = currentTab === 'retry' ? 'leaderboard_r' : 'leaderboard';
+    wrap.innerHTML = '<div class="loading">불러오는 중...</div>';
     try {
       const { data: rows, error } = await sb
-        .from('leaderboard')
+        .from(table)
         .select('username, score, best_hand, replay_id')
         .order('score', { ascending: false })
         .limit(20);
