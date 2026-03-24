@@ -71,7 +71,7 @@
     background: rgba(255,255,255,0.02);
     border-color: rgba(255,255,255,0.06);
     color: rgba(255,255,255,0.2);
-    cursor: not-allowed;
+    cursor: pointer;
   }
   .stage-detail {
     background: rgba(255,255,255,0.04);
@@ -288,10 +288,7 @@
       else if (!unlocked) btn.classList.add('locked');
 
       btn.textContent = unlocked ? stage.id : '🔒';
-
-      if (unlocked) {
-        btn.addEventListener('click', () => selectStage(stage.id));
-      }
+      btn.addEventListener('click', () => selectStage(stage.id));
 
       grid.appendChild(btn);
     });
@@ -341,9 +338,15 @@
       ${bestLine}
     `;
 
+    const unlocked = isUnlocked(stage);
     const btn = document.getElementById('btnChallenge');
-    btn.disabled = false;
-    btn.textContent = cleared ? '다시 도전' : '도전하기';
+    if (unlocked) {
+      btn.disabled = false;
+      btn.textContent = cleared ? '다시 도전' : '도전하기';
+    } else {
+      btn.disabled = true;
+      btn.textContent = '🔒 잠김';
+    }
   }
 
   function startStage() {
