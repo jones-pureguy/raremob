@@ -13,15 +13,25 @@
 <body>
 
 <div class="menu-container">
+  <div class="currency-bar" style="justify-content:center;margin-bottom:8px;">
+    <div class="currency-item">
+      <img src="./images/gold.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span>
+      <span class="currency-value" id="goldDisplay">0</span>
+    </div>
+    <div class="currency-item">
+      <img src="./images/chip.png" alt="chip" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">🎰</span>
+      <span class="currency-value" id="chipDisplay">0</span>
+    </div>
+  </div>
   <img src="images/logo.webp" alt="DragON POKER" class="menu-logo">
 
   <div class="menu-player" id="menuPlayer"></div>
   <div class="menu-buttons">
-    <a href="game.html" class="menu-btn">게임하기</a>
-    <a href="leaderboard.html" class="menu-btn">하이스코어</a>
-    <a href="stage_select.html" class="menu-btn">스테이지</a>
+    <a href="game.html" class="menu-btn">베이직모드</a>
+    <a href="stage_select.html" class="menu-btn">도전모드</a>
+    <a href="leaderboard.html" class="menu-btn">랭킹</a>
     <a href="replay.html?source=local" class="menu-btn">리플레이</a>
-    <a href="id.html" class="menu-btn">아이디등록</a>
+    <a href="id.html" class="menu-btn">아이디관리</a>
   </div>
 </div>
 
@@ -33,6 +43,15 @@
   } else {
     document.getElementById('menuPlayer').textContent = savedUsername;
   }
+
+  // Currency bar
+  (function renderCurrencyBar() {
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const goldEl = document.getElementById('goldDisplay');
+    const chipEl = document.getElementById('chipDisplay');
+    if (goldEl) goldEl.textContent = gold.toLocaleString();
+    if (chipEl) chipEl.textContent = '0';
+  })();
 </script>
 </body>
 </html>

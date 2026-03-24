@@ -13,7 +13,16 @@
 <body class="game-page">
 
 <div class="header">
-  <div class="title">DRAG.on.POKER</div>
+  <div class="currency-bar">
+    <div class="currency-item">
+      <img src="./images/gold.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span>
+      <span class="currency-value" id="goldDisplay">0</span>
+    </div>
+    <div class="currency-item">
+      <img src="./images/chip.png" alt="chip" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">🎰</span>
+      <span class="currency-value" id="chipDisplay">0</span>
+    </div>
+  </div>
   <div style="display:flex;align-items:center;gap:8px;">
   <div class="username-display" id="usernameDisplay"></div>
   <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
@@ -75,6 +84,16 @@
   const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script>
+  function renderCurrencyBar() {
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const goldEl = document.getElementById('goldDisplay');
+    const chipEl = document.getElementById('chipDisplay');
+    if (goldEl) goldEl.textContent = gold.toLocaleString();
+    if (chipEl) chipEl.textContent = '0';
+  }
+  renderCurrencyBar();
 </script>
 <script src="script.js"></script>
 </body>

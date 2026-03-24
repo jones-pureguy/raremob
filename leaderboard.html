@@ -46,6 +46,11 @@
   <div class="leaderboard-wrap" id="leaderboardWrap">
     <div class="loading">불러오는 중...</div>
   </div>
+  <p class="retry-description" id="retryDesc" style="display:none;">
+    본인이 직접 저장한 리플레이의 경우 리플레이 분석 후 RETRY할 수 있습니다.
+    별도의 순위로 집계됩니다. 정말 아쉽게 고득점을 놓친 판이 있다면
+    리플레이 저장 후 더 높은 점수에 도전해 보세요.
+  </p>
   <div style="margin-top:20px;">
     <a href="index.html" class="menu-btn small">메인메뉴</a>
   </div>
@@ -70,6 +75,7 @@
     currentTab = tab;
     document.getElementById('tabNormal').classList.toggle('active', tab === 'normal');
     document.getElementById('tabRetry').classList.toggle('active', tab === 'retry');
+    document.getElementById('retryDesc').style.display = tab === 'retry' ? 'block' : 'none';
     loadLeaderboard();
   }
 

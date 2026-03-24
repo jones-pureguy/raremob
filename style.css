@@ -216,14 +216,13 @@ body::before {
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   border: 2px solid transparent;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
 }
 
 .card .card-value {
+  position: absolute;
+  top: 3px;
+  left: 5px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 1.1rem;
   font-weight: 700;
@@ -232,9 +231,11 @@ body::before {
 }
 
 .card .card-suit {
-  font-size: 0.85rem;
+  position: absolute;
+  bottom: 3px;
+  right: 4px;
+  font-size: 1.5rem;
   line-height: 1;
-  margin-top: 1px;
 }
 
 .card.suit-s { color: var(--card-spade); }
@@ -565,13 +566,13 @@ body.debug-mode .card .debug-info { display: block; }
 @media (max-width: 400px) {
   .card { width: 38px; height: 38px; }
   .card .card-value { font-size: 0.85rem; }
-  .card .card-suit { font-size: 0.7rem; }
+  .card .card-suit { font-size: 1.3rem; }
   .grid { gap: 3px; }
 }
 @media (min-width: 500px) {
   .card { width: 52px; height: 52px; }
   .card .card-value { font-size: 1.2rem; }
-  .card .card-suit { font-size: 0.9rem; }
+  .card .card-suit { font-size: 1.7rem; }
 }
 
 /* Leaderboard */
@@ -753,4 +754,41 @@ body.debug-mode .card .debug-info { display: block; }
   text-align: center;
   padding: 20px;
   font-size: 0.9rem;
+}
+
+/* ─── Retry Description ─── */
+.retry-description {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(201, 168, 76, 0.7);
+  line-height: 1.6;
+  text-align: center;
+  padding: 8px 16px;
+  margin: 4px 0 12px 0;
+  border-left: 2px solid rgba(201, 168, 76, 0.3);
+  border-right: 2px solid rgba(201, 168, 76, 0.3);
+}
+
+/* ─── Currency Bar ─── */
+.currency-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.currency-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.currency-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.currency-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gold);
+  min-width: 32px;
 }
