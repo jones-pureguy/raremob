@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DragON POKER - Stage Select</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .stage-select-header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .stage-select-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .gold-display {
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .stage-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+  }
+  .stage-btn {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .stage-btn:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4); }
+  .stage-btn.selected { border-color: var(--gold); background: rgba(201,168,76,0.2); box-shadow: 0 0 12px rgba(201,168,76,0.3); }
+  .stage-btn.cleared {
+    background: rgba(201,168,76,0.25);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .stage-btn.cleared::after {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 0.6rem;
+    color: var(--gold);
+  }
+  .stage-btn.locked {
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.2);
+    cursor: not-allowed;
+  }
+  .stage-detail {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 8px;
+    min-height: 120px;
+  }
+  .stage-detail-title {
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+  .stage-detail-desc {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .stage-detail-meta {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  .stage-detail-meta span { color: rgba(255,255,255,0.6); }
+  .stage-detail-reward {
+    color: var(--gold);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .btn-challenge {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    margin: 16px auto 0;
+    padding: 12px;
+    background: rgba(201,168,76,0.2);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-challenge:hover { background: rgba(201,168,76,0.35); }
+  .btn-challenge:disabled { opacity: 0.3; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="menu-container">
+  <div class="stage-select-header">
+    <div class="stage-select-title">STAGE MODE</div>
+    <div class="gold-display" id="goldDisplay">0 Gold</div>
+  </div>
+
+  <div class="stage-grid" id="stageGrid"></div>
+
+  <div class="stage-detail" id="stageDetail">
+    <div style="color:rgba(255,255,255,0.3);text-align:center;padding-top:30px;">스테이지를 선택하세요</div>
+  </div>
+
+  <button class="btn-challenge" id="btnChallenge" disabled onclick="startStage()">도전하기</button>
+
+  <div style="margin-top:16px;text-align:center;">
+    <a href="index.html" class="menu-btn small">메인메뉴</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let stages = [];
+  let progress = { clearedStages: [] };
+  let selectedStageId = null;
+
+  async function init() {
+    // Load gold
+    await loadGold();
+
+    // Load stages.json
+    try {
+      const res = await fetch('stages.json');
+      stages = await res.json();
+    } catch(e) { console.error('Failed to load stages.json'); return; }
+
+    // Load progress
+    progress = await loadStageProgress();
+
+    renderStageGrid();
+  }
+
+  async function loadGold() {
+    const playerId = localStorage.getItem('poker_player_id');
+    if (playerId) {
+      try {
+        const { data } = await sb.from('players').select('gold').eq('id', playerId).single();
+        if (data) {
+          localStorage.setItem('poker_gold', data.gold || 0);
+        }
+      } catch(e) {}
+    }
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    document.getElementById('goldDisplay').textContent = gold.toLocaleString() + ' Gold';
+  }
+
+  async function loadStageProgress() {
+    const cached = JSON.parse(localStorage.getItem('poker_stage_progress') || '{"clearedStages":[]}');
+    try {
+      const playerId = localStorage.getItem('poker_player_id');
+      if (!playerId) return cached;
+      const { data } = await sb.from('player_stages').select('*').eq('player_id', playerId);
+      if (data) {
+        const p = {
+          clearedStages: data.filter(s => s.cleared).map(s => s.stage_id),
+          stageData: data,
+          lastSynced: new Date().toISOString(),
+        };
+        localStorage.setItem('poker_stage_progress', JSON.stringify(p));
+        return p;
+      }
+    } catch(e) {}
+    return cached;
+  }
+
+  function isUnlocked(stage) {
+    if (stage.unlockCondition.type === 'none') return true;
+    if (stage.unlockCondition.type === 'stage_clear') {
+      return progress.clearedStages.includes(stage.unlockCondition.stageId);
+    }
+    return false;
+  }
+
+  function renderStageGrid() {
+    const grid = document.getElementById('stageGrid');
+    grid.innerHTML = '';
+
+    stages.forEach(stage => {
+      const btn = document.createElement('button');
+      btn.className = 'stage-btn';
+      const cleared = progress.clearedStages.includes(stage.id);
+      const unlocked = isUnlocked(stage);
+
+      if (cleared) btn.classList.add('cleared');
+      else if (!unlocked) btn.classList.add('locked');
+
+      btn.textContent = unlocked ? stage.id : '🔒';
+
+      if (unlocked) {
+        btn.addEventListener('click', () => selectStage(stage.id));
+      }
+
+      grid.appendChild(btn);
+    });
+  }
+
+  function selectStage(id) {
+    selectedStageId = id;
+    const stage = stages.find(s => s.id === id);
+    if (!stage) return;
+
+    // Highlight selected button
+    document.querySelectorAll('.stage-btn').forEach((btn, i) => {
+      btn.classList.toggle('selected', stages[i].id === id);
+    });
+
+    const cleared = progress.clearedStages.includes(id);
+    const constraints = stage.constraints;
+
+    // Build constraints text
+    let metaLines = [];
+    if (stage.timers.gameTime !== 100) metaLines.push(`게임 시간: <span>${stage.timers.gameTime}초</span>`);
+    if (stage.timers.stageTime) metaLines.push(`스테이지 시간: <span>${stage.timers.stageTime}초</span>`);
+    if (constraints.resetLimit === 0) metaLines.push('리셋: <span>불가</span>');
+    else if (constraints.resetLimit !== null) metaLines.push(`리셋: <span>${constraints.resetLimit}회</span>`);
+    if (!constraints.jumpAllowed) metaLines.push('점프: <span>불가</span>');
+    if (constraints.diagonalOnly) metaLines.push('이동: <span>대각선만</span>');
+    else if (!constraints.diagonalAllowed) metaLines.push('이동: <span>직교만</span>');
+    else if (constraints.moveMode === 'straight') metaLines.push('이동: <span>직선만</span>');
+    if (constraints.forbiddenHands.length > 0) metaLines.push(`금지 족보: <span>${constraints.forbiddenHands.join(', ')}</span>`);
+    if (constraints.forbiddenValues.length > 0) metaLines.push(`금지 숫자: <span>${constraints.forbiddenValues.join(', ')}</span>`);
+
+    // Best score
+    let bestLine = '';
+    if (progress.stageData) {
+      const sd = progress.stageData.find(d => d.stage_id === id);
+      if (sd && sd.best_score > 0) bestLine = `<div style="color:var(--gold);font-size:0.8rem;margin-top:4px;">Best Score: ${sd.best_score}</div>`;
+    }
+
+    const detail = document.getElementById('stageDetail');
+    detail.innerHTML = `
+      <div class="stage-detail-title">${cleared ? '✓ ' : ''}Stage ${stage.id}: ${stage.title}</div>
+      <div class="stage-detail-desc">${stage.description}</div>
+      ${metaLines.length > 0 ? `<div class="stage-detail-meta">${metaLines.join('<br>')}</div>` : ''}
+      <div class="stage-detail-reward">보상: ${stage.rewards.gold} Gold${stage.rewards.bonus.length > 0 ? ' + 보너스' : ''}</div>
+      ${bestLine}
+    `;
+
+    const btn = document.getElementById('btnChallenge');
+    btn.disabled = false;
+    btn.textContent = cleared ? '다시 도전' : '도전하기';
+  }
+
+  function startStage() {
+    if (!selectedStageId) return;
+    window.location.href = `stage.html?id=${selectedStageId}`;
+  }
+
+  init();
+</script>
+</body>
+</html>

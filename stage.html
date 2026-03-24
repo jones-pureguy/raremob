@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DragON POKER - Stage</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .stage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    position: relative;
+    z-index: 1;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stage-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stage-title-text {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .stage-mission-text {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.75rem;
+  }
+  .stage-timer-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.06);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .stage-timer-label {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .stage-timer-num {
+    color: var(--gold);
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body class="game-page">
+
+<div class="header">
+  <div class="title">DRAG.on.POKER</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="username-display" id="usernameDisplay"></div>
+    <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
+  </div>
+</div>
+
+<div class="stage-header">
+  <div class="stage-header-left">
+    <span class="stage-title-text" id="stageTitle">Stage 1</span>
+    <span class="stage-mission-text" id="stageMission"></span>
+  </div>
+  <div class="stage-timer-wrap" id="stageTimerWrap" style="display:none;">
+    <span class="stage-timer-label">STAGE</span>
+    <span class="stage-timer-num" id="stageTimerNum">0s</span>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="timer-wrap">
+    <svg class="timer-ring" viewBox="0 0 40 40">
+      <circle class="timer-ring-bg" cx="20" cy="20" r="16" />
+      <circle class="timer-ring-fg" id="timerRing" cx="20" cy="20" r="16"
+        stroke-dasharray="100.53" stroke-dashoffset="0"
+        transform="rotate(-90 20 20)" />
+    </svg>
+    <div class="timer-num" id="timerNum">100</div>
+  </div>
+  <div class="score-display">
+    <div class="current-score" id="currentScore">0</div>
+  </div>
+  <div class="hand-counter"><span id="handCount">0</span>/9</div>
+</div>
+
+<div class="grid-container" id="gridContainer">
+  <div class="grid" id="grid"></div>
+  <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+  <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+</div>
+
+<div class="hand-preview" id="handPreview"></div>
+
+<div class="hand-panel">
+  <div class="hand-panel-title">BEST HANDS</div>
+  <div class="hand-slots" id="handSlots"></div>
+</div>
+
+<div class="removed-panel">
+  <div class="removed-panel-title">REMOVED</div>
+  <div class="removed-cards" id="removedCards"></div>
+</div>
+
+<div class="back-to-menu">
+  <a href="stage_select.html" class="menu-btn small">스테이지 선택</a>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="stage_script.js"></script>
+</body>
+</html>
