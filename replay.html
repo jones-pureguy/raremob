@@ -69,6 +69,13 @@
     padding: 8px 16px;
     position: relative;
     z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+  }
+  .action-col {
+    display: flex;
+    flex-direction: column;
   }
   .action-entry {
     font-size: 0.75rem;
@@ -462,19 +469,24 @@ function updateDisplay() {
 function renderActionLog() {
   if (!replay) return;
   const el = document.getElementById('actionLog');
-  let html = '';
+  let leftHtml = '';
+  let rightHtml = '';
   replay.actions.forEach((a, i) => {
     let cls = 'action-entry';
     if (i === currentStep) cls += ' current';
     else if (i < currentStep) cls += ' played';
-    html += '<div class="' + cls + '">' + (i + 1) + '. ' + a.hand + ' (+' + a.score + ') t=' + a.t + '</div>';
+    const entry = '<div class="' + cls + '">' + (i + 1) + '. ' + a.hand + ' (+' + a.score + ') t=' + a.t + '</div>';
+    if (i < 5) leftHtml += entry;
+    else rightHtml += entry;
   });
   if (replay.result) {
     let cls = 'action-entry';
     if (currentStep >= replay.actions.length - 1) cls += ' current';
-    html += '<div class="' + cls + '" style="margin-top:4px;color:var(--gold);">' + replay.result.reason.toUpperCase() + ' — Final: ' + replay.result.finalScore + '</div>';
+    const resultEntry = '<div class="' + cls + '" style="margin-top:4px;color:var(--gold);">' + replay.result.reason.toUpperCase() + ' — Final: ' + replay.result.finalScore + '</div>';
+    if (replay.actions.length <= 5) leftHtml += resultEntry;
+    else rightHtml += resultEntry;
   }
-  el.innerHTML = html;
+  el.innerHTML = '<div class="action-col">' + leftHtml + '</div><div class="action-col">' + rightHtml + '</div>';
 }
 
 function updateInfo() {
