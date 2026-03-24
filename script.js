@@ -130,9 +130,28 @@ function isRedSuit(suit) {
   return suit === '♥' || suit === '♦';
 }
 
+// ─── Card ID Parser ───
+const SUIT_BY_CODE = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const VALUE_BY_NAME = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
+
+function cardFromId(id) {
+  const suitCode = id[id.length - 1];
+  const valueName = id.slice(0, -1);
+  return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
+}
+
 // ─── Grid Init & Render ───
 function initGrid() {
-  const deck = shuffle(createDeck());
+  let deck;
+  const retryRaw = localStorage.getItem('poker_retry_deck');
+  if (retryRaw) {
+    localStorage.removeItem('poker_retry_deck');
+    const deckIds = JSON.parse(retryRaw);
+    deck = deckIds.map(id => cardFromId(id));
+  } else {
+    deck = shuffle(createDeck());
+  }
+
   // Remove 3 random cards
   state.removedCards = deck.splice(0, 3);
   const cards = deck.slice(0, 49);
