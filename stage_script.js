@@ -319,7 +319,7 @@ function finalizePath() {
         updateScoreDisplay();
         showScorePopup(hand.label, earnedScore);
         removeCardsAndApplyGravity();
-        setTimeout(() => triggerStageFail('forbidden_hand'), 600);
+        setTimeout(() => triggerStageFail('forbidden_hand'), 350);
         return;
       }
     }
@@ -334,7 +334,7 @@ function finalizePath() {
       updateScoreDisplay();
       showScorePopup(hand.label, earnedScore);
       removeCardsAndApplyGravity();
-      setTimeout(() => triggerStageFail('forbidden_value'), 600);
+      setTimeout(() => triggerStageFail('forbidden_value'), 350);
       return;
     }
   }
@@ -349,7 +349,7 @@ function finalizePath() {
       updateScoreDisplay();
       showScorePopup(hand.label, earnedScore);
       removeCardsAndApplyGravity();
-      setTimeout(() => triggerStageFail('high_card_start'), 600);
+      setTimeout(() => triggerStageFail('high_card_start'), 350);
       return;
     }
   }
@@ -364,7 +364,7 @@ function finalizePath() {
         updateScoreDisplay();
         showScorePopup(hand.label, earnedScore);
         removeCardsAndApplyGravity();
-        setTimeout(() => triggerStageFail('ascending_rank'), 600);
+        setTimeout(() => triggerStageFail('ascending_rank'), 350);
         return;
       }
     }
@@ -421,7 +421,7 @@ function finalizePath() {
   if (stageConfig && !stageFailed && !stageCleared) {
     setTimeout(() => {
       if (!checkNthHandConditions()) return;
-    }, 600);
+    }, 350);
   }
 
   // Check real_time mission completion after hand
@@ -430,7 +430,7 @@ function finalizePath() {
       if (!stageFailed && !stageCleared && checkAllConditionsMet()) {
         triggerStageComplete();
       }
-    }, 600);
+    }, 350);
   }
 }
 
@@ -542,9 +542,9 @@ function removeCardsAndApplyGravity() {
         if (state.phase === 'playing' && !stageFailed && !stageCleared && !scanForValidMoves()) {
           endGame('nomoves');
         }
-      }, 500);
+      }, 200);
     }
-  }, 500);
+  }, 300);
 }
 
 function applyGravityToColumn(col) {
