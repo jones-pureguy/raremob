@@ -16,7 +16,8 @@
   }
   .lb-tab {
     flex: 1;
-    padding: 10px 0;
+    padding: 10px 16px;
+    white-space: nowrap;
     background: rgba(255,255,255,0.04);
     color: rgba(255,255,255,0.5);
     border: none;
@@ -39,8 +40,8 @@
 <div class="menu-container">
   <div class="menu-title">LEADERBOARD</div>
   <div class="lb-tabs">
-    <button class="lb-tab active" id="tabNormal" onclick="switchTab('normal')">일반점수</button>
-    <button class="lb-tab" id="tabRetry" onclick="switchTab('retry')">재시도점수</button>
+    <button class="lb-tab active" id="tabNormal" onclick="switchTab('normal')">일반 순위</button>
+    <button class="lb-tab" id="tabRetry" onclick="switchTab('retry')">RETRY 순위</button>
   </div>
   <div class="leaderboard-wrap" id="leaderboardWrap">
     <div class="loading">불러오는 중...</div>
