@@ -1,0 +1,924 @@
+[
+  {
+    "id": 1,
+    "title": "첫 번째 도전",
+    "description": "투페어 이상의 패를 2개 완성하고 스테이지를 종료하세요.",
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "TWO_PAIR",
+          "count_gte": 2,
+          "description": "투페어 이상 패 2개 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 50,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "none" },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 2,
+    "title": "200점 돌파",
+    "description": "200점 이상으로 스테이지를 종료하세요.",
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "score_gte",
+          "value": 200,
+          "description": "최종 스코어 200점 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 80,
+      "bonus": [
+        {
+          "condition": "finalScore >= 300",
+          "gold": 40,
+          "description": "300점 이상 달성 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 1 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 3,
+    "title": "노 리셋 챌린지",
+    "description": "리셋 없이, 점프 이동 없이 100점 이상으로 종료하세요.",
+    "theme": {
+      "bgColor": "#1a0a2e",
+      "accentColor": "#9b59b6",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "score_gte",
+          "value": 100,
+          "description": "최종 스코어 100점 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 100,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 2 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 4,
+    "title": "속도전",
+    "description": "50초 안에 9개의 패를 모두 완성하여 스테이지를 종료하세요.",
+    "theme": {
+      "bgColor": "#1f0a0a",
+      "accentColor": "#e74c3c",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 50,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 전부 완성"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 120,
+      "bonus": [
+        {
+          "condition": "timeRemaining >= 10",
+          "gold": 60,
+          "description": "10초 이상 남기기 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 3 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 5,
+    "title": "원페어 금지",
+    "description": "원페어를 한 번도 만들지 않고 9개의 패를 모두 완성하세요.",
+    "theme": {
+      "bgColor": "#0a1a2e",
+      "accentColor": "#3498db",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": ["ONE_PAIR"],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": "forbidden_hand_made",
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 전부 완성 (원페어 없이)"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 150,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 4 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 6,
+    "title": "하트를 남겨라",
+    "description": "9개 패를 모두 완성했을 때 그리드에 하트가 3장 이상 남아있어야 합니다.",
+    "theme": {
+      "bgColor": "#1f0a14",
+      "accentColor": "#e91e63",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 전부 완성"
+        },
+        {
+          "id": "c2",
+          "type": "suit_remaining",
+          "suit": "♥",
+          "count_gte": 3,
+          "description": "그리드에 하트 3장 이상 잔존"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 150,
+      "bonus": [
+        {
+          "condition": "suitRemaining['♥'] >= 6",
+          "gold": 80,
+          "description": "하트 6장 이상 남기기 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 5 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 7,
+    "title": "8은 금물",
+    "description": "숫자 8이 포함된 패를 한 번도 만들지 않고 9개의 패를 모두 완성하세요.",
+    "theme": {
+      "bgColor": "#1a1a0a",
+      "accentColor": "#f39c12",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": [8]
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": "forbidden_value_used",
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 전부 완성 (숫자 8 없이)"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 150,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 6 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 8,
+    "title": "끝자리의 법칙",
+    "description": "스테이지 종료 시 최종 스코어의 끝자리가 0이 되게 하세요.",
+    "theme": {
+      "bgColor": "#0d0d1f",
+      "accentColor": "#7f8cf7",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "score_last_digit",
+          "digit": 0,
+          "description": "최종 스코어 끝자리 = 0"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 130,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 7 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 9,
+    "title": "막다른 길",
+    "description": "6개의 패가 완성되기 전에 NO MORE MOVES 상황을 만들어 스테이지를 종료하세요.",
+    "theme": {
+      "bgColor": "#1a0a0a",
+      "accentColor": "#c0392b",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "nomoves_before",
+          "count_lte": 5,
+          "description": "5개 이하 완성 후 NO MORE MOVES"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 180,
+      "bonus": [
+        {
+          "condition": "handsCollected <= 2",
+          "gold": 100,
+          "description": "2개 이하로 막기 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 8 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 10,
+    "title": "오름차순 마스터",
+    "description": "3개의 패를 연속으로 만들되, 다음 패는 반드시 이전 패보다 높은 랭크여야 합니다. 낮은 랭크 패를 만드는 순간 실패입니다.",
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#27ae60",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": "ascending_rank_broken",
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "ascending_ranks",
+          "trackCount": 3,
+          "description": "연속 3개 패가 오름차순 랭크"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 200,
+      "bonus": [
+        {
+          "condition": "ascendingStreak >= 5",
+          "gold": 120,
+          "description": "5연속 오름차순 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 9 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 11,
+    "title": "로얄 플러시 사냥",
+    "description": "300초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!",
+    "theme": {
+      "bgColor": "#1a1200",
+      "accentColor": "#f1c40f",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": 300
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 1,
+          "description": "Royal Flush+ 1개 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 300,
+      "bonus": [
+        {
+          "condition": "stageTimeRemaining >= 150",
+          "gold": 150,
+          "description": "150초 이상 남기기 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 10 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 12,
+    "title": "포카드 트리플",
+    "description": "200초 안에 포카드 패를 3개 이상 만드세요.",
+    "theme": {
+      "bgColor": "#0a0a1f",
+      "accentColor": "#8e44ad",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": 200
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 3,
+          "description": "포카드 3개 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 250,
+      "bonus": [
+        {
+          "condition": "stageTimeRemaining >= 100",
+          "gold": 100,
+          "description": "100초 이상 남기기 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 11 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 13,
+    "title": "스피드 파이브",
+    "description": "리셋 없이 100초 안에 5개 이상의 패를 완성하세요.",
+    "theme": {
+      "bgColor": "#1f0a00",
+      "accentColor": "#e67e22",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": 100
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count_gte": 5,
+          "description": "5개 이상 패 완성"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 200,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 12 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 14,
+    "title": "스페이드 원페어",
+    "description": "10초 안에 스페이드가 2장 포함된 원페어 패를 만드세요.",
+    "theme": {
+      "bgColor": "#0a0a0a",
+      "accentColor": "#95a5a6",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 10,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "suit_in_hand",
+          "suit": "♠",
+          "count_gte": 2,
+          "handType": "ONE_PAIR",
+          "description": "스페이드 2장 포함 원페어"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 180,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 13 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 15,
+    "title": "대각선 마스터",
+    "description": "대각선 이동만 사용해서 5개의 패를 만드세요.",
+    "theme": {
+      "bgColor": "#0f1a0f",
+      "accentColor": "#2ecc71",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": true,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count_gte": 5,
+          "description": "대각선만으로 5개 패 완성"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 220,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 14 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 16,
+    "title": "최고패로 시작하라",
+    "description": "모든 패를 만들 때 반드시 해당 패에서 가장 높은 숫자의 카드로 드래그를 시작해야 합니다. 9개 패를 완성하고 종료하세요.",
+    "theme": {
+      "bgColor": "#1a1000",
+      "accentColor": "#d4ac0d",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": "high_card_start_violated",
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "high_card_start",
+          "count": 9,
+          "description": "9개 패 모두 최고값 카드로 시작"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 250,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 15 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 17,
+    "title": "순서 있는 스트레이트",
+    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트 패를 하나 만드세요. (예: 3→4→5→6→7 순서로 드래그)",
+    "theme": {
+      "bgColor": "#001a1a",
+      "accentColor": "#1abc9c",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "ordered_straight",
+          "hand": "STRAIGHT",
+          "count_gte": 1,
+          "description": "드래그 순서대로 연속된 스트레이트"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 200,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 16 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 18,
+    "title": "순서 있는 스트레이트 플러시",
+    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트 플러시 패를 하나 만드세요. 리셋을 활용하세요!",
+    "theme": {
+      "bgColor": "#001a0a",
+      "accentColor": "#00e676",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": 500
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "ordered_straight",
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 1,
+          "description": "드래그 순서대로 연속된 스트레이트 플러시"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 500,
+      "bonus": [
+        {
+          "condition": "stageTimeRemaining >= 300",
+          "gold": 200,
+          "description": "300초 이상 남기기 보너스"
+        }
+      ]
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 17 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 19,
+    "title": "플러시 금지",
+    "description": "플러시를 만들지 않고 9개의 패를 모두 완성하세요.",
+    "theme": {
+      "bgColor": "#1a0a1a",
+      "accentColor": "#e91e8c",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": ["FLUSH"],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": "forbidden_hand_made",
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 전부 완성 (플러시 없이)"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 180,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 18 },
+    "pvpConfig": null
+  },
+
+  {
+    "id": 20,
+    "title": "포카드 원샷",
+    "description": "리셋 없이 포카드 패를 하나 이상 만들고 스테이지를 종료하세요.",
+    "theme": {
+      "bgColor": "#0a0a1a",
+      "accentColor": "#5c6bc0",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 100,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 1,
+          "description": "포카드 1개 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 200,
+      "bonus": []
+    },
+    "unlockCondition": { "type": "stage_clear", "stageId": 19 },
+    "pvpConfig": null
+  }
+]
