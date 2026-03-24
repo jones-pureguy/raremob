@@ -67,6 +67,7 @@ const FAIL_MESSAGES = {
   'timeout':           '스테이지 제한 시간이 초과되었습니다',
   'nomoves':           '수가 없어졌습니다 (조건 미달성)',
   'gameover':          '게임 시간이 초과되었습니다',
+  'nth_hand_violated': '특정 순서의 패 조건을 만족하지 못했습니다',
 };
 
 // ─── Game State ───
@@ -306,7 +307,7 @@ function finalizePath() {
 
   // ─── Stage mission checks BEFORE adding hand ───
   const earnedScore = getRankScore(hand.rank);
-  const handData = { cards: [...cards], rank: hand.rank, rankValue: hand.rankValue, label: hand.label };
+  const handData = { cards: [...cards], rank: hand.rank, rankValue: hand.rankValue, label: hand.label, usedJump: wasJumpUsed(state.selectedPath) };
 
   // Check forbidden hands
   if (stageConfig && stageConfig.constraints.forbiddenHands.length > 0) {
@@ -416,10 +417,17 @@ function finalizePath() {
   showScorePopup(hand.label, earnedScore);
   removeCardsAndApplyGravity();
 
+  // Check nth_hand_condition (immediate fail if violated)
+  if (stageConfig && !stageFailed && !stageCleared) {
+    setTimeout(() => {
+      if (!checkNthHandConditions()) return;
+    }, 600);
+  }
+
   // Check real_time mission completion after hand
   if (stageConfig && stageConfig.mission.type === 'real_time' && !stageFailed && !stageCleared) {
     setTimeout(() => {
-      if (checkAllConditionsMet()) {
+      if (!stageFailed && !stageCleared && checkAllConditionsMet()) {
         triggerStageComplete();
       }
     }, 600);
@@ -705,6 +713,54 @@ function countRemainingCards() {
   return count;
 }
 
+// ─── Jump Detection ───
+function wasJumpUsed(path) {
+  for (let i = 0; i < path.length - 1; i++) {
+    const [r1, c1] = path[i];
+    const [r2, c2] = path[i + 1];
+    const dr = Math.abs(r2 - r1);
+    const dc = Math.abs(c2 - c1);
+    if (dr > 1 || dc > 1) return true;
+  }
+  return false;
+}
+
+// ─── Nth Hand Sub-Condition Checker ───
+function checkHandSubCondition(hand, condition) {
+  switch (condition) {
+    case 'all_odd': {
+      const oddValues = [1, 3, 5, 7, 9, 11, 13, 14];
+      return hand.cards.every(c => oddValues.includes(c.value));
+    }
+    case 'all_even': {
+      const evenValues = [2, 4, 6, 8, 10, 12];
+      return hand.cards.every(c => evenValues.includes(c.value));
+    }
+    case 'single_suit':
+      return new Set(hand.cards.map(c => c.suit)).size === 1;
+    default:
+      return true;
+  }
+}
+
+function checkNthHandConditions() {
+  if (!stageConfig) return true;
+  const nthConditions = stageConfig.mission.conditions.filter(c => c.type === 'nth_hand_condition');
+  for (const cond of nthConditions) {
+    for (const targetN of cond.targets) {
+      if (state.hands.length < targetN) continue;
+      const hand = state.hands[targetN - 1];
+      if (!checkHandSubCondition(hand, cond.condition)) {
+        if (stageConfig.mission.failTrigger === 'nth_hand_condition_violated') {
+          triggerStageFail('nth_hand_violated', cond.failMessage);
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 // ─── Mission Condition Checker ───
 function checkAllConditionsMet() {
   if (!stageConfig) return false;
@@ -759,6 +815,18 @@ function checkCondition(cond) {
     case 'high_card_start': {
       // All hands must have started with highest value card — checked in finalizePath failTrigger
       return state.hands.length >= cond.count;
+    }
+    case 'jump_hands_gte': {
+      const jumpCount = state.hands.filter(h => h.usedJump === true).length;
+      return jumpCount >= cond.count_gte;
+    }
+    case 'nth_hand_condition': {
+      for (const targetN of cond.targets) {
+        if (state.hands.length < targetN) return false;
+        const hand = state.hands[targetN - 1];
+        if (!checkHandSubCondition(hand, cond.condition)) return false;
+      }
+      return true;
     }
     default: return false;
   }
@@ -856,14 +924,14 @@ async function triggerStageComplete() {
 }
 
 // ─── Stage Fail ───
-function triggerStageFail(reason) {
+function triggerStageFail(reason, customMessage) {
   if (stageFailed || stageCleared) return;
   stageFailed = true;
   state.phase = 'failed';
   clearInterval(state.timerInterval);
   clearInterval(stageTimerInterval);
 
-  showStageFailPopup(reason);
+  showStageFailPopup(reason, customMessage);
 }
 
 // ─── Popups ───
@@ -937,9 +1005,9 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-function showStageFailPopup(reason) {
+function showStageFailPopup(reason, customMessage) {
   const modal = document.getElementById('modal');
-  const msg = FAIL_MESSAGES[reason] || '스테이지 실패';
+  const msg = customMessage || FAIL_MESSAGES[reason] || '스테이지 실패';
 
   modal.innerHTML = `
     <h2 style="color:#ff5252;">STAGE FAILED</h2>
