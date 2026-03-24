@@ -118,6 +118,34 @@
   }
   .btn-challenge:hover { background: rgba(201,168,76,0.35); }
   .btn-challenge:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .pagination button {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.7);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pagination button:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4); }
+  .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pagination .page-info {
+    color: rgba(255,255,255,0.5);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    min-width: 60px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -128,6 +156,7 @@
     <div class="gold-display" id="goldDisplay">0 Gold</div>
   </div>
 
+  <div class="pagination" id="pagination"></div>
   <div class="stage-grid" id="stageGrid"></div>
 
   <div class="stage-detail" id="stageDetail">
@@ -150,6 +179,9 @@
   let stages = [];
   let progress = { clearedStages: [] };
   let selectedStageId = null;
+  const PAGE_SIZE = 25;
+  let currentPage = 1;
+  let totalPages = 1;
 
   async function init() {
     // Load gold
@@ -164,6 +196,8 @@
     // Load progress
     progress = await loadStageProgress();
 
+    totalPages = Math.ceil(stages.length / PAGE_SIZE);
+    renderPagination();
     renderStageGrid();
   }
 
@@ -208,11 +242,34 @@
     return false;
   }
 
+  function renderPagination() {
+    const pag = document.getElementById('pagination');
+    pag.innerHTML = `
+      <button onclick="goPage(currentPage - 1)" ${currentPage <= 1 ? 'disabled' : ''}>◀</button>
+      <span class="page-info">${currentPage} / ${totalPages}</span>
+      <button onclick="goPage(currentPage + 1)" ${currentPage >= totalPages ? 'disabled' : ''}>▶</button>
+    `;
+  }
+
+  function goPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    selectedStageId = null;
+    document.getElementById('stageDetail').innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;padding-top:30px;">스테이지를 선택하세요</div>';
+    document.getElementById('btnChallenge').disabled = true;
+    document.getElementById('btnChallenge').textContent = '도전하기';
+    renderPagination();
+    renderStageGrid();
+  }
+
   function renderStageGrid() {
     const grid = document.getElementById('stageGrid');
     grid.innerHTML = '';
 
-    stages.forEach(stage => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageStages = stages.slice(start, start + PAGE_SIZE);
+
+    pageStages.forEach(stage => {
       const btn = document.createElement('button');
       btn.className = 'stage-btn';
       const cleared = progress.clearedStages.includes(stage.id);
@@ -237,8 +294,10 @@
     if (!stage) return;
 
     // Highlight selected button
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageStages = stages.slice(start, start + PAGE_SIZE);
     document.querySelectorAll('.stage-btn').forEach((btn, i) => {
-      btn.classList.toggle('selected', stages[i].id === id);
+      btn.classList.toggle('selected', pageStages[i] && pageStages[i].id === id);
     });
 
     const cleared = progress.clearedStages.includes(id);
