@@ -641,6 +641,10 @@ body.debug-mode .card .debug-info { display: block; }
   padding: 24px;
   position: relative;
   z-index: 1;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 .menu-logo {
   width: 293px;
