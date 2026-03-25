@@ -1412,7 +1412,7 @@
   {
     "id": 31,
     "title": "순서 있는 스트레이트",
-    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트 패를 두개 만드세요.",
+    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트나 로열스트레이트 패를 두개 만드세요.(A=14)",
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#1abc9c",
@@ -1482,7 +1482,7 @@
       ]
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_value_used",
       "completionMode": "all",
       "conditions": [
@@ -1552,7 +1552,7 @@
   {
     "id": 34,
     "title": "대각선 플러시",
-    "description": "대각선 이동만으로 플러시를 1개 이상 만드세요.",
+    "description": "대각선 이동만으로 플러시를 2개 이상 만드세요.",
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#2ecc71",
@@ -1580,8 +1580,8 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 1,
-          "description": "대각선만으로 플러시 1개"
+          "count_gte": 2,
+          "description": "대각선만으로 플러시 2개"
         }
       ]
     },
@@ -1618,18 +1618,18 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "high_card_start_violated",
       "completionMode": "all",
       "conditions": [
-        {
-          "id": "c1",
-          "type": "high_card_start",
-          "count": 3,
-          "description": "3개 패 최고값 카드로 시작"
-        }
-      ]
-    },
+    {
+      "id": "c1",
+      "type": "hands_complete",
+      "count_gte": 3,
+      "description": "3개 패 완성"
+    }
+  ]
+},
     "rewards": {
       "gold": 200,
       "bonus": []
@@ -2994,15 +2994,15 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "high_card_start_violated",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "high_card_start",
-          "count": 5,
-          "description": "5개 패 최고값 카드로 시작"
+          "type": "hands_complete",
+          "count_gte": 5,
+          "description": "5개 패 완성"
         }
       ]
     },
