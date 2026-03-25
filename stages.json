@@ -1412,7 +1412,7 @@
   {
     "id": 31,
     "title": "순서 있는 스트레이트",
-    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트나 로열스트레이트 패를 두개 만드세요.(A=14)",
+    "description": "순서대로 드래그한 스트레이트를 2개 만드세요.(스티플인정/A2345불가)",
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#1abc9c",
@@ -1982,7 +1982,7 @@
   {
     "id": 43,
     "title": "노 리셋 포카드",
-    "description": "리셋 없이 포카드를 1개 이상 만들고 종료하세요.",
+    "description": "리셋 없이 포카드를 2개 이상 만드세요.",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#5c6bc0",
@@ -2002,7 +2002,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -2010,8 +2010,8 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FOUR_KIND",
-          "count_gte": 1,
-          "description": "포카드 1개 이상"
+          "count_gte": 2,
+          "description": "포카드 2개 이상"
         }
       ]
     },
@@ -2121,7 +2121,7 @@
   {
     "id": 46,
     "title": "순서 있는 스트레이트 II",
-    "description": "순서 있는 스트레이트를 2개 만드세요.",
+    "description": "순서대로 드래그한 스트레이트를 3개 만드세요.(스티플인정/A2345불가)",
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#1abc9c",
@@ -2149,8 +2149,8 @@
           "id": "c1",
           "type": "ordered_straight",
           "hand": "STRAIGHT",
-          "count_gte": 2,
-          "description": "순서 있는 스트레이트 2개"
+          "count_gte": 3,
+          "description": "순서 있는 스트레이트 3개"
         }
       ]
     },
@@ -4372,7 +4372,7 @@
   {
     "id": 92,
     "title": "순서 있는 ST III",
-    "description": "순서 있는 스트레이트를 3개 만드세요.",
+    "description": "순서 있는 스트레이트를 4개 만드세요.",
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#84ffff",
@@ -4400,8 +4400,8 @@
           "id": "c1",
           "type": "ordered_straight",
           "hand": "STRAIGHT",
-          "count_gte": 3,
-          "description": "순서 있는 스트레이트 3개"
+          "count_gte": 4,
+          "description": "순서 있는 스트레이트 4개"
         }
       ]
     },
