@@ -415,6 +415,7 @@ function finalizePath() {
   state.hands.push(handData);
   updateScoreDisplay();
   showScorePopup(hand.label, earnedScore);
+  renderScoreProgress();
   removeCardsAndApplyGravity();
 
   // Check nth_hand_condition (immediate fail if violated)
@@ -776,7 +777,9 @@ function checkCondition(cond) {
       return count >= (cond.count_gte || 1);
     }
     case 'score_gte': {
-      const score = calcFinalScore();
+      const score = (stageConfig && stageConfig.mission.type === 'real_time')
+        ? state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0)
+        : calcFinalScore();
       return score >= cond.value;
     }
     case 'hands_complete': {
@@ -830,6 +833,19 @@ function checkCondition(cond) {
     }
     default: return false;
   }
+}
+
+function renderScoreProgress() {
+  const el = document.getElementById('scoreProgress');
+  if (!el) return;
+  if (!stageConfig || stageConfig.mission.type !== 'real_time') { el.style.display = 'none'; return; }
+  const scoreCondition = stageConfig.mission.conditions.find(c => c.type === 'score_gte');
+  if (!scoreCondition) { el.style.display = 'none'; return; }
+  const current = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
+  const target = scoreCondition.value;
+  const pct = Math.min(100, Math.round(current / target * 100));
+  el.style.display = 'block';
+  el.textContent = `핸드 점수: ${current} / ${target}점 (${pct}%)`;
 }
 
 function calcFinalScore() {
@@ -1060,6 +1076,7 @@ function resetGame() {
   updateHandPanel();
   updateHandPreview();
   updateScoreDisplay();
+  renderScoreProgress();
   renderRemovedCards();
   startTimer();
   ascendingStreak = 0;
@@ -1219,6 +1236,7 @@ async function initStage() {
   updateHandPanel();
   updateHandPreview();
   updateScoreDisplay();
+  renderScoreProgress();
   renderRemovedCards();
   startTimer();
 
