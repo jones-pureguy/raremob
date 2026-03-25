@@ -9,7 +9,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -54,7 +54,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -99,7 +99,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -144,7 +144,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -190,7 +190,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -236,7 +236,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -282,7 +282,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -328,7 +328,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -373,7 +373,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -418,7 +418,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -464,7 +464,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -509,7 +509,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -561,7 +561,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -612,7 +612,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -663,7 +663,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -708,7 +708,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -747,14 +747,14 @@
   {
     "id": 17,
     "title": "스피드 파이브",
-    "description": "80카운트 안에 5개 이상의 패를 완성하세요.",
+    "description": "160초 안에 5개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 80,
+      "gameTime": 160,
       "stageTime": null
     },
     "constraints": {
@@ -799,7 +799,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -846,7 +846,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -891,7 +891,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -942,7 +942,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -989,7 +989,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1036,7 +1036,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1081,7 +1081,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1133,7 +1133,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1170,15 +1170,15 @@
   },
   {
     "id": 26,
-    "title": "300카운트 포카드 사냥",
-    "description": "300카운트 안에 포카드를 1개 이상 만드세요. 리셋을 활용하세요!",
+    "title": "300초 포카드 사냥",
+    "description": "300초 안에 포카드를 1개 이상 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#f1c40f",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 300
     },
     "constraints": {
@@ -1210,7 +1210,7 @@
         {
           "condition": "stageTimeRemaining >= 150",
           "gold": 80,
-          "description": "150카운트 이상 남기기"
+          "description": "150초 이상 남기기"
         }
       ]
     },
@@ -1230,7 +1230,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1282,7 +1282,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1322,14 +1322,14 @@
   {
     "id": 29,
     "title": "타임 어택 I",
-    "description": "80카운트 안에 9개 패를 모두 완성하세요.",
+    "description": "160초 안에 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 80,
+      "gameTime": 160,
       "stageTime": null
     },
     "constraints": {
@@ -1374,7 +1374,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1419,7 +1419,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1465,7 +1465,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1514,7 +1514,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1559,7 +1559,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1605,7 +1605,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1650,7 +1650,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1695,7 +1695,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1751,7 +1751,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1802,7 +1802,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1853,7 +1853,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1892,14 +1892,14 @@
   {
     "id": 41,
     "title": "타임 어택 II",
-    "description": "70카운트 안에 9개 패를 모두 완성하세요.",
+    "description": "140초 안에 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff7675",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 70,
+      "gameTime": 140,
       "stageTime": null
     },
     "constraints": {
@@ -1944,7 +1944,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -1989,7 +1989,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2035,7 +2035,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2081,7 +2081,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2128,7 +2128,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2174,7 +2174,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2220,7 +2220,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2264,15 +2264,15 @@
   },
   {
     "id": 49,
-    "title": "300카운트 스트레이트 플러시",
-    "description": "400카운트 안에 스트레이트 플러시를 1개 만드세요. 리셋을 활용하세요!",
+    "title": "400초 스트레이트 플러시",
+    "description": "400초 안에 스트레이트 플러시를 1개 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 400
     },
     "constraints": {
@@ -2304,7 +2304,7 @@
         {
           "condition": "stageTimeRemaining >= 200",
           "gold": 120,
-          "description": "200카운트 이상 남기기"
+          "description": "200초 이상 남기기"
         }
       ]
     },
@@ -2324,7 +2324,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2375,7 +2375,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2422,7 +2422,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2467,7 +2467,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2513,7 +2513,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2551,14 +2551,14 @@
   {
     "id": 55,
     "title": "타임 어택 III",
-    "description": "60카운트 안에 9개 패를 모두 완성하세요.",
+    "description": "120초 안에 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#d63031",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 60,
+      "gameTime": 120,
       "stageTime": null
     },
     "constraints": {
@@ -2603,7 +2603,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2650,7 +2650,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2696,7 +2696,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2741,7 +2741,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2786,7 +2786,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2837,7 +2837,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2884,7 +2884,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2936,7 +2936,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -2981,7 +2981,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3019,14 +3019,14 @@
   {
     "id": 65,
     "title": "타임 어택 IV",
-    "description": "50카운트 안에 7개 이상의 패를 완성하세요.",
+    "description": "100초 안에 7개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ef5350",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 50,
+      "gameTime": 100,
       "stageTime": null
     },
     "constraints": {
@@ -3064,14 +3064,14 @@
   {
     "id": 66,
     "title": "포카드 트리플",
-    "description": "200카운트 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!",
+    "description": "200초 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#8e44ad",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 200
     },
     "constraints": {
@@ -3103,7 +3103,7 @@
         {
           "condition": "stageTimeRemaining >= 100",
           "gold": 150,
-          "description": "100카운트 이상 남기기"
+          "description": "100초 이상 남기기"
         }
       ]
     },
@@ -3123,7 +3123,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3168,7 +3168,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3221,7 +3221,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3266,7 +3266,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3317,14 +3317,14 @@
   {
     "id": 71,
     "title": "순서 있는 SF",
-    "description": "500카운트 안에 드래그 순서대로 이어지는 스트레이트 플러시를 1개 만드세요.",
+    "description": "500초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 1개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 500
     },
     "constraints": {
@@ -3356,7 +3356,7 @@
         {
           "condition": "stageTimeRemaining >= 250",
           "gold": 180,
-          "description": "250카운트 이상 남기기"
+          "description": "250초 이상 남기기"
         }
       ]
     },
@@ -3376,7 +3376,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3449,7 +3449,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3500,7 +3500,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3548,7 +3548,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3586,14 +3586,14 @@
   {
     "id": 76,
     "title": "타임 어택 V",
-    "description": "40카운트 안에 5개 이상의 패를 완성하세요.",
+    "description": "80초 안에 5개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff5252",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 40,
+      "gameTime": 80,
       "stageTime": null
     },
     "constraints": {
@@ -3630,15 +3630,15 @@
   },
   {
     "id": 77,
-    "title": "300카운트 Royal Flush+",
-    "description": "300카운트 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!",
+    "title": "300초 Royal Flush+",
+    "description": "300초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#f1c40f",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 300
     },
     "constraints": {
@@ -3670,7 +3670,7 @@
         {
           "condition": "stageTimeRemaining >= 150",
           "gold": 200,
-          "description": "150카운트 이상 남기기"
+          "description": "150초 이상 남기기"
         }
       ]
     },
@@ -3690,7 +3690,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3743,7 +3743,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3789,7 +3789,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3849,7 +3849,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3880,7 +3880,7 @@
         {
           "condition": "timeRemaining >= 50",
           "gold": 250,
-          "description": "50카운트 이상 남기기"
+          "description": "50초 이상 남기기"
         }
       ]
     },
@@ -3900,7 +3900,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -3938,14 +3938,14 @@
   {
     "id": 83,
     "title": "SF 듀오",
-    "description": "600카운트 안에 스트레이트 플러시를 2개 만드세요.",
+    "description": "600초 안에 스트레이트 플러시를 2개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#b9f6ca",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 600
     },
     "constraints": {
@@ -3991,7 +3991,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4029,14 +4029,14 @@
   {
     "id": 85,
     "title": "타임 어택 VI",
-    "description": "30카운트 안에 4개 이상의 패를 완성하세요.",
+    "description": "60초 안에 4개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff1744",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 30,
+      "gameTime": 60,
       "stageTime": null
     },
     "constraints": {
@@ -4081,7 +4081,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4125,14 +4125,14 @@
   {
     "id": 87,
     "title": "순서 있는 SF II",
-    "description": "700카운트 안에 순서 있는 스트레이트 플러시를 2개 만드세요.",
+    "description": "700초 안에 순서 있는 스트레이트 플러시를 2개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#69f0ae",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 700
     },
     "constraints": {
@@ -4164,7 +4164,7 @@
         {
           "condition": "stageTimeRemaining >= 350",
           "gold": 300,
-          "description": "350카운트 이상 남기기"
+          "description": "350초 이상 남기기"
         }
       ]
     },
@@ -4177,14 +4177,14 @@
   {
     "id": 88,
     "title": "Royal Flush+ 듀오",
-    "description": "600카운트 안에 Royal Flush+ 를 2개 만드세요.",
+    "description": "600초 안에 Royal Flush+ 를 2개 만드세요.",
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#ffd600",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": 600
     },
     "constraints": {
@@ -4230,7 +4230,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4286,7 +4286,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4331,7 +4331,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4379,7 +4379,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4425,7 +4425,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4482,7 +4482,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4534,7 +4534,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4613,7 +4613,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4658,7 +4658,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4706,14 +4706,14 @@
   {
     "id": 98,
     "title": "타임 어택 극한",
-    "description": "20카운트 안에 3개 이상의 패를 완성하세요.",
+    "description": "40초 안에 3개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0000",
       "accentColor": "#ff0000",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 20,
+      "gameTime": 40,
       "stageTime": null
     },
     "constraints": {
@@ -4758,7 +4758,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -4818,7 +4818,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {

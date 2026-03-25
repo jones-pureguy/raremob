@@ -311,7 +311,7 @@
 
     // Build constraints text
     let metaLines = [];
-    if (stage.timers.gameTime !== 100) metaLines.push(`게임 시간: <span>${stage.timers.gameTime}초</span>`);
+    if (stage.timers.gameTime !== 200) metaLines.push(`게임 시간: <span>${stage.timers.gameTime}초</span>`);
     if (stage.timers.stageTime) metaLines.push(`스테이지 시간: <span>${stage.timers.stageTime}초</span>`);
     if (constraints.resetLimit === 0) metaLines.push('리셋: <span>불가</span>');
     else if (constraints.resetLimit !== null) metaLines.push(`리셋: <span>${constraints.resetLimit}회</span>`);

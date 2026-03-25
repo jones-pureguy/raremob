@@ -85,7 +85,7 @@ let stageCleared = false;
 function initState() {
   state = {
     grid: [], hands: [], selectedPath: [], isDragging: false,
-    timer: stageConfig ? stageConfig.timers.gameTime : 100,
+    timer: stageConfig ? Math.floor(stageConfig.timers.gameTime / 2) : 100,
     phase: 'playing', timerInterval: null, debugMode: false,
     currentScore: 0, removedCards: [],
   };
@@ -616,8 +616,8 @@ function dfsScan(r, c, cards, visited, path) {
 
 // ─── Timer ───
 function startTimer() {
-  const gameTime = stageConfig ? stageConfig.timers.gameTime : 100;
-  state.timer = gameTime;
+  const gameTimeCounts = stageConfig ? Math.floor(stageConfig.timers.gameTime / 2) : 100;
+  state.timer = gameTimeCounts;
   updateTimerDisplay();
   state.timerInterval = setInterval(() => {
     if (state.phase !== 'playing' || stageFailed || stageCleared) return;
@@ -628,12 +628,12 @@ function startTimer() {
 }
 
 function updateTimerDisplay() {
-  const gameTime = stageConfig ? stageConfig.timers.gameTime : 100;
+  const gameTimeCounts = stageConfig ? Math.floor(stageConfig.timers.gameTime / 2) : 100;
   const numEl = document.getElementById('timerNum');
   const ringEl = document.getElementById('timerRing');
   const circumference = 2 * Math.PI * 16;
   numEl.textContent = Math.max(0, state.timer);
-  const offset = circumference * (1 - state.timer / gameTime);
+  const offset = circumference * (1 - state.timer / gameTimeCounts);
   ringEl.style.strokeDashoffset = offset;
   numEl.classList.remove('warning', 'urgent');
   if (state.timer <= 10) { numEl.classList.add('urgent'); ringEl.style.stroke = '#ff3333'; }
@@ -972,7 +972,7 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
   let nextStageHTML = '';
   if (nextStage) {
     let metaItems = [];
-    if (nextStage.timers.gameTime !== 100) metaItems.push(`⏱ ${nextStage.timers.gameTime}초`);
+    if (nextStage.timers.gameTime !== 200) metaItems.push(`⏱ ${nextStage.timers.gameTime}초`);
     if (nextStage.timers.stageTime) metaItems.push(`⏳ ${nextStage.timers.stageTime}초`);
     if (nextStage.constraints.resetLimit === 0) metaItems.push('↺ 리셋불가');
     else if (nextStage.constraints.resetLimit !== null) metaItems.push(`↺ ${nextStage.constraints.resetLimit}회`);
