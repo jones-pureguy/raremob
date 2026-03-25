@@ -868,7 +868,7 @@ function endGame(reason) {
 }
 
 // ─── Stage Complete ───
-async function triggerStageComplete() {
+function triggerStageComplete() {
   if (stageCleared) return;
   stageCleared = true;
   state.phase = 'complete';
@@ -912,15 +912,18 @@ async function triggerStageComplete() {
 
   const totalGold = goldBase + bonuses.reduce((s, b) => s + b.gold, 0);
 
-  // Check if first clear before saving
-  const isFirstClear = await checkFirstClear(stageConfig.id);
+  // Check first clear from local cache (synchronous — no DB wait)
+  const progress = JSON.parse(localStorage.getItem('poker_stage_progress') || '{}');
+  const isFirstClear = !progress.clearedStages || !progress.clearedStages.includes(stageConfig.id);
   const actualGold = isFirstClear ? totalGold : 0;
 
-  // Save to DB
-  saveStageResult(stageConfig.id, { success: true, finalScore }, actualGold);
-
-  // Show clear popup
+  // Show clear popup immediately (no DB delay)
   showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, isFirstClear });
+
+  // Save to DB in background
+  saveStageResult(stageConfig.id, { success: true, finalScore }, actualGold).catch(err => {
+    console.error('Stage save failed:', err);
+  });
 }
 
 // ─── Stage Fail ───

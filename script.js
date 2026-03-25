@@ -857,51 +857,30 @@ function endGame(reason) {
     buildAndShowEndModal();
   }
 
-  async function buildAndShowEndModal() {
+  function buildAndShowEndModal() {
     const username = (localStorage.getItem('poker_username') || '').trim();
-    let leaderboardUpdated = false;
-    let allUserTopScore = 0;
-
-    // Save to server and get status
-    if (username) {
-      const result = await saveSessionAndGetStatus({
-        username,
-        score,
-        best_hand: best ? best.label : null,
-        hands_collected: state.hands.length,
-        time_remaining: Math.max(0, state.timer),
-      });
-      leaderboardUpdated = result.leaderboardUpdated;
-      allUserTopScore = result.topScore;
-    } else {
-      allUserTopScore = await fetchTopScore();
-    }
 
     let highScoreHTML = '';
     if (isNewHighScore && score > 0) {
       highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:4px;">🏆 NEW HIGH SCORE!</div>`;
     }
     highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">My High Score: ${highScore}</div>`;
-    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">All User High Score: ${allUserTopScore}</div>`;
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;" id="allUserTopScoreRow">All User High Score: ...</div>`;
 
     const modalClass = reason === 'nomoves' ? ' nomoves' : '';
     modal.className = 'modal' + modalClass;
 
-    // Auto-save replay to DB if leaderboard updated (link to leaderboard)
-    if (leaderboardUpdated) {
-      saveReplayToDB(true);
-    }
-
-    // Buttons
+    // Buttons — initially show leaderboard & replay buttons; hide if DB says leaderboard updated
     const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
     let buttonsHTML = `
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">Play Again</button>
         <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">Menu</a>
-        ${!leaderboardUpdated ? `<button class="btn-play-again" style="${btnSecondary}" onclick="showLeaderboard()">Leader Board</button>` : ''}
-        ${!leaderboardUpdated ? `<button class="btn-play-again" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay</button>` : ''}
+        <button class="btn-play-again" id="btnLeaderboard" style="${btnSecondary}" onclick="showLeaderboard()">Leader Board</button>
+        <button class="btn-play-again" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay</button>
       </div>`;
 
+    // Show modal immediately (no DB delay)
     modal.innerHTML = `
       <h2>${title}</h2>
       <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
@@ -915,10 +894,34 @@ function endGame(reason) {
     `;
     document.getElementById('modalOverlay').classList.add('active');
 
-    // Auto-show leaderboard only if updated
-    if (leaderboardUpdated && username) {
-      showLeaderboard(username);
-    }
+    // Save to server in background and update modal when done
+    const dbPromise = username
+      ? saveSessionAndGetStatus({
+          username,
+          score,
+          best_hand: best ? best.label : null,
+          hands_collected: state.hands.length,
+          time_remaining: Math.max(0, state.timer),
+        })
+      : fetchTopScore().then(topScore => ({ leaderboardUpdated: false, topScore }));
+
+    dbPromise.then(result => {
+      const topScoreEl = document.getElementById('allUserTopScoreRow');
+      if (topScoreEl) topScoreEl.textContent = `All User High Score: ${result.topScore}`;
+
+      if (result.leaderboardUpdated) {
+        saveReplayToDB(true);
+        const btnLB = document.getElementById('btnLeaderboard');
+        if (btnLB) btnLB.remove();
+        const btnReplay = document.getElementById('btnSaveReplay');
+        if (btnReplay) btnReplay.remove();
+        if (username) showLeaderboard(username);
+      }
+    }).catch(err => {
+      console.error('Session save failed:', err);
+      const topScoreEl = document.getElementById('allUserTopScoreRow');
+      if (topScoreEl) topScoreEl.textContent = `All User High Score: -`;
+    });
   }
 }
 
