@@ -1223,7 +1223,7 @@
   {
     "id": 27,
     "title": "9개 완성 + 하트 수호",
-    "description": "9개 패 완성 시 그리드에 하트가 5장 이상 남아있어야 합니다.",
+    "description": "9개 패 완성 시 그리드에 하트가 4장 이상 남아있어야 합니다.",
     "theme": {
       "bgColor": "#1f0a14",
       "accentColor": "#e91e63",
@@ -1257,8 +1257,8 @@
           "id": "c2",
           "type": "suit_remaining",
           "suit": "♥",
-          "count_gte": 5,
-          "description": "하트 5장 이상 잔존"
+          "count_gte": 4,
+          "description": "하트 4장 이상 잔존"
         }
       ]
     },
@@ -1322,14 +1322,14 @@
   {
     "id": 29,
     "title": "타임 어택 I",
-    "description": "160초 안에 9개 패를 모두 완성하세요.",
+    "description": "80초 안에 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 160,
+      "gameTime": 80,
       "stageTime": null
     },
     "constraints": {
@@ -1412,7 +1412,7 @@
   {
     "id": 31,
     "title": "순서 있는 스트레이트",
-    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트 패를 하나 만드세요.",
+    "description": "드래그 순서대로 숫자가 연속으로 이어지는 스트레이트 패를 두개 만드세요.",
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#1abc9c",
@@ -1440,8 +1440,8 @@
           "id": "c1",
           "type": "ordered_straight",
           "hand": "STRAIGHT",
-          "count_gte": 1,
-          "description": "순서 있는 스트레이트 1개"
+          "count_gte": 2,
+          "description": "순서 있는 스트레이트 2개"
         }
       ]
     },
