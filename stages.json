@@ -656,7 +656,7 @@
   {
     "id": 15,
     "title": "막다른 길 입문",
-    "description": "7개 이하 패 완성 후 NO MORE MOVES 상황을 만드세요.",
+    "description": "7개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(점프불가)",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -669,7 +669,7 @@
     "constraints": {
       "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -684,7 +684,7 @@
           "id": "c1",
           "type": "nomoves_before",
           "count_lte": 7,
-          "description": "7개 이하 완성 후 NO MORE MOVES"
+          "description": "7개 완성까지 NO MORE MOVES(점프 불가)"
         }
       ]
     },
@@ -1507,7 +1507,7 @@
   {
     "id": 33,
     "title": "막다른 길",
-    "description": "5개 이하 패 완성 후 NO MORE MOVES 상황을 만드세요.",
+    "description": "6개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(점프불가)",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -1520,7 +1520,7 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -1534,8 +1534,8 @@
         {
           "id": "c1",
           "type": "nomoves_before",
-          "count_lte": 5,
-          "description": "5개 이하 완성 후 NO MORE MOVES"
+          "count_lte": 6,
+          "description": "6개 완성까지 NO MORE MOVES(점프 불가)"
         }
       ]
     },
@@ -2689,7 +2689,7 @@
   {
     "id": 58,
     "title": "막다른 길 심화",
-    "description": "3개 이하 패 완성 후 NO MORE MOVES 상황을 만드세요.",
+    "description": "5개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(점프불가)",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -2702,7 +2702,7 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -2716,8 +2716,8 @@
         {
           "id": "c1",
           "type": "nomoves_before",
-          "count_lte": 3,
-          "description": "3개 이하 완성 후 NO MORE MOVES"
+          "count_lte": 5,
+          "description": "5개 완성까지 NO MORE MOVES(점프 불가)"
         }
       ]
     },
@@ -3893,7 +3893,7 @@
   {
     "id": 82,
     "title": "막다른 길 극한",
-    "description": "2개 이하 패 완성 후 NO MORE MOVES 상황을 만드세요.",
+    "description": "4개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(점프불가)",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#b71c1c",
@@ -3906,7 +3906,7 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -3920,8 +3920,8 @@
         {
           "id": "c1",
           "type": "nomoves_before",
-          "count_lte": 2,
-          "description": "2개 이하 완성 후 NO MORE MOVES"
+          "count_lte": 4,
+          "description": "4개 완성까지 NO MORE MOVES(점프 불가)"
         }
       ]
     },
