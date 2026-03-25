@@ -1009,11 +1009,14 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
     `;
   }
 
+  const clearBreakdownHTML = buildScoreBreakdownHTML('var(--gold)');
+
   modal.innerHTML = `
     <h2 style="color:var(--gold);">STAGE CLEAR!</h2>
     <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
     ${best ? `<div style="color:var(--gold);font-size:0.9rem;margin:8px 0;">Best: ${best.label}</div>` : ''}
     <div class="score">Score: ${finalScore}pts</div>
+    ${clearBreakdownHTML}
     ${rewardHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       ${nextStage ? `<button class="btn-play-again" onclick="goNextStage()">다음 스테이지</button>` : ''}
@@ -1024,17 +1027,75 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
   document.getElementById('modalOverlay').classList.add('active');
 }
 
+function buildScoreBreakdownHTML(accentColor) {
+  if (!stageConfig) return '';
+  const conditions = stageConfig.mission.conditions || [];
+  const digitCond = conditions.find(c => c.type === 'score_last_digit');
+  const scoreCond = conditions.find(c => c.type === 'score_gte');
+  if (!digitCond && !scoreCond) return '';
+
+  const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
+  const timeBonus = Math.max(0, state.timer);
+  const remaining = countRemainingCards();
+  const cardPenalty = remaining > 4 ? (remaining - 4) * getPenaltyPerCard() : 0;
+  const finalScore = Math.max(0, handScore + timeBonus - cardPenalty);
+
+  const ac = accentColor || '#C9A84C';
+  const dim = 'rgba(255,255,255,0.5)';
+  const row = (label, value, color) =>
+    `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:${dim};font-size:0.82rem;">${label}</span><span style="color:${color || 'rgba(255,255,255,0.8)'};font-size:0.82rem;font-weight:600;">${value}</span></div>`;
+
+  let rows = '';
+  if (scoreCond) {
+    rows += row('핸드 점수', `${handScore} / ${scoreCond.value}pts`);
+  } else {
+    rows += row('핸드 점수', `${handScore}pts`);
+  }
+  rows += row('타임 보너스', `+${timeBonus}pts`, timeBonus > 0 ? '#4CAF50' : dim);
+  rows += row('카드 페널티', cardPenalty > 0 ? `-${cardPenalty}pts` : '0pts', cardPenalty > 0 ? '#ff5252' : dim);
+  rows += `<div style="border-top:1px solid rgba(255,255,255,0.12);margin:6px 0;"></div>`;
+  if (scoreCond) {
+    rows += row('최종 점수', `${finalScore} / ${scoreCond.value}pts`, ac);
+  } else {
+    rows += row('최종 점수', `${finalScore}pts`, ac);
+  }
+
+  if (digitCond) {
+    const actualDigit = finalScore % 10;
+    rows += `<div style="border-top:1px solid rgba(255,255,255,0.12);margin:6px 0;"></div>`;
+    rows += row('끝자리', `${actualDigit}`, actualDigit === digitCond.digit ? '#4CAF50' : '#ff5252');
+    rows += row('목표 끝자리', `${digitCond.digit}`, ac);
+  }
+
+  return `
+    <div style="margin:10px 0;padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-family:'IBM Plex Mono',monospace;">
+      ${rows}
+    </div>`;
+}
+
 function showStageFailPopup(reason, customMessage) {
   const modal = document.getElementById('modal');
   const msg = customMessage || FAIL_MESSAGES[reason] || '스테이지 실패';
+
+  const conditions = stageConfig ? (stageConfig.mission.conditions || []) : [];
+  const hasScoreCond = conditions.some(c => c.type === 'score_last_digit' || c.type === 'score_gte');
+  const digitCond = conditions.find(c => c.type === 'score_last_digit');
+
+  let failLabel = msg;
+  if (hasScoreCond && (reason === 'gameover' || reason === 'nomoves')) {
+    failLabel = digitCond ? '끝자리 조건 미달' : '점수 조건 미달';
+  }
+
+  const breakdownHTML = hasScoreCond ? buildScoreBreakdownHTML('#ff5252') : '';
 
   modal.innerHTML = `
     <h2 style="color:#ff5252;">STAGE FAILED</h2>
     <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
     <div style="margin:16px 0;padding:12px;background:rgba(255,82,82,0.1);border-radius:8px;border:1px solid rgba(255,82,82,0.3);">
       <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">실패 원인:</div>
-      <div style="color:#ff5252;font-size:0.95rem;font-weight:600;">"${msg}"</div>
+      <div style="color:#ff5252;font-size:0.95rem;font-weight:600;">"${failLabel}"</div>
     </div>
+    ${breakdownHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn-play-again" onclick="retryStage()">다시 도전</button>
       <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">스테이지 선택</a>
