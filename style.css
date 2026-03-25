@@ -165,28 +165,37 @@ body::before {
 .score-popup {
   position: fixed;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.8);
   z-index: 60;
   pointer-events: none;
   text-align: center;
-  animation: scorePopup 1.5s forwards;
+  padding: 10px 28px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  animation: scorePopup 1.8s forwards;
 }
 .score-popup .popup-rank {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
   color: var(--gold);
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  text-shadow: 0 0 10px rgba(201, 168, 76, 0.5), 0 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 0.5px;
 }
 .score-popup .popup-pts {
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
   color: #4CAF50;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  text-shadow: 0 0 12px rgba(76, 175, 80, 0.5), 0 2px 6px rgba(0,0,0,0.8);
+  margin-top: 2px;
 }
 @keyframes scorePopup {
-  0%   { opacity: 1; top: 45%; }
-  70%  { opacity: 1; }
-  100% { opacity: 0; top: 25%; }
+  0%   { opacity: 0; top: 42%; transform: translateX(-50%) scale(0.8); }
+  10%  { opacity: 1; top: 40%; transform: translateX(-50%) scale(1.05); }
+  20%  { transform: translateX(-50%) scale(1); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; top: 22%; transform: translateX(-50%) scale(0.95); }
 }
 
 /* Grid */
