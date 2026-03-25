@@ -1892,14 +1892,14 @@
   {
     "id": 41,
     "title": "타임 어택 II",
-    "description": "140초 안에 9개 패를 모두 완성하세요.",
+    "description": "60초 안에 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff7675",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 140,
+      "gameTime": 60,
       "stageTime": null
     },
     "constraints": {
@@ -2551,14 +2551,14 @@
   {
     "id": 55,
     "title": "타임 어택 III",
-    "description": "120초 안에 9개 패를 모두 완성하세요.",
+    "description": "45초 안에 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#d63031",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 120,
+      "gameTime": 45,
       "stageTime": null
     },
     "constraints": {
@@ -3019,14 +3019,14 @@
   {
     "id": 65,
     "title": "타임 어택 IV",
-    "description": "100초 안에 7개 이상의 패를 완성하세요.",
+    "description": "35초 안에 7개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ef5350",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 100,
+      "gameTime": 35,
       "stageTime": null
     },
     "constraints": {
@@ -3586,14 +3586,14 @@
   {
     "id": 76,
     "title": "타임 어택 V",
-    "description": "80초 안에 5개 이상의 패를 완성하세요.",
+    "description": "30초 안에 5개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff5252",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 80,
+      "gameTime": 30,
       "stageTime": null
     },
     "constraints": {
@@ -4029,14 +4029,14 @@
   {
     "id": 85,
     "title": "타임 어택 VI",
-    "description": "60초 안에 4개 이상의 패를 완성하세요.",
+    "description": "24초 안에 4개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff1744",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 60,
+      "gameTime": 24,
       "stageTime": null
     },
     "constraints": {
@@ -4706,14 +4706,14 @@
   {
     "id": 98,
     "title": "타임 어택 극한",
-    "description": "40초 안에 3개 이상의 패를 완성하세요.",
+    "description": "20초 안에 3개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0000",
       "accentColor": "#ff0000",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 40,
+      "gameTime": 20,
       "stageTime": null
     },
     "constraints": {
