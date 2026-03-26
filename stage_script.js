@@ -773,7 +773,9 @@ function checkCondition(cond) {
   switch (cond.type) {
     case 'specific_hand': {
       const targetRank = RANK_BY_NAME[cond.hand];
-      const count = state.hands.filter(h => h.rank >= targetRank).length;
+      const count = state.hands.filter(h =>
+        cond.exact === true ? h.rank === targetRank : h.rank >= targetRank
+      ).length;
       return count >= (cond.count_gte || 1);
     }
     case 'score_gte': {

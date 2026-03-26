@@ -2,7 +2,7 @@
   {
     "id": 1,
     "title": "첫 번째 도전",
-    "description": "투페어 이상의 패를 1개 완성하세요.",
+    "description": "투페어를 2개 완성하세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -30,8 +30,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "TWO_PAIR",
-          "count_gte": 1,
-          "description": "투페어 이상 1개 이상"
+          "count_gte": 2,
+          "exact": true,
+          "description": "투페어 2개 완성"
         }
       ]
     },
@@ -46,8 +47,8 @@
   },
   {
     "id": 2,
-    "title": "패 3개 만들기",
-    "description": "3개의 패를 완성하세요.",
+    "title": "패 7개 만들기",
+    "description": "7개의 패를 완성하세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -74,8 +75,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 3,
-          "description": "3개 패 완성"
+          "count_gte": 7,
+          "description": "7개 패 완성"
         }
       ]
     },
@@ -91,8 +92,8 @@
   },
   {
     "id": 3,
-    "title": "50점 돌파",
-    "description": "50점 이상으로 스테이지를 종료하세요.",
+    "title": "60점 돌파",
+    "description": "60점 이상으로 스테이지를 종료하세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -119,8 +120,8 @@
         {
           "id": "c1",
           "type": "score_gte",
-          "value": 50,
-          "description": "50점 이상"
+          "value": 60,
+          "description": "60점 이상"
         }
       ]
     },
@@ -137,7 +138,7 @@
   {
     "id": 4,
     "title": "스트레이트 도전",
-    "description": "스트레이트를 1개 이상 만들고 스테이지를 종료하세요.",
+    "description": "스트레이트를 2개 만들어보세요.(스트레이트플러시 X)",
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#3498db",
@@ -157,7 +158,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -165,8 +166,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "STRAIGHT",
-          "count_gte": 1,
-          "description": "스트레이트 1개 이상"
+          "count_gte": 2,
+          "exact": true,
+          "description": "스트레이트 2개"
         }
       ]
     },
@@ -183,7 +185,7 @@
   {
     "id": 5,
     "title": "플러시 도전",
-    "description": "플러시를 1개 이상 만들고 스테이지를 종료하세요.",
+    "description": "플러시를 3개 만들어보세요.",
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#9b59b6",
@@ -203,7 +205,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -211,8 +213,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 1,
-          "description": "플러시 1개 이상"
+          "count_gte": 3,
+          "exact": true,
+          "description": "플러시 3개"
         }
       ]
     },
@@ -229,7 +232,7 @@
   {
     "id": 6,
     "title": "쓰리카인드 도전",
-    "description": "쓰리오브어카인드를 1개 이상 만들고 스테이지를 종료하세요.",
+    "description": "쓰리오브어카인드를 3개 만들어 보세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#27ae60",
@@ -249,7 +252,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -257,8 +260,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "THREE_KIND",
-          "count_gte": 1,
-          "description": "쓰리카인드 1개 이상"
+          "count_gte": 3,
+          "exact": true,
+          "description": "쓰리카인드 3개 이상"
         }
       ]
     },
@@ -275,7 +279,7 @@
   {
     "id": 7,
     "title": "풀하우스 도전",
-    "description": "풀하우스를 1개 이상 만들고 스테이지를 종료하세요.",
+    "description": "풀하우스를 2개 만들어 보세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
@@ -295,7 +299,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -303,8 +307,8 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FULL_HOUSE",
-          "count_gte": 1,
-          "description": "풀하우스 1개 이상"
+          "count_gte": 2,
+          "description": "풀하우스 2개"
         }
       ]
     },
@@ -411,7 +415,7 @@
   {
     "id": 10,
     "title": "투페어 컬렉터",
-    "description": "투페어 이상의 패를 3개 이상 만들고 스테이지를 종료하세요.",
+    "description": "투페어 패를 4개 만드세요.",
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#2980b9",
@@ -431,7 +435,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -439,8 +443,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "TWO_PAIR",
-          "count_gte": 3,
-          "description": "투페어 이상 3개 이상"
+          "count_gte": 4,
+          "exact": true,
+          "description": "투페어 4개"
         }
       ]
     },
@@ -656,7 +661,7 @@
   {
     "id": 15,
     "title": "막다른 길 입문",
-    "description": "7개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)",
+    "description": "7개 패 완성 이내에 NO MORE MOVES를 만드세요.(힌트 : 점프불가임을 활용)",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -701,7 +706,7 @@
   {
     "id": 16,
     "title": "포카드 도전",
-    "description": "포카드를 1개 이상 만들고 스테이지를 종료하세요.",
+    "description": "포카드를 만들어 보세요.",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#5c6bc0",
@@ -721,7 +726,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -730,6 +735,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 1,
+          "exact": true,
           "description": "포카드 1개 이상"
         }
       ]
@@ -747,14 +753,14 @@
   {
     "id": 17,
     "title": "스피드 파이브",
-    "description": "160초 안에 5개 이상의 패를 완성하세요.",
+    "description": "50초 안에 5개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 160,
+      "gameTime": 50,
       "stageTime": null
     },
     "constraints": {
@@ -814,7 +820,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_hand_made",
       "completionMode": "all",
       "conditions": [
@@ -957,7 +963,7 @@
       ]
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_value_used",
       "completionMode": "all",
       "conditions": [
@@ -982,7 +988,7 @@
   {
     "id": 22,
     "title": "스페이드 원페어",
-    "description": "스페이드가 2장 이상 포함된 원페어 패를 만드세요.",
+    "description": "스페이드가 4장 이상 포함된 원페어 패를 만드세요.",
     "theme": {
       "bgColor": "#0a0a0a",
       "accentColor": "#95a5a6",
@@ -1010,9 +1016,9 @@
           "id": "c1",
           "type": "suit_in_hand",
           "suit": "♠",
-          "count_gte": 2,
+          "count_gte": 4,
           "handType": "ONE_PAIR",
-          "description": "스페이드 2장 이상 포함 원페어"
+          "description": "스페이드 4장 이상 포함 원페어"
         }
       ]
     },
@@ -1074,7 +1080,7 @@
   {
     "id": 24,
     "title": "리셋 2번의 기회",
-    "description": "리셋 2번 이내로 플러시를 1개 이상 만들고 종료하세요.",
+    "description": "리셋 2번 이내로 플러시를 4개 이상 만드세요.",
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#7f8cf7",
@@ -1094,7 +1100,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -1102,8 +1108,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 1,
-          "description": "플러시 1개 이상"
+          "count_gte": 4,
+          "exact": true,
+          "description": "플러시 4개 이상"
         }
       ]
     },
@@ -1170,8 +1177,8 @@
   },
   {
     "id": 26,
-    "title": "300초 포카드 사냥",
-    "description": "300초 안에 포카드를 1개 이상 만드세요. 리셋을 활용하세요!",
+    "title": "100초 상위패 사냥",
+    "description": "100초 안에 포카드 이상의 패를 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#f1c40f",
@@ -1179,7 +1186,7 @@
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": 300
+      "stageTime": 100
     },
     "constraints": {
       "resetLimit": null,
@@ -1200,7 +1207,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 1,
-          "description": "포카드 1개 이상"
+          "description": "포카드 이상 1개 이상"
         }
       ]
     },
@@ -1222,7 +1229,7 @@
   },
   {
     "id": 27,
-    "title": "9개 완성 + 하트 수호",
+    "title": "하트 수호자",
     "description": "9개 패 완성 시 그리드에 하트가 4장 이상 남아있어야 합니다.",
     "theme": {
       "bgColor": "#1f0a14",
@@ -1260,6 +1267,7 @@
           "count_gte": 4,
           "description": "하트 4장 이상 잔존"
         }
+
       ]
     },
     "rewards": {
@@ -1581,6 +1589,7 @@
           "type": "specific_hand",
           "hand": "FLUSH",
           "count_gte": 2,
+          "exact": true,
           "description": "대각선만으로 플러시 2개"
         }
       ]
@@ -1597,8 +1606,8 @@
   },
   {
     "id": 35,
-    "title": "최고패로 시작 3개",
-    "description": "3개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요.",
+    "title": "최고패로 시작 7개",
+    "description": "7개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요.",
     "theme": {
       "bgColor": "#1a1000",
       "accentColor": "#d4ac0d",
@@ -1625,8 +1634,8 @@
     {
       "id": "c1",
       "type": "hands_complete",
-      "count_gte": 3,
-      "description": "3개 패 완성"
+      "count_gte": 7,
+      "description": "7개 패 완성"
     }
   ]
 },
@@ -1642,8 +1651,8 @@
   },
   {
     "id": 36,
-    "title": "노 리셋 200점",
-    "description": "리셋 없이 200점 이상으로 종료하세요.",
+    "title": "노 리셋 250점",
+    "description": "리셋 없이 250점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#6c5ce7",
@@ -1670,8 +1679,8 @@
         {
           "id": "c1",
           "type": "score_gte",
-          "value": 200,
-          "description": "200점 이상"
+          "value": 250,
+          "description": "250점 이상"
         }
       ]
     },
@@ -1687,8 +1696,8 @@
   },
   {
     "id": 37,
-    "title": "1,2번째 홀수 패",
-    "description": "첫 번째와 두 번째 패를 홀수 카드(A,3,5,7,9,J,K)만으로 만들고, 9개 패를 모두 완성하세요.",
+    "title": "1,3,5는 홀수 패",
+    "description": "1번째, 3번째, 5번째 패를 홀수카드만으로 만들고,9개 패를 모두 완성하세요. (A홀수 인정)",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#a29bfe",
@@ -1717,11 +1726,12 @@
           "type": "nth_hand_condition",
           "targets": [
             1,
-            2
+            3,
+            5
           ],
           "condition": "all_odd",
-          "failMessage": "1번째, 2번째 패는 홀수 카드만으로 구성해야 합니다",
-          "description": "1,2번째 패: 홀수 카드만"
+          "failMessage": "1,3,5번째 패는 홀수 카드만으로 구성해야 합니다",
+          "description": "1,3,5번째 패: 홀수 카드만"
         },
         {
           "id": "c2",
@@ -1846,7 +1856,7 @@
   {
     "id": 40,
     "title": "쓰리카인드 컬렉터",
-    "description": "쓰리오브어카인드를 3개 이상 만들고 종료하세요.",
+    "description": "쓰리오브어카인드를 4개 이상 만드세요.",
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#fd79a8",
@@ -1866,7 +1876,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -1874,8 +1884,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "THREE_KIND",
-          "count_gte": 3,
-          "description": "쓰리카인드 3개 이상"
+          "count_gte": 4,
+          "exact": true,
+          "description": "쓰리카인드 4개 이상"
         }
       ]
     },
@@ -2011,6 +2022,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 2,
+          "exact": true,
           "description": "포카드 2개 이상"
         }
       ]
@@ -2057,6 +2069,7 @@
           "type": "specific_hand",
           "hand": "STRAIGHT",
           "count_gte": 1,
+          "exact": true,
           "description": "대각선만으로 스트레이트 1개"
         }
       ]
@@ -2166,11 +2179,11 @@
   },
   {
     "id": 47,
-    "title": "풀하우스 듀오",
-    "description": "풀하우스를 2개 이상 만들고 종료하세요.",
+   "title": "원,투페어 금지",
+    "description": "원페어와 투페어를 한 번도 만들지 않고 7개 이상의 패를 완성하세요.",
     "theme": {
-      "bgColor": "#1f0a0a",
-      "accentColor": "#e17055",
+      "bgColor": "#0a1a2e",
+      "accentColor": "#3498db",
       "cardBack": "default"
     },
     "timers": {
@@ -2183,20 +2196,22 @@
       "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
-      "forbiddenHands": [],
+      "forbiddenHands": [
+        "ONE_PAIR",
+        "TWO_PAIR"
+      ],
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
-      "failTrigger": null,
+      "type": "real_time",
+      "failTrigger": "forbidden_hand_made",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "specific_hand",
-          "hand": "FULL_HOUSE",
-          "count_gte": 2,
-          "description": "풀하우스 2개 이상"
+          "type": "hands_complete",
+          "count_gte": 7,
+          "description": "7개 이상 패 완성 (원,투페어 없이)"
         }
       ]
     },
@@ -2213,7 +2228,7 @@
   {
     "id": 48,
     "title": "클로버 수호자",
-    "description": "9개 패 완성 시 그리드에 클로버가 4장 이상 남아있어야 합니다.",
+    "description": "9개 패 완성 시 그리드에 클로버가 4장 이상 남아있어야 합니다.(40점 이상)",
     "theme": {
       "bgColor": "#0a1f0a",
       "accentColor": "#00b894",
@@ -2249,6 +2264,12 @@
           "suit": "♣",
           "count_gte": 4,
           "description": "클로버 4장 이상 잔존"
+        },
+        {
+          "id": "c3",
+          "type": "score_gte",
+          "value": 40,
+          "description": "40점 이상"
         }
       ]
     },
@@ -2264,8 +2285,8 @@
   },
   {
     "id": 49,
-    "title": "400초 스트레이트 플러시",
-    "description": "400초 안에 스트레이트 플러시를 1개 만드세요. 리셋을 활용하세요!",
+    "title": "50초 스트레이트 플러시",
+    "description": "50초 안에 스트레이트 플러시를 1개 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
@@ -2459,8 +2480,8 @@
   },
   {
     "id": 53,
-    "title": "포카드 듀오",
-    "description": "포카드를 2개 이상 만들고 종료하세요.",
+    "title": "스티플 듀오",
+    "description": "스트레이트 플러시를 3개 이상 만들고 종료하세요.",
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#e84393",
@@ -2487,9 +2508,9 @@
         {
           "id": "c1",
           "type": "specific_hand",
-          "hand": "FOUR_KIND",
-          "count_gte": 2,
-          "description": "포카드 2개 이상"
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 3,
+          "description": "스트레이트플러시 3개 이상"
         }
       ]
     },
@@ -2672,6 +2693,7 @@
           "type": "specific_hand",
           "hand": "FLUSH",
           "count_gte": 5,
+          "exact": true,
           "description": "플러시 5개 이상"
         }
       ]
@@ -2877,7 +2899,7 @@
   {
     "id": 62,
     "title": "스페이드 수호자",
-    "description": "9개 패 완성 시 그리드에 스페이드가 4장 이상 남아있어야 합니다.",
+    "description": "9개 패 완성 시 그리드에 스페이드가 4장 이상 남아있어야 합니다.(80점 이상)",
     "theme": {
       "bgColor": "#0a0a1a",
       "accentColor": "#636e72",
@@ -2913,6 +2935,12 @@
           "suit": "♠",
           "count_gte": 4,
           "description": "스페이드 4장 이상 잔존"
+        },
+        {
+          "id": "c3",
+          "type": "score_gte",
+          "value": 80,
+          "description": "80점 이상"
         }
       ]
     },
@@ -3093,6 +3121,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 3,
+          "exact": true,
           "description": "포카드 3개 이상"
         }
       ]
@@ -3213,11 +3242,11 @@
   },
   {
     "id": 69,
-    "title": "7연속 오름차순",
-    "description": "7개의 패를 연속으로 오름차순 랭크로 완성하세요.",
+     "title": "점프 마스터",
+    "description": "점프 이동을 사용한 패를 5개 이상 만들고 9개 패를 완성하세요.",
     "theme": {
-      "bgColor": "#0a1f14",
-      "accentColor": "#00e5ff",
+      "bgColor": "#0a1a2e",
+      "accentColor": "#74b9ff",
       "cardBack": "default"
     },
     "timers": {
@@ -3234,15 +3263,21 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
-      "failTrigger": "ascending_rank_broken",
+      "type": "end_of_game",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "ascending_ranks",
-          "trackCount": 7,
-          "description": "연속 7개 오름차순 랭크"
+          "type": "jump_hands_gte",
+          "count_gte": 5,
+          "description": "점프 사용 패 5개 이상"
+        },
+        {
+          "id": "c2",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 완성"
         }
       ]
     },
@@ -3338,8 +3373,8 @@
           "id": "c1",
           "type": "ordered_straight",
           "hand": "STRAIGHT_FLUSH",
-          "count_gte": 1,
-          "description": "순서 있는 스트레이트 플러시 1개"
+          "count_gte": 2,
+          "description": "순서 있는 스트레이트 플러시 2개"
         }
       ]
     },
@@ -3362,7 +3397,7 @@
   {
     "id": 72,
     "title": "4수트 수호자",
-    "description": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.",
+    "description": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.(80점 이상)",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#e040fb",
@@ -3419,6 +3454,12 @@
           "suit": "♣",
           "count_gte": 1,
           "description": "클로버 1장 이상"
+        },
+        {
+          "id": "c6",
+          "type": "score_gte",
+          "value": 80,
+          "description": "80점 이상"
         }
       ]
     },
@@ -3517,6 +3558,7 @@
           "type": "specific_hand",
           "hand": "FLUSH",
           "count_gte": 3,
+          "exact": true,
           "description": "플러시 3개 이상 (점프 없이, 에이스 없이)"
         }
       ]
@@ -3563,6 +3605,7 @@
           "type": "specific_hand",
           "hand": "FLUSH",
           "count_gte": 3,
+          "exact": true,
           "description": "플러시 3개 이상"
         }
         ,
@@ -3571,6 +3614,7 @@
           "type": "specific_hand",
           "hand": "STRAIGHT",
           "count_gte": 3,
+          "exact": true,
           "description": "스트레이트 3개 이상"
         }
       ]
@@ -3767,6 +3811,7 @@
           "type": "specific_hand",
           "hand": "STRAIGHT",
           "count_gte": 2,
+          "exact": true,
           "description": "스트레이트 2개 이상 (대각선만, 리셋 없이)"
         }
       ]
@@ -3864,6 +3909,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 2,
+          "exact": true,
           "description": "포카드 2개 이상"
         }
         ,
@@ -3943,8 +3989,8 @@
   },
   {
     "id": 83,
-    "title": "SF+ 듀오",
-    "description": "600초 안에 스트레이트 플러시+를 2개 만드세요.",
+    "title": "최고의 영예",
+    "description": "600초 안에 로열플러시+를 2개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#b9f6ca",
@@ -3971,9 +4017,9 @@
         {
           "id": "c1",
           "type": "specific_hand",
-          "hand": "STRAIGHT_FLUSH_PLUS",
+          "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 2,
-          "description": "스트레이트 플러시+ 2개"
+          "description": "로열플러시+ 2개"
         }
       ]
     },
@@ -4086,7 +4132,7 @@
   {
     "id": 86,
     "title": "전문가 보스 II",
-    "description": "대각선만, 리셋 없이, 200점 이상 달성하고 9개 패를 완성하세요.",
+    "description": "직선만, 리셋 없이, 300점 이상 달성하고 9개 패를 완성하세요.",
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#ccff90",
@@ -4100,8 +4146,8 @@
       "resetLimit": 0,
       "moveMode": "freehand",
       "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": true,
+      "diagonalAllowed": false,
+      "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
@@ -4119,8 +4165,8 @@
         {
           "id": "c2",
           "type": "score_gte",
-          "value": 200,
-          "description": "200점 이상"
+          "value": 300,
+          "description": "300점 이상"
         }
       ]
     },
@@ -4136,8 +4182,8 @@
   },
   {
     "id": 87,
-    "title": "순서 있는 SF II",
-    "description": "700초 안에 순서 있는 스트레이트 플러시를 2개 만드세요.",
+    "title": "순서 있는 SF 3",
+    "description": "700초 안에 순서 있는 스트레이트 플러시를 3개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#69f0ae",
@@ -4165,8 +4211,8 @@
           "id": "c1",
           "type": "ordered_straight",
           "hand": "STRAIGHT_FLUSH",
-          "count_gte": 2,
-          "description": "순서 있는 SF 2개"
+          "count_gte": 3,
+          "description": "순서 있는 SF 3개"
         }
       ]
     },
@@ -4188,16 +4234,16 @@
   },
   {
     "id": 88,
-    "title": "Royal Flush+ 듀오",
-    "description": "600초 안에 Royal Flush+ 를 2개 만드세요.",
+    "title": "7연속 오름차순",
+    "description": "7개의 패를 연속으로 오름차순 랭크로 완성하세요.",
     "theme": {
-      "bgColor": "#1a1200",
-      "accentColor": "#ffd600",
+      "bgColor": "#0a1f14",
+      "accentColor": "#00e5ff",
       "cardBack": "default"
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": 600
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
@@ -4210,15 +4256,14 @@
     },
     "mission": {
       "type": "real_time",
-      "failTrigger": null,
+      "failTrigger": "ascending_rank_broken",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "specific_hand",
-          "hand": "ROYAL_FLUSH_PLUS",
-          "count_gte": 2,
-          "description": "Royal Flush+ 2개"
+          "type": "ascending_ranks",
+          "trackCount": 7,
+          "description": "연속 7개 오름차순 랭크"
         }
       ]
     },
@@ -4533,7 +4578,7 @@
   {
     "id": 95,
     "title": "모든 수트 수호 + 고득점",
-    "description": "9개 패 완성 시 4가지 수트가 각각 3장 이상 남아있고 350점 이상을 달성하세요.",
+    "description": "9개 패 완성 시 4가지 수트가 각각 1장 이상 남아있고 250점 이상을 달성하세요.",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#e040fb",
@@ -4594,8 +4639,8 @@
         {
           "id": "c6",
           "type": "score_gte",
-          "value": 350,
-          "description": "350점 이상"
+          "value": 250,
+          "description": "250점 이상"
         }
       ]
     },
