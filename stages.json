@@ -3039,7 +3039,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
+      "type": "end_of_game",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -3606,7 +3606,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
+      "type": "end_of_game",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -4029,14 +4029,14 @@
   {
     "id": 85,
     "title": "타임 어택 VI",
-    "description": "24초 안에 4개 이상의 패를 완성하세요.",
+    "description": "24초 안에 8개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff1744",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 24,
+      "gameTime": 22,
       "stageTime": null
     },
     "constraints": {
@@ -4056,8 +4056,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 4,
-          "description": "4개 이상 완성"
+          "count_gte": 8,
+          "description": "8개 이상 완성"
         }
       ]
     },
@@ -4706,7 +4706,7 @@
   {
     "id": 98,
     "title": "타임 어택 극한",
-    "description": "20초 안에 3개 이상의 패를 완성하세요.",
+    "description": "20초 안에 8개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0000",
       "accentColor": "#ff0000",
@@ -4733,8 +4733,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 3,
-          "description": "3개 이상 완성"
+          "count_gte": 8,
+          "description": "8개 이상 완성"
         }
       ]
     },
