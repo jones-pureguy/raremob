@@ -2,7 +2,7 @@
   {
     "id": 1,
     "title": "첫 번째 도전",
-    "description": "투페어 이상의 패를 1개 완성하고 스테이지를 종료하세요.",
+    "description": "투페어 이상의 패를 1개 완성하세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -22,7 +22,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -47,7 +47,7 @@
   {
     "id": 2,
     "title": "패 3개 만들기",
-    "description": "3개 이상의 패를 완성하고 스테이지를 종료하세요.",
+    "description": "3개의 패를 완성하세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -67,7 +67,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -75,7 +75,7 @@
           "id": "c1",
           "type": "hands_complete",
           "count_gte": 3,
-          "description": "3개 이상 패 완성"
+          "description": "3개 패 완성"
         }
       ]
     },
@@ -3116,7 +3116,7 @@
   {
     "id": 67,
     "title": "복합 도전 II",
-    "description": "리셋 없이, 대각선만으로 150점 이상 달성하세요.",
+    "description": "리셋 없이, 직선만으로 150점 이상 달성하세요.",
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#a855f7",
@@ -3130,8 +3130,8 @@
       "resetLimit": 0,
       "moveMode": "freehand",
       "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": true,
+      "diagonalAllowed": false,
+      "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
@@ -3144,7 +3144,7 @@
           "id": "c1",
           "type": "score_gte",
           "value": 150,
-          "description": "150점 이상 (대각선만, 리셋 없이)"
+          "description": "150점 이상 (직선만, 리셋 없이)"
         }
       ]
     },
@@ -3259,7 +3259,7 @@
   {
     "id": 70,
     "title": "고급 보스",
-    "description": "점프 없이, 스트레이트 이상 패를 2개 포함하여 300점 이상으로 종료하세요.",
+    "description": "점프 없이, 300점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff1744",
@@ -3285,13 +3285,6 @@
       "conditions": [
         {
           "id": "c1",
-          "type": "specific_hand",
-          "hand": "STRAIGHT",
-          "count_gte": 2,
-          "description": "스트레이트 이상 2개"
-        },
-        {
-          "id": "c2",
           "type": "score_gte",
           "value": 300,
           "description": "300점 이상"
@@ -3317,15 +3310,15 @@
   {
     "id": 71,
     "title": "순서 있는 SF",
-    "description": "50초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 1개 만드세요.",
+    "description": "400초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 2개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 50,
-      "stageTime": 50
+      "gameTime": 200,
+      "stageTime": 400
     },
     "constraints": {
       "resetLimit": null,
@@ -3354,9 +3347,9 @@
       "gold": 420,
       "bonus": [
         {
-          "condition": "stageTimeRemaining >= 20",
+          "condition": "stageTimeRemaining >= 100",
           "gold": 180,
-          "description": "20초 이상 남기기"
+          "description": "100초 이상 남기기"
         }
       ]
     },
@@ -3540,8 +3533,8 @@
   },
   {
     "id": 75,
-    "title": "8연속 오름차순",
-    "description": "8개의 패를 연속으로 오름차순 랭크로 완성하세요.",
+    "title": "플스플스",
+    "description": "플러쉬와 스트레이트를 3개 이상씩 만드세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#18ffff",
@@ -3562,14 +3555,23 @@
     },
     "mission": {
       "type": "real_time",
-      "failTrigger": "ascending_rank_broken",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "ascending_ranks",
-          "trackCount": 8,
-          "description": "연속 8개 오름차순 랭크"
+          "type": "specific_hand",
+          "hand": "FLUSH",
+          "count_gte": 3,
+          "description": "플러시 3개 이상"
+        }
+        ,
+                {
+          "id": "c2",
+          "type": "specific_hand",
+          "hand": "STRAIGHT",
+          "count_gte": 3,
+          "description": "스트레이트 3개 이상"
         }
       ]
     },
@@ -3683,7 +3685,7 @@
   {
     "id": 78,
     "title": "복합 도전 IV",
-    "description": "리셋 없이, 원페어 금지, 9개 패를 완성하고 350점 이상으로 종료하세요.",
+    "description": "원페어 금지, 9개 패를 완성하고 350점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff6d00",
@@ -3694,7 +3696,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": true,
       "diagonalAllowed": true,
@@ -3782,7 +3784,7 @@
   {
     "id": 80,
     "title": "전문가 보스 I",
-    "description": "리셋 없이, 원페어/투페어 금지, 9개 패 완성 후 400점 이상으로 종료하세요.",
+    "description": "리셋 없이, 450점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff3d00",
@@ -3798,28 +3800,19 @@
       "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
-      "forbiddenHands": [
-        "ONE_PAIR",
-        "TWO_PAIR"
-      ],
+      "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
       "type": "end_of_game",
-      "failTrigger": "forbidden_hand_made",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "hands_complete",
-          "count": 9,
-          "description": "9개 패 완성"
-        },
-        {
-          "id": "c2",
           "type": "score_gte",
-          "value": 400,
-          "description": "400점 이상"
+          "value": 450,
+          "description": "450점 이상"
         }
       ]
     },
@@ -3841,8 +3834,8 @@
   },
   {
     "id": 81,
-    "title": "9연속 오름차순",
-    "description": "9개의 패를 모두 오름차순 랭크로 완성하세요. 단 한 번이라도 낮아지면 실패!",
+    "title": "2+2",
+    "description": "포카드와 스트레이트 플러시를 각각 2개 이상 만드세요.",
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#64ffda",
@@ -3863,14 +3856,23 @@
     },
     "mission": {
       "type": "real_time",
-      "failTrigger": "ascending_rank_broken",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "ascending_ranks",
-          "trackCount": 9,
-          "description": "9개 패 전부 오름차순"
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 2,
+          "description": "포카드 2개 이상"
+        }
+        ,
+                {
+          "id": "c2",
+          "type": "specific_hand",
+          "hand": "STRAIGHT FLUSH",
+          "count_gte": 2,
+          "description": "스트레이트 플러시 2개 이상"
         }
       ]
     },
@@ -3892,8 +3894,8 @@
   },
   {
     "id": 82,
-    "title": "막다른 길 극한",
-    "description": "4개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)",
+    "title": "티끌모아 태산",
+    "description": "스트레이트 플러시 이상의 패를 쓰지 않고 9개 패를 완성해서 250점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#b71c1c",
@@ -3904,24 +3906,28 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
-      "forbiddenHands": [],
+      "forbiddenHands": [
+        "STRAIGHT_FLUSH_PLUS",
+        "ROYAL_FLUSH",
+        "ROYAL_FLUSH_PLUS"
+      ],
       "forbiddenValues": []
     },
     "mission": {
       "type": "end_of_game",
-      "failTrigger": null,
+      "failTrigger": "forbidden_hand_made",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "nomoves_before",
-          "count_lte": 4,
-          "description": "4개 완성까지 NO MORE MOVES"
+          "type": "score_gte",
+          "value": 250,
+          "description": "250점 이상"
         }
       ]
     },
@@ -3937,8 +3943,8 @@
   },
   {
     "id": 83,
-    "title": "SF 듀오",
-    "description": "600초 안에 스트레이트 플러시를 2개 만드세요.",
+    "title": "SF+ 듀오",
+    "description": "600초 안에 스트레이트 플러시+를 2개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#b9f6ca",
@@ -3965,9 +3971,9 @@
         {
           "id": "c1",
           "type": "specific_hand",
-          "hand": "STRAIGHT_FLUSH",
+          "hand": "STRAIGHT_FLUSH_PLUS",
           "count_gte": 2,
-          "description": "스트레이트 플러시 2개"
+          "description": "스트레이트 플러시+ 2개"
         }
       ]
     },
@@ -3984,7 +3990,7 @@
   {
     "id": 84,
     "title": "최고패 시작 전체",
-    "description": "9개 패 모두 최고값 카드로 드래그를 시작하세요.",
+    "description": "9개 패 모두 최고값 카드로 드래그를 시작해서 300점 이상 획득하세요.",
     "theme": {
       "bgColor": "#1a1000",
       "accentColor": "#ffca28",
@@ -4013,6 +4019,12 @@
           "type": "high_card_start",
           "count": 9,
           "description": "9개 패 최고값 카드로 시작"
+        },
+        {
+          "id": "c2",
+          "type": "score_gte",
+          "value": 300,
+          "description": "300점 이상"
         }
       ]
     },
@@ -4087,7 +4099,7 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": true,
       "forbiddenHands": [],
@@ -4223,7 +4235,7 @@
   {
     "id": 89,
     "title": "전문가 복합 I",
-    "description": "리셋 없이, J/Q/K/A 금지, 6개 이상 패를 완성하고 200점 이상으로 종료하세요.",
+    "description": "J/Q/K/A 금지, 200점 이상을 획득하세요.",
     "theme": {
       "bgColor": "#0a0000",
       "accentColor": "#ff6e40",
@@ -4248,18 +4260,12 @@
       ]
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_value_used",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "hands_complete",
-          "count_gte": 6,
-          "description": "6개 이상 패 완성"
-        },
-        {
-          "id": "c2",
           "type": "score_gte",
           "value": 200,
           "description": "200점 이상"
