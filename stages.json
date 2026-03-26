@@ -2642,8 +2642,8 @@
   },
   {
     "id": 57,
-    "title": "노 리셋 플러시 듀오",
-    "description": "리셋 없이 플러시를 2개 이상 만들고 종료하세요.",
+    "title": "노 리셋 플러시 파이브",
+    "description": "리셋 없이 플러시를 5개 이상 만들고 종료하세요.",
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#9b59b6",
@@ -2671,8 +2671,8 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 2,
-          "description": "플러시 2개 이상"
+          "count_gte": 5,
+          "description": "플러시 5개 이상"
         }
       ]
     },
@@ -2734,7 +2734,7 @@
   {
     "id": 59,
     "title": "대각선 7개 완성",
-    "description": "대각선 이동만으로 9개 패를 모두 완성하세요.",
+    "description": "대각선 이동만으로 7개 패를 완성하세요.",
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#00e676",
@@ -2973,8 +2973,8 @@
   },
   {
     "id": 64,
-    "title": "최고패 시작 5개",
-    "description": "5개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요.",
+    "title": "최고패 시작 8개",
+    "description": "8개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요.",
     "theme": {
       "bgColor": "#1a1000",
       "accentColor": "#d4ac0d",
@@ -3001,8 +3001,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 5,
-          "description": "5개 패 완성"
+          "count_gte": 8,
+          "description": "8개 패 완성"
         }
       ]
     },
@@ -3019,7 +3019,7 @@
   {
     "id": 65,
     "title": "타임 어택 IV",
-    "description": "35초 안에 7개 이상의 패를 완성하세요.",
+    "description": "35초 안에 9개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ef5350",
@@ -3046,8 +3046,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 7,
-          "description": "7개 이상 완성"
+          "count_gte": 9,
+          "description": "9개 이상 완성"
         }
       ]
     },
@@ -3064,15 +3064,15 @@
   {
     "id": 66,
     "title": "포카드 트리플",
-    "description": "200초 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!",
+    "description": "100초 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#8e44ad",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
-      "stageTime": 200
+      "gameTime": 100,
+      "stageTime": 100
     },
     "constraints": {
       "resetLimit": null,
@@ -3101,9 +3101,9 @@
       "gold": 350,
       "bonus": [
         {
-          "condition": "stageTimeRemaining >= 100",
+          "condition": "stageTimeRemaining >= 20",
           "gold": 150,
-          "description": "100초 이상 남기기"
+          "description": "20초 이상 남기기"
         }
       ]
     },
@@ -3129,7 +3129,7 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": true,
       "forbiddenHands": [],
@@ -3259,7 +3259,7 @@
   {
     "id": 70,
     "title": "고급 보스",
-    "description": "리셋 없이, 점프 없이, 스트레이트 이상 패를 2개 포함하여 300점 이상으로 종료하세요.",
+    "description": "점프 없이, 스트레이트 이상 패를 2개 포함하여 300점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff1744",
@@ -3270,7 +3270,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": false,
       "diagonalAllowed": true,
@@ -3317,15 +3317,15 @@
   {
     "id": 71,
     "title": "순서 있는 SF",
-    "description": "500초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 1개 만드세요.",
+    "description": "50초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 1개 만드세요.",
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
-      "stageTime": 500
+      "gameTime": 50,
+      "stageTime": 50
     },
     "constraints": {
       "resetLimit": null,
@@ -3354,9 +3354,9 @@
       "gold": 420,
       "bonus": [
         {
-          "condition": "stageTimeRemaining >= 250",
+          "condition": "stageTimeRemaining >= 20",
           "gold": 180,
-          "description": "250초 이상 남기기"
+          "description": "20초 이상 남기기"
         }
       ]
     },
@@ -3369,7 +3369,7 @@
   {
     "id": 72,
     "title": "4수트 수호자",
-    "description": "9개 패 완성 시 4가지 수트가 각각 2장 이상 그리드에 남아있어야 합니다.",
+    "description": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.",
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#e040fb",
@@ -3403,29 +3403,29 @@
           "id": "c2",
           "type": "suit_remaining",
           "suit": "♠",
-          "count_gte": 2,
-          "description": "스페이드 2장 이상"
+          "count_gte": 1,
+          "description": "스페이드 1장 이상"
         },
         {
           "id": "c3",
           "type": "suit_remaining",
           "suit": "♥",
-          "count_gte": 2,
-          "description": "하트 2장 이상"
+          "count_gte": 1,
+          "description": "하트 1장 이상"
         },
         {
           "id": "c4",
           "type": "suit_remaining",
           "suit": "♦",
-          "count_gte": 2,
-          "description": "다이아 2장 이상"
+          "count_gte": 1,
+          "description": "다이아 1장 이상"
         },
         {
           "id": "c5",
           "type": "suit_remaining",
           "suit": "♣",
-          "count_gte": 2,
-          "description": "클로버 2장 이상"
+          "count_gte": 1,
+          "description": "클로버 1장 이상"
         }
       ]
     },
@@ -3442,7 +3442,7 @@
   {
     "id": 73,
     "title": "끝자리 3",
-    "description": "최종 스코어 끝자리가 3이 되게 하세요. (100점 이상)",
+    "description": "최종 스코어 끝자리가 3이 되게 하세요. (180점 이상)",
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#7986cb",
@@ -3475,8 +3475,8 @@
         {
           "id": "c2",
           "type": "score_gte",
-          "value": 100,
-          "description": "100점 이상"
+          "value": 180,
+          "description": "180점 이상"
         }
       ]
     },
@@ -3493,7 +3493,7 @@
   {
     "id": 74,
     "title": "복합 도전 III",
-    "description": "점프 없이, 에이스 금지, 플러시를 1개 이상 만들고 종료하세요.",
+    "description": "점프 없이, 에이스 금지, 플러시를 3개 이상 만들고 종료하세요.",
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#1565c0",
@@ -3523,8 +3523,8 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 1,
-          "description": "플러시 1개 이상 (점프 없이, 에이스 없이)"
+          "count_gte": 3,
+          "description": "플러시 3개 이상 (점프 없이, 에이스 없이)"
         }
       ]
     },
@@ -3586,7 +3586,7 @@
   {
     "id": 76,
     "title": "타임 어택 V",
-    "description": "30초 안에 5개 이상의 패를 완성하세요.",
+    "description": "30초 안에 9개 이상의 패를 완성하세요.",
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff5252",
@@ -3613,8 +3613,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 5,
-          "description": "5개 이상 완성"
+          "count_gte": 9,
+          "description": "9개 이상 완성"
         }
       ]
     },
@@ -3630,8 +3630,8 @@
   },
   {
     "id": 77,
-    "title": "300초 Royal Flush+",
-    "description": "300초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!",
+    "title": "Royal Flush+",
+    "description": "50초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!",
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#f1c40f",
@@ -3668,9 +3668,9 @@
       "gold": 450,
       "bonus": [
         {
-          "condition": "stageTimeRemaining >= 150",
+          "condition": "stageTimeRemaining >= 10",
           "gold": 200,
-          "description": "150초 이상 남기기"
+          "description": "10초 이상 남기기"
         }
       ]
     },
