@@ -1171,23 +1171,31 @@ function updateResetButton() {
 }
 
 // ─── DB Functions ───
-async function loadStageProgress() {
-  const cached = JSON.parse(localStorage.getItem('poker_stage_progress') || '{}');
-  try {
-    const playerId = localStorage.getItem('poker_player_id');
-    if (!playerId) return cached;
-    const { data } = await sb.from('player_stages').select('*').eq('player_id', playerId);
-    if (data) {
+function syncProgressFromDB() {
+  const playerId = localStorage.getItem('poker_player_id');
+  if (!playerId) return;
+
+  // 골드 싱크
+  sb.from('players').select('gold').eq('id', playerId).single()
+    .then(({ data }) => {
+      if (!data) return;
+      localStorage.setItem('poker_gold', data.gold || 0);
+      renderCurrencyBar();
+    })
+    .catch(err => console.error('Gold sync failed:', err));
+
+  // 진도 싱크
+  sb.from('player_stages').select('*').eq('player_id', playerId)
+    .then(({ data }) => {
+      if (!data) return;
       const progress = {
         clearedStages: data.filter(s => s.cleared).map(s => s.stage_id),
         stageData: data,
         lastSynced: new Date().toISOString(),
       };
       localStorage.setItem('poker_stage_progress', JSON.stringify(progress));
-      return progress;
-    }
-  } catch(e) { console.error('Failed to load stage progress:', e); }
-  return cached;
+    })
+    .catch(err => console.error('Stage progress sync failed:', err));
 }
 
 async function checkFirstClear(stageId) {
@@ -1302,6 +1310,9 @@ async function initStage() {
   renderScoreProgress();
   renderRemovedCards();
   startTimer();
+
+  // 백그라운드에서 DB 싱크 (게임 시작 후 조용히)
+  syncProgressFromDB();
 
   // Sanity check
   setTimeout(() => {

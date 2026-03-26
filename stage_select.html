@@ -193,24 +193,24 @@
   let totalPages = 1;
 
   async function init() {
-    // Load gold
-    await loadGold();
+    // 1. 즉시 로컬 골드 표시
+    const localGold = parseInt(localStorage.getItem('poker_gold') || '0');
+    document.getElementById('goldDisplay').textContent = localGold.toLocaleString() + ' Gold';
 
-    // Load stages.json
+    // 2. 즉시 로컬 진도 로드
+    progress = JSON.parse(localStorage.getItem('poker_stage_progress') || '{"clearedStages":[]}');
+
+    // Load stages.json (로컬 파일이므로 빠름)
     try {
       const res = await fetch('stages.json');
       stages = await res.json();
     } catch(e) { console.error('Failed to load stages.json'); return; }
-
-    // Load progress
-    progress = await loadStageProgress();
 
     totalPages = Math.ceil(stages.length / PAGE_SIZE);
 
     // Auto-navigate to the page of the last progress stage
     if (progress.clearedStages.length > 0) {
       const maxCleared = Math.max(...progress.clearedStages);
-      // Find the next uncleared stage (the one to play next)
       const nextStageId = maxCleared + 1;
       const targetId = nextStageId <= stages.length ? nextStageId : maxCleared;
       const stageIndex = stages.findIndex(s => s.id === targetId);
@@ -221,39 +221,48 @@
 
     renderPagination();
     renderStageGrid();
+
+    // 3. 백그라운드에서 DB 싱크
+    syncFromDB();
   }
 
-  async function loadGold() {
+  function syncFromDB() {
     const playerId = localStorage.getItem('poker_player_id');
-    if (playerId) {
-      try {
-        const { data } = await sb.from('players').select('gold').eq('id', playerId).single();
-        if (data) {
-          localStorage.setItem('poker_gold', data.gold || 0);
-        }
-      } catch(e) {}
-    }
-    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
-    document.getElementById('goldDisplay').textContent = gold.toLocaleString() + ' Gold';
-  }
+    if (!playerId) return;
 
-  async function loadStageProgress() {
-    const cached = JSON.parse(localStorage.getItem('poker_stage_progress') || '{"clearedStages":[]}');
-    try {
-      const playerId = localStorage.getItem('poker_player_id');
-      if (!playerId) return cached;
-      const { data } = await sb.from('player_stages').select('*').eq('player_id', playerId);
-      if (data) {
+    // 골드 싱크
+    sb.from('players').select('gold').eq('id', playerId).single()
+      .then(({ data }) => {
+        if (!data) return;
+        localStorage.setItem('poker_gold', data.gold || 0);
+        document.getElementById('goldDisplay').textContent =
+          parseInt(data.gold || 0).toLocaleString() + ' Gold';
+      })
+      .catch(err => console.error('Gold sync failed:', err));
+
+    // 진도 싱크
+    sb.from('player_stages').select('*').eq('player_id', playerId)
+      .then(({ data }) => {
+        if (!data) return;
         const p = {
           clearedStages: data.filter(s => s.cleared).map(s => s.stage_id),
           stageData: data,
           lastSynced: new Date().toISOString(),
         };
         localStorage.setItem('poker_stage_progress', JSON.stringify(p));
-        return p;
-      }
-    } catch(e) {}
-    return cached;
+        // 변경사항 있으면 UI 갱신
+        const oldIds = progress.clearedStages.sort().join(',');
+        const newIds = p.clearedStages.sort().join(',');
+        if (oldIds !== newIds) {
+          progress = p;
+          renderStageGrid();
+          // 선택된 스테이지가 있으면 상세정보도 갱신
+          if (selectedStageId) selectStage(selectedStageId);
+        } else {
+          progress = p;
+        }
+      })
+      .catch(err => console.error('Stage progress sync failed:', err));
   }
 
   function isUnlocked(stage) {
