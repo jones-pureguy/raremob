@@ -2747,7 +2747,7 @@
     "constraints": {
       "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": true,
       "forbiddenHands": [],
