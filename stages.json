@@ -2733,7 +2733,7 @@
   },
   {
     "id": 59,
-    "title": "대각선 9개 완성",
+    "title": "대각선 7개 완성",
     "description": "대각선 이동만으로 9개 패를 모두 완성하세요.",
     "theme": {
       "bgColor": "#0f1a0f",
@@ -2754,15 +2754,15 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
           "type": "hands_complete",
-          "count": 9,
-          "description": "9개 패 모두 대각선으로"
+          "count": 7,
+          "description": "7개 패 모두 대각선으로"
         }
       ]
     },
