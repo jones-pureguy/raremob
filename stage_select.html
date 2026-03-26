@@ -206,6 +206,19 @@
     progress = await loadStageProgress();
 
     totalPages = Math.ceil(stages.length / PAGE_SIZE);
+
+    // Auto-navigate to the page of the last progress stage
+    if (progress.clearedStages.length > 0) {
+      const maxCleared = Math.max(...progress.clearedStages);
+      // Find the next uncleared stage (the one to play next)
+      const nextStageId = maxCleared + 1;
+      const targetId = nextStageId <= stages.length ? nextStageId : maxCleared;
+      const stageIndex = stages.findIndex(s => s.id === targetId);
+      if (stageIndex >= 0) {
+        currentPage = Math.floor(stageIndex / PAGE_SIZE) + 1;
+      }
+    }
+
     renderPagination();
     renderStageGrid();
   }
