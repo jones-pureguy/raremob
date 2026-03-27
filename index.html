@@ -15,7 +15,9 @@
     flex-direction: column;
     gap: 12px;
     width: 100%;
+    max-width: 420px;
     margin-top: 12px;
+    box-sizing: border-box;
   }
   .menu-row {
     display: flex;
@@ -29,13 +31,13 @@
     min-width: 100px;
   }
   .m-btn {
-    font-family: 'Playfair Display', serif;
+    font-family: 'IBM Plex Mono', monospace;
     font-weight: 700;
-    letter-spacing: 0.05em;
-    border: none;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.15s, opacity 0.15s;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -44,22 +46,58 @@
     line-height: 1.2;
     position: relative;
     color: var(--gold);
+    box-shadow:
+      0 4px 0 rgba(0,0,0,0.45),
+      0 6px 14px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.07);
   }
-  .m-btn:hover { opacity: 0.85; }
-  .m-btn:active { transform: scale(0.97); }
+  .m-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 0 rgba(0,0,0,0.45),
+      0 10px 20px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+    border-color: rgba(201,168,76,0.55);
+  }
+  .m-btn:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.45),
+      0 2px 6px rgba(0,0,0,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+  }
   .m-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .m-btn.btn-large  { flex: 1; min-height: 110px; font-size: 1.4rem; }
-  .m-btn.btn-medium { flex: 1; min-height: 90px; font-size: 1.1rem; }
-  .m-btn.btn-wide   { width: 100%; min-height: 60px; font-size: 1.1rem; }
-  .m-btn.btn-small  { width: 100%; min-height: 48px; font-size: 0.85rem; }
+  .m-btn.btn-large  { flex: 1; min-height: 110px; font-size: 1.0rem; }
+  .m-btn.btn-medium { flex: 1; min-height: 90px; font-size: 1.0rem; }
+  .m-btn.btn-wide   { width: 100%; min-height: 60px; font-size: 1.0rem; }
+  .m-btn.btn-small  { width: 100%; min-height: 48px; font-size: 0.85rem; letter-spacing: 0.1em; }
 
-  .btn-basic     { background: #1a4a2a; }
-  .btn-sub       { background: #2d5a1a; }
-  .btn-challenge { background: #2d3a1a; }
-  .btn-puzzle    { background: #1a3a4a; }
-  .btn-vs        { background: #1a1a3a; }
-  .btn-settings  { background: #3a3a3a; }
+  .btn-basic {
+    background: linear-gradient(160deg, #1e5c30 0%, #153f22 100%);
+    border: 1px solid rgba(201,168,76,0.35);
+  }
+  .btn-sub {
+    background: linear-gradient(160deg, #194f28 0%, #11361b 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+  .btn-challenge {
+    background: linear-gradient(160deg, #2a4a1a 0%, #1c3211 100%);
+    border: 1px solid rgba(201,168,76,0.25);
+  }
+  .btn-puzzle {
+    background: linear-gradient(160deg, #144a40 0%, #0d322b 100%);
+    border: 1px solid rgba(201,168,76,0.25);
+  }
+  .btn-vs {
+    background: linear-gradient(160deg, #0e2a1a 0%, #091c11 100%);
+    border: 1px solid rgba(201,168,76,0.1);
+    opacity: 0.65;
+  }
+  .btn-settings {
+    background: linear-gradient(160deg, #1a2e20 0%, #111e16 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+  }
 
   .coming-soon {
     font-family: 'IBM Plex Mono', monospace;
