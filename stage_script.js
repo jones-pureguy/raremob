@@ -1292,6 +1292,19 @@ async function initStage() {
     stageTimerEl.style.display = 'none';
   }
 
+  // Condition bar
+  const condBar = document.getElementById('stageConditionBar');
+  if (condBar) {
+    let text = stageConfig.description;
+    const forbidden = [];
+    if (stageConfig.constraints.forbiddenHands.length > 0)
+      forbidden.push('금지: ' + stageConfig.constraints.forbiddenHands.join(', '));
+    if (stageConfig.constraints.forbiddenValues.length > 0)
+      forbidden.push('금지: ' + stageConfig.constraints.forbiddenValues.join(', '));
+    if (forbidden.length > 0) text += ' [' + forbidden.join(' / ') + ']';
+    condBar.textContent = text;
+  }
+
   // Username
   const saved = localStorage.getItem('poker_username') || '';
   const el = document.getElementById('usernameDisplay');

@@ -57,6 +57,15 @@
     background: #2c2c2c;
     border-color: rgba(255,255,255,0.12);
   }
+  .stage-condition-bar {
+    max-height: 2.8em;
+    overflow: hidden;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    padding: 2px 12px;
+  }
 </style>
 </head>
 <body class="game-page">
@@ -123,6 +132,8 @@
   <div class="removed-panel-title">REMOVED</div>
   <div class="removed-cards" id="removedCards"></div>
 </div>
+
+<div class="stage-condition-bar" id="stageConditionBar"></div>
 
 <div class="back-to-menu">
   <a href="stage_select.html" class="menu-btn small">스테이지 선택</a>
