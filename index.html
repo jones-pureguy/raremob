@@ -36,8 +36,15 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // 아이디 없으면 id.html로 이동
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script>
+  // 로컬 즉시 표시
   const savedUsername = localStorage.getItem('poker_username');
   if (!savedUsername) {
     window.location.href = 'id.html';
@@ -52,6 +59,31 @@
     const chipEl = document.getElementById('chipDisplay');
     if (goldEl) goldEl.textContent = gold.toLocaleString();
     if (chipEl) chipEl.textContent = '0';
+  })();
+
+  // 백그라운드 auth + DB 싱크
+  (async function checkUserReady() {
+    const uid = await initAuth();
+    if (!uid) return;
+
+    const { data } = await sb
+      .from('players')
+      .select('username, gold')
+      .eq('id', uid)
+      .single();
+
+    if (!data || !data.username) {
+      window.location.href = 'id.html';
+      return;
+    }
+
+    localStorage.setItem('poker_username', data.username);
+    localStorage.setItem('poker_player_id', uid);
+    localStorage.setItem('poker_gold', data.gold || 0);
+
+    document.getElementById('menuPlayer').textContent = data.username;
+    const goldEl = document.getElementById('goldDisplay');
+    if (goldEl) goldEl.textContent = parseInt(data.gold || 0).toLocaleString();
   })();
 </script>
 </body>

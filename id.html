@@ -28,7 +28,14 @@
     <div class="id-message" id="idMessage"></div>
   </div>
 
-  <div style="margin-top:24px;">
+  <div class="oauth-section" style="margin-top:24px;text-align:center;">
+    <p style="color:rgba(255,255,255,0.35);font-size:0.75rem;margin-bottom:8px;">
+      구글 계정을 연동하면 다른 기기에서도 이어할 수 있어요.
+    </p>
+    <button class="menu-btn small" disabled style="opacity:0.3;cursor:not-allowed;">구글 계정 연동 (준비 중)</button>
+  </div>
+
+  <div style="margin-top:16px;">
     <a href="index.html" class="menu-btn small">메인메뉴</a>
   </div>
 </div>
@@ -38,7 +45,9 @@
   const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+</script>
+<script src="auth.js"></script>
+<script>
   const saved = localStorage.getItem('poker_username');
 
   function showState() {
@@ -69,7 +78,10 @@
     msgEl.style.color = 'rgba(255,255,255,0.5)';
 
     try {
-      // 중복 체크
+      const uid = await initAuth();
+      if (!uid) { msgEl.textContent = '인증 실패'; msgEl.style.color = '#ff5252'; return; }
+
+      // 중복 체크 (다른 유저가 이미 사용 중인 이름인지)
       const { data: existing, error: fetchErr } = await sb
         .from('players')
         .select('id')
@@ -78,27 +90,25 @@
 
       if (fetchErr) { msgEl.textContent = '오류: ' + fetchErr.message; msgEl.style.color = '#ff5252'; return; }
 
-      if (existing) {
-        // 기존 유저 — 로그인 처리
-        localStorage.setItem('poker_username', username);
-        localStorage.setItem('poker_player_id', existing.id);
-        msgEl.textContent = '기존 아이디로 로그인되었습니다';
-        msgEl.style.color = '#4CAF50';
-        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+      if (existing && existing.id !== uid) {
+        msgEl.textContent = '이미 사용 중인 아이디입니다.';
+        msgEl.style.color = '#ff5252';
         return;
       }
 
-      // 신규 등록
-      const { data: newPlayer, error: insertErr } = await sb
+      // auth.uid()로 players 레코드 생성 또는 업데이트
+      const { error: upsertErr } = await sb
         .from('players')
-        .insert({ username })
-        .select('id')
-        .single();
+        .upsert({
+          id: uid,
+          username: username,
+          gold: 0
+        }, { onConflict: 'id' });
 
-      if (insertErr) { msgEl.textContent = '등록 실패: ' + insertErr.message; msgEl.style.color = '#ff5252'; return; }
+      if (upsertErr) { msgEl.textContent = '등록 실패: ' + upsertErr.message; msgEl.style.color = '#ff5252'; return; }
 
       localStorage.setItem('poker_username', username);
-      localStorage.setItem('poker_player_id', newPlayer.id);
+      localStorage.setItem('poker_player_id', uid);
       msgEl.textContent = '등록 완료!';
       msgEl.style.color = '#4CAF50';
       setTimeout(() => { window.location.href = 'index.html'; }, 800);

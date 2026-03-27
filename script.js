@@ -1031,44 +1031,18 @@ window.validateGrid = function() {
 // ─── Supabase / Players / Leaderboard ───
 
 // Get or create player, returns player uuid
-async function getOrCreatePlayer(username) {
-  // Return cached id if same username
-  if (currentPlayerId && localStorage.getItem('poker_player_username') === username) {
-    return currentPlayerId;
-  }
+async function getOrCreatePlayer() {
+  // Use auth.uid() from initAuth
+  if (currentPlayerId) return currentPlayerId;
 
   try {
-    // Check if player exists
-    const { data: existing, error: fetchErr } = await sb
-      .from('players')
-      .select('id')
-      .eq('username', username)
-      .maybeSingle();
-
-    if (fetchErr) { console.error('[DragON] Player fetch error:', fetchErr); return null; }
-
-    if (existing) {
-      currentPlayerId = existing.id;
-      localStorage.setItem('poker_player_username', username);
-      return existing.id;
-    }
-
-    // Insert new player
-    const { data: newPlayer, error: insertErr } = await sb
-      .from('players')
-      .insert({ username })
-      .select('id')
-      .single();
-
-    if (insertErr) { console.error('[DragON] Player insert error:', insertErr); return null; }
-
-    currentPlayerId = newPlayer.id;
-    localStorage.setItem('poker_player_username', username);
-    console.log('[DragON] New player created:', username, newPlayer.id);
-    return newPlayer.id;
+    const uid = await initAuth();
+    if (!uid) { console.error('[DragON] No auth uid'); return null; }
+    currentPlayerId = uid;
+    return uid;
   } catch (err) {
     console.error('[DragON] Player error:', err);
-    return null;
+    return localStorage.getItem('poker_player_id') || null;
   }
 }
 
