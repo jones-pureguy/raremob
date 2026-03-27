@@ -3190,8 +3190,8 @@
   },
   {
     "id": 68,
-    "title": "8 금지 + 리셋 없이",
-    "description": "리셋 없이, 숫자 8 없이 9개 패를 완성하고 200점 이상으로 종료하세요.",
+    "title": "8 금지, 200점",
+    "description": "숫자 8 없이 9개 패를 완성하고 200점 이상으로 종료하세요.",
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#e53935",
@@ -3202,7 +3202,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": true,
       "diagonalAllowed": true,
