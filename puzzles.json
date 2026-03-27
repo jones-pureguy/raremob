@@ -101,12 +101,12 @@
 
   {
     "id": 3,
-    "title": "대각선 탐험",
-    "description": "대각선 이동만 사용해서 풀하우스를 1개 만드세요.",
+    "title": "길을 찾아라",
+    "description": "풀하우스 이상의 패를 하나 만드세요",
     "hint": {
-      "level1": "대각선으로만 이동할 수 있어요. 가로세로는 불가능해요.",
-      "level2": "같은 숫자 카드 3장과 다른 숫자 카드 2장을 대각선으로 연결해야 해요.",
-      "level3": "K카드 3장이 대각선으로 배치되어 있어요. A카드 2장과 조합하세요."
+      "level1": "점프도 생각해야 해요.",
+      "level2": "첫 시도에 스트레이트 플러쉬를 만들 수 있어요.",
+      "level3": "스페이드 5->8->6->2->7 순서를 찾아보세요."
     },
     "theme": {
       "bgColor": "#1a1000",
@@ -114,20 +114,20 @@
       "cardBack": "default"
     },
     "initialDeck": [
-      "Ks",  "",    "",    "",    "",    "",    "As",
-      "",    "Kh",  "",    "",    "",    "Ah",  "",
-      "",    "",    "Kd",  "",    "3c",  "",    "",
-      "",    "",    "",    "7s",  "",    "",    "",
-      "",    "",    "Jd",  "",    "2h",  "",    "",
-      "",    "5c",  "",    "",    "",    "8s",  "",
-      "Qh",  "",    "",    "",    "",    "",    "4d"
+        "","","","","","","",
+        "","","","","","","",
+        "","","","","","","",
+        "5s","","","","","","7s",
+        "7h","","","9h","","","9s",
+        "Jd","Ks","","Ac","2s","","4h",
+        "3d","Qs","7d","8s","6s","Jc","8c"
     ],
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
-      "diagonalOnly": true,
+      "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
@@ -141,7 +141,7 @@
           "type": "specific_hand",
           "hand": "FULL_HOUSE",
           "count_gte": 1,
-          "description": "풀하우스 1개"
+          "description": "풀하우스 이상 1개"
         }
       ]
     },
