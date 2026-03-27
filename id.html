@@ -11,19 +11,19 @@
 <div class="menu-container">
    <img src="images/logo.webp" alt="DragON POKER" class="menu-logo">
 
-  <!-- 기존 아이디가 있을 때 -->
+  <!-- 기존 닉네임이 있을 때 -->
   <div class="id-section" id="existingSection" style="display:none;">
-    <div class="id-label">현재 아이디</div>
+    <div class="id-label">현재 닉네임</div>
     <div class="id-current" id="currentId"></div>
-    <button class="menu-btn small" onclick="changeId()" style="margin-top:16px;">아이디 변경</button>
+    <button class="menu-btn small" onclick="changeId()" style="margin-top:16px;">닉네임 변경</button>
   </div>
 
-  <!-- 아이디 등록 -->
+  <!-- 닉네임 설정 -->
   <div class="id-section" id="registerSection" style="display:none;">
-    <div class="id-label">아이디 등록</div>
+    <div class="id-label">닉네임 설정</div>
     <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px;">
       <input class="username-input" id="idInput" type="text" placeholder="NAME" maxlength="12" spellcheck="false" style="width:160px;font-size:1rem;padding:10px 14px;">
-      <button class="menu-btn small" onclick="registerPlayer()">등록</button>
+      <button class="menu-btn small" onclick="registerPlayer()">저장</button>
     </div>
     <div class="id-message" id="idMessage"></div>
   </div>
@@ -72,7 +72,7 @@
     const username = document.getElementById('idInput').value.trim();
     const msgEl = document.getElementById('idMessage');
 
-    if (!username) { msgEl.textContent = '아이디를 입력하세요'; msgEl.style.color = '#ff5252'; return; }
+    if (!username) { msgEl.textContent = '닉네임을 입력하세요'; msgEl.style.color = '#ff5252'; return; }
 
     msgEl.textContent = '확인 중...';
     msgEl.style.color = 'rgba(255,255,255,0.5)';
@@ -91,7 +91,7 @@
       if (fetchErr) { msgEl.textContent = '오류: ' + fetchErr.message; msgEl.style.color = '#ff5252'; return; }
 
       if (existing && existing.id !== uid) {
-        msgEl.textContent = '이미 사용 중인 아이디입니다.';
+        msgEl.textContent = '이미 사용 중인 닉네임입니다.';
         msgEl.style.color = '#ff5252';
         return;
       }
