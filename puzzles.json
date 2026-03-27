@@ -1,0 +1,299 @@
+[
+  {
+    "id": 1,
+    "title": "첫 번째 퍼즐",
+    "description": "스트레이트를 1개 만드세요.",
+    "hint": {
+      "level1": "숫자가 연속된 카드 5장을 찾아보세요.",
+      "level2": "하단 영역에 연속된 숫자가 모여 있어요.",
+      "level3": "6♥ → 7♣ → 8♥ → 9♥ → 10♥ 경로를 확인해보세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "2s",  "Kh",  "Qd",  "Ah",  "3c",  "Jh",  "4d",
+      "6h",  "9s",  "8d",  "Kd",  "10h", "Qc",  "As",
+      "7c",  "3h",  "8h",  "9h",  "Ks",  "Jd",  "5s"
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT",
+          "count_gte": 1,
+          "description": "스트레이트 1개"
+        }
+      ]
+    },
+    "rewards": { "gold": 50 },
+    "unlockCondition": { "type": "none" }
+  },
+
+  {
+    "id": 2,
+    "title": "직선의 법칙",
+    "description": "직선으로만, 점프 없이 플러시를 1개 만드세요.",
+    "hint": {
+      "level1": "같은 수트(모양) 카드 5장이 일직선으로 놓여 있어요.",
+      "level2": "하트(♥) 카드들을 찾아보세요. 세로 방향으로 배치되어 있어요.",
+      "level3": "4열을 위에서 아래로 내려오면 하트 5장이 직선으로 연결돼요."
+    },
+    "theme": {
+      "bgColor": "#0a1a2e",
+      "accentColor": "#3498db",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "",    "",    "",    "2h",  "",    "",    "",
+      "",    "",    "",    "5h",  "",    "",    "",
+      "",    "Kd",  "Qs",  "7h",  "3c",  "Jd",  "",
+      "",    "4s",  "Ac",  "9h",  "8d",  "2c",  "",
+      "",    "10s", "6d",  "Jh",  "Qd",  "3s",  "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    ""
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "straight",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FLUSH",
+          "count_gte": 1,
+          "description": "플러시 1개"
+        }
+      ]
+    },
+    "rewards": { "gold": 80 },
+    "unlockCondition": { "type": "puzzle_clear", "puzzleId": 1 }
+  },
+
+  {
+    "id": 3,
+    "title": "대각선 탐험",
+    "description": "대각선 이동만 사용해서 풀하우스를 1개 만드세요.",
+    "hint": {
+      "level1": "대각선으로만 이동할 수 있어요. 가로세로는 불가능해요.",
+      "level2": "같은 숫자 카드 3장과 다른 숫자 카드 2장을 대각선으로 연결해야 해요.",
+      "level3": "K카드 3장이 대각선으로 배치되어 있어요. A카드 2장과 조합하세요."
+    },
+    "theme": {
+      "bgColor": "#1a1000",
+      "accentColor": "#d4ac0d",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "Ks",  "",    "",    "",    "",    "",    "As",
+      "",    "Kh",  "",    "",    "",    "Ah",  "",
+      "",    "",    "Kd",  "",    "3c",  "",    "",
+      "",    "",    "",    "7s",  "",    "",    "",
+      "",    "",    "Jd",  "",    "2h",  "",    "",
+      "",    "5c",  "",    "",    "",    "8s",  "",
+      "Qh",  "",    "",    "",    "",    "",    "4d"
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": true,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FULL_HOUSE",
+          "count_gte": 1,
+          "description": "풀하우스 1개"
+        }
+      ]
+    },
+    "rewards": { "gold": 120 },
+    "unlockCondition": { "type": "puzzle_clear", "puzzleId": 2 }
+  },
+
+  {
+    "id": 4,
+    "title": "좁은 길",
+    "description": "점프 없이 포카드를 1개 만드세요. 카드 배치를 잘 살펴보세요.",
+    "hint": {
+      "level1": "포카드는 같은 숫자 카드 4장이 필요해요.",
+      "level2": "7카드가 4장 있어요. 인접한 경로로 연결할 수 있는지 확인해보세요.",
+      "level3": "7♠ → 7♥ → 7♦ → 7♣ 순서로 대각선 인접 경로가 있어요. 아무 카드 1장을 더 연결하세요."
+    },
+    "theme": {
+      "bgColor": "#1a0a2e",
+      "accentColor": "#9b59b6",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "7s",  "2h",  "Kc",  "Ah",  "Qd",  "3s",  "",
+      "5c",  "7h",  "9d",  "Jc",  "4h",  "10s", "",
+      "Ks",  "6h",  "7d",  "8s",  "2c",  "Qh",  "",
+      "Ad",  "Jh",  "3d",  "7c",  "9s",  "5h",  "",
+      "",    "",    "",    "",    "",    "",    ""
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 1,
+          "description": "포카드 1개"
+        }
+      ]
+    },
+    "rewards": { "gold": 180 },
+    "unlockCondition": { "type": "puzzle_clear", "puzzleId": 3 }
+  },
+  {
+    "id": 5,
+    "title": "순서의 예술",
+    "description": "드래그 순서대로 숫자가 이어지는 스트레이트 플러시를 찾으세요.",
+    "hint": {
+      "level1": "스트레이트 플러시는 같은 수트의 연속된 숫자 5장이에요. 드래그 순서도 숫자 순서와 일치해야 해요.",
+      "level2": "스페이드(♠) 카드 중 연속된 숫자 5장을 찾아보세요.",
+      "level3": "5♠ → 6♠ → 7♠ → 8♠ → 9♠ 순서로 드래그하세요. 모두 인접해 있어요."
+    },
+    "theme": {
+      "bgColor": "#001a0a",
+      "accentColor": "#00e676",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "Kh",  "3d",  "Jc",  "Ah",  "2h",  "",
+      "",    "Qd",  "5s",  "6s",  "7s",  "10c", "",
+      "",    "4h",  "Kc",  "8s",  "9s",  "Jd",  "",
+      "",    "Ad",  "3c",  "Qs",  "2c",  "Kd",  "",
+      "",    "10h", "Jh",  "4c",  "5h",  "6d",  "",
+      "",    "",    "",    "",    "",    "",    ""
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "ordered_straight",
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 1,
+          "description": "순서 있는 스트레이트 플러시 1개"
+        }
+      ]
+    },
+    "rewards": { "gold": 300 },
+    "unlockCondition": { "type": "puzzle_clear", "puzzleId": 4 }
+  },
+  {
+    "id": 6,
+    "title": "깨끗하게",
+    "description": "그리드의 모든 카드를 없애세요.",
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "grid_empty",
+          "description": "그리드의 모든 카드를 없애세요"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 150
+    },
+    "unlockCondition": { "type": "puzzle_clear", "puzzleId": 3 },
+    "hint": {
+      "level1": "카드가 10장뿐이에요. 두 번의 패로 전부 없앨 수 있어요.",
+      "level2": "하트 5장, 스페이드 5장이 각각 인접해 있어요.",
+      "level3": "하트 A→K→Q→J→10, 스페이드 A→K→Q→J→10 순서로 드래그하세요."
+    },
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "Ah",  "Kh",  "Qh",  "Jh",  "10h", "",
+      "",    "As",  "Ks",  "Qs",  "Js",  "10s", ""
+    ]
+  }
+]

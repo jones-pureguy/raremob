@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DragON POKER - Puzzle</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .puzzle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    position: relative;
+    z-index: 1;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .puzzle-title-text {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .hint-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-size: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    font-weight: 700;
+  }
+  .hint-btn:hover { background: rgba(201,168,76,0.15); }
+  .hint-btn:active { transform: scale(0.95); }
+  .puzzle-condition-bar {
+    max-height: 2.8em;
+    overflow: hidden;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    padding: 2px 12px;
+  }
+  /* Override removed card background */
+  .removed-card {
+    background: #2c2c2c;
+    border-color: rgba(255,255,255,0.12);
+  }
+</style>
+</head>
+<body class="game-page">
+
+<div class="header">
+  <div class="currency-bar">
+    <div class="currency-item">
+      <img src="./images/coin.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span>
+      <span class="currency-value" id="goldDisplay">0</span>
+    </div>
+    <div class="currency-item">
+      <img src="./images/chip.png" alt="chip" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">🎰</span>
+      <span class="currency-value" id="chipDisplay">0</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="username-display" id="usernameDisplay"></div>
+    <button class="hint-btn" id="hintBtn" title="힌트">?</button>
+  </div>
+</div>
+
+<div class="puzzle-header">
+  <span class="puzzle-title-text" id="puzzleTitle">Puzzle 1</span>
+</div>
+
+<div class="grid-container" id="gridContainer">
+  <div class="grid" id="grid"></div>
+  <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+  <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+</div>
+
+<div class="hand-preview" id="handPreview"></div>
+
+<div class="puzzle-condition-bar" id="puzzleConditionBar"></div>
+
+<div class="back-to-menu">
+  <a href="puzzle_select.html" class="menu-btn small">퍼즐 선택</a>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script>
+  function renderCurrencyBar() {
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const goldEl = document.getElementById('goldDisplay');
+    const chipEl = document.getElementById('chipDisplay');
+    if (goldEl) goldEl.textContent = gold.toLocaleString();
+    if (chipEl) chipEl.textContent = '0';
+  }
+  renderCurrencyBar();
+</script>
+<script src="puzzle_script.js"></script>
+</body>
+</html>

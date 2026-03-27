@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DragON POKER - Puzzle Select</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .puzzle-select-header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .puzzle-select-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .gold-display {
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .puzzle-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .puzzle-btn {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .puzzle-btn:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4); }
+  .puzzle-btn.selected { border-color: var(--gold); background: rgba(201,168,76,0.2); box-shadow: 0 0 12px rgba(201,168,76,0.3); }
+  .puzzle-btn.cleared {
+    background: rgba(201,168,76,0.25);
+    border-color: var(--gold);
+    color: var(--gold);
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 4px 0 0 6px;
+  }
+  .puzzle-btn.cleared-no-hint::after {
+    content: '★';
+    position: absolute;
+    bottom: 3px;
+    right: 4px;
+    font-size: 0.85rem;
+    color: var(--gold);
+    text-shadow: 0 0 6px rgba(201,168,76,0.5);
+  }
+  .puzzle-btn.cleared-with-hint::after {
+    content: '✓';
+    position: absolute;
+    bottom: 3px;
+    right: 4px;
+    font-size: 0.85rem;
+    color: #4CAF50;
+  }
+  .puzzle-btn.locked {
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.2);
+    cursor: pointer;
+  }
+  .puzzle-detail {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 8px;
+    min-height: 120px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .puzzle-detail-title {
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+  .puzzle-detail-desc {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .puzzle-detail-meta {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  .puzzle-detail-meta span { color: rgba(255,255,255,0.6); }
+  .puzzle-detail-reward {
+    color: var(--gold);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .btn-challenge {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    margin: 16px auto 0;
+    padding: 12px;
+    background: rgba(201,168,76,0.2);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-challenge:hover { background: rgba(201,168,76,0.35); }
+  .btn-challenge:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    width: 100%;
+  }
+  .pagination button {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.7);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pagination button:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4); }
+  .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pagination .page-info {
+    color: rgba(255,255,255,0.5);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    min-width: 60px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="menu-container">
+  <div class="puzzle-select-header">
+    <div class="puzzle-select-title">PUZZLE MODE</div>
+    <div class="gold-display" id="goldDisplay">0 Gold</div>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+  <div class="puzzle-grid" id="puzzleGrid"></div>
+
+  <div class="puzzle-detail" id="puzzleDetail">
+    <div style="color:rgba(255,255,255,0.3);text-align:center;padding-top:30px;">퍼즐을 선택하세요</div>
+  </div>
+
+  <button class="btn-challenge" id="btnChallenge" disabled onclick="startPuzzle()">도전하기</button>
+
+  <div style="margin-top:16px;text-align:center;">
+    <a href="index.html" class="menu-btn small">메인메뉴</a>
+  </div>
+</div>
+
+<script>
+  let puzzles = [];
+  let progress = { clearedPuzzles: [], hintUsed: {} };
+  let selectedPuzzleId = null;
+  const PAGE_SIZE = 25;
+  let currentPage = 1;
+  let totalPages = 1;
+
+  async function init() {
+    // 1. 즉시 로컬 골드 표시
+    const localGold = parseInt(localStorage.getItem('poker_gold') || '0');
+    document.getElementById('goldDisplay').textContent = localGold.toLocaleString() + ' Gold';
+
+    // 2. 즉시 로컬 진도 로드
+    progress = JSON.parse(localStorage.getItem('poker_puzzle_progress') || '{"clearedPuzzles":[],"hintUsed":{}}');
+
+    // Load puzzles.json
+    try {
+      const res = await fetch('puzzles.json');
+      puzzles = await res.json();
+    } catch(e) { console.error('Failed to load puzzles.json'); return; }
+
+    totalPages = Math.ceil(puzzles.length / PAGE_SIZE);
+
+    // Auto-navigate to last progress page
+    if (progress.clearedPuzzles && progress.clearedPuzzles.length > 0) {
+      const maxCleared = Math.max(...progress.clearedPuzzles);
+      const nextPuzzleId = maxCleared + 1;
+      const targetId = nextPuzzleId <= puzzles.length ? nextPuzzleId : maxCleared;
+      const puzzleIndex = puzzles.findIndex(p => p.id === targetId);
+      if (puzzleIndex >= 0) {
+        currentPage = Math.floor(puzzleIndex / PAGE_SIZE) + 1;
+      }
+    }
+
+    renderPagination();
+    renderPuzzleGrid();
+  }
+
+  function isUnlocked(puzzle) {
+    if (puzzle.unlockCondition.type === 'none') return true;
+    if (puzzle.unlockCondition.type === 'puzzle_clear') {
+      return progress.clearedPuzzles && progress.clearedPuzzles.includes(puzzle.unlockCondition.puzzleId);
+    }
+    return false;
+  }
+
+  function renderPagination() {
+    const pag = document.getElementById('pagination');
+    if (totalPages <= 1) { pag.innerHTML = ''; return; }
+    pag.innerHTML = `
+      <button onclick="goPage(currentPage - 1)" ${currentPage <= 1 ? 'disabled' : ''}>◀</button>
+      <span class="page-info">${currentPage} / ${totalPages}</span>
+      <button onclick="goPage(currentPage + 1)" ${currentPage >= totalPages ? 'disabled' : ''}>▶</button>
+    `;
+  }
+
+  function goPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    selectedPuzzleId = null;
+    document.getElementById('puzzleDetail').innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;padding-top:30px;">퍼즐을 선택하세요</div>';
+    document.getElementById('btnChallenge').disabled = true;
+    document.getElementById('btnChallenge').textContent = '도전하기';
+    renderPagination();
+    renderPuzzleGrid();
+  }
+
+  function renderPuzzleGrid() {
+    const grid = document.getElementById('puzzleGrid');
+    grid.innerHTML = '';
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pagePuzzles = puzzles.slice(start, start + PAGE_SIZE);
+
+    pagePuzzles.forEach(puzzle => {
+      const btn = document.createElement('button');
+      btn.className = 'puzzle-btn';
+      const cleared = progress.clearedPuzzles && progress.clearedPuzzles.includes(puzzle.id);
+      const unlocked = isUnlocked(puzzle);
+      const hintUsed = progress.hintUsed && progress.hintUsed[puzzle.id] !== undefined ? progress.hintUsed[puzzle.id] : -1;
+
+      if (cleared) {
+        btn.classList.add('cleared');
+        if (hintUsed === 0) btn.classList.add('cleared-no-hint');
+        else btn.classList.add('cleared-with-hint');
+      } else if (!unlocked) {
+        btn.classList.add('locked');
+      }
+
+      btn.textContent = unlocked ? puzzle.id : '🔒';
+      btn.addEventListener('click', () => selectPuzzle(puzzle.id));
+
+      grid.appendChild(btn);
+    });
+  }
+
+  function selectPuzzle(id) {
+    selectedPuzzleId = id;
+    const puzzle = puzzles.find(p => p.id === id);
+    if (!puzzle) return;
+
+    // Highlight selected button
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pagePuzzles = puzzles.slice(start, start + PAGE_SIZE);
+    document.querySelectorAll('.puzzle-btn').forEach((btn, i) => {
+      btn.classList.toggle('selected', pagePuzzles[i] && pagePuzzles[i].id === id);
+    });
+
+    const cleared = progress.clearedPuzzles && progress.clearedPuzzles.includes(id);
+    const constraints = puzzle.constraints;
+
+    // Build constraints text
+    let metaLines = [];
+    if (!constraints.jumpAllowed) metaLines.push('점프: <span>불가</span>');
+    if (constraints.diagonalOnly) metaLines.push('이동: <span>대각선만</span>');
+    else if (!constraints.diagonalAllowed) metaLines.push('이동: <span>직교만</span>');
+    else if (constraints.moveMode === 'straight') metaLines.push('이동: <span>직선만</span>');
+    if (constraints.forbiddenHands.length > 0) metaLines.push(`금지 족보: <span>${constraints.forbiddenHands.join(', ')}</span>`);
+    if (constraints.forbiddenValues.length > 0) metaLines.push(`금지 숫자: <span>${constraints.forbiddenValues.join(', ')}</span>`);
+
+    // Hint usage
+    let hintLine = '';
+    if (cleared) {
+      const hintUsed = progress.hintUsed && progress.hintUsed[id] !== undefined ? progress.hintUsed[id] : -1;
+      if (hintUsed === 0) hintLine = '<div style="color:#4CAF50;font-size:0.8rem;margin-top:4px;">힌트 없이 클리어</div>';
+      else if (hintUsed > 0) hintLine = `<div style="color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:4px;">Lv.${hintUsed} 힌트 사용</div>`;
+    }
+
+    const detail = document.getElementById('puzzleDetail');
+    detail.innerHTML = `
+      <div class="puzzle-detail-title">${cleared ? '✓ ' : ''}Puzzle ${puzzle.id}: ${puzzle.title}</div>
+      <div class="puzzle-detail-desc">${puzzle.description}</div>
+      ${metaLines.length > 0 ? `<div class="puzzle-detail-meta">${metaLines.join('<br>')}</div>` : ''}
+      <div class="puzzle-detail-reward">보상: ${puzzle.rewards.gold} Gold${hintLine ? ' + 힌트 미사용 보너스' : ''}</div>
+      ${hintLine}
+    `;
+
+    const unlocked = isUnlocked(puzzle);
+    const btn = document.getElementById('btnChallenge');
+    if (unlocked) {
+      btn.disabled = false;
+      btn.textContent = cleared ? '다시 도전' : '도전하기';
+    } else {
+      btn.disabled = true;
+      btn.textContent = '🔒 잠김';
+    }
+  }
+
+  function startPuzzle() {
+    if (!selectedPuzzleId) return;
+    window.location.href = `puzzle.html?id=${selectedPuzzleId}`;
+  }
+
+  init();
+</script>
+</body>
+</html>
