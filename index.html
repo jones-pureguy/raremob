@@ -9,6 +9,145 @@
 <link rel="manifest" href="manifest.json">
 <title>DragON POKER</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  .main-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+  }
+  .menu-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+  .menu-col-small {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 100px;
+  }
+  .m-btn {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    position: relative;
+    color: var(--gold);
+  }
+  .m-btn:hover { opacity: 0.85; }
+  .m-btn:active { transform: scale(0.97); }
+  .m-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .m-btn.btn-large  { flex: 1; min-height: 110px; font-size: 1.4rem; }
+  .m-btn.btn-medium { flex: 1; min-height: 90px; font-size: 1.1rem; }
+  .m-btn.btn-wide   { width: 100%; min-height: 60px; font-size: 1.1rem; }
+  .m-btn.btn-small  { width: 100%; min-height: 48px; font-size: 0.85rem; }
+
+  .btn-basic     { background: #1a4a2a; }
+  .btn-sub       { background: #2d5a1a; }
+  .btn-challenge { background: #2d3a1a; }
+  .btn-puzzle    { background: #1a3a4a; }
+  .btn-vs        { background: #1a1a3a; }
+  .btn-settings  { background: #3a3a3a; }
+
+  .coming-soon {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    background: rgba(201,168,76,0.25);
+    color: var(--gold);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Settings Modal */
+  .settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .settings-box {
+    background: linear-gradient(145deg, #1a3a22, #0d2818);
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 24px 20px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(201,168,76,0.2);
+  }
+  .settings-title {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+  }
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+  .settings-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 12px;
+    background: rgba(255,255,255,0.05);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    width: 100%;
+  }
+  .settings-item:hover:not(.settings-disabled) {
+    background: rgba(255,255,255,0.1);
+  }
+  .settings-disabled { opacity: 0.45; cursor: not-allowed; }
+  .settings-icon  { font-size: 1.1rem; width: 24px; text-align: center; }
+  .settings-label { flex: 1; }
+  .settings-value { font-size: 0.8rem; color: var(--gold); }
+  .settings-arrow { color: var(--gold); font-size: 1.1rem; }
+  .settings-badge {
+    font-size: 0.65rem;
+    background: rgba(201,168,76,0.2);
+    color: var(--gold);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .settings-close {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .settings-close:hover { background: rgba(201,168,76,0.15); }
+</style>
 </head>
 <body>
 
@@ -26,13 +165,95 @@
   <img src="images/logo.webp" alt="DragON POKER" class="menu-logo">
 
   <div class="menu-player" id="menuPlayer"></div>
-  <div class="menu-buttons">
-    <a href="game.html" class="menu-btn">베이직모드</a>
-    <a href="stage_select.html" class="menu-btn">도전모드</a>
-    <a href="puzzle_select.html" class="menu-btn">퍼즐모드</a>
-    <a href="leaderboard.html" class="menu-btn">랭킹</a>
-    <a href="replay.html?source=local" class="menu-btn">리플레이</a>
-    <a href="id.html" class="menu-btn">닉네임관리</a>
+
+  <div class="main-menu">
+    <!-- Row 1: BASIC GAME + Ranking/Replay -->
+    <div class="menu-row">
+      <button class="m-btn btn-large btn-basic" onclick="location.href='game.html'">
+        BASIC<br>GAME
+      </button>
+      <div class="menu-col-small">
+        <button class="m-btn btn-small btn-sub" onclick="location.href='leaderboard.html'">
+          Ranking
+        </button>
+        <button class="m-btn btn-small btn-sub" onclick="location.href='replay.html?source=local'">
+          Replay
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 2: CHALLENGE + PUZZLE -->
+    <div class="menu-row">
+      <button class="m-btn btn-medium btn-challenge" onclick="location.href='stage_select.html'">
+        CHALLENGE<br>MODE
+      </button>
+      <button class="m-btn btn-medium btn-puzzle" onclick="location.href='puzzle_select.html'">
+        PUZZLE<br>MODE
+      </button>
+    </div>
+
+    <!-- Row 3: vs MODE -->
+    <div class="menu-row">
+      <button class="m-btn btn-medium btn-vs" disabled>
+        vs MODE
+        <span class="coming-soon">준비 중</span>
+      </button>
+    </div>
+
+    <!-- Row 4: SETTINGS -->
+    <div class="menu-row">
+      <button class="m-btn btn-wide btn-settings" onclick="openSettings()">
+        SETTINGS
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="settings-overlay" id="settingsModal">
+  <div class="settings-box">
+    <div class="settings-title">SETTINGS</div>
+
+    <div class="settings-list">
+      <button class="settings-item" onclick="location.href='id.html'">
+        <span class="settings-icon">👤</span>
+        <span class="settings-label">닉네임 관리</span>
+        <span class="settings-value" id="settingsUsername"></span>
+        <span class="settings-arrow">›</span>
+      </button>
+
+      <button class="settings-item settings-disabled">
+        <span class="settings-icon">🔗</span>
+        <span class="settings-label">구글 계정 연동</span>
+        <span class="settings-badge">준비 중</span>
+      </button>
+
+      <button class="settings-item settings-disabled">
+        <span class="settings-icon">📖</span>
+        <span class="settings-label">튜토리얼</span>
+        <span class="settings-badge">준비 중</span>
+      </button>
+
+      <button class="settings-item settings-disabled">
+        <span class="settings-icon">🔊</span>
+        <span class="settings-label">사운드 설정</span>
+        <span class="settings-badge">준비 중</span>
+      </button>
+
+      <button class="settings-item settings-disabled">
+        <span class="settings-icon">🌐</span>
+        <span class="settings-label">언어 설정</span>
+        <span class="settings-badge">준비 중</span>
+      </button>
+
+      <button class="settings-item" onclick="showAppInfo()">
+        <span class="settings-icon">ℹ️</span>
+        <span class="settings-label">앱 정보</span>
+        <span class="settings-arrow">›</span>
+      </button>
+    </div>
+
+    <button class="settings-close" onclick="closeSettings()">닫기</button>
   </div>
 </div>
 
@@ -85,6 +306,25 @@
     const goldEl = document.getElementById('goldDisplay');
     if (goldEl) goldEl.textContent = parseInt(data.gold || 0).toLocaleString();
   })();
+
+  // Settings
+  function openSettings() {
+    const username = localStorage.getItem('poker_username') || '';
+    document.getElementById('settingsUsername').textContent = username;
+    document.getElementById('settingsModal').style.display = 'flex';
+  }
+
+  function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+  }
+
+  function showAppInfo() {
+    alert('DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones');
+  }
+
+  document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+  });
 </script>
 </body>
 </html>
