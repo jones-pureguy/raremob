@@ -54,6 +54,7 @@ let allPuzzles = null;
 let puzzleFailed = false;
 let puzzleCleared = false;
 let hintLevel = 0;
+let orderedStraightCount = 0;
 
 function initState() {
   state = {
@@ -300,6 +301,27 @@ function finalizePath() {
     }
   }
 
+  // Track ordered straight
+  if (puzzleConfig) {
+    const osConditions = puzzleConfig.mission.conditions.filter(c => c.type === 'ordered_straight');
+    if (osConditions.length > 0) {
+      const dragValues = cards.map(c => c.value);
+      let ascending = true, descending = true;
+      for (let i = 1; i < dragValues.length; i++) {
+        if (dragValues[i] !== dragValues[i-1] + 1) ascending = false;
+        if (dragValues[i] !== dragValues[i-1] - 1) descending = false;
+      }
+      const isOrdered = ascending || descending;
+      for (const osc of osConditions) {
+        if (isOrdered && osc.hand === 'STRAIGHT_FLUSH' && hand.rank >= RANK.STRAIGHT_FLUSH) {
+          orderedStraightCount++;
+        } else if (isOrdered && osc.hand === 'STRAIGHT' && hand.rank >= RANK.STRAIGHT) {
+          orderedStraightCount++;
+        }
+      }
+    }
+  }
+
   // Add hand
   state.hands.push(handData);
   showScorePopup(hand.label);
@@ -513,6 +535,9 @@ function checkCondition(cond) {
       const target = cond.count || cond.count_gte || MAX_HANDS;
       return state.hands.length >= target;
     }
+    case 'ordered_straight': {
+      return orderedStraightCount >= (cond.count_gte || 1);
+    }
     case 'grid_empty': {
       const remaining = state.grid.flat().filter(cell => cell && cell.card !== null).length;
       return remaining === 0;
@@ -670,6 +695,7 @@ function retryPuzzle() {
   // hintLevel is preserved on retry
   puzzleFailed = false;
   puzzleCleared = false;
+  orderedStraightCount = 0;
   document.getElementById('modalOverlay').classList.remove('active');
 
   initState();
