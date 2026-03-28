@@ -891,19 +891,6 @@ body.debug-mode .card .debug-info { display: block; }
   flex-direction: column;
 }
 
-.qr-header {
-  padding: 14px 16px 10px;
-  border-bottom: 0.5px solid rgba(201,168,76,0.2);
-  flex-shrink: 0;
-}
-
-.qr-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  color: var(--gold);
-  letter-spacing: 0.08em;
-}
-
 .qr-scroll {
   overflow-y: auto;
   flex: 1;
@@ -924,33 +911,25 @@ body.debug-mode .card .debug-info { display: block; }
   flex: 1;
   min-width: 0;
 }
-.qr-info-top {
-  display: flex;
-  align-items: baseline;
-  gap: 0;
-}
-.qr-score {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--gold);
-  width: 44px;
-  flex-shrink: 0;
-  text-align: right;
-  padding-right: 8px;
-}
 .qr-name {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
   font-weight: 700;
   color: white;
 }
+.qr-pts {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-left: 4px;
+}
 .qr-desc {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.62rem;
-  color: rgba(255,255,255,0.45);
+  font-size: 0.55rem;
+  color: rgba(255,255,255,0.4);
   margin-top: 2px;
-  padding-left: 52px;
+  padding-left: 0;
   line-height: 1.3;
 }
 

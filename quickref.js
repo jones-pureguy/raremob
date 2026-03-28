@@ -27,14 +27,11 @@ function miniCard(val, suit, dim) {
   </div>`;
 }
 
-function qrRow(scoreStr, nameStr, descStr, cardsHTML) {
+function qrRow(nameStr, scoreStr, descStr, cardsHTML) {
   return `
     <div class="qr-row">
       <div class="qr-info">
-        <div class="qr-info-top">
-          <span class="qr-score">${scoreStr}</span>
-          <span class="qr-name">${nameStr}</span>
-        </div>
+        <div class="qr-name">${nameStr} <span class="qr-pts">(${scoreStr})</span></div>
         <div class="qr-desc">${descStr}</div>
       </div>
       <div class="qr-mini-cards">${cardsHTML}</div>
@@ -80,10 +77,6 @@ function qrDesc(rank) {
   const v = i18n.t(`quickRef.desc.${rank}`);
   return (v && !v.startsWith('quickRef.')) ? v : QR_FALLBACK_DESCS[rank] || '';
 }
-function qrTitle() {
-  const v = i18n.t('quickRef.title');
-  return (v && v !== 'quickRef.title') ? v : 'Hand Rankings';
-}
 
 function buildQuickRef() {
   const scores = getQRScores();
@@ -101,21 +94,18 @@ function buildQuickRef() {
   const rfHTML = rfCards.map(([v,s]) => miniCard(v, s, false)).join('');
 
   const rows = [
-    qrRow(`${scores.ROYAL_FLUSH_PLUS}P`, qrName('ROYAL_FLUSH_PLUS'),
+    qrRow(qrName('ROYAL_FLUSH_PLUS'), `${scores.ROYAL_FLUSH_PLUS}P`,
           qrDesc('ROYAL_FLUSH_PLUS'), rfPlusHTML),
-    qrRow(`${scores.ROYAL_FLUSH}P`, qrName('ROYAL_FLUSH'),
+    qrRow(qrName('ROYAL_FLUSH'), `${scores.ROYAL_FLUSH}P`,
           qrDesc('ROYAL_FLUSH'), rfHTML),
     ...QR_HANDS.map(h =>
-      qrRow(`${scores[h.rank] ?? 0}P`, qrName(h.rank),
+      qrRow(qrName(h.rank), `${scores[h.rank] ?? 0}P`,
             qrDesc(h.rank),
             h.cards.map(([v,s,dim]) => miniCard(v, s, dim)).join(''))
     )
   ].join('');
 
   list.innerHTML = rows;
-
-  const titleEl = document.getElementById('qrTitle');
-  if (titleEl) titleEl.textContent = qrTitle();
 }
 
 async function showQuickRef() {
