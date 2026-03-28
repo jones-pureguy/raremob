@@ -135,7 +135,7 @@
 
 <div style="text-align:center;padding:12px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
   <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">500</span></button>
-  <a href="index.html" class="menu-btn small">메인메뉴</a>
+  <a href="index.html" class="menu-btn small">&larr; BACK</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -518,17 +518,20 @@ async function syncGoldDeductToDB(reason) {
   const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
   if (pending <= 0) return;
   const playerId = localStorage.getItem('poker_player_id');
+  if (!playerId) return;
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-  const { error } = await sb.from('players').update({ gold: currentGold }).eq('id', playerId);
-  if (!error) {
-    sb.from('gold_transactions').insert({
-      player_id: playerId,
-      amount: -pending,
-      reason: reason || 'deduct_sync',
-      meta: { synced_amount: pending }
-    }).catch(err => console.error('Transaction log failed:', err));
-    localStorage.setItem('poker_gold_pending_deduct', 0);
-  }
+  try {
+    const { error } = await sb.from('players').update({ gold: currentGold }).eq('id', playerId);
+    if (!error) {
+      sb.from('gold_transactions').insert({
+        player_id: playerId,
+        amount: -pending,
+        reason: reason || 'deduct_sync',
+        meta: { synced_amount: pending }
+      }).catch(err => console.error('Transaction log failed:', err));
+      localStorage.setItem('poker_gold_pending_deduct', 0);
+    }
+  } catch(e) { console.error('syncGoldDeductToDB error:', e); }
 }
 
 // ─── Confirm Modal ───
@@ -565,7 +568,7 @@ function gameRetry() {
     confirmText: '리트라이 (-500G)',
     onConfirm: async () => {
       deductGoldLocal(500, 'game_retry');
-      await syncGoldDeductToDB('game_retry');
+      try { await syncGoldDeductToDB('game_retry'); } catch(e) { console.error('Gold sync error:', e); }
       localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
       window.location.href = 'game.html';
     }
