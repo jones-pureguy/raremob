@@ -229,7 +229,7 @@
     "minHandDesc": "최소 유효 패: 10 이상의 원페어 이상.",
     "desc": {
       "ROYAL_FLUSH_PLUS": "순서대로 선택된 Royal Flush",
-      "ROYAL_FLUSH": "10,J,Q,K,A 5장 카드가 선택된 최상위 Straight Flush",
+      "ROYAL_FLUSH": "10,J,Q,K,A 최상위 Straight Flush",
       "STRAIGHT_FLUSH": "같은 무늬로 구성된 Straight",
       "FOUR_KIND": "같은 숫자 4장",
       "FULL_HOUSE": "같은 숫자 3장 + 2장",
