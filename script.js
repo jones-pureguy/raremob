@@ -22,38 +22,12 @@ const RANK = {
   ROYAL_FLUSH_PLUS: 10,
 };
 
-const DEFAULT_SCORES = {
-  [RANK.HIGH_CARD]: 0,
-  [RANK.ONE_PAIR]: 1,
-  [RANK.TWO_PAIR]: 2,
-  [RANK.THREE_KIND]: 5,
-  [RANK.STRAIGHT]: 10,
-  [RANK.FLUSH]: 15,
-  [RANK.FULL_HOUSE]: 20,
-  [RANK.FOUR_KIND]: 50,
-  [RANK.STRAIGHT_FLUSH]: 75,
-  [RANK.ROYAL_FLUSH]: 100,
-  [RANK.ROYAL_FLUSH_PLUS]: 250,
-};
-
-const DEFAULT_PENALTY = 10;
-
-function getScoreSettings() {
-  try {
-    const saved = localStorage.getItem('poker_scores');
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
-  return { scores: { ...DEFAULT_SCORES }, penalty: DEFAULT_PENALTY };
-}
-
 function getRankScore(rank) {
-  const settings = getScoreSettings();
-  return settings.scores[rank] !== undefined ? settings.scores[rank] : (DEFAULT_SCORES[rank] || 0);
+  return ScorePolicy.getHandScore(rank);
 }
 
 function getPenaltyPerCard() {
-  const settings = getScoreSettings();
-  return settings.penalty !== undefined ? settings.penalty : DEFAULT_PENALTY;
+  return ScorePolicy.get().penalty.perCard;
 }
 
 const RANK_LABELS = {
@@ -786,12 +760,12 @@ function endGame(reason) {
   const best = sorted[0];
 
   // Time bonus
-  const timeBonus = Math.max(0, state.timer);
+  const timeBonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
 
   // Remaining cards penalty
   const remainingCards = countRemainingCards();
   const penaltyPerCard = getPenaltyPerCard();
-  const penalty = remainingCards > 4 ? (remainingCards - 4) * penaltyPerCard : 0;
+  const penalty = ScorePolicy.getPenalty(remainingCards);
   const score = Math.max(0, handScore + timeBonus - penalty);
 
   // High score
@@ -892,8 +866,8 @@ function endGame(reason) {
     `;
     document.getElementById('modalOverlay').classList.add('active');
 
-    // Save to server in background and update modal when done
-    const dbPromise = username
+    // Save to server in background and update modal when done (skip leaderboard if score is 0)
+    const dbPromise = (username && score > 0)
       ? saveSessionAndGetStatus({
           username,
           score,

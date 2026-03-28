@@ -58,6 +58,8 @@
 </head>
 <body class="game-page">
 
+<div class="back-fixed"><a href="puzzle_select.html">&larr;</a></div>
+
 <div class="header">
   <div class="currency-bar">
     <div class="currency-item">
@@ -69,9 +71,8 @@
       <span class="currency-value" id="chipDisplay">0</span>
     </div>
   </div>
-  <button class="qr-btn">?</button>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <div class="username-display" id="usernameDisplay"></div>
+  <div style="position:absolute;right:16px;display:flex;align-items:center;gap:6px;">
+    <button class="qr-btn">?</button>
     <button class="hint-btn" id="hintBtn" title="힌트">?</button>
   </div>
 </div>
@@ -90,9 +91,6 @@
 
 <div class="puzzle-condition-bar" id="puzzleConditionBar"></div>
 
-<div class="back-to-menu">
-  <a href="puzzle_select.html" class="menu-btn small">퍼즐 선택</a>
-</div>
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modal"></div>
@@ -116,6 +114,7 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="scorepolicy.js"></script>
 <script src="quickref.js"></script>
 <script>
   function renderCurrencyBar() {

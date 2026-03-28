@@ -22,26 +22,11 @@ const RANK_BY_NAME = {
   'STRAIGHT_FLUSH': 8, 'ROYAL_FLUSH': 9, 'ROYAL_FLUSH_PLUS': 10,
 };
 
-const DEFAULT_SCORES = {
-  [RANK.HIGH_CARD]: 0, [RANK.ONE_PAIR]: 1, [RANK.TWO_PAIR]: 2,
-  [RANK.THREE_KIND]: 5, [RANK.STRAIGHT]: 10, [RANK.FLUSH]: 15,
-  [RANK.FULL_HOUSE]: 20, [RANK.FOUR_KIND]: 50, [RANK.STRAIGHT_FLUSH]: 75,
-  [RANK.ROYAL_FLUSH]: 100, [RANK.ROYAL_FLUSH_PLUS]: 250,
-};
-
-const DEFAULT_PENALTY = 10;
-
-function getScoreSettings() {
-  try { const s = localStorage.getItem('poker_scores'); if (s) return JSON.parse(s); } catch(e) {}
-  return { scores: { ...DEFAULT_SCORES }, penalty: DEFAULT_PENALTY };
-}
 function getRankScore(rank) {
-  const s = getScoreSettings();
-  return s.scores[rank] !== undefined ? s.scores[rank] : (DEFAULT_SCORES[rank] || 0);
+  return ScorePolicy.getHandScore(rank);
 }
 function getPenaltyPerCard() {
-  const s = getScoreSettings();
-  return s.penalty !== undefined ? s.penalty : DEFAULT_PENALTY;
+  return ScorePolicy.get().penalty.perCard;
 }
 
 const RANK_LABELS = {
@@ -852,9 +837,9 @@ function renderScoreProgress() {
 
 function calcFinalScore() {
   const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
-  const timeBonus = Math.max(0, state.timer);
+  const timeBonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
   const remaining = countRemainingCards();
-  const penalty = remaining > 4 ? (remaining - 4) * getPenaltyPerCard() : 0;
+  const penalty = ScorePolicy.getPenalty(remaining);
   return Math.max(0, handScore + timeBonus - penalty);
 }
 
@@ -1037,9 +1022,9 @@ function buildScoreBreakdownHTML(accentColor) {
   if (!digitCond && !scoreCond) return '';
 
   const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
-  const timeBonus = Math.max(0, state.timer);
+  const timeBonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
   const remaining = countRemainingCards();
-  const cardPenalty = remaining > 4 ? (remaining - 4) * getPenaltyPerCard() : 0;
+  const cardPenalty = ScorePolicy.getPenalty(remaining);
   const finalScore = Math.max(0, handScore + timeBonus - cardPenalty);
 
   const ac = accentColor || '#C9A84C';

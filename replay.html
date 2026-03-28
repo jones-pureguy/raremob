@@ -89,11 +89,10 @@
 </head>
 <body class="game-page">
 
+<div class="back-fixed"><a href="index.html">&larr;</a></div>
+
 <div class="header">
   <div class="title">REPLAY</div>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <div class="username-display" id="replayUser"></div>
-  </div>
 </div>
 
 <div class="status-bar">
@@ -135,7 +134,6 @@
 
 <div style="text-align:center;padding:12px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
   <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">500</span></button>
-  <a href="index.html" class="menu-btn small">&larr; BACK</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -1,22 +1,7 @@
 // Quick Reference Modal — shared across game/stage/puzzle pages
 
 function getQRScores() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('poker_scores') || '{}');
-    const s = saved.scores || {};
-    return {
-      ROYAL_FLUSH_PLUS: s.ROYAL_FLUSH_PLUS ?? 250,
-      ROYAL_FLUSH:      s.ROYAL_FLUSH      ?? 100,
-      STRAIGHT_FLUSH:   s.STRAIGHT_FLUSH   ?? 75,
-      FOUR_KIND:        s.FOUR_KIND        ?? 50,
-      FULL_HOUSE:       s.FULL_HOUSE       ?? 20,
-      FLUSH:            s.FLUSH            ?? 15,
-      STRAIGHT:         s.STRAIGHT         ?? 10,
-      THREE_KIND:       s.THREE_KIND       ?? 5,
-      TWO_PAIR:         s.TWO_PAIR         ?? 2,
-      ONE_PAIR:         s.ONE_PAIR         ?? 1
-    };
-  } catch(e) { return {}; }
+  return ScorePolicy.get().handScores;
 }
 
 function miniCard(val, suit, dim) {

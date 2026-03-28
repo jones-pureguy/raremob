@@ -1,0 +1,31 @@
+{
+  "_comment": "DragON POKER 점수 정책 설정 파일. 이 파일을 수정하여 점수 체계를 변경할 수 있습니다.",
+  "_lastUpdated": "2026-03-29",
+  "version": 1,
+
+  "handScores": {
+    "HIGH_CARD":        0,
+    "ONE_PAIR":         1,
+    "TWO_PAIR":         2,
+    "THREE_KIND":       5,
+    "STRAIGHT":        10,
+    "FLUSH":           15,
+    "FULL_HOUSE":      20,
+    "FOUR_KIND":       50,
+    "STRAIGHT_FLUSH":  75,
+    "ROYAL_FLUSH":    100,
+    "ROYAL_FLUSH_PLUS": 250
+  },
+
+  "penalty": {
+    "freeCards": 4,
+    "perCard": 10,
+    "_comment": "잔여 카드가 freeCards 초과 시, 초과 장당 perCard점 감점"
+  },
+
+  "timeBonus": {
+    "enabled": true,
+    "perSecond": 1,
+    "_comment": "게임 종료 시 남은 초당 perSecond점 보너스"
+  }
+}
