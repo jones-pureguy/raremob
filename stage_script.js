@@ -1200,11 +1200,13 @@ function syncProgressFromDB() {
   const playerId = localStorage.getItem('poker_player_id');
   if (!playerId) return;
 
-  // 골드 싱크
+  // 골드 싱크 (pending 고려)
   sb.from('players').select('gold').eq('id', playerId).single()
     .then(({ data }) => {
       if (!data) return;
-      localStorage.setItem('poker_gold', data.gold || 0);
+      const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
+      const gold = Math.max(0, (data.gold || 0) - pending);
+      localStorage.setItem('poker_gold', gold);
       renderCurrencyBar();
     })
     .catch(err => console.error('Gold sync failed:', err));
