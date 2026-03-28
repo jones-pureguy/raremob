@@ -1033,10 +1033,13 @@ body.debug-mode .card .debug-info { display: block; }
   align-items: center;
   justify-content: center;
   min-height: 0;
+  width: 100%;
 }
 .tut-grid-area .grid-container {
   max-width: 340px;
   width: 90%;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 .tut-grid-area .hand-preview {
   position: absolute;
