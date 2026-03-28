@@ -320,8 +320,8 @@
 
     const detail = document.getElementById('puzzleDetail');
     detail.innerHTML = `
-      <div class="puzzle-detail-title">${cleared ? '✓ ' : ''}Puzzle ${puzzle.id}: ${puzzle.title}</div>
-      <div class="puzzle-detail-desc">${puzzle.description}</div>
+      <div class="puzzle-detail-title">${cleared ? '✓ ' : ''}Puzzle ${puzzle.id}: ${i18n.tField(puzzle.title)}</div>
+      <div class="puzzle-detail-desc">${i18n.tField(puzzle.description)}</div>
       ${metaLines.length > 0 ? `<div class="puzzle-detail-meta">${metaLines.join('<br>')}</div>` : ''}
       <div class="puzzle-detail-reward">보상: ${puzzle.rewards.gold} Gold${hintLine ? ' + 힌트 미사용 보너스' : ''}</div>
       ${hintLine}

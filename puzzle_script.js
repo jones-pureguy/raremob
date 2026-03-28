@@ -648,8 +648,8 @@ function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) 
     nextHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;text-align:left;">
         <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">${i18n.t('modal.nextPuzzleLabel')}</div>
-        <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Puzzle ${nextPuzzle.id}: ${nextPuzzle.title}</div>
-        <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${nextPuzzle.description}</div>
+        <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Puzzle ${nextPuzzle.id}: ${i18n.tField(nextPuzzle.title)}</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${i18n.tField(nextPuzzle.description)}</div>
         <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">${i18n.t('modal.stageReward', { n: nextPuzzle.rewards.gold })}</div>
       </div>
     `;
@@ -657,7 +657,7 @@ function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) 
 
   modal.innerHTML = `
     <h2 style="color:var(--gold);">${i18n.t('modal.puzzleClear')}</h2>
-    <div class="subtitle">Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}</div>
+    <div class="subtitle">Puzzle ${puzzleConfig.id}: ${i18n.tField(puzzleConfig.title)}</div>
     ${hintStatusHTML}
     ${rewardHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
@@ -675,7 +675,7 @@ function showPuzzleFailPopup(reason) {
 
   modal.innerHTML = `
     <h2 style="color:#ff5252;">${i18n.t('modal.puzzleFailed')}</h2>
-    <div class="subtitle">Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}</div>
+    <div class="subtitle">Puzzle ${puzzleConfig.id}: ${i18n.tField(puzzleConfig.title)}</div>
     <div style="margin:16px 0;padding:12px;background:rgba(255,82,82,0.1);border-radius:8px;border:1px solid rgba(255,82,82,0.3);">
       <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.failReason')}</div>
       <div style="color:#ff5252;font-size:0.95rem;font-weight:600;">"${msg}"</div>
@@ -742,7 +742,7 @@ function onHintButtonClick() {
 function confirmHint(level, cost) {
   if (!deductGold(cost, 'puzzle_hint_' + puzzleConfig.id + '_lv' + level)) return;
   hintLevel = level;
-  const hintText = puzzleConfig.hint['level' + level];
+  const hintText = i18n.tField(puzzleConfig.hint['level' + level]);
   showHintDisplayModal(level, hintText);
 }
 
@@ -849,12 +849,12 @@ async function initPuzzle() {
   document.body.style.setProperty('--gold-glow', puzzleConfig.theme.accentColor + '80');
 
   // Update header
-  document.getElementById('puzzleTitle').textContent = `Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}`;
+  document.getElementById('puzzleTitle').textContent = `Puzzle ${puzzleConfig.id}: ${i18n.tField(puzzleConfig.title)}`;
 
   // Condition bar
   const condBar = document.getElementById('puzzleConditionBar');
   if (condBar) {
-    let text = puzzleConfig.description;
+    let text = i18n.tField(puzzleConfig.description);
     const forbidden = [];
     if (puzzleConfig.constraints.forbiddenHands.length > 0)
       forbidden.push(i18n.t('constraint.forbiddenHands', { list: puzzleConfig.constraints.forbiddenHands.join(', ') }));

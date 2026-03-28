@@ -1003,8 +1003,8 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
     nextStageHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;text-align:left;">
         <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">${i18n.t('modal.nextStageLabel')}</div>
-        <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Stage ${nextStage.id}: ${nextStage.title}</div>
-        <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${nextStage.description}</div>
+        <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Stage ${nextStage.id}: ${i18n.tField(nextStage.title)}</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${i18n.tField(nextStage.description)}</div>
         <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">${i18n.t('modal.reward')}: ${nextStage.rewards.gold} Gold</div>
         ${metaStr}
       </div>
@@ -1015,7 +1015,7 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
 
   modal.innerHTML = `
     <h2 style="color:var(--gold);">${i18n.t('modal.stageClear')}</h2>
-    <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
+    <div class="subtitle">Stage ${stageConfig.id}: ${i18n.tField(stageConfig.title)}</div>
     ${best ? `<div style="color:var(--gold);font-size:0.9rem;margin:8px 0;">Best: ${best.label}</div>` : ''}
     <div class="score">Score: ${finalScore}pts</div>
     ${clearBreakdownHTML}
@@ -1092,7 +1092,7 @@ function showStageFailPopup(reason, customMessage) {
 
   modal.innerHTML = `
     <h2 style="color:#ff5252;">${i18n.t('modal.stageFailed')}</h2>
-    <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
+    <div class="subtitle">Stage ${stageConfig.id}: ${i18n.tField(stageConfig.title)}</div>
     <div style="margin:16px 0;padding:12px;background:rgba(255,82,82,0.1);border-radius:8px;border:1px solid rgba(255,82,82,0.3);">
       <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.failReason')}</div>
       <div style="color:#ff5252;font-size:0.95rem;font-weight:600;">"${failLabel}"</div>
@@ -1303,7 +1303,7 @@ async function initStage() {
 
   // Update header
   document.getElementById('stageTitle').textContent = `Stage ${stageConfig.id}`;
-  document.getElementById('stageMission').textContent = stageConfig.title;
+  document.getElementById('stageMission').textContent = i18n.tField(stageConfig.title);
 
   // Stage timer
   const stageTimerEl = document.getElementById('stageTimerWrap');
@@ -1317,7 +1317,7 @@ async function initStage() {
   // Condition bar
   const condBar = document.getElementById('stageConditionBar');
   if (condBar) {
-    let text = stageConfig.description;
+    let text = i18n.tField(stageConfig.description);
     const forbidden = [];
     if (stageConfig.constraints.forbiddenHands.length > 0)
       forbidden.push(i18n.t('constraint.forbiddenHands', { list: stageConfig.constraints.forbiddenHands.join(', ') }));

@@ -352,8 +352,8 @@
 
     const detail = document.getElementById('stageDetail');
     detail.innerHTML = `
-      <div class="stage-detail-title">${cleared ? '✓ ' : ''}Stage ${stage.id}: ${stage.title}</div>
-      <div class="stage-detail-desc">${stage.description}</div>
+      <div class="stage-detail-title">${cleared ? '✓ ' : ''}Stage ${stage.id}: ${i18n.tField(stage.title)}</div>
+      <div class="stage-detail-desc">${i18n.tField(stage.description)}</div>
       ${metaLines.length > 0 ? `<div class="stage-detail-meta">${metaLines.join('<br>')}</div>` : ''}
       <div class="stage-detail-reward">보상: ${stage.rewards.gold} Gold${stage.rewards.bonus.length > 0 ? ' + 보너스' : ''}</div>
       ${bestLine}
