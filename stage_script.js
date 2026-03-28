@@ -1199,7 +1199,7 @@ function syncProgressFromDB() {
       };
       localStorage.setItem('poker_stage_progress', JSON.stringify(progress));
     })
-    .catch(err => console.error('Stage progress sync failed:', err));
+    .then(result => { if (result && result.error) console.error('Stage progress sync failed:', result.error); });
 }
 
 async function checkFirstClear(stageId) {

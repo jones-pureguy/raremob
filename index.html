@@ -344,7 +344,7 @@
         localStorage.setItem('poker_gold', resolvedGold);
         if (resolvedGold !== dbGold) {
           sb.from('players').update({ gold: resolvedGold }).eq('id', playerId)
-            .catch(err => console.error('Gold sync error:', err));
+            .then(({ error }) => { if (error) console.error('Gold sync error:', error); });
         }
       }
 

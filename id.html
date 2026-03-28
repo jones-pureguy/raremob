@@ -118,12 +118,13 @@
       // 신규 계정 골드 지급
       if (!existingPlayer) {
         localStorage.setItem('poker_gold', INITIAL_GOLD);
-        sb.from('gold_transactions').insert({
+        const { error: txErr } = await sb.from('gold_transactions').insert({
           player_id: uid,
           amount: INITIAL_GOLD,
           reason: 'initial_grant',
           meta: { note: '신규 계정 초기 지급' }
-        }).catch(err => console.error('Transaction log failed:', err));
+        });
+        if (txErr) console.error('Transaction log failed:', txErr);
       }
       msgEl.textContent = i18n.t('toast.registerComplete');
       msgEl.style.color = '#4CAF50';
