@@ -335,14 +335,14 @@
       .single();
 
     if (data) {
-      const actualGold = data.gold - pending;
-      localStorage.setItem('poker_gold', Math.max(0, actualGold));
-
       if (pending > 0) {
-        const currentGold = Math.max(0, actualGold);
+        // pending이 남아있으면 DB 골드에서 차감 후 반영
+        const actualGold = Math.max(0, data.gold - pending);
+        localStorage.setItem('poker_gold', actualGold);
+
         const { error } = await sb
           .from('players')
-          .update({ gold: currentGold })
+          .update({ gold: actualGold })
           .eq('id', playerId);
 
         if (!error) {
@@ -352,8 +352,11 @@
             reason: 'startup_sync',
             meta: { synced_amount: pending }
           }).catch(err => console.error('Transaction log failed:', err));
-          localStorage.setItem('poker_gold_pending_deduct', 0);
         }
+        localStorage.setItem('poker_gold_pending_deduct', 0);
+      } else {
+        // pending 없으면 DB 값 그대로 사용
+        localStorage.setItem('poker_gold', data.gold || 0);
       }
 
       renderCurrencyBar();
@@ -378,11 +381,10 @@
 
     localStorage.setItem('poker_username', data.username);
     localStorage.setItem('poker_player_id', uid);
-    localStorage.setItem('poker_gold', data.gold || 0);
 
     document.getElementById('menuPlayer').textContent = data.username;
 
-    // syncGoldOnStart after setting player data
+    // DB 골드를 기준으로 pending 처리 후 localStorage 반영
     await syncGoldOnStart();
 
     renderCurrencyBar();
