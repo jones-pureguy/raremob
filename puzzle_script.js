@@ -39,11 +39,14 @@ const RANK_CSS = {
   [RANK.ROYAL_FLUSH]: 'royal-flush', [RANK.ROYAL_FLUSH_PLUS]: 'royal-flush-plus',
 };
 
-const FAIL_MESSAGES = {
-  'forbidden_hand':    '금지된 족보 패를 만들었습니다',
-  'forbidden_value':   '금지된 숫자가 포함된 패를 만들었습니다',
-  'nomoves':           '더 이상 만들 수 있는 패가 없습니다',
-};
+function getFailMessage(reason) {
+  const messages = {
+    'forbidden_hand':    i18n.t('failReasons.forbiddenHand'),
+    'forbidden_value':   i18n.t('failReasons.forbiddenValue'),
+    'nomoves':           i18n.t('failReasons.noMoreMovesCondition'),
+  };
+  return messages[reason];
+}
 
 const HINT_COSTS = { 1: 30, 2: 60, 3: 90 };
 
@@ -241,7 +244,7 @@ function finalizePath() {
   state.isDragging = false;
 
   if (state.selectedPath.length < HAND_SIZE) {
-    showToast('카드 5장을 선택해주세요!');
+    showToast(i18n.t('toast.selectFiveCards'));
     clearSelection();
     return;
   }
@@ -268,7 +271,7 @@ function finalizePath() {
       el.style.borderColor = '#ff5252';
       setTimeout(() => { el.classList.remove('invalid-shake'); el.style.borderColor = ''; }, 400);
     });
-    showToast('10 이상의 원페어가 필요합니다!');
+    showToast(i18n.t('toast.needHigherPair'));
     setTimeout(() => clearSelection(), 400);
     return;
   }
@@ -363,7 +366,7 @@ function updateHandPreview() {
   const previewEl = document.getElementById('handPreview');
   if (state.selectedPath.length === 0) { previewEl.textContent = ''; previewEl.className = 'hand-preview'; return; }
   const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
-  if (cards.length < 2) { previewEl.textContent = `${cards.length}/5 선택 중...`; previewEl.className = 'hand-preview'; return; }
+  if (cards.length < 2) { previewEl.textContent = i18n.t('ui.selecting', { count: cards.length }); previewEl.className = 'hand-preview'; return; }
   const hand = evaluateHand(cards);
   const valid = cards.length === 5 && isValidHand(hand);
   const mark = cards.length === 5 ? (valid ? '✓' : '✗') : '';
@@ -612,27 +615,27 @@ function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) 
   const newGold = currentGold + actualGold;
 
   const hintStatusHTML = hintLevel === 0
-    ? '<div style="color:#4CAF50;font-size:0.9rem;margin:8px 0;">힌트 미사용 클리어!</div>'
-    : `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">힌트 Lv.${hintLevel} 사용</div>`;
+    ? `<div style="color:#4CAF50;font-size:0.9rem;margin:8px 0;">${i18n.t('modal.hintUnused')}</div>`
+    : `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">${i18n.t('modal.hintUsed', { n: hintLevel })}</div>`;
 
   let rewardHTML = '';
   if (isFirstClear) {
     let bonusLine = '';
     if (hintBonus > 0) {
-      bonusLine = `<div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#4CAF50;"><span>힌트 미사용</span><span>+${hintBonus} Gold</span></div>`;
+      bonusLine = `<div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#4CAF50;"><span>${i18n.t('modal.hintUnusedBonus')}</span><span>+${hintBonus} Gold</span></div>`;
     }
     rewardHTML = `
       <div style="margin:12px 0;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:rgba(255,255,255,0.7);"><span>기본 보상</span><span>+${goldBase} Gold</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:rgba(255,255,255,0.7);"><span>${i18n.t('modal.baseReward')}</span><span>+${goldBase} Gold</span></div>
         ${bonusLine}
-        <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);"><span>합계</span><span>+${totalGold} Gold</span></div>
+        <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);"><span>${i18n.t('modal.total')}</span><span>+${totalGold} Gold</span></div>
       </div>
-      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:12px;">보유 골드: ${currentGold.toLocaleString()} → ${newGold.toLocaleString()}</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:12px;">${i18n.t('modal.goldChange', { before: currentGold.toLocaleString(), after: newGold.toLocaleString() })}</div>
     `;
   } else {
     rewardHTML = `
       <div style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.08);">
-        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-align:center;">이미 클리어한 퍼즐입니다.<br>골드 보상은 첫 클리어 시에만 지급됩니다.</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-align:center;">${i18n.t('modal.alreadyClearedPuzzle')}</div>
       </div>
     `;
   }
@@ -644,22 +647,22 @@ function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) 
   if (nextPuzzle) {
     nextHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;text-align:left;">
-        <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">NEXT PUZZLE</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">${i18n.t('modal.nextPuzzleLabel')}</div>
         <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Puzzle ${nextPuzzle.id}: ${nextPuzzle.title}</div>
         <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${nextPuzzle.description}</div>
-        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">보상: ${nextPuzzle.rewards.gold} Gold</div>
+        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">${i18n.t('modal.stageReward', { n: nextPuzzle.rewards.gold })}</div>
       </div>
     `;
   }
 
   modal.innerHTML = `
-    <h2 style="color:var(--gold);">PUZZLE CLEAR!</h2>
+    <h2 style="color:var(--gold);">${i18n.t('modal.puzzleClear')}</h2>
     <div class="subtitle">Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}</div>
     ${hintStatusHTML}
     ${rewardHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      ${nextPuzzle ? `<button class="btn-play-again" onclick="goNextPuzzle()">다음 퍼즐</button>` : ''}
-      <a href="puzzle_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">퍼즐 선택</a>
+      ${nextPuzzle ? `<button class="btn-play-again" onclick="goNextPuzzle()">${i18n.t('ui.nextPuzzle')}</button>` : ''}
+      <a href="puzzle_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.puzzleSelect')}</a>
     </div>
     ${nextHTML}
   `;
@@ -668,18 +671,18 @@ function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) 
 
 function showPuzzleFailPopup(reason) {
   const modal = document.getElementById('modal');
-  const msg = FAIL_MESSAGES[reason] || '퍼즐 실패';
+  const msg = getFailMessage(reason) || i18n.t('failReasons.puzzleFail');
 
   modal.innerHTML = `
-    <h2 style="color:#ff5252;">PUZZLE FAILED</h2>
+    <h2 style="color:#ff5252;">${i18n.t('modal.puzzleFailed')}</h2>
     <div class="subtitle">Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}</div>
     <div style="margin:16px 0;padding:12px;background:rgba(255,82,82,0.1);border-radius:8px;border:1px solid rgba(255,82,82,0.3);">
-      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">실패 원인:</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.failReason')}</div>
       <div style="color:#ff5252;font-size:0.95rem;font-weight:600;">"${msg}"</div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn-play-again" onclick="retryPuzzle()">다시 도전</button>
-      <a href="puzzle_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">퍼즐 선택</a>
+      <button class="btn-play-again" onclick="retryPuzzle()">${i18n.t('ui.retry')}</button>
+      <a href="puzzle_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.puzzleSelect')}</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
@@ -721,16 +724,16 @@ function onHintButtonClick() {
 
   const modal = document.getElementById('modal');
   modal.innerHTML = `
-    <h2 style="color:var(--gold);">힌트 Lv.${nextLevel} 보기</h2>
+    <h2 style="color:var(--gold);">${i18n.t('modal.hintConfirmTitle', { n: nextLevel })}</h2>
     <div style="margin:16px 0;color:rgba(255,255,255,0.7);font-size:0.9rem;">
-      골드 ${cost} 소모
+      ${i18n.t('modal.hintCost', { n: cost })}
     </div>
     <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:16px;">
-      현재 보유: ${currentGold.toLocaleString()} Gold
+      ${i18n.t('modal.hintCurrentGold', { n: currentGold.toLocaleString() })}
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn-play-again" onclick="confirmHint(${nextLevel}, ${cost})" ${currentGold < cost ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>힌트 보기 -${cost}G</button>
-      <button class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;" onclick="closeHintModal()">취소</button>
+      <button class="btn-play-again" onclick="confirmHint(${nextLevel}, ${cost})" ${currentGold < cost ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>${i18n.t('modal.hintConfirmTitle', { n: nextLevel })} -${cost}G</button>
+      <button class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;" onclick="closeHintModal()">${i18n.t('ui.cancel')}</button>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
@@ -746,12 +749,12 @@ function confirmHint(level, cost) {
 function showHintDisplayModal(level, text) {
   const modal = document.getElementById('modal');
   modal.innerHTML = `
-    <h2 style="color:var(--gold);">힌트 Lv.${level}</h2>
+    <h2 style="color:var(--gold);">${i18n.t('modal.hintTitle', { n: level })}</h2>
     <div style="margin:16px 0;padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;color:rgba(255,255,255,0.8);font-size:0.9rem;line-height:1.5;">
       ${text}
     </div>
     <div style="display:flex;justify-content:center;">
-      <button class="btn-play-again" onclick="closeHintModal()">확인</button>
+      <button class="btn-play-again" onclick="closeHintModal()">${i18n.t('ui.confirm')}</button>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
@@ -765,7 +768,7 @@ function closeHintModal() {
 function deductGold(amount, reason) {
   const current = parseInt(localStorage.getItem('poker_gold') || '0');
   if (current < amount) {
-    showToast('골드가 부족합니다.');
+    showToast(i18n.t('toast.goldInsufficient'));
     return false;
   }
   const newGold = current - amount;
@@ -832,8 +835,8 @@ async function initPuzzle() {
     const res = await fetch('puzzles.json');
     allPuzzles = await res.json();
     puzzleConfig = allPuzzles.find(p => p.id === puzzleId);
-    if (!puzzleConfig) { showToast('퍼즐을 찾을 수 없습니다'); return; }
-  } catch(e) { showToast('퍼즐 데이터 로드 실패'); return; }
+    if (!puzzleConfig) { showToast(i18n.t('toast.puzzleNotFound')); return; }
+  } catch(e) { showToast(i18n.t('toast.puzzleLoadFailed')); return; }
 
   puzzleFailed = false;
   puzzleCleared = false;
@@ -854,9 +857,9 @@ async function initPuzzle() {
     let text = puzzleConfig.description;
     const forbidden = [];
     if (puzzleConfig.constraints.forbiddenHands.length > 0)
-      forbidden.push('금지: ' + puzzleConfig.constraints.forbiddenHands.join(', '));
+      forbidden.push(i18n.t('constraint.forbiddenHands', { list: puzzleConfig.constraints.forbiddenHands.join(', ') }));
     if (puzzleConfig.constraints.forbiddenValues.length > 0)
-      forbidden.push('금지: ' + puzzleConfig.constraints.forbiddenValues.join(', '));
+      forbidden.push(i18n.t('constraint.forbiddenValues', { list: puzzleConfig.constraints.forbiddenValues.join(', ') }));
     if (forbidden.length > 0) text += ' [' + forbidden.join(' / ') + ']';
     condBar.textContent = text;
   }

@@ -187,10 +187,12 @@
   </div>
 </div>
 
+<script src="i18n.js"></script>
 <script>
   let puzzles = [];
   let progress = { clearedPuzzles: [], hintUsed: {} };
   let selectedPuzzleId = null;
+  i18n.init();
   const PAGE_SIZE = 25;
   let currentPage = 1;
   let totalPages = 1;

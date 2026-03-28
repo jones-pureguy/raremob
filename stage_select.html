@@ -186,10 +186,12 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 <script src="auth.js"></script>
+<script src="i18n.js"></script>
 <script>
   let stages = [];
   let progress = { clearedStages: [] };
   let selectedStageId = null;
+  i18n.init();
   const PAGE_SIZE = 25;
   let currentPage = 1;
   let totalPages = 1;

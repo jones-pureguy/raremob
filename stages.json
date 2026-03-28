@@ -1,8 +1,12 @@
 [
   {
     "id": 1,
-    "title": "첫 번째 도전",
-    "description": "투페어를 2개 완성하세요.",
+    "title": {
+      "ko": "첫 번째 도전"
+    },
+    "description": {
+      "ko": "투페어를 2개 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -47,8 +51,12 @@
   },
   {
     "id": 2,
-    "title": "패 7개 만들기",
-    "description": "7개의 패를 완성하세요.",
+    "title": {
+      "ko": "패 7개 만들기"
+    },
+    "description": {
+      "ko": "7개의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -92,8 +100,12 @@
   },
   {
     "id": 3,
-    "title": "60점 돌파",
-    "description": "60점 이상으로 스테이지를 종료하세요.",
+    "title": {
+      "ko": "60점 돌파"
+    },
+    "description": {
+      "ko": "60점 이상으로 스테이지를 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -137,8 +149,12 @@
   },
   {
     "id": 4,
-    "title": "스트레이트 도전",
-    "description": "스트레이트를 2개 만들어보세요.(스트레이트플러시 X)",
+    "title": {
+      "ko": "스트레이트 도전"
+    },
+    "description": {
+      "ko": "스트레이트를 2개 만들어보세요.(스트레이트플러시 X)"
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#3498db",
@@ -184,8 +200,12 @@
   },
   {
     "id": 5,
-    "title": "플러시 도전",
-    "description": "플러시를 3개 만들어보세요.",
+    "title": {
+      "ko": "플러시 도전"
+    },
+    "description": {
+      "ko": "플러시를 3개 만들어보세요."
+    },
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#9b59b6",
@@ -231,8 +251,12 @@
   },
   {
     "id": 6,
-    "title": "쓰리카인드 도전",
-    "description": "쓰리오브어카인드를 3개 만들어 보세요.",
+    "title": {
+      "ko": "쓰리카인드 도전"
+    },
+    "description": {
+      "ko": "쓰리오브어카인드를 3개 만들어 보세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#27ae60",
@@ -278,8 +302,12 @@
   },
   {
     "id": 7,
-    "title": "풀하우스 도전",
-    "description": "풀하우스를 2개 만들어 보세요.",
+    "title": {
+      "ko": "풀하우스 도전"
+    },
+    "description": {
+      "ko": "풀하우스를 2개 만들어 보세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
@@ -324,8 +352,12 @@
   },
   {
     "id": 8,
-    "title": "스피드 파이브",
-    "description": "50초 안에 5개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "스피드 파이브"
+    },
+    "description": {
+      "ko": "50초 안에 5개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
@@ -369,8 +401,12 @@
   },
   {
     "id": 9,
-    "title": "100점 돌파",
-    "description": "100점 이상으로 스테이지를 종료하세요.",
+    "title": {
+      "ko": "100점 돌파"
+    },
+    "description": {
+      "ko": "100점 이상으로 스테이지를 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -414,8 +450,12 @@
   },
   {
     "id": 10,
-    "title": "투페어 컬렉터",
-    "description": "투페어 패를 4개 만드세요.",
+    "title": {
+      "ko": "투페어 컬렉터"
+    },
+    "description": {
+      "ko": "투페어 패를 4개 만드세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#2980b9",
@@ -461,8 +501,12 @@
   },
   {
     "id": 11,
-    "title": "9개 완성",
-    "description": "9개의 패를 모두 완성하여 스테이지를 종료하세요.",
+    "title": {
+      "ko": "9개 완성"
+    },
+    "description": {
+      "ko": "9개의 패를 모두 완성하여 스테이지를 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -506,8 +550,12 @@
   },
   {
     "id": 12,
-    "title": "하트를 남겨라",
-    "description": "9개 패를 모두 완성했을 때 그리드에 하트가 3장 이상 남아있어야 합니다.",
+    "title": {
+      "ko": "하트를 남겨라"
+    },
+    "description": {
+      "ko": "9개 패를 모두 완성했을 때 그리드에 하트가 3장 이상 남아있어야 합니다."
+    },
     "theme": {
       "bgColor": "#1f0a14",
       "accentColor": "#e91e63",
@@ -558,8 +606,12 @@
   },
   {
     "id": 13,
-    "title": "끝자리의 법칙",
-    "description": "스테이지 종료 시 최종 스코어의 끝자리가 0이 되게 하세요. (50점 이상)",
+    "title": {
+      "ko": "끝자리의 법칙"
+    },
+    "description": {
+      "ko": "스테이지 종료 시 최종 스코어의 끝자리가 0이 되게 하세요. (50점 이상)"
+    },
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#7f8cf7",
@@ -609,8 +661,12 @@
   },
   {
     "id": 14,
-    "title": "150점 돌파",
-    "description": "150점 이상으로 스테이지를 종료하세요.",
+    "title": {
+      "ko": "150점 돌파"
+    },
+    "description": {
+      "ko": "150점 이상으로 스테이지를 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#27ae60",
@@ -660,8 +716,12 @@
   },
   {
     "id": 15,
-    "title": "막다른 길 입문",
-    "description": "7개 패 완성 이내에 NO MORE MOVES를 만드세요.(힌트 : 점프불가임을 활용)",
+    "title": {
+      "ko": "막다른 길 입문"
+    },
+    "description": {
+      "ko": "7개 패 완성 이내에 NO MORE MOVES를 만드세요.(힌트 : 점프불가임을 활용)"
+    },
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -705,8 +765,12 @@
   },
   {
     "id": 16,
-    "title": "포카드 도전",
-    "description": "포카드를 만들어 보세요.",
+    "title": {
+      "ko": "포카드 도전"
+    },
+    "description": {
+      "ko": "포카드를 만들어 보세요."
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#5c6bc0",
@@ -752,8 +816,12 @@
   },
   {
     "id": 17,
-    "title": "스피드 하이파이브",
-    "description": "50초 안에 투페어 이상의 패를 5개 이상 완성하세요.",
+    "title": {
+      "ko": "스피드 하이파이브"
+    },
+    "description": {
+      "ko": "50초 안에 투페어 이상의 패를 5개 이상 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
@@ -798,8 +866,12 @@
   },
   {
     "id": 18,
-    "title": "원페어 금지",
-    "description": "원페어를 한 번도 만들지 않고 5개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "원페어 금지"
+    },
+    "description": {
+      "ko": "원페어를 한 번도 만들지 않고 5개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#3498db",
@@ -845,8 +917,12 @@
   },
   {
     "id": 19,
-    "title": "리셋 없이 도전",
-    "description": "리셋 없이 100점 이상으로 종료하세요.",
+    "title": {
+      "ko": "리셋 없이 도전"
+    },
+    "description": {
+      "ko": "리셋 없이 100점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#9b59b6",
@@ -890,8 +966,12 @@
   },
   {
     "id": 20,
-    "title": "200점 돌파",
-    "description": "200점 이상으로 스테이지를 종료하세요.",
+    "title": {
+      "ko": "200점 돌파"
+    },
+    "description": {
+      "ko": "200점 이상으로 스테이지를 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#C9A84C",
@@ -941,8 +1021,12 @@
   },
   {
     "id": 21,
-    "title": "8은 금물",
-    "description": "숫자 8이 포함된 패를 한 번도 만들지 않고 6개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "8은 금물"
+    },
+    "description": {
+      "ko": "숫자 8이 포함된 패를 한 번도 만들지 않고 6개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1a1a0a",
       "accentColor": "#f39c12",
@@ -988,8 +1072,12 @@
   },
   {
     "id": 22,
-    "title": "스페이드 원페어",
-    "description": "스페이드가 4장 이상 포함된 원페어 패를 만드세요.",
+    "title": {
+      "ko": "스페이드 원페어"
+    },
+    "description": {
+      "ko": "스페이드가 4장 이상 포함된 원페어 패를 만드세요."
+    },
     "theme": {
       "bgColor": "#0a0a0a",
       "accentColor": "#95a5a6",
@@ -1035,8 +1123,12 @@
   },
   {
     "id": 23,
-    "title": "대각선 마스터 입문",
-    "description": "대각선 이동만 사용해서 3개 이상의 패를 만드세요.",
+    "title": {
+      "ko": "대각선 마스터 입문"
+    },
+    "description": {
+      "ko": "대각선 이동만 사용해서 3개 이상의 패를 만드세요."
+    },
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#2ecc71",
@@ -1080,8 +1172,12 @@
   },
   {
     "id": 24,
-    "title": "리셋 2번의 기회",
-    "description": "리셋 2번 이내로 플러시를 4개 이상 만드세요.",
+    "title": {
+      "ko": "리셋 2번의 기회"
+    },
+    "description": {
+      "ko": "리셋 2번 이내로 플러시를 4개 이상 만드세요."
+    },
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#7f8cf7",
@@ -1133,8 +1229,12 @@
   },
   {
     "id": 25,
-    "title": "점프 없이 도전",
-    "description": "점프 이동 없이 100점 이상으로 종료하세요.",
+    "title": {
+      "ko": "점프 없이 도전"
+    },
+    "description": {
+      "ko": "점프 이동 없이 100점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a1a0a",
       "accentColor": "#f39c12",
@@ -1178,8 +1278,12 @@
   },
   {
     "id": 26,
-    "title": "100초 상위패 사냥",
-    "description": "100초 안에 포카드 이상의 패를 만드세요. 리셋을 활용하세요!",
+    "title": {
+      "ko": "100초 상위패 사냥"
+    },
+    "description": {
+      "ko": "100초 안에 포카드 이상의 패를 만드세요. 리셋을 활용하세요!"
+    },
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#f1c40f",
@@ -1230,8 +1334,12 @@
   },
   {
     "id": 27,
-    "title": "하트 수호자",
-    "description": "9개 패 완성 시 그리드에 하트가 4장 이상 남아있어야 합니다.",
+    "title": {
+      "ko": "하트 수호자"
+    },
+    "description": {
+      "ko": "9개 패 완성 시 그리드에 하트가 4장 이상 남아있어야 합니다."
+    },
     "theme": {
       "bgColor": "#1f0a14",
       "accentColor": "#e91e63",
@@ -1268,7 +1376,6 @@
           "count_gte": 4,
           "description": "하트 4장 이상 잔존"
         }
-
       ]
     },
     "rewards": {
@@ -1283,8 +1390,12 @@
   },
   {
     "id": 28,
-    "title": "플러시 금지 150점",
-    "description": "플러시를 만들지 않고 150점 이상으로 종료하세요.",
+    "title": {
+      "ko": "플러시 금지 150점"
+    },
+    "description": {
+      "ko": "플러시를 만들지 않고 150점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#e91e8c",
@@ -1330,8 +1441,12 @@
   },
   {
     "id": 29,
-    "title": "타임 어택 I",
-    "description": "80초 안에 9개 패를 모두 완성하세요.",
+    "title": {
+      "ko": "타임 어택 I"
+    },
+    "description": {
+      "ko": "80초 안에 9개 패를 모두 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#e74c3c",
@@ -1375,8 +1490,12 @@
   },
   {
     "id": 30,
-    "title": "오름차순 입문",
-    "description": "3개의 패를 연속으로 만들되 다음 패는 반드시 이전 패보다 높은 랭크여야 합니다.",
+    "title": {
+      "ko": "오름차순 입문"
+    },
+    "description": {
+      "ko": "3개의 패를 연속으로 만들되 다음 패는 반드시 이전 패보다 높은 랭크여야 합니다."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#27ae60",
@@ -1420,8 +1539,12 @@
   },
   {
     "id": 31,
-    "title": "순서 있는 스트레이트",
-    "description": "순서대로 드래그한 스트레이트를 2개 만드세요.(스티플인정/A2345불가)",
+    "title": {
+      "ko": "순서 있는 스트레이트"
+    },
+    "description": {
+      "ko": "순서대로 드래그한 스트레이트를 2개 만드세요.(스티플인정/A2345불가)"
+    },
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#1abc9c",
@@ -1466,8 +1589,12 @@
   },
   {
     "id": 32,
-    "title": "J Q K 금지 챌린지",
-    "description": "J, Q, K가 포함된 패를 만들지 않고 6개 이상 패를 완성하세요.",
+    "title": {
+      "ko": "J Q K 금지 챌린지"
+    },
+    "description": {
+      "ko": "J, Q, K가 포함된 패를 만들지 않고 6개 이상 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#d63031",
@@ -1515,8 +1642,12 @@
   },
   {
     "id": 33,
-    "title": "막다른 길",
-    "description": "6개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)",
+    "title": {
+      "ko": "막다른 길"
+    },
+    "description": {
+      "ko": "6개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)"
+    },
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -1560,8 +1691,12 @@
   },
   {
     "id": 34,
-    "title": "대각선 플러시",
-    "description": "대각선 이동만으로 플러시를 2개 이상 만드세요.",
+    "title": {
+      "ko": "대각선 플러시"
+    },
+    "description": {
+      "ko": "대각선 이동만으로 플러시를 2개 이상 만드세요."
+    },
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#2ecc71",
@@ -1607,8 +1742,12 @@
   },
   {
     "id": 35,
-    "title": "최고패로 시작 7개",
-    "description": "7개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요.",
+    "title": {
+      "ko": "최고패로 시작 7개"
+    },
+    "description": {
+      "ko": "7개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요."
+    },
     "theme": {
       "bgColor": "#1a1000",
       "accentColor": "#d4ac0d",
@@ -1632,14 +1771,14 @@
       "failTrigger": "high_card_start_violated",
       "completionMode": "all",
       "conditions": [
-    {
-      "id": "c1",
-      "type": "hands_complete",
-      "count_gte": 7,
-      "description": "7개 패 완성"
-    }
-  ]
-},
+        {
+          "id": "c1",
+          "type": "hands_complete",
+          "count_gte": 7,
+          "description": "7개 패 완성"
+        }
+      ]
+    },
     "rewards": {
       "gold": 200,
       "bonus": []
@@ -1652,8 +1791,12 @@
   },
   {
     "id": 36,
-    "title": "노 리셋 250점",
-    "description": "리셋 없이 250점 이상으로 종료하세요.",
+    "title": {
+      "ko": "노 리셋 250점"
+    },
+    "description": {
+      "ko": "리셋 없이 250점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#6c5ce7",
@@ -1697,8 +1840,12 @@
   },
   {
     "id": 37,
-    "title": "50초 스트레이트 플러시",
-    "description": "50초 안에 스트레이트 플러시를 1개 만드세요. 리셋을 활용하세요!",
+    "title": {
+      "ko": "50초 스트레이트 플러시"
+    },
+    "description": {
+      "ko": "50초 안에 스트레이트 플러시를 1개 만드세요. 리셋을 활용하세요!"
+    },
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
@@ -1743,8 +1890,12 @@
   },
   {
     "id": 38,
-    "title": "끝자리 5",
-    "description": "스코어 끝자리가 5가 되게 하세요. (50점 이상)",
+    "title": {
+      "ko": "끝자리 5"
+    },
+    "description": {
+      "ko": "스코어 끝자리가 5가 되게 하세요. (50점 이상)"
+    },
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#a29bfe",
@@ -1794,8 +1945,12 @@
   },
   {
     "id": 39,
-    "title": "점프 활용 패 만들기",
-    "description": "점프 이동을 사용한 패를 2개 이상 만들고 9개 패를 완성하세요.",
+    "title": {
+      "ko": "점프 활용 패 만들기"
+    },
+    "description": {
+      "ko": "점프 이동을 사용한 패를 2개 이상 만들고 9개 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#74b9ff",
@@ -1845,8 +2000,12 @@
   },
   {
     "id": 40,
-    "title": "쓰리카인드 컬렉터",
-    "description": "쓰리오브어카인드를 4개 이상 만드세요.",
+    "title": {
+      "ko": "쓰리카인드 컬렉터"
+    },
+    "description": {
+      "ko": "쓰리오브어카인드를 4개 이상 만드세요."
+    },
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#fd79a8",
@@ -1892,8 +2051,12 @@
   },
   {
     "id": 41,
-    "title": "타임 어택 II",
-    "description": "60초 안에 9개 패를 모두 완성하세요.",
+    "title": {
+      "ko": "타임 어택 II"
+    },
+    "description": {
+      "ko": "60초 안에 9개 패를 모두 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff7675",
@@ -1937,8 +2100,12 @@
   },
   {
     "id": 42,
-    "title": "4연속 오름차순",
-    "description": "4개의 패를 연속으로 오름차순 랭크로 완성하세요.",
+    "title": {
+      "ko": "4연속 오름차순"
+    },
+    "description": {
+      "ko": "4개의 패를 연속으로 오름차순 랭크로 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#00b894",
@@ -1982,8 +2149,12 @@
   },
   {
     "id": 43,
-    "title": "노 리셋 포카드",
-    "description": "리셋 없이 포카드를 2개 이상 만드세요.",
+    "title": {
+      "ko": "노 리셋 포카드"
+    },
+    "description": {
+      "ko": "리셋 없이 포카드를 2개 이상 만드세요."
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#5c6bc0",
@@ -2029,8 +2200,12 @@
   },
   {
     "id": 44,
-    "title": "대각선 스트레이트",
-    "description": "대각선 이동만으로 스트레이트를 1개 이상 만드세요.",
+    "title": {
+      "ko": "대각선 스트레이트"
+    },
+    "description": {
+      "ko": "대각선 이동만으로 스트레이트를 1개 이상 만드세요."
+    },
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#55efc4",
@@ -2076,8 +2251,12 @@
   },
   {
     "id": 45,
-    "title": "원페어 금지 9개 완성",
-    "description": "원페어를 한 번도 만들지 않고 9개 패를 모두 완성하세요.",
+    "title": {
+      "ko": "원페어 금지 9개 완성"
+    },
+    "description": {
+      "ko": "원페어를 한 번도 만들지 않고 9개 패를 모두 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#3498db",
@@ -2123,8 +2302,12 @@
   },
   {
     "id": 46,
-    "title": "플러시 금지 200점",
-    "description": "플러시를 만들지 않고 200점 이상으로 종료하세요.",
+    "title": {
+      "ko": "플러시 금지 200점"
+    },
+    "description": {
+      "ko": "플러시를 만들지 않고 200점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1a1a",
       "accentColor": "#00cec9",
@@ -2170,8 +2353,12 @@
   },
   {
     "id": 47,
-   "title": "원,투페어 금지",
-    "description": "원페어와 투페어를 한 번도 만들지 않고 7개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "원,투페어 금지"
+    },
+    "description": {
+      "ko": "원페어와 투페어를 한 번도 만들지 않고 7개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#3498db",
@@ -2218,8 +2405,12 @@
   },
   {
     "id": 48,
-    "title": "클로버 수호자",
-    "description": "9개 패 완성 시 그리드에 클로버가 4장 이상 남아있어야 합니다.(40점 이상)",
+    "title": {
+      "ko": "클로버 수호자"
+    },
+    "description": {
+      "ko": "9개 패 완성 시 그리드에 클로버가 4장 이상 남아있어야 합니다.(40점 이상)"
+    },
     "theme": {
       "bgColor": "#0a1f0a",
       "accentColor": "#00b894",
@@ -2276,8 +2467,12 @@
   },
   {
     "id": 49,
-    "title": "1,3,5는 홀수 패",
-    "description": "1번째, 3번째, 5번째 패를 홀수카드만으로 만들고,9개 패를 모두 완성하세요. (A홀수 인정)",
+    "title": {
+      "ko": "1,3,5는 홀수 패"
+    },
+    "description": {
+      "ko": "1번째, 3번째, 5번째 패를 홀수카드만으로 만들고,9개 패를 모두 완성하세요. (A홀수 인정)"
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#a29bfe",
@@ -2339,8 +2534,12 @@
   },
   {
     "id": 50,
-    "title": "중간 보스",
-    "description": "리셋 없이, 점프 없이, 250점 이상으로 종료하세요.",
+    "title": {
+      "ko": "중간 보스"
+    },
+    "description": {
+      "ko": "리셋 없이, 점프 없이, 250점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff0000",
@@ -2390,8 +2589,12 @@
   },
   {
     "id": 51,
-    "title": "에이스 금지",
-    "description": "에이스(A)가 포함된 패를 만들지 않고 6개 이상 패를 완성하세요.",
+    "title": {
+      "ko": "에이스 금지"
+    },
+    "description": {
+      "ko": "에이스(A)가 포함된 패를 만들지 않고 6개 이상 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#a29bfe",
@@ -2437,8 +2640,12 @@
   },
   {
     "id": 52,
-    "title": "5연속 오름차순",
-    "description": "5개의 패를 연속으로 오름차순 랭크로 완성하세요.",
+    "title": {
+      "ko": "5연속 오름차순"
+    },
+    "description": {
+      "ko": "5개의 패를 연속으로 오름차순 랭크로 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#00b894",
@@ -2482,8 +2689,12 @@
   },
   {
     "id": 53,
-    "title": "스티플 듀오",
-    "description": "스트레이트 플러시를 3개 이상 만들고 종료하세요.",
+    "title": {
+      "ko": "스티플 듀오"
+    },
+    "description": {
+      "ko": "스트레이트 플러시를 3개 이상 만들고 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#e84393",
@@ -2528,8 +2739,12 @@
   },
   {
     "id": 54,
-    "title": "점프 없이 200점",
-    "description": "점프 이동 없이 200점 이상으로 종료하세요.",
+    "title": {
+      "ko": "점프 없이 200점"
+    },
+    "description": {
+      "ko": "점프 이동 없이 200점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a1a0a",
       "accentColor": "#fdcb6e",
@@ -2573,8 +2788,12 @@
   },
   {
     "id": 55,
-    "title": "타임 어택 III",
-    "description": "45초 안에 9개 패를 모두 완성하세요.",
+    "title": {
+      "ko": "타임 어택 III"
+    },
+    "description": {
+      "ko": "45초 안에 9개 패를 모두 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#d63031",
@@ -2618,8 +2837,12 @@
   },
   {
     "id": 56,
-    "title": "순서 있는 스트레이트 II",
-    "description": "순서대로 드래그한 스트레이트를 3개 만드세요.(스티플인정/A2345불가)",
+    "title": {
+      "ko": "순서 있는 스트레이트 II"
+    },
+    "description": {
+      "ko": "순서대로 드래그한 스트레이트를 3개 만드세요.(스티플인정/A2345불가)"
+    },
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#1abc9c",
@@ -2664,8 +2887,12 @@
   },
   {
     "id": 57,
-    "title": "노 리셋 플러시 파이브",
-    "description": "리셋 없이 플러시를 5개 이상 만들고 종료하세요.",
+    "title": {
+      "ko": "노 리셋 플러시 파이브"
+    },
+    "description": {
+      "ko": "리셋 없이 플러시를 5개 이상 만들고 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#9b59b6",
@@ -2711,8 +2938,12 @@
   },
   {
     "id": 58,
-    "title": "막다른 길 심화",
-    "description": "5개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)",
+    "title": {
+      "ko": "막다른 길 심화"
+    },
+    "description": {
+      "ko": "5개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)"
+    },
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#c0392b",
@@ -2756,8 +2987,12 @@
   },
   {
     "id": 59,
-    "title": "대각선 7개 완성",
-    "description": "대각선 이동만으로 7개 패를 완성하세요.",
+    "title": {
+      "ko": "대각선 7개 완성"
+    },
+    "description": {
+      "ko": "대각선 이동만으로 7개 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#00e676",
@@ -2801,8 +3036,12 @@
   },
   {
     "id": 60,
-    "title": "끝자리 7",
-    "description": "최종 스코어 끝자리가 7이 되게 하세요. (100점 이상)",
+    "title": {
+      "ko": "끝자리 7"
+    },
+    "description": {
+      "ko": "최종 스코어 끝자리가 7이 되게 하세요. (100점 이상)"
+    },
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#6c5ce7",
@@ -2852,8 +3091,12 @@
   },
   {
     "id": 61,
-    "title": "복합 도전 I",
-    "description": "플러시 금지, 점프 없이, 150점 이상으로 종료하세요.",
+    "title": {
+      "ko": "복합 도전 I"
+    },
+    "description": {
+      "ko": "플러시 금지, 점프 없이, 150점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a1a2e",
       "accentColor": "#4a69bd",
@@ -2899,8 +3142,12 @@
   },
   {
     "id": 62,
-    "title": "스페이드 수호자",
-    "description": "9개 패 완성 시 그리드에 스페이드가 4장 이상 남아있어야 합니다.(80점 이상)",
+    "title": {
+      "ko": "스페이드 수호자"
+    },
+    "description": {
+      "ko": "9개 패 완성 시 그리드에 스페이드가 4장 이상 남아있어야 합니다.(80점 이상)"
+    },
     "theme": {
       "bgColor": "#0a0a1a",
       "accentColor": "#636e72",
@@ -2957,8 +3204,12 @@
   },
   {
     "id": 63,
-    "title": "6연속 오름차순",
-    "description": "6개의 패를 연속으로 오름차순 랭크로 완성하세요.",
+    "title": {
+      "ko": "6연속 오름차순"
+    },
+    "description": {
+      "ko": "6개의 패를 연속으로 오름차순 랭크로 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#55efc4",
@@ -3002,8 +3253,12 @@
   },
   {
     "id": 64,
-    "title": "최고패 시작 8개",
-    "description": "8개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요.",
+    "title": {
+      "ko": "최고패 시작 8개"
+    },
+    "description": {
+      "ko": "8개의 패를 만들 때 각 패에서 가장 높은 숫자의 카드로 드래그를 시작하세요."
+    },
     "theme": {
       "bgColor": "#1a1000",
       "accentColor": "#d4ac0d",
@@ -3047,8 +3302,12 @@
   },
   {
     "id": 65,
-    "title": "타임 어택 IV",
-    "description": "35초 안에 9개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "타임 어택 IV"
+    },
+    "description": {
+      "ko": "35초 안에 9개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ef5350",
@@ -3092,8 +3351,12 @@
   },
   {
     "id": 66,
-    "title": "포카드 트리플",
-    "description": "100초 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!",
+    "title": {
+      "ko": "포카드 트리플"
+    },
+    "description": {
+      "ko": "100초 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!"
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#8e44ad",
@@ -3145,8 +3408,12 @@
   },
   {
     "id": 67,
-    "title": "복합 도전 II",
-    "description": "리셋 없이, 직선만으로 150점 이상 달성하세요.",
+    "title": {
+      "ko": "복합 도전 II"
+    },
+    "description": {
+      "ko": "리셋 없이, 직선만으로 150점 이상 달성하세요."
+    },
     "theme": {
       "bgColor": "#1a0a1a",
       "accentColor": "#a855f7",
@@ -3190,8 +3457,12 @@
   },
   {
     "id": 68,
-    "title": "8 금지, 200점",
-    "description": "숫자 8 없이 9개 패를 완성하고 200점 이상으로 종료하세요.",
+    "title": {
+      "ko": "8 금지, 200점"
+    },
+    "description": {
+      "ko": "숫자 8 없이 9개 패를 완성하고 200점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#e53935",
@@ -3243,8 +3514,12 @@
   },
   {
     "id": 69,
-     "title": "점프 마스터",
-    "description": "점프 이동을 사용한 패를 5개 이상 만들고 9개 패를 완성하세요.",
+    "title": {
+      "ko": "점프 마스터"
+    },
+    "description": {
+      "ko": "점프 이동을 사용한 패를 5개 이상 만들고 9개 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#74b9ff",
@@ -3294,8 +3569,12 @@
   },
   {
     "id": 70,
-    "title": "고급 보스",
-    "description": "점프 없이, 300점 이상으로 종료하세요.",
+    "title": {
+      "ko": "고급 보스"
+    },
+    "description": {
+      "ko": "점프 없이, 300점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff1744",
@@ -3345,8 +3624,12 @@
   },
   {
     "id": 71,
-    "title": "순서 있는 SF",
-    "description": "400초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 2개 만드세요.",
+    "title": {
+      "ko": "순서 있는 SF"
+    },
+    "description": {
+      "ko": "400초 안에 드래그 순서대로 이어지는 스트레이트 플러시를 2개 만드세요."
+    },
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#00e676",
@@ -3397,8 +3680,12 @@
   },
   {
     "id": 72,
-    "title": "4수트 수호자",
-    "description": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.(80점 이상)",
+    "title": {
+      "ko": "4수트 수호자"
+    },
+    "description": {
+      "ko": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.(80점 이상)"
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#e040fb",
@@ -3476,8 +3763,12 @@
   },
   {
     "id": 73,
-    "title": "끝자리 3",
-    "description": "최종 스코어 끝자리가 3이 되게 하세요. (180점 이상)",
+    "title": {
+      "ko": "끝자리 3"
+    },
+    "description": {
+      "ko": "최종 스코어 끝자리가 3이 되게 하세요. (180점 이상)"
+    },
     "theme": {
       "bgColor": "#0d0d1f",
       "accentColor": "#7986cb",
@@ -3527,8 +3818,12 @@
   },
   {
     "id": 74,
-    "title": "복합 도전 III",
-    "description": "점프 없이, 에이스 금지, 플러시를 3개 이상 만들고 종료하세요.",
+    "title": {
+      "ko": "복합 도전 III"
+    },
+    "description": {
+      "ko": "점프 없이, 에이스 금지, 플러시를 3개 이상 만들고 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a1a2e",
       "accentColor": "#1565c0",
@@ -3576,8 +3871,12 @@
   },
   {
     "id": 75,
-    "title": "플스플스",
-    "description": "플러쉬와 스트레이트를 3개 이상씩 만드세요.",
+    "title": {
+      "ko": "플스플스"
+    },
+    "description": {
+      "ko": "플러쉬와 스트레이트를 3개 이상씩 만드세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#18ffff",
@@ -3608,9 +3907,8 @@
           "count_gte": 3,
           "exact": true,
           "description": "플러시 3개 이상"
-        }
-        ,
-                {
+        },
+        {
           "id": "c2",
           "type": "specific_hand",
           "hand": "STRAIGHT",
@@ -3632,8 +3930,12 @@
   },
   {
     "id": 76,
-    "title": "타임 어택 V",
-    "description": "30초 안에 9개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "타임 어택 V"
+    },
+    "description": {
+      "ko": "30초 안에 9개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff5252",
@@ -3677,8 +3979,12 @@
   },
   {
     "id": 77,
-    "title": "Royal Flush+",
-    "description": "50초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!",
+    "title": {
+      "ko": "Royal Flush+"
+    },
+    "description": {
+      "ko": "50초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!"
+    },
     "theme": {
       "bgColor": "#1a1200",
       "accentColor": "#f1c40f",
@@ -3729,8 +4035,12 @@
   },
   {
     "id": 78,
-    "title": "복합 도전 IV",
-    "description": "원페어 금지, 9개 패를 완성하고 350점 이상으로 종료하세요.",
+    "title": {
+      "ko": "복합 도전 IV"
+    },
+    "description": {
+      "ko": "원페어 금지, 9개 패를 완성하고 350점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff6d00",
@@ -3782,8 +4092,12 @@
   },
   {
     "id": 79,
-    "title": "대각선 극한",
-    "description": "대각선만, 리셋 없이, 스트레이트를 2개 이상 만들고 종료하세요.",
+    "title": {
+      "ko": "대각선 극한"
+    },
+    "description": {
+      "ko": "대각선만, 리셋 없이, 스트레이트를 2개 이상 만들고 종료하세요."
+    },
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#76ff03",
@@ -3829,8 +4143,12 @@
   },
   {
     "id": 80,
-    "title": "전문가 보스 I",
-    "description": "리셋 없이, 450점 이상으로 종료하세요.",
+    "title": {
+      "ko": "전문가 보스 I"
+    },
+    "description": {
+      "ko": "리셋 없이, 450점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff3d00",
@@ -3880,8 +4198,12 @@
   },
   {
     "id": 81,
-    "title": "2+2",
-    "description": "포카드와 스트레이트 플러시를 각각 2개 이상 만드세요.",
+    "title": {
+      "ko": "2+2"
+    },
+    "description": {
+      "ko": "포카드와 스트레이트 플러시를 각각 2개 이상 만드세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#64ffda",
@@ -3912,9 +4234,8 @@
           "count_gte": 2,
           "exact": true,
           "description": "포카드 2개 이상"
-        }
-        ,
-                {
+        },
+        {
           "id": "c2",
           "type": "specific_hand",
           "hand": "STRAIGHT FLUSH",
@@ -3941,8 +4262,12 @@
   },
   {
     "id": 82,
-    "title": "티끌모아 태산",
-    "description": "스트레이트 플러시 이상의 패를 쓰지 않고 9개 패를 완성해서 250점 이상으로 종료하세요.",
+    "title": {
+      "ko": "티끌모아 태산"
+    },
+    "description": {
+      "ko": "스트레이트 플러시 이상의 패를 쓰지 않고 9개 패를 완성해서 250점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0a0a",
       "accentColor": "#b71c1c",
@@ -3990,8 +4315,12 @@
   },
   {
     "id": 83,
-    "title": "최고의 영예",
-    "description": "600초 안에 로열플러시+를 2개 만드세요.",
+    "title": {
+      "ko": "최고의 영예"
+    },
+    "description": {
+      "ko": "600초 안에 로열플러시+를 2개 만드세요."
+    },
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#b9f6ca",
@@ -4036,8 +4365,12 @@
   },
   {
     "id": 84,
-    "title": "최고패 시작 전체",
-    "description": "9개 패 모두 최고값 카드로 드래그를 시작해서 300점 이상 획득하세요.",
+    "title": {
+      "ko": "최고패 시작 전체"
+    },
+    "description": {
+      "ko": "9개 패 모두 최고값 카드로 드래그를 시작해서 300점 이상 획득하세요."
+    },
     "theme": {
       "bgColor": "#1a1000",
       "accentColor": "#ffca28",
@@ -4087,8 +4420,12 @@
   },
   {
     "id": 85,
-    "title": "타임 어택 VI",
-    "description": "24초 안에 8개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "타임 어택 VI"
+    },
+    "description": {
+      "ko": "24초 안에 8개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0a0a",
       "accentColor": "#ff1744",
@@ -4132,8 +4469,12 @@
   },
   {
     "id": 86,
-    "title": "전문가 보스 II",
-    "description": "직선만, 리셋 없이, 300점 이상 달성하고 9개 패를 완성하세요.",
+    "title": {
+      "ko": "전문가 보스 II"
+    },
+    "description": {
+      "ko": "직선만, 리셋 없이, 300점 이상 달성하고 9개 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#0f1a0f",
       "accentColor": "#ccff90",
@@ -4183,8 +4524,12 @@
   },
   {
     "id": 87,
-    "title": "순서 있는 SF 3",
-    "description": "700초 안에 순서 있는 스트레이트 플러시를 3개 만드세요.",
+    "title": {
+      "ko": "순서 있는 SF 3"
+    },
+    "description": {
+      "ko": "700초 안에 순서 있는 스트레이트 플러시를 3개 만드세요."
+    },
     "theme": {
       "bgColor": "#001a0a",
       "accentColor": "#69f0ae",
@@ -4235,8 +4580,12 @@
   },
   {
     "id": 88,
-    "title": "7연속 오름차순",
-    "description": "7개의 패를 연속으로 오름차순 랭크로 완성하세요.",
+    "title": {
+      "ko": "7연속 오름차순"
+    },
+    "description": {
+      "ko": "7개의 패를 연속으로 오름차순 랭크로 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#00e5ff",
@@ -4280,8 +4629,12 @@
   },
   {
     "id": 89,
-    "title": "전문가 복합 I",
-    "description": "J/Q/K/A 금지, 200점 이상을 획득하세요.",
+    "title": {
+      "ko": "전문가 복합 I"
+    },
+    "description": {
+      "ko": "J/Q/K/A 금지, 200점 이상을 획득하세요."
+    },
     "theme": {
       "bgColor": "#0a0000",
       "accentColor": "#ff6e40",
@@ -4330,8 +4683,12 @@
   },
   {
     "id": 90,
-    "title": "9연속 오름차순 + 점프 없이",
-    "description": "점프 없이, 9개의 패를 모두 오름차순 랭크로 완성하세요.",
+    "title": {
+      "ko": "9연속 오름차순 + 점프 없이"
+    },
+    "description": {
+      "ko": "점프 없이, 9개의 패를 모두 오름차순 랭크로 완성하세요."
+    },
     "theme": {
       "bgColor": "#0a1f14",
       "accentColor": "#00e5ff",
@@ -4375,8 +4732,12 @@
   },
   {
     "id": 91,
-    "title": "전문가 복합 II",
-    "description": "리셋 없이, 대각선만, 원페어/투페어 금지, 6개 이상 패를 완성하세요.",
+    "title": {
+      "ko": "전문가 복합 II"
+    },
+    "description": {
+      "ko": "리셋 없이, 대각선만, 원페어/투페어 금지, 6개 이상 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1a0a2e",
       "accentColor": "#7c4dff",
@@ -4423,8 +4784,12 @@
   },
   {
     "id": 92,
-    "title": "순서 있는 ST III",
-    "description": "순서 있는 스트레이트를 4개 만드세요.",
+    "title": {
+      "ko": "순서 있는 ST III"
+    },
+    "description": {
+      "ko": "순서 있는 스트레이트를 4개 만드세요."
+    },
     "theme": {
       "bgColor": "#001a1a",
       "accentColor": "#84ffff",
@@ -4469,8 +4834,12 @@
   },
   {
     "id": 93,
-    "title": "전문가 복합 III",
-    "description": "리셋 없이, 점프 없이, 9연속 오름차순으로 9개 패를 완성하고 400점 이상을 달성하세요.",
+    "title": {
+      "ko": "전문가 복합 III"
+    },
+    "description": {
+      "ko": "리셋 없이, 점프 없이, 9연속 오름차순으로 9개 패를 완성하고 400점 이상을 달성하세요."
+    },
     "theme": {
       "bgColor": "#0a0000",
       "accentColor": "#ff9100",
@@ -4526,8 +4895,12 @@
   },
   {
     "id": 94,
-    "title": "전문가 보스 III",
-    "description": "리셋 없이, 점프 없이, 대각선만으로, 스트레이트 이상 패를 3개 포함하여 300점 이상으로 종료하세요.",
+    "title": {
+      "ko": "전문가 보스 III"
+    },
+    "description": {
+      "ko": "리셋 없이, 점프 없이, 대각선만으로, 스트레이트 이상 패를 3개 포함하여 300점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#1a0000",
       "accentColor": "#ff1744",
@@ -4578,8 +4951,12 @@
   },
   {
     "id": 95,
-    "title": "모든 수트 수호 + 고득점",
-    "description": "9개 패 완성 시 4가지 수트가 각각 1장 이상 남아있고 250점 이상을 달성하세요.",
+    "title": {
+      "ko": "모든 수트 수호 + 고득점"
+    },
+    "description": {
+      "ko": "9개 패 완성 시 4가지 수트가 각각 1장 이상 남아있고 250점 이상을 달성하세요."
+    },
     "theme": {
       "bgColor": "#0a0a1f",
       "accentColor": "#e040fb",
@@ -4657,8 +5034,12 @@
   },
   {
     "id": 96,
-    "title": "전문가 복합 IV",
-    "description": "리셋 없이, 대각선만, 9연속 오름차순으로 9개 패를 완성하세요.",
+    "title": {
+      "ko": "전문가 복합 IV"
+    },
+    "description": {
+      "ko": "리셋 없이, 대각선만, 9연속 오름차순으로 9개 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#001a00",
       "accentColor": "#b2ff59",
@@ -4702,8 +5083,12 @@
   },
   {
     "id": 97,
-    "title": "전문가 보스 IV",
-    "description": "리셋 없이, 원페어/투페어/쓰리카인드 금지, 9개 패를 완성하고 350점 이상을 달성하세요.",
+    "title": {
+      "ko": "전문가 보스 IV"
+    },
+    "description": {
+      "ko": "리셋 없이, 원페어/투페어/쓰리카인드 금지, 9개 패를 완성하고 350점 이상을 달성하세요."
+    },
     "theme": {
       "bgColor": "#000a00",
       "accentColor": "#ccff90",
@@ -4757,8 +5142,12 @@
   },
   {
     "id": 98,
-    "title": "타임 어택 극한",
-    "description": "20초 안에 8개 이상의 패를 완성하세요.",
+    "title": {
+      "ko": "타임 어택 극한"
+    },
+    "description": {
+      "ko": "20초 안에 8개 이상의 패를 완성하세요."
+    },
     "theme": {
       "bgColor": "#1f0000",
       "accentColor": "#ff0000",
@@ -4802,8 +5191,12 @@
   },
   {
     "id": 99,
-    "title": "전문가 최종 보스",
-    "description": "리셋 없이, 점프 없이, 원페어/투페어 금지, 9개 패를 완성하고 450점 이상으로 종료하세요.",
+    "title": {
+      "ko": "전문가 최종 보스"
+    },
+    "description": {
+      "ko": "리셋 없이, 점프 없이, 원페어/투페어 금지, 9개 패를 완성하고 450점 이상으로 종료하세요."
+    },
     "theme": {
       "bgColor": "#0a0000",
       "accentColor": "#ff3d00",
@@ -4862,8 +5255,12 @@
   },
   {
     "id": 100,
-    "title": "DRAGON MASTER",
-    "description": "리셋 없이, 대각선만, 원페어/투페어 금지, 9연속 오름차순으로 9개 패를 완성하고 300점 이상을 달성하세요.",
+    "title": {
+      "ko": "DRAGON MASTER"
+    },
+    "description": {
+      "ko": "리셋 없이, 대각선만, 원페어/투페어 금지, 9연속 오름차순으로 9개 패를 완성하고 300점 이상을 달성하세요."
+    },
     "theme": {
       "bgColor": "#000000",
       "accentColor": "#ffd700",

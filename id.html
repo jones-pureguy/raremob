@@ -47,8 +47,12 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 <script src="auth.js"></script>
+<script src="i18n.js"></script>
 <script>
   const saved = localStorage.getItem('poker_username');
+
+  // i18n init
+  i18n.init();
 
   function showState() {
     if (saved) {
@@ -72,24 +76,24 @@
     const username = document.getElementById('idInput').value.trim();
     const msgEl = document.getElementById('idMessage');
 
-    if (!username) { msgEl.textContent = '닉네임을 입력하세요'; msgEl.style.color = '#ff5252'; return; }
+    if (!username) { msgEl.textContent = i18n.t('toast.nicknameRequired'); msgEl.style.color = '#ff5252'; return; }
 
-    msgEl.textContent = '확인 중...';
+    msgEl.textContent = i18n.t('toast.checking');
     msgEl.style.color = 'rgba(255,255,255,0.5)';
 
     try {
       const uid = await initAuth();
-      if (!uid) { msgEl.textContent = '인증 실패'; msgEl.style.color = '#ff5252'; return; }
+      if (!uid) { msgEl.textContent = i18n.t('toast.authFailed'); msgEl.style.color = '#ff5252'; return; }
 
       // 중복 체크 (다른 유저가 이미 사용 중인 이름인지)
       const { data: existing, error: fetchErr } = await sbRetry(() =>
         sb.from('players').select('id').eq('username', username).maybeSingle()
       );
 
-      if (fetchErr) { msgEl.textContent = '네트워크 오류, 다시 시도해주세요.'; msgEl.style.color = '#ff5252'; return; }
+      if (fetchErr) { msgEl.textContent = i18n.t('toast.networkError'); msgEl.style.color = '#ff5252'; return; }
 
       if (existing && existing.id !== uid) {
-        msgEl.textContent = '이미 사용 중인 닉네임입니다.';
+        msgEl.textContent = i18n.t('toast.nicknameDuplicate');
         msgEl.style.color = '#ff5252';
         return;
       }
@@ -107,7 +111,7 @@
         sb.from('players').upsert(upsertObj, { onConflict: 'id' })
       );
 
-      if (upsertErr) { msgEl.textContent = '네트워크 오류, 다시 시도해주세요.'; msgEl.style.color = '#ff5252'; return; }
+      if (upsertErr) { msgEl.textContent = i18n.t('toast.networkError'); msgEl.style.color = '#ff5252'; return; }
 
       localStorage.setItem('poker_username', username);
       localStorage.setItem('poker_player_id', uid);
@@ -122,11 +126,11 @@
           meta: { note: '신규 계정 초기 지급' }
         }).catch(err => console.error('Transaction log failed:', err));
       }
-      msgEl.textContent = '등록 완료!';
+      msgEl.textContent = i18n.t('toast.registerComplete');
       msgEl.style.color = '#4CAF50';
       setTimeout(() => { window.location.href = 'index.html'; }, 800);
     } catch (err) {
-      msgEl.textContent = '오류 발생';
+      msgEl.textContent = i18n.t('toast.errorOccurred');
       msgEl.style.color = '#ff5252';
     }
   }

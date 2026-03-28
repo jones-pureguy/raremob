@@ -152,6 +152,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 <script src="auth.js"></script>
+<script src="i18n.js"></script>
 <script>
   function renderCurrencyBar() {
     const gold = parseInt(localStorage.getItem('poker_gold') || '0');
@@ -192,6 +193,12 @@
     btn.style.cursor = gold < 1 ? 'not-allowed' : 'pointer';
   }
 </script>
-<script src="stage_script.js"></script>
+<script>
+(async () => { await i18n.init(); })().then(() => {
+  const s = document.createElement('script');
+  s.src = 'stage_script.js';
+  document.body.appendChild(s);
+});
+</script>
 </body>
 </html>

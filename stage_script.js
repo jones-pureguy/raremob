@@ -60,14 +60,14 @@ const RANK_CSS = {
 };
 
 const FAIL_MESSAGES = {
-  'forbidden_hand':    '금지된 족보 패를 만들었습니다',
-  'forbidden_value':   '금지된 숫자가 포함된 패를 만들었습니다',
-  'ascending_rank':    '이전보다 낮은 랭크의 패를 만들었습니다',
-  'high_card_start':   '최고값 카드로 시작하지 않았습니다',
-  'timeout':           '스테이지 제한 시간이 초과되었습니다',
-  'nomoves':           '수가 없어졌습니다 (조건 미달성)',
-  'gameover':          '게임 시간이 초과되었습니다',
-  'nth_hand_violated': '특정 순서의 패 조건을 만족하지 못했습니다',
+  'forbidden_hand':    () => i18n.t('failReasons.forbiddenHand'),
+  'forbidden_value':   () => i18n.t('failReasons.forbiddenValue'),
+  'ascending_rank':    () => i18n.t('failReasons.ascendingRank'),
+  'high_card_start':   () => i18n.t('failReasons.highCardStart'),
+  'timeout':           () => i18n.t('failReasons.stageTimeout'),
+  'nomoves':           () => i18n.t('failReasons.noMoves'),
+  'gameover':          () => i18n.t('failReasons.gameover'),
+  'nth_hand_violated': () => i18n.t('failReasons.nthHand'),
 };
 
 // ─── Game State ───
@@ -273,7 +273,7 @@ function finalizePath() {
   state.isDragging = false;
 
   if (state.selectedPath.length < HAND_SIZE) {
-    showToast('카드 5장을 선택해주세요!');
+    showToast(i18n.t('toast.selectFiveCards'));
     clearSelection();
     return;
   }
@@ -300,7 +300,7 @@ function finalizePath() {
       el.style.borderColor = '#ff5252';
       setTimeout(() => { el.classList.remove('invalid-shake'); el.style.borderColor = ''; }, 400);
     });
-    showToast('10 이상의 원페어가 필요합니다!');
+    showToast(i18n.t('toast.needHigherPair'));
     setTimeout(() => clearSelection(), 400);
     return;
   }
@@ -461,7 +461,7 @@ function updateHandPreview() {
   const previewEl = document.getElementById('handPreview');
   if (state.selectedPath.length === 0) { previewEl.textContent = ''; previewEl.className = 'hand-preview'; return; }
   const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
-  if (cards.length < 2) { previewEl.textContent = `${cards.length}/5 선택 중...`; previewEl.className = 'hand-preview'; return; }
+  if (cards.length < 2) { previewEl.textContent = i18n.t('ui.selecting', { count: cards.length }); previewEl.className = 'hand-preview'; return; }
   const hand = evaluateHand(cards);
   const valid = cards.length === 5 && isValidHand(hand);
   const mark = cards.length === 5 ? (valid ? '✓' : '✗') : '';
@@ -847,7 +847,7 @@ function renderScoreProgress() {
   const target = scoreCondition.value;
   const pct = Math.min(100, Math.round(current / target * 100));
   el.style.display = 'block';
-  el.textContent = `핸드 점수: ${current} / ${target}점 (${pct}%)`;
+  el.textContent = i18n.t('modal.scoreBreakdown.scoreProgress', { current, target, pct });
 }
 
 function calcFinalScore() {
@@ -970,16 +970,16 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
     }
     rewardHTML = `
       <div style="margin:12px 0;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:rgba(255,255,255,0.7);"><span>기본 보상</span><span>+${goldBase} Gold</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:rgba(255,255,255,0.7);"><span>${i18n.t('modal.baseReward')}</span><span>+${goldBase} Gold</span></div>
         ${bonusHTML}
-        <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);"><span>합계</span><span>+${totalGold} Gold</span></div>
+        <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--gold);"><span>${i18n.t('modal.total')}</span><span>+${totalGold} Gold</span></div>
       </div>
-      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:12px;">보유 골드: ${currentGold.toLocaleString()} → ${newGold.toLocaleString()}</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:12px;">${i18n.t('modal.goldChange', { before: currentGold.toLocaleString(), after: newGold.toLocaleString() })}</div>
     `;
   } else {
     rewardHTML = `
       <div style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.08);">
-        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-align:center;">이미 클리어한 스테이지입니다.<br>골드 보상은 첫 클리어 시에만 지급됩니다.</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-align:center;">${i18n.t('modal.alreadyCleared')}</div>
       </div>
     `;
   }
@@ -990,22 +990,22 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
   let nextStageHTML = '';
   if (nextStage) {
     let metaItems = [];
-    if (nextStage.timers.gameTime !== 200) metaItems.push(`⏱ ${nextStage.timers.gameTime}초`);
-    if (nextStage.timers.stageTime) metaItems.push(`⏳ ${nextStage.timers.stageTime}초`);
-    if (nextStage.constraints.resetLimit === 0) metaItems.push('↺ 리셋불가');
-    else if (nextStage.constraints.resetLimit !== null) metaItems.push(`↺ ${nextStage.constraints.resetLimit}회`);
-    if (!nextStage.constraints.jumpAllowed) metaItems.push('점프불가');
-    if (nextStage.constraints.diagonalOnly) metaItems.push('대각선만');
-    else if (!nextStage.constraints.diagonalAllowed) metaItems.push('직교만');
-    if (nextStage.constraints.forbiddenHands.length > 0) metaItems.push(`금지: ${nextStage.constraints.forbiddenHands.join(', ')}`);
+    if (nextStage.timers.gameTime !== 200) metaItems.push(`⏱ ${nextStage.timers.gameTime}s`);
+    if (nextStage.timers.stageTime) metaItems.push(`⏳ ${nextStage.timers.stageTime}s`);
+    if (nextStage.constraints.resetLimit === 0) metaItems.push('↺ ' + i18n.t('constraint.resetOnly'));
+    else if (nextStage.constraints.resetLimit !== null) metaItems.push(`↺ ${nextStage.constraints.resetLimit}`);
+    if (!nextStage.constraints.jumpAllowed) metaItems.push(i18n.t('constraint.jumpOnly'));
+    if (nextStage.constraints.diagonalOnly) metaItems.push(i18n.t('constraint.diagOnly'));
+    else if (!nextStage.constraints.diagonalAllowed) metaItems.push(i18n.t('constraint.orthOnly'));
+    if (nextStage.constraints.forbiddenHands.length > 0) metaItems.push(i18n.t('constraint.forbiddenHands', { list: nextStage.constraints.forbiddenHands.join(', ') }));
     const metaStr = metaItems.length > 0 ? `<div style="color:rgba(255,255,255,0.35);font-size:0.7rem;margin-top:4px;">${metaItems.join(' · ')}</div>` : '';
 
     nextStageHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;text-align:left;">
-        <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">NEXT STAGE</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">${i18n.t('modal.nextStageLabel')}</div>
         <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Stage ${nextStage.id}: ${nextStage.title}</div>
         <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${nextStage.description}</div>
-        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">보상: ${nextStage.rewards.gold} Gold</div>
+        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">${i18n.t('modal.reward')}: ${nextStage.rewards.gold} Gold</div>
         ${metaStr}
       </div>
     `;
@@ -1014,15 +1014,15 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
   const clearBreakdownHTML = buildScoreBreakdownHTML('var(--gold)');
 
   modal.innerHTML = `
-    <h2 style="color:var(--gold);">STAGE CLEAR!</h2>
+    <h2 style="color:var(--gold);">${i18n.t('modal.stageClear')}</h2>
     <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
     ${best ? `<div style="color:var(--gold);font-size:0.9rem;margin:8px 0;">Best: ${best.label}</div>` : ''}
     <div class="score">Score: ${finalScore}pts</div>
     ${clearBreakdownHTML}
     ${rewardHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      ${nextStage ? `<button class="btn-play-again" onclick="goNextStage()">다음 스테이지</button>` : ''}
-      <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">스테이지 선택</a>
+      ${nextStage ? `<button class="btn-play-again" onclick="goNextStage()">${i18n.t('ui.nextStage')}</button>` : ''}
+      <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.stageSelect')}</a>
     </div>
     ${nextStageHTML}
   `;
@@ -1049,24 +1049,24 @@ function buildScoreBreakdownHTML(accentColor) {
 
   let rows = '';
   if (scoreCond) {
-    rows += row('핸드 점수', `${handScore} / ${scoreCond.value}pts`);
+    rows += row(i18n.t('modal.scoreBreakdown.handScore'), `${handScore} / ${scoreCond.value}pts`);
   } else {
-    rows += row('핸드 점수', `${handScore}pts`);
+    rows += row(i18n.t('modal.scoreBreakdown.handScore'), `${handScore}pts`);
   }
-  rows += row('타임 보너스', `+${timeBonus}pts`, timeBonus > 0 ? '#4CAF50' : dim);
-  rows += row('카드 페널티', cardPenalty > 0 ? `-${cardPenalty}pts` : '0pts', cardPenalty > 0 ? '#ff5252' : dim);
+  rows += row(i18n.t('modal.scoreBreakdown.timeBonus'), `+${timeBonus}pts`, timeBonus > 0 ? '#4CAF50' : dim);
+  rows += row(i18n.t('modal.scoreBreakdown.cardPenalty'), cardPenalty > 0 ? `-${cardPenalty}pts` : '0pts', cardPenalty > 0 ? '#ff5252' : dim);
   rows += `<div style="border-top:1px solid rgba(255,255,255,0.12);margin:6px 0;"></div>`;
   if (scoreCond) {
-    rows += row('최종 점수', `${finalScore} / ${scoreCond.value}pts`, ac);
+    rows += row(i18n.t('modal.scoreBreakdown.finalScore'), `${finalScore} / ${scoreCond.value}pts`, ac);
   } else {
-    rows += row('최종 점수', `${finalScore}pts`, ac);
+    rows += row(i18n.t('modal.scoreBreakdown.finalScore'), `${finalScore}pts`, ac);
   }
 
   if (digitCond) {
     const actualDigit = finalScore % 10;
     rows += `<div style="border-top:1px solid rgba(255,255,255,0.12);margin:6px 0;"></div>`;
-    rows += row('끝자리', `${actualDigit}`, actualDigit === digitCond.digit ? '#4CAF50' : '#ff5252');
-    rows += row('목표 끝자리', `${digitCond.digit}`, ac);
+    rows += row(i18n.t('modal.scoreBreakdown.lastDigit'), `${actualDigit}`, actualDigit === digitCond.digit ? '#4CAF50' : '#ff5252');
+    rows += row(i18n.t('modal.scoreBreakdown.targetDigit'), `${digitCond.digit}`, ac);
   }
 
   return `
@@ -1077,7 +1077,7 @@ function buildScoreBreakdownHTML(accentColor) {
 
 function showStageFailPopup(reason, customMessage) {
   const modal = document.getElementById('modal');
-  const msg = customMessage || FAIL_MESSAGES[reason] || '스테이지 실패';
+  const msg = customMessage || (FAIL_MESSAGES[reason] ? FAIL_MESSAGES[reason]() : i18n.t('failReasons.stageFail'));
 
   const conditions = stageConfig ? (stageConfig.mission.conditions || []) : [];
   const hasScoreCond = conditions.some(c => c.type === 'score_last_digit' || c.type === 'score_gte');
@@ -1085,22 +1085,22 @@ function showStageFailPopup(reason, customMessage) {
 
   let failLabel = msg;
   if (hasScoreCond && (reason === 'gameover' || reason === 'nomoves')) {
-    failLabel = digitCond ? '끝자리 조건 미달' : '점수 조건 미달';
+    failLabel = digitCond ? i18n.t('failReasons.scoreDigit') : i18n.t('failReasons.scoreTarget');
   }
 
   const breakdownHTML = hasScoreCond ? buildScoreBreakdownHTML('#ff5252') : '';
 
   modal.innerHTML = `
-    <h2 style="color:#ff5252;">STAGE FAILED</h2>
+    <h2 style="color:#ff5252;">${i18n.t('modal.stageFailed')}</h2>
     <div class="subtitle">Stage ${stageConfig.id}: ${stageConfig.title}</div>
     <div style="margin:16px 0;padding:12px;background:rgba(255,82,82,0.1);border-radius:8px;border:1px solid rgba(255,82,82,0.3);">
-      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">실패 원인:</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.failReason')}</div>
       <div style="color:#ff5252;font-size:0.95rem;font-weight:600;">"${failLabel}"</div>
     </div>
     ${breakdownHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn-play-again" onclick="retryStage()">다시 도전</button>
-      <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">스테이지 선택</a>
+      <button class="btn-play-again" onclick="retryStage()">${i18n.t('ui.retry')}</button>
+      <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.stageSelect')}</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
@@ -1123,14 +1123,14 @@ function resetGame() {
   // 골드 확인
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
   if (currentGold < 1) {
-    showToast('골드가 부족합니다. (필요: 1 골드)');
+    showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
     return;
   }
 
   if (stageConfig && stageConfig.constraints.resetLimit !== null) {
     const limit = stageConfig.constraints.resetLimit;
     if (limit === 0) return;
-    if (resetUsed >= limit) { showToast('리셋 횟수를 모두 사용했습니다!'); return; }
+    if (resetUsed >= limit) { showToast(i18n.t('toast.resetLimitReached')); return; }
     resetUsed++;
     updateResetButton();
   }
@@ -1292,8 +1292,8 @@ async function initStage() {
     const stages = await res.json();
     allStages = stages;
     stageConfig = stages.find(s => s.id === stageId);
-    if (!stageConfig) { showToast('스테이지를 찾을 수 없습니다'); return; }
-  } catch(e) { showToast('스테이지 데이터 로드 실패'); return; }
+    if (!stageConfig) { showToast(i18n.t('toast.stageNotFound')); return; }
+  } catch(e) { showToast(i18n.t('toast.stageLoadFailed')); return; }
 
   // Apply theme
   document.body.style.setProperty('--bg', stageConfig.theme.bgColor);
@@ -1320,9 +1320,9 @@ async function initStage() {
     let text = stageConfig.description;
     const forbidden = [];
     if (stageConfig.constraints.forbiddenHands.length > 0)
-      forbidden.push('금지: ' + stageConfig.constraints.forbiddenHands.join(', '));
+      forbidden.push(i18n.t('constraint.forbiddenHands', { list: stageConfig.constraints.forbiddenHands.join(', ') }));
     if (stageConfig.constraints.forbiddenValues.length > 0)
-      forbidden.push('금지: ' + stageConfig.constraints.forbiddenValues.join(', '));
+      forbidden.push(i18n.t('constraint.forbiddenValues', { list: stageConfig.constraints.forbiddenValues.join(', ') }));
     if (forbidden.length > 0) text += ' [' + forbidden.join(' / ') + ']';
     condBar.textContent = text;
   }

@@ -321,7 +321,7 @@ function finalizePath() {
   state.isDragging = false;
 
   if (state.selectedPath.length < HAND_SIZE) {
-    showToast('카드 5장을 선택해주세요!');
+    showToast(i18n.t('toast.selectFiveCards'));
     clearSelection();
     return;
   }
@@ -352,7 +352,7 @@ function finalizePath() {
         el.style.borderColor = '';
       }, 400);
     });
-    showToast('10 이상의 원페어가 필요합니다!');
+    showToast(i18n.t('toast.needHigherPair'));
     setTimeout(() => clearSelection(), 400);
     return;
   }
@@ -421,7 +421,7 @@ function updateHandPreview() {
 
   const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
   if (cards.length < 2) {
-    previewEl.textContent = `${cards.length}/5 선택 중...`;
+    previewEl.textContent = i18n.t('ui.selecting', { count: cards.length });
     previewEl.className = 'hand-preview';
     return;
   }
@@ -814,9 +814,9 @@ function endGame(reason) {
 
   const modal = document.getElementById('modal');
   let title;
-  if (reason === 'complete') title = 'COMPLETE!';
-  else if (reason === 'nomoves') title = 'NO MORE MOVES';
-  else title = "TIME'S UP!";
+  if (reason === 'complete') title = i18n.t('modal.complete');
+  else if (reason === 'nomoves') title = i18n.t('modal.noMoreMoves');
+  else title = i18n.t('modal.timeUp');
 
   let handListHTML = '';
   sorted.forEach((h, i) => {
@@ -830,12 +830,12 @@ function endGame(reason) {
 
   let timeBonusHTML = '';
   if (timeBonus > 0) {
-    timeBonusHTML = `<div style="color:#4CAF50;font-size:0.85rem;margin-bottom:4px;">남은 시간 보너스: +${timeBonus}</div>`;
+    timeBonusHTML = `<div style="color:#4CAF50;font-size:0.85rem;margin-bottom:4px;">${i18n.t('modal.timeBonus', { n: timeBonus })}</div>`;
   }
 
   let penaltyHTML = '';
   if (penalty > 0) {
-    penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">남은 카드 ${remainingCards}장 (4장 초과 ${remainingCards - 4}장 × -${penaltyPerCard}) = -${penalty}</div>`;
+    penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">${i18n.t('modal.cardPenalty', { total: remainingCards, over: remainingCards - 4, per: penaltyPerCard, penalty })}</div>`;
   }
 
   // NO MORE MOVES: special animated sequence
@@ -862,10 +862,10 @@ function endGame(reason) {
 
     let highScoreHTML = '';
     if (isNewHighScore && score > 0) {
-      highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:4px;">🏆 NEW HIGH SCORE!</div>`;
+      highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:4px;">${i18n.t('modal.newHighScore')}</div>`;
     }
-    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">My High Score: ${highScore}</div>`;
-    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;" id="allUserTopScoreRow">All User High Score: ...</div>`;
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.myHighScore', { score: highScore })}</div>`;
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;" id="allUserTopScoreRow">${i18n.t('modal.allUserHighScore', { score: '...' })}</div>`;
 
     const modalClass = reason === 'nomoves' ? ' nomoves' : '';
     modal.className = 'modal' + modalClass;
@@ -873,17 +873,17 @@ function endGame(reason) {
     const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
     let buttonsHTML = `
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn-play-again" onclick="resetGame()">Play Again</button>
-        <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">게임종료</a>
-        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
+        <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
+        <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
       </div>`;
 
     // Show modal immediately (no DB delay)
     modal.innerHTML = `
       <h2>${title}</h2>
-      <div class="subtitle">${state.hands.length}개의 핸드를 완성했습니다</div>
-      ${best ? `<div class="best-hand">Best: ${best.label}</div>` : ''}
-      <div class="score">Score: ${score}</div>
+      <div class="subtitle">${i18n.t('modal.handsCompleted', { n: state.hands.length })}</div>
+      ${best ? `<div class="best-hand">${i18n.t('modal.best', { hand: best.label })}</div>` : ''}
+      <div class="score">${i18n.t('modal.score', { score })}</div>
       ${timeBonusHTML}
       ${penaltyHTML}
       ${highScoreHTML}
@@ -905,7 +905,7 @@ function endGame(reason) {
 
     dbPromise.then(result => {
       const topScoreEl = document.getElementById('allUserTopScoreRow');
-      if (topScoreEl) topScoreEl.textContent = `All User High Score: ${result.topScore}`;
+      if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScore', { score: result.topScore });
 
       if (result.leaderboardUpdated) {
         saveReplayToDB(true);
@@ -915,7 +915,7 @@ function endGame(reason) {
     }).catch(err => {
       console.error('Session save failed:', err);
       const topScoreEl = document.getElementById('allUserTopScoreRow');
-      if (topScoreEl) topScoreEl.textContent = `All User High Score: -`;
+      if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScoreNone');
     });
   }
 }
@@ -924,7 +924,7 @@ function endGame(reason) {
 function resetGame() {
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
   if (currentGold < 1) {
-    showToast('골드가 부족합니다. (필요: 1 골드)');
+    showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
     return;
   }
   deductGoldLocal(1, 'restart');
@@ -1198,18 +1198,18 @@ async function saveReplayFromButton() {
   if (!hasGold) return;
 
   btn.disabled = true;
-  btn.textContent = '저장 중...';
+  btn.textContent = i18n.t('ui.saving');
 
   // DB 즉시 싱크
   await syncGoldToDB('replay_save');
 
   const replayId = await saveReplayToDB(false);
   if (replayId) {
-    btn.textContent = '저장 완료';
+    btn.textContent = i18n.t('ui.saved');
     btn.style.color = '#4CAF50';
     btn.style.borderColor = '#4CAF50';
   } else {
-    btn.textContent = '저장 실패';
+    btn.textContent = i18n.t('ui.saveFailed');
     btn.style.color = '#ff5252';
     btn.disabled = false;
   }
@@ -1219,7 +1219,7 @@ async function showLeaderboard(currentUser) {
   if (!currentUser) currentUser = (localStorage.getItem('poker_username') || '').trim();
   try {
     const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
-    const lbTitle = isRetryMode ? 'LEADERBOARD (RETRY)' : 'LEADERBOARD';
+    const lbTitle = isRetryMode ? i18n.t('modal.leaderboardRetry') : i18n.t('modal.leaderboard');
     const { data: rows, error } = await sb
       .from(lbTable)
       .select('username, score, best_hand, replay_id')
@@ -1240,15 +1240,15 @@ async function showLeaderboard(currentUser) {
     tableHTML += '</tbody></table>';
 
     if (!rows || rows.length === 0) {
-      tableHTML = '<div style="padding:16px;color:rgba(255,255,255,0.5);">No scores yet</div>';
+      tableHTML = '<div style="padding:16px;color:rgba(255,255,255,0.5);">' + i18n.t('modal.noScores') + '</div>';
     }
 
     const modal = document.getElementById('leaderboardModal');
     modal.innerHTML = `
       <h2>${lbTitle}</h2>
-      <div class="subtitle">Top 10</div>
+      <div class="subtitle">${i18n.t('modal.top10')}</div>
       ${tableHTML}
-      <button class="btn-close-lb" onclick="document.getElementById('leaderboardOverlay').classList.remove('active')">CLOSE</button>
+      <button class="btn-close-lb" onclick="document.getElementById('leaderboardOverlay').classList.remove('active')">${i18n.t('ui.close')}</button>
     `;
     document.getElementById('leaderboardOverlay').classList.add('active');
   } catch (err) {

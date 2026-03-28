@@ -145,6 +145,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 <script src="auth.js"></script>
+<script src="i18n.js"></script>
 <script>
 // ─── Replay Engine ───
 const GRID_SIZE = 7;
@@ -530,7 +531,7 @@ function showConfirmModal({ message, confirmText, onConfirm }) {
     <div style="color:#e0e0e0;font-size:0.9rem;margin-bottom:20px;font-family:'IBM Plex Mono',monospace;">${message}</div>
     <div style="display:flex;gap:10px;justify-content:center;">
       <button id="confirmYes" style="background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;cursor:pointer;">${confirmText}</button>
-      <button id="confirmNo" style="background:rgba(255,255,255,0.1);color:#e0e0e0;border:1px solid rgba(255,255,255,0.2);padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;cursor:pointer;">취소</button>
+      <button id="confirmNo" style="background:rgba(255,255,255,0.1);color:#e0e0e0;border:1px solid rgba(255,255,255,0.2);padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;cursor:pointer;">${i18n.t('ui.cancel')}</button>
     </div>`;
   overlay.appendChild(box);
   document.body.appendChild(overlay);
@@ -545,13 +546,13 @@ function gameRetry() {
 
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
   if (currentGold < 500) {
-    alert('골드가 부족합니다. (필요: 500 골드)');
+    alert(i18n.t('toast.goldInsufficientN', { n: 500 }));
     return;
   }
 
   showConfirmModal({
-    message: '500 골드를 사용하여 리트라이하시겠습니까?',
-    confirmText: '리트라이 (-500G)',
+    message: i18n.t('modal.retryConfirm'),
+    confirmText: i18n.t('modal.retryConfirmBtn'),
     onConfirm: async () => {
       deductGoldLocal(500, 'game_retry');
       try { await syncGoldToDB('game_retry'); } catch(e) { console.error('Gold sync error:', e); }
@@ -562,22 +563,22 @@ function gameRetry() {
 }
 
 // ─── Init: load from URL param or localStorage ───
-const params = new URLSearchParams(window.location.search);
-const replayId = params.get('id');
-const source = params.get('source'); // 'local' or 'db'
+(async () => {
+  await i18n.init();
 
-if (source === 'local' || (!source && !replayId)) {
-  // Load from localStorage
-  const raw = localStorage.getItem('poker_last_replay');
-  if (raw) {
-    try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
-  } else {
-    document.getElementById('replayInfo').textContent = '리플레이 데이터가 없습니다';
-  }
-} else if (replayId) {
-  // Load from DB
-  document.getElementById('replayInfo').textContent = '불러오는 중...';
-  (async () => {
+  const params = new URLSearchParams(window.location.search);
+  const replayId = params.get('id');
+  const source = params.get('source');
+
+  if (source === 'local' || (!source && !replayId)) {
+    const raw = localStorage.getItem('poker_last_replay');
+    if (raw) {
+      try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
+    } else {
+      document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
+    }
+  } else if (replayId) {
+    document.getElementById('replayInfo').textContent = i18n.t('ui.loading');
     try {
       const { data, error } = await sb
         .from('game_replays')
@@ -585,15 +586,15 @@ if (source === 'local' || (!source && !replayId)) {
         .eq('id', replayId)
         .single();
       if (error || !data) {
-        document.getElementById('replayInfo').textContent = '리플레이를 찾을 수 없습니다';
+        document.getElementById('replayInfo').textContent = i18n.t('toast.replayNotFound');
         return;
       }
       loadReplay(data.replay_data);
     } catch(e) {
-      document.getElementById('replayInfo').textContent = '오류 발생';
+      document.getElementById('replayInfo').textContent = i18n.t('toast.errorOccurred');
     }
-  })();
-}
+  }
+})();
 </script>
 </body>
 </html>

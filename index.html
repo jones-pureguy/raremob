@@ -278,10 +278,11 @@
         <span class="settings-badge">준비 중</span>
       </button>
 
-      <button class="settings-item settings-disabled">
+      <button class="settings-item" onclick="showLanguageSelector()">
         <span class="settings-icon">🌐</span>
         <span class="settings-label">언어 설정</span>
-        <span class="settings-badge">준비 중</span>
+        <span class="settings-value" id="settingsLang"></span>
+        <span class="settings-arrow">›</span>
       </button>
 
       <button class="settings-item" onclick="showAppInfo()">
@@ -302,6 +303,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 <script src="auth.js"></script>
+<script src="i18n.js"></script>
 <script>
   // 로컬 즉시 표시
   const savedUsername = localStorage.getItem('poker_username');
@@ -353,6 +355,7 @@
 
   // 백그라운드 auth + DB 싱크
   (async function checkUserReady() {
+    await i18n.init();
     const uid = await initAuth();
     if (!uid) return;
 
@@ -388,6 +391,8 @@
   function openSettings() {
     const username = localStorage.getItem('poker_username') || '';
     document.getElementById('settingsUsername').textContent = username;
+    const langEl = document.getElementById('settingsLang');
+    if (langEl) langEl.textContent = LANG_NAMES[i18n.getLang()] || i18n.getLang();
     document.getElementById('settingsModal').style.display = 'flex';
   }
 
@@ -396,7 +401,31 @@
   }
 
   function showAppInfo() {
-    alert('DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones');
+    alert(i18n.t('settings.appInfoContent'));
+  }
+
+  const LANG_NAMES = {
+    ko:'한국어', en:'English', ja:'日本語', zh:'中文(简体)', 'zh-TW':'中文(繁體)',
+    es:'Español', pt:'Português', fr:'Français', de:'Deutsch', it:'Italiano',
+    ru:'Русский', ar:'العربية', hi:'हिन्दी', th:'ภาษาไทย', vi:'Tiếng Việt', id:'Bahasa Indonesia'
+  };
+
+  function showLanguageSelector() {
+    const supported = i18n.getSupported();
+    const current = i18n.getLang();
+    const list = document.querySelector('.settings-list');
+    list.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${supported.map(lang => `
+          <button class="settings-item${lang === current ? '' : ''}" onclick="i18n.setLang('${lang}')"
+            style="${lang === current ? 'background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);' : ''}">
+            <span class="settings-label">${LANG_NAMES[lang] || lang}</span>
+            ${lang === current ? '<span style="color:var(--gold);">✓</span>' : ''}
+          </button>
+        `).join('')}
+      </div>`;
+    document.querySelector('.settings-close').textContent = i18n.t('ui.back');
+    document.querySelector('.settings-close').onclick = () => { closeSettings(); location.reload(); };
   }
 
   document.getElementById('settingsModal').addEventListener('click', function(e) {
