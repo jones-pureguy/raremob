@@ -256,13 +256,13 @@
       "2s",   "",   "",   "",   "",   "",   "",
       "Ad",   "8s",   "",   "",   "",   "",   "",
       "7h", "7d",   "5s",   "",   "",   "",   "",
-      "3c",   "8h", "6d",   "Js",   "",   "",   "",
-      "Kc",   "6c",   "10h", "3d", "As",   "", ""
+      "3c",   "9h", "6d",   "Js",   "",   "",   "",
+      "Kc",   "4c",   "10h", "3d", "As",   "", ""
     ],
     "constraints": {
       "jumpAllowed": false,
       "diagonalAllowed": true,
-      "diagonalOnly": false
+      "diagonalOnly": true
     },
     "mission": {
       "type": "real_time",
@@ -371,7 +371,7 @@
       "",   "",   "",   "",   "",   "",   "Kc",
       "",   "", "",   "",   "",   "Kd", "Ad",
       "",   "",   "",   "",   "",   "5h",   "3d",
-      "",   "Ks", "",   "Kh",   "",   "3h", "2d"
+      "As",   "Ks", "",   "Kh",   "",   "3h", "2d"
     ],
     "constraints": {
       "jumpAllowed": true,
