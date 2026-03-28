@@ -838,33 +838,38 @@ body.debug-mode .card .debug-info { display: block; }
 
 /* ── Quick Reference Modal ── */
 .qr-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(201, 168, 76, 0.15);
-  border: 1.5px solid rgba(201, 168, 76, 0.5);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(201, 168, 76, 0.3);
   color: var(--gold);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: background 0.15s;
 }
-.qr-btn:active { opacity: 0.7; }
+.qr-btn:hover { background: rgba(201,168,76,0.15); }
+.qr-btn:active { transform: scale(0.95); }
 
 .qr-overlay {
-  display: none;
+  display: none !important;
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0,0,0,0.68);
   z-index: 1000;
   align-items: center;
   justify-content: center;
 }
-.qr-overlay.active { display: flex; }
+.qr-overlay.active { display: flex !important; }
 
 .qr-modal {
   width: 92%;

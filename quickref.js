@@ -99,11 +99,15 @@ function buildQuickRef() {
 
 function showQuickRef() {
   buildQuickRef();
-  document.getElementById('qrOverlay').classList.add('active');
+  const el = document.getElementById('qrOverlay');
+  el.style.display = 'flex';
+  el.classList.add('active');
 }
 
 function closeQuickRef() {
-  document.getElementById('qrOverlay').classList.remove('active');
+  const el = document.getElementById('qrOverlay');
+  el.classList.remove('active');
+  el.style.display = 'none';
 }
 
 document.addEventListener('keydown', e => {
