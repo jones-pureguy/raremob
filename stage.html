@@ -170,29 +170,18 @@
       showToast('골드가 부족합니다.');
       return false;
     }
-    const newGold = current - amount;
-    const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
-    localStorage.setItem('poker_gold', newGold);
-    localStorage.setItem('poker_gold_pending_deduct', pending + amount);
+    localStorage.setItem('poker_gold', current - amount);
     renderCurrencyBar();
     return true;
   }
 
-  async function syncGoldDeductToDB(reason) {
-    const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
-    if (pending <= 0) return;
+  async function syncGoldToDB(reason) {
     const playerId = localStorage.getItem('poker_player_id');
-    const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-    const { error } = await sb.from('players').update({ gold: currentGold }).eq('id', playerId);
-    if (!error) {
-      sb.from('gold_transactions').insert({
-        player_id: playerId,
-        amount: -pending,
-        reason: reason || 'deduct_sync',
-        meta: { synced_amount: pending }
-      }).catch(err => console.error('Transaction log failed:', err));
-      localStorage.setItem('poker_gold_pending_deduct', 0);
-    }
+    if (!playerId) return;
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    try {
+      await sb.from('players').update({ gold }).eq('id', playerId);
+    } catch(e) { console.error('Gold sync error:', e); }
   }
 
   function updateRestartButtonState() {

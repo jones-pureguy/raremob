@@ -122,7 +122,6 @@
       // 신규 계정 골드 지급
       if (!existingPlayer) {
         localStorage.setItem('poker_gold', INITIAL_GOLD);
-        localStorage.setItem('poker_gold_pending_deduct', 0);
         sb.from('gold_transactions').insert({
           player_id: uid,
           amount: INITIAL_GOLD,

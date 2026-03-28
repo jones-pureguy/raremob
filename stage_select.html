@@ -232,17 +232,10 @@
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
 
-    // 골드 싱크 (pending 고려)
-    sb.from('players').select('gold').eq('id', playerId).single()
-      .then(({ data }) => {
-        if (!data) return;
-        const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
-        const gold = Math.max(0, (data.gold || 0) - pending);
-        localStorage.setItem('poker_gold', gold);
-        document.getElementById('goldDisplay').textContent =
-          gold.toLocaleString() + ' Gold';
-      })
-      .catch(err => console.error('Gold sync failed:', err));
+    // 골드 — localStorage 값 그대로 표시 (DB 싱크는 index.html에서만)
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    document.getElementById('goldDisplay').textContent =
+      gold.toLocaleString() + ' Gold';
 
     // 진도 싱크
     sb.from('player_stages').select('*').eq('player_id', playerId)

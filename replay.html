@@ -507,31 +507,17 @@ function updateInfo() {
 function deductGoldLocal(amount, reason) {
   const current = parseInt(localStorage.getItem('poker_gold') || '0');
   if (current < amount) return false;
-  const newGold = current - amount;
-  const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
-  localStorage.setItem('poker_gold', newGold);
-  localStorage.setItem('poker_gold_pending_deduct', pending + amount);
+  localStorage.setItem('poker_gold', current - amount);
   return true;
 }
 
-async function syncGoldDeductToDB(reason) {
-  const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
-  if (pending <= 0) return;
+async function syncGoldToDB(reason) {
   const playerId = localStorage.getItem('poker_player_id');
   if (!playerId) return;
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  const gold = parseInt(localStorage.getItem('poker_gold') || '0');
   try {
-    const { error } = await sb.from('players').update({ gold: currentGold }).eq('id', playerId);
-    if (!error) {
-      sb.from('gold_transactions').insert({
-        player_id: playerId,
-        amount: -pending,
-        reason: reason || 'deduct_sync',
-        meta: { synced_amount: pending }
-      }).catch(err => console.error('Transaction log failed:', err));
-      localStorage.setItem('poker_gold_pending_deduct', 0);
-    }
-  } catch(e) { console.error('syncGoldDeductToDB error:', e); }
+    await sb.from('players').update({ gold }).eq('id', playerId);
+  } catch(e) { console.error('Gold sync error:', e); }
 }
 
 // ─── Confirm Modal ───
@@ -568,7 +554,7 @@ function gameRetry() {
     confirmText: '리트라이 (-500G)',
     onConfirm: async () => {
       deductGoldLocal(500, 'game_retry');
-      try { await syncGoldDeductToDB('game_retry'); } catch(e) { console.error('Gold sync error:', e); }
+      try { await syncGoldToDB('game_retry'); } catch(e) { console.error('Gold sync error:', e); }
       localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
       window.location.href = 'game.html';
     }

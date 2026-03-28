@@ -1200,16 +1200,8 @@ function syncProgressFromDB() {
   const playerId = localStorage.getItem('poker_player_id');
   if (!playerId) return;
 
-  // 골드 싱크 (pending 고려)
-  sb.from('players').select('gold').eq('id', playerId).single()
-    .then(({ data }) => {
-      if (!data) return;
-      const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
-      const gold = Math.max(0, (data.gold || 0) - pending);
-      localStorage.setItem('poker_gold', gold);
-      renderCurrencyBar();
-    })
-    .catch(err => console.error('Gold sync failed:', err));
+  // 골드 싱크 — DB 읽지 않고 localStorage 유지 (세션 중 localStorage가 진실)
+  // DB 싱크는 게임 종료 시 syncGoldToDB에서 처리
 
   // 진도 싱크
   sb.from('player_stages').select('*').eq('player_id', playerId)
@@ -1242,7 +1234,7 @@ async function saveStageResult(stageId, result, goldEarned) {
 
   try {
     // Sync pending gold deductions before DB write
-    await syncGoldDeductToDB('stage_end');
+    await syncGoldToDB('stage_end');
 
     // Check existing record for clear_count increment
     const { data: existing } = await sb.from('player_stages')

@@ -1059,7 +1059,7 @@ async function saveSessionAndGetStatus(data) {
     if (!playerId) { console.error('[DragON] No player ID, skipping save'); return { leaderboardUpdated, topScore }; }
 
     // Sync pending gold deductions before DB write
-    await syncGoldDeductToDB('game_end');
+    await syncGoldToDB('game_end');
 
     // Insert game session
     const { data: sessionData, error: sessionError } = await sb
@@ -1201,7 +1201,7 @@ async function saveReplayFromButton() {
   btn.textContent = '저장 중...';
 
   // DB 즉시 싱크
-  await syncGoldDeductToDB('replay_save');
+  await syncGoldToDB('replay_save');
 
   const replayId = await saveReplayToDB(false);
   if (replayId) {
