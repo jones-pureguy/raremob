@@ -27,9 +27,62 @@ function miniCard(val, suit, dim) {
   </div>`;
 }
 
-function textCard(val, suit, dim) {
-  const cls = {'\u2660':'s','\u2665':'h','\u2666':'d','\u2663':'c'}[suit] || '';
-  return `<span class="qr-text-card ${cls}${dim?' dim':''}">${suit}${val}</span>`;
+function qrRow(scoreStr, nameStr, descStr, cardsHTML) {
+  return `
+    <div class="qr-row">
+      <div class="qr-info">
+        <div class="qr-info-top">
+          <span class="qr-score">${scoreStr}</span>
+          <span class="qr-name">${nameStr}</span>
+        </div>
+        <div class="qr-desc">${descStr}</div>
+      </div>
+      <div class="qr-mini-cards">${cardsHTML}</div>
+    </div>`;
+}
+
+const QR_HANDS = [
+  { rank: 'STRAIGHT_FLUSH', cards: [['5','\u2666',false],['6','\u2666',false],['7','\u2666',false],['8','\u2666',false],['9','\u2666',false]] },
+  { rank: 'FOUR_KIND',      cards: [['7','\u2660',true],['K','\u2660',false],['K','\u2665',false],['K','\u2666',false],['K','\u2663',false]] },
+  { rank: 'FULL_HOUSE',     cards: [['J','\u2663',false],['J','\u2660',false],['Q','\u2660',false],['Q','\u2665',false],['Q','\u2666',false]] },
+  { rank: 'FLUSH',          cards: [['2','\u2663',false],['4','\u2663',false],['7','\u2663',false],['10','\u2663',false],['A','\u2663',false]] },
+  { rank: 'STRAIGHT',       cards: [['4','\u2660',false],['5','\u2663',false],['6','\u2666',false],['7','\u2665',false],['8','\u2660',false]] },
+  { rank: 'THREE_KIND',     cards: [['3','\u2660',true],['8','\u2663',true],['J','\u2660',false],['J','\u2665',false],['J','\u2666',false]] },
+  { rank: 'TWO_PAIR',       cards: [['5','\u2660',true],['9','\u2666',false],['9','\u2663',false],['10','\u2660',false],['10','\u2665',false]] },
+  { rank: 'ONE_PAIR',       cards: [['2','\u2660',true],['7','\u2663',true],['K','\u2666',true],['A','\u2660',false],['A','\u2665',false]] }
+];
+
+// Fallback hand names (used if i18n data not yet loaded)
+const QR_FALLBACK_NAMES = {
+  ROYAL_FLUSH_PLUS: 'Royal Flush+', ROYAL_FLUSH: 'Royal Flush',
+  STRAIGHT_FLUSH: 'Straight Flush', FOUR_KIND: 'Four of a Kind',
+  FULL_HOUSE: 'Full House', FLUSH: 'Flush', STRAIGHT: 'Straight',
+  THREE_KIND: 'Three of a Kind', TWO_PAIR: 'Two Pair', ONE_PAIR: 'One Pair'
+};
+const QR_FALLBACK_DESCS = {
+  ROYAL_FLUSH_PLUS: 'Royal Flush selected in order',
+  ROYAL_FLUSH: 'Top Straight Flush: 10,J,Q,K,A',
+  STRAIGHT_FLUSH: 'Straight with same suit',
+  FOUR_KIND: '4 cards of the same number',
+  FULL_HOUSE: '3 of a kind + a pair',
+  FLUSH: '5 cards of the same suit',
+  STRAIGHT: '5 consecutive numbers (A=14 or 1)',
+  THREE_KIND: '3 cards of the same number',
+  TWO_PAIR: 'Two different pairs',
+  ONE_PAIR: 'A pair (10s or higher only)'
+};
+
+function qrName(rank) {
+  const v = i18n.t(`handNames.${rank}`);
+  return (v && !v.startsWith('handNames.')) ? v : QR_FALLBACK_NAMES[rank] || rank;
+}
+function qrDesc(rank) {
+  const v = i18n.t(`quickRef.desc.${rank}`);
+  return (v && !v.startsWith('quickRef.')) ? v : QR_FALLBACK_DESCS[rank] || '';
+}
+function qrTitle() {
+  const v = i18n.t('quickRef.title');
+  return (v && v !== 'quickRef.title') ? v : 'Hand Rankings';
 }
 
 function buildQuickRef() {
@@ -37,67 +90,39 @@ function buildQuickRef() {
   const list = document.getElementById('qrHandList');
   if (!list) return;
 
-  const name = rank => i18n.t(`handNames.${rank}`);
-
-  // Royal Flush+ — mini cards + orange arrows
-  const rfPlusCards = [['A','\u2660'],['K','\u2660'],['Q','\u2660'],['J','\u2660'],['10','\u2660']];
+  // Royal Flush+ — mini cards with orange arrows
+  const rfPlusCards = [['10','\u2660'],['J','\u2660'],['Q','\u2660'],['K','\u2660'],['A','\u2660']];
   const rfPlusHTML = rfPlusCards.map(([v,s], i) =>
     miniCard(v, s, false) + (i < 4 ? '<span class="qr-arrow">\u2192</span>' : '')
   ).join('');
 
-  // Royal Flush — mini cards, shuffled order
-  const rfCards = [['J','\u2665'],['A','\u2665'],['K','\u2665'],['10','\u2665'],['Q','\u2665']];
+  // Royal Flush — mini cards without arrows
+  const rfCards = [['10','\u2660'],['J','\u2660'],['Q','\u2660'],['K','\u2660'],['A','\u2660']];
   const rfHTML = rfCards.map(([v,s]) => miniCard(v, s, false)).join('');
 
-  // Remaining 8 hands — text style
-  const hands = [
-    { rank: 'STRAIGHT_FLUSH', cards: [['9','\u2666',false],['8','\u2666',false],['7','\u2666',false],['6','\u2666',false],['5','\u2666',false]] },
-    { rank: 'FOUR_KIND',      cards: [['K','\u2660',false],['K','\u2665',false],['K','\u2666',false],['K','\u2663',false],['7','\u2660',true]] },
-    { rank: 'FULL_HOUSE',     cards: [['Q','\u2660',false],['Q','\u2665',false],['Q','\u2666',false],['J','\u2663',false],['J','\u2660',false]] },
-    { rank: 'FLUSH',          cards: [['A','\u2663',false],['10','\u2663',false],['7','\u2663',false],['4','\u2663',false],['2','\u2663',false]] },
-    { rank: 'STRAIGHT',       cards: [['8','\u2660',false],['7','\u2665',false],['6','\u2666',false],['5','\u2663',false],['4','\u2660',false]] },
-    { rank: 'THREE_KIND',     cards: [['J','\u2660',false],['J','\u2665',false],['J','\u2666',false],['8','\u2663',true],['3','\u2660',true]] },
-    { rank: 'TWO_PAIR',       cards: [['10','\u2660',false],['10','\u2665',false],['9','\u2666',false],['9','\u2663',false],['5','\u2660',true]] },
-    { rank: 'ONE_PAIR',       cards: [['A','\u2660',false],['A','\u2665',false],['K','\u2666',true],['7','\u2663',true],['2','\u2660',true]] }
-  ];
+  const rows = [
+    qrRow(`${scores.ROYAL_FLUSH_PLUS}P`, qrName('ROYAL_FLUSH_PLUS'),
+          qrDesc('ROYAL_FLUSH_PLUS'), rfPlusHTML),
+    qrRow(`${scores.ROYAL_FLUSH}P`, qrName('ROYAL_FLUSH'),
+          qrDesc('ROYAL_FLUSH'), rfHTML),
+    ...QR_HANDS.map(h =>
+      qrRow(`${scores[h.rank] ?? 0}P`, qrName(h.rank),
+            qrDesc(h.rank),
+            h.cards.map(([v,s,dim]) => miniCard(v, s, dim)).join(''))
+    )
+  ].join('');
 
-  const rfPlusRow = `
-    <div class="qr-row">
-      <div class="qr-info">
-        <div class="qr-name">${name('ROYAL_FLUSH_PLUS')}</div>
-        <div class="qr-score">${scores.ROYAL_FLUSH_PLUS} pts</div>
-      </div>
-      <div class="qr-mini-cards">${rfPlusHTML}</div>
-    </div>`;
-
-  const rfRow = `
-    <div class="qr-row">
-      <div class="qr-info">
-        <div class="qr-name">${name('ROYAL_FLUSH')}</div>
-        <div class="qr-score">${scores.ROYAL_FLUSH} pts</div>
-      </div>
-      <div class="qr-mini-cards">${rfHTML}</div>
-    </div>`;
-
-  const otherRows = hands.map(h => {
-    const cardsHTML = h.cards.map(([v,s,dim]) => textCard(v, s, dim)).join('');
-    return `
-      <div class="qr-row">
-        <div class="qr-info">
-          <div class="qr-name">${name(h.rank)}</div>
-          <div class="qr-score">${scores[h.rank] ?? 0} pts</div>
-        </div>
-        <div class="qr-text-cards">${cardsHTML}</div>
-      </div>`;
-  }).join('');
-
-  list.innerHTML = rfPlusRow + rfRow + otherRows;
+  list.innerHTML = rows;
 
   const titleEl = document.getElementById('qrTitle');
-  if (titleEl) titleEl.textContent = i18n.t('quickRef.title');
+  if (titleEl) titleEl.textContent = qrTitle();
 }
 
-function showQuickRef() {
+async function showQuickRef() {
+  // Ensure i18n is loaded before building content
+  if (typeof i18n !== 'undefined' && i18n.t('handNames.ROYAL_FLUSH') === 'handNames.ROYAL_FLUSH') {
+    await i18n.init();
+  }
   try { buildQuickRef(); } catch(e) { console.error('QR build error:', e); }
   const el = document.getElementById('qrOverlay');
   el.style.display = 'flex';
@@ -114,7 +139,6 @@ function closeQuickRef() {
 // Bind button events via JS for reliable mobile touch handling
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.qr-btn').forEach(btn => {
-    // Remove inline onclick to avoid double-fire
     btn.removeAttribute('onclick');
 
     let touched = false;

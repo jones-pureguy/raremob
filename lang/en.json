@@ -226,6 +226,18 @@
     "howToPlay": "How to Play",
     "moveDesc": "Drag 5 adjacent cards in any direction.",
     "jumpDesc": "You can skip empty cells (jump).",
-    "minHandDesc": "Minimum valid hand: Pair of 10s or higher."
+    "minHandDesc": "Minimum valid hand: Pair of 10s or higher.",
+    "desc": {
+      "ROYAL_FLUSH_PLUS": "Royal Flush selected in order",
+      "ROYAL_FLUSH": "Top Straight Flush: 10,J,Q,K,A",
+      "STRAIGHT_FLUSH": "Straight with same suit",
+      "FOUR_KIND": "4 cards of the same number",
+      "FULL_HOUSE": "3 of a kind + a pair",
+      "FLUSH": "5 cards of the same suit",
+      "STRAIGHT": "5 consecutive numbers (A=14 or 1)",
+      "THREE_KIND": "3 cards of the same number",
+      "TWO_PAIR": "Two different pairs",
+      "ONE_PAIR": "A pair (10s or higher only)"
+    }
   }
 }

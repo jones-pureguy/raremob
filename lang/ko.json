@@ -226,6 +226,18 @@
     "howToPlay": "플레이 방법",
     "moveDesc": "아무 방향으로나 인접한 카드 5장을 드래그하세요.",
     "jumpDesc": "빈 칸을 건너뛸 수 있습니다 (점프).",
-    "minHandDesc": "최소 유효 패: 10 이상의 원페어 이상."
+    "minHandDesc": "최소 유효 패: 10 이상의 원페어 이상.",
+    "desc": {
+      "ROYAL_FLUSH_PLUS": "순서대로 선택된 Royal Flush",
+      "ROYAL_FLUSH": "10,J,Q,K,A 5장 카드가 선택된 최상위 Straight Flush",
+      "STRAIGHT_FLUSH": "같은 무늬로 구성된 Straight",
+      "FOUR_KIND": "같은 숫자 4장",
+      "FULL_HOUSE": "같은 숫자 3장 + 2장",
+      "FLUSH": "같은 무늬 5장",
+      "STRAIGHT": "연속되는 5개의 숫자 (A=14 or 1)",
+      "THREE_KIND": "같은 숫자 3장",
+      "TWO_PAIR": "같은 숫자 2장 + 2장",
+      "ONE_PAIR": "같은 숫자 2장 (단 10이상만 패로 인정)"
+    }
   }
 }
