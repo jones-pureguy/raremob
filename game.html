@@ -25,6 +25,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
   <div class="username-display" id="usernameDisplay"></div>
+  <button class="qr-btn" onclick="showQuickRef()">?</button>
   <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
   </div>
 </div>
@@ -77,6 +78,17 @@
   <div class="modal leaderboard-modal" id="leaderboardModal"></div>
 </div>
 
+<div class="qr-overlay" id="qrOverlay" onclick="closeQuickRef()">
+  <div class="qr-modal" onclick="event.stopPropagation()">
+    <div class="qr-header">
+      <span class="qr-title" id="qrTitle">족보 랭킹</span>
+    </div>
+    <div class="qr-scroll">
+      <div id="qrHandList"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -87,6 +99,7 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="quickref.js"></script>
 <script>
   function renderCurrencyBar() {
     const gold = parseInt(localStorage.getItem('poker_gold') || '0');
