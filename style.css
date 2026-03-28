@@ -1038,6 +1038,14 @@ body.debug-mode .card .debug-info { display: block; }
   max-width: 340px;
   width: 90%;
 }
+.tut-grid-area .hand-preview {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  padding: 4px 16px;
+}
 
 .tut-restart-btn {
   position: absolute;
