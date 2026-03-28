@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DragON POKER - Tutorial</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body class="tutorial-body">
+
+  <!-- 상단 진행 바 -->
+  <div class="tut-header">
+    <span class="tut-progress" id="tutProgress">1 / 10</span>
+    <button class="tut-skip-btn" id="tutSkipBtn" onclick="skipTutorial()">SKIP</button>
+  </div>
+
+  <!-- 그리드 영역 -->
+  <div class="tut-grid-area">
+    <div class="grid-container" id="gridContainer">
+      <div class="grid" id="grid"></div>
+      <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+    </div>
+
+    <!-- 핸드 프리뷰 -->
+    <div class="hand-preview" id="handPreview"></div>
+
+    <!-- 리스타트 버튼 -->
+    <button class="tut-restart-btn" id="tutRestartBtn" onclick="tutorialRestart()" disabled>↺</button>
+  </div>
+
+  <!-- 다이얼로그 영역 -->
+  <div class="tut-dialog-area" id="tutDialogArea">
+    <div class="tut-character">
+      <img src="./images/portrait.webp" alt="Dragon" class="tut-dragon-img">
+    </div>
+    <div class="tut-bubble">
+      <p class="tut-dialog-text" id="tutDialogText"></p>
+      <div class="tut-click-hint" id="tutClickHint">&#9660; tap to continue</div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="./auth.js"></script>
+<script src="./i18n.js"></script>
+<script src="./scorepolicy.js"></script>
+<script>
+(async () => {
+  await i18n.init();
+  await ScorePolicy.load();
+})().then(() => {
+  const s = document.createElement('script');
+  s.src = './tutorial_script.js';
+  document.body.appendChild(s);
+});
+</script>
+</body>
+</html>

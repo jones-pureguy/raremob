@@ -199,6 +199,8 @@
     "clearedWithHint": "Lv.${n} hint used"
   },
   "tutorial": {
+    "skipConfirm": "Skip the tutorial?",
+    "tapContinue": "▼ tap to continue",
     "step1": {
       "title": "Welcome to DragON POKER",
       "body": "Drag 5 adjacent cards on the 7×7 grid to form a poker hand."

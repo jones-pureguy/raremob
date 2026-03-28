@@ -993,4 +993,139 @@ body.debug-mode .card .debug-info { display: block; }
   flex-shrink: 0;
 }
 
+/* ── Tutorial Mode ── */
+.tutorial-body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg, #0a1f14);
+}
 
+.tut-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.2);
+}
+.tut-progress {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--gold);
+}
+.tut-skip-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.tut-skip-btn:hover { color: rgba(255,255,255,0.7); }
+
+.tut-grid-area {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+.tut-grid-area .grid-container {
+  max-width: 340px;
+  width: 90%;
+}
+
+.tut-restart-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(201,168,76,0.15);
+  border: 1.5px solid rgba(201,168,76,0.4);
+  color: var(--gold);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tut-restart-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.tut-dialog-area {
+  flex-shrink: 0;
+  min-height: 140px;
+  max-height: 200px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(0,0,0,0.35);
+  border-top: 1px solid rgba(201,168,76,0.2);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: auto;
+}
+
+.tut-character {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+}
+.tut-dragon-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(201,168,76,0.5);
+}
+
+.tut-bubble {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 0;
+}
+.tut-dialog-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.55;
+  margin: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.tut-click-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(201,168,76,0.6);
+  text-align: right;
+  margin-top: 6px;
+  animation: tut-blink 1.2s infinite;
+}
+.tut-click-hint.hidden { visibility: hidden; }
+
+@keyframes tut-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.tut-dialog-area.instruction-mode {
+  border-top: 1px solid rgba(201,168,76,0.6);
+  background: rgba(201,168,76,0.06);
+}
+.tut-dialog-area.instruction-mode .tut-dragon-img {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(201,168,76,0.4);
+}

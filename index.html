@@ -266,10 +266,9 @@
         <span class="settings-badge">준비 중</span>
       </button>
 
-      <button class="settings-item settings-disabled">
+      <button class="settings-item" onclick="location.href='tutorial.html?replay=1'">
         <span class="settings-icon">📖</span>
         <span class="settings-label">튜토리얼</span>
-        <span class="settings-badge">준비 중</span>
       </button>
 
       <button class="settings-item settings-disabled">
@@ -305,9 +304,12 @@
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
 <script>
-  // 로컬 즉시 표시
+  // 온보딩 체크: 튜토리얼 → 닉네임 → 메인
+  const tutDone = localStorage.getItem('poker_tutorial_done');
   const savedUsername = localStorage.getItem('poker_username');
-  if (!savedUsername) {
+  if (!tutDone) {
+    window.location.href = 'tutorial.html';
+  } else if (!savedUsername) {
     window.location.href = 'id.html';
   } else {
     document.getElementById('menuPlayer').textContent = savedUsername;
