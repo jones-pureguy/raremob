@@ -875,7 +875,7 @@ function endGame(reason) {
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">Play Again</button>
         <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">Menu</a>
-        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
+        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
       </div>`;
 
     // Show modal immediately (no DB delay)
