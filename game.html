@@ -23,9 +23,9 @@
       <span class="currency-value" id="chipDisplay">0</span>
     </div>
   </div>
+  <button class="qr-btn">?</button>
   <div style="display:flex;align-items:center;gap:8px;">
   <div class="username-display" id="usernameDisplay"></div>
-  <button class="qr-btn" onclick="showQuickRef()">?</button>
   <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
   </div>
 </div>
@@ -78,7 +78,7 @@
   <div class="modal leaderboard-modal" id="leaderboardModal"></div>
 </div>
 
-<div class="qr-overlay" id="qrOverlay" style="display:none" onclick="closeQuickRef()">
+<div class="qr-overlay" id="qrOverlay" style="display:none">
   <div class="qr-modal" onclick="event.stopPropagation()">
     <div class="qr-header">
       <span class="qr-title" id="qrTitle">족보 랭킹</span>

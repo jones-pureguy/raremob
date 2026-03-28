@@ -98,7 +98,7 @@ function buildQuickRef() {
 }
 
 function showQuickRef() {
-  buildQuickRef();
+  try { buildQuickRef(); } catch(e) { console.error('QR build error:', e); }
   const el = document.getElementById('qrOverlay');
   el.style.display = 'flex';
   el.classList.add('active');
@@ -106,9 +106,46 @@ function showQuickRef() {
 
 function closeQuickRef() {
   const el = document.getElementById('qrOverlay');
+  if (!el) return;
   el.classList.remove('active');
   el.style.display = 'none';
 }
+
+// Bind button events via JS for reliable mobile touch handling
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.qr-btn').forEach(btn => {
+    // Remove inline onclick to avoid double-fire
+    btn.removeAttribute('onclick');
+
+    let touched = false;
+    btn.addEventListener('touchend', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      touched = true;
+      showQuickRef();
+    }, { passive: false });
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (touched) { touched = false; return; }
+      showQuickRef();
+    });
+  });
+
+  // Overlay close — touch + click
+  const overlay = document.getElementById('qrOverlay');
+  if (overlay) {
+    overlay.addEventListener('touchend', e => {
+      if (e.target === overlay) {
+        e.preventDefault();
+        closeQuickRef();
+      }
+    }, { passive: false });
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeQuickRef();
+    });
+  }
+});
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeQuickRef();
