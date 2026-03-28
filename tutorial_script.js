@@ -548,7 +548,7 @@ function loadStep(idx) {
 
   // Restart button
   const restartBtn = document.getElementById('tutRestartBtn');
-  restartBtn.disabled = !step.restartEnabled;
+  restartBtn.disabled = false;
 
   // Init grid
   initState();
@@ -685,29 +685,39 @@ function onTutorialHandComplete(handData) {
 // ── Restart Button ──
 function tutorialRestart() {
   const step = tutorials[currentStep];
-  if (!step.restartEnabled) return;
 
   // Step with restartMissionComplete: pressing restart IS the mission
   if (step.restartMissionComplete && waitingForMission) {
-    if (step.retryDeck === 'random') {
-      initState();
-      loadRandomDeck();
-      renderGrid();
-    }
+    initState();
+    loadRandomDeck();
+    renderGrid();
+
     waitingForMission = false;
     currentPhaseIdx++;
     currentLineIdx = 0;
     document.getElementById('tutDialogArea').classList.remove('instruction-mode');
+    document.getElementById('tutNextBtn').classList.remove('hidden');
     setTimeout(() => showCurrentDialog(), 400);
     return;
   }
 
-  // Normal restart: reload current step's deck
+  // Normal restart: reload current step's initialDeck (no gold cost)
   initState();
   loadTutorialDeck(step.initialDeck);
   applyGravityToAll();
   orderedStraightCount = 0;
   renderGrid();
+
+  // Reset dialog to instruction phase
+  const instrIdx = step.dialogs.findIndex(d => d.phase === 'instruction');
+  if (instrIdx !== -1) {
+    currentPhaseIdx = instrIdx;
+    currentLineIdx = 0;
+    waitingForMission = true;
+    document.getElementById('tutDialogArea').classList.add('instruction-mode');
+    document.getElementById('tutNextBtn').classList.add('hidden');
+    showCurrentDialog();
+  }
 }
 
 // ── Skip ──
