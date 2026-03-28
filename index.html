@@ -356,13 +356,20 @@
     const uid = await initAuth();
     if (!uid) return;
 
-    const { data } = await sb
-      .from('players')
-      .select('username, gold')
-      .eq('id', uid)
-      .single();
+    const { data, error } = await sbRetry(() =>
+      sb.from('players').select('username, gold').eq('id', uid).single()
+    );
 
-    if (!data || !data.username) {
+    if (error || !data || !data.username) {
+      // DB 실패지만 localStorage에 username이 있으면 그대로 진행
+      const cachedUsername = localStorage.getItem('poker_username');
+      if (cachedUsername) {
+        console.warn('[DragON] DB 조회 실패, localStorage fallback 사용');
+        document.getElementById('menuPlayer').textContent = cachedUsername;
+        renderCurrencyBar();
+        return;
+      }
+      // localStorage에도 없으면 진짜 신규 유저
       window.location.href = 'id.html';
       return;
     }
@@ -372,7 +379,6 @@
 
     document.getElementById('menuPlayer').textContent = data.username;
 
-    // DB 골드를 기준으로 pending 처리 후 localStorage 반영
     await syncGoldOnStart();
 
     renderCurrencyBar();

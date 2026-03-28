@@ -82,13 +82,11 @@
       if (!uid) { msgEl.textContent = '인증 실패'; msgEl.style.color = '#ff5252'; return; }
 
       // 중복 체크 (다른 유저가 이미 사용 중인 이름인지)
-      const { data: existing, error: fetchErr } = await sb
-        .from('players')
-        .select('id')
-        .eq('username', username)
-        .maybeSingle();
+      const { data: existing, error: fetchErr } = await sbRetry(() =>
+        sb.from('players').select('id').eq('username', username).maybeSingle()
+      );
 
-      if (fetchErr) { msgEl.textContent = '오류: ' + fetchErr.message; msgEl.style.color = '#ff5252'; return; }
+      if (fetchErr) { msgEl.textContent = '네트워크 오류, 다시 시도해주세요.'; msgEl.style.color = '#ff5252'; return; }
 
       if (existing && existing.id !== uid) {
         msgEl.textContent = '이미 사용 중인 닉네임입니다.';
@@ -98,23 +96,18 @@
 
       // auth.uid()로 players 레코드 생성 또는 업데이트
       const INITIAL_GOLD = 10000;
-      const isNewPlayer = !existing || existing.id === uid;
-      const { data: existingPlayer } = await sb
-        .from('players')
-        .select('id')
-        .eq('id', uid)
-        .maybeSingle();
-
-      const goldToSet = existingPlayer ? undefined : INITIAL_GOLD;
+      const { data: existingPlayer } = await sbRetry(() =>
+        sb.from('players').select('id').eq('id', uid).maybeSingle()
+      );
 
       const upsertObj = { id: uid, username: username };
       if (!existingPlayer) upsertObj.gold = INITIAL_GOLD;
 
-      const { error: upsertErr } = await sb
-        .from('players')
-        .upsert(upsertObj, { onConflict: 'id' });
+      const { error: upsertErr } = await sbRetry(() =>
+        sb.from('players').upsert(upsertObj, { onConflict: 'id' })
+      );
 
-      if (upsertErr) { msgEl.textContent = '등록 실패: ' + upsertErr.message; msgEl.style.color = '#ff5252'; return; }
+      if (upsertErr) { msgEl.textContent = '네트워크 오류, 다시 시도해주세요.'; msgEl.style.color = '#ff5252'; return; }
 
       localStorage.setItem('poker_username', username);
       localStorage.setItem('poker_player_id', uid);
