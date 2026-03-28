@@ -870,13 +870,11 @@ function endGame(reason) {
     const modalClass = reason === 'nomoves' ? ' nomoves' : '';
     modal.className = 'modal' + modalClass;
 
-    // Buttons — initially show leaderboard & replay buttons; hide if DB says leaderboard updated
     const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
     let buttonsHTML = `
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">Play Again</button>
         <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">Menu</a>
-        <button class="btn-play-again" id="btnLeaderboard" style="${btnSecondary}" onclick="showLeaderboard()">Leader Board</button>
         <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
       </div>`;
 
@@ -911,11 +909,8 @@ function endGame(reason) {
 
       if (result.leaderboardUpdated) {
         saveReplayToDB(true);
-        const btnLB = document.getElementById('btnLeaderboard');
-        if (btnLB) btnLB.remove();
         const btnReplay = document.getElementById('btnSaveReplay');
         if (btnReplay) btnReplay.remove();
-        if (username) showLeaderboard(username);
       }
     }).catch(err => {
       console.error('Session save failed:', err);

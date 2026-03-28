@@ -1179,18 +1179,17 @@ function resetGame() {
 function updateResetButton() {
   const btn = document.getElementById('restartBtn');
   if (!btn || !stageConfig) return;
-  const goldBadge = '<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display=\'none\'">1</span>';
   const limit = stageConfig.constraints.resetLimit;
   if (limit === null) {
-    btn.innerHTML = '↺' + goldBadge;
+    btn.textContent = '↺';
     btn.disabled = false;
   } else if (limit === 0) {
-    btn.innerHTML = '↺' + goldBadge;
+    btn.textContent = '↺';
     btn.disabled = true;
     btn.style.opacity = '0.3';
   } else {
     const remaining = limit - resetUsed;
-    btn.innerHTML = `↺ (${remaining})` + goldBadge;
+    btn.textContent = `↺ (${remaining})`;
     btn.disabled = remaining <= 0;
     if (remaining <= 0) btn.style.opacity = '0.3';
   }

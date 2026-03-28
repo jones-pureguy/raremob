@@ -833,14 +833,3 @@ body.debug-mode .card .debug-info { display: block; }
   object-fit: contain;
 }
 
-/* restart-btn gold cost override */
-.restart-btn.btn-gold-cost {
-  width: auto;
-  height: auto;
-  min-width: 32px;
-  padding: 4px 6px;
-}
-.restart-btn.btn-gold-cost .gold-cost-badge {
-  font-size: 0.55rem;
-  padding: 1px 4px;
-}
