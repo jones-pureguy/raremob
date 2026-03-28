@@ -1,0 +1,599 @@
+[
+  {
+    "id": 1,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "Ah", "As", "3c", "5d", "7h", "",   ""
+    ],
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "ONE_PAIR", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "게임 접속을 환영합니다! DragON 포커는 7×7 그리드에서 5장의 카드를 한붓그리기로 드래그해 포커 패를 완성하는 게임입니다.",
+            "en": "Welcome to DragON POKER! Drag 5 adjacent cards on the 7×7 grid to form a poker hand."
+          },
+          {
+            "ko": "먼저 기본부터 배워볼까요? 위 그리드에서 5개의 카드를 직선으로 이어 보세요!",
+            "en": "Let's start with the basics! Connect 5 cards in a straight line on the grid above."
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "5개의 카드를 한줄로 이어 보세요.",
+            "en": "Connect 5 cards in a row."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "잘하셨습니다! 방금 완성하신 패는 「원페어」라고 합니다. 같은 숫자 2장만 있으면 되는 포커에서 가장 낮은 패예요. 우리 게임에서는 1점을 드립니다.",
+            "en": "Well done! The hand you just made is called \"One Pair\" — just two cards of the same number. It's the lowest hand in poker, worth 1 point in our game."
+          },
+          {
+            "ko": "단, 우리 게임에서는 10 이상의 원페어만 유효해요. 10, J, Q, K, A 중 같은 숫자가 2장 있어야 한답니다. 꼭 기억해 두세요!",
+            "en": "In our game, only pairs of 10 or higher count. That means 10, J, Q, K, or A — remember this rule!"
+          },
+          {
+            "ko": "참고로 A(에이스)는 특별한 카드예요. 스트레이트에서 1이 되기도 하고 14가 되기도 한답니다.",
+            "en": "By the way, the Ace (A) is special — it can be 1 or 14 in a Straight."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 2,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "3s", "",   "",   "",   "",   "",   "",
+      "4d", "6h", "3c", "4h", "",   "",   ""
+    ],
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "TWO_PAIR", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이번에는 꺾어서 연결해 볼 거예요. 드래그는 직선이 아니어도 됩니다 — 방향을 바꾸면서 연결할 수 있어요!",
+            "en": "This time, try bending your path! You don't have to go straight — you can change direction while dragging."
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "위 그리드에서 꺾인 경로로 5개의 카드를 이어 보세요.",
+            "en": "Connect 5 cards using a bent path on the grid."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "훌륭해요! 이 패는 「투페어」입니다. 서로 다른 두 개의 페어가 있는 5장짜리 패예요. 2점을 드립니다!",
+            "en": "Excellent! This hand is called \"Two Pair\" — two different pairs in 5 cards. Worth 2 points!"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 3,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "Js", "",   "",   "",   "",   "Kh", "",
+      "Ks", "",   "",   "",   "Kd", "5c", ""
+    ],
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "THREE_KIND", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이번에는 특별한 이동 방법을 알려드릴게요. 중간에 빈 칸이 있어도 같은 방향이라면 뛰어넘어 연결할 수 있어요. 이걸 「점프」라고 합니다!",
+            "en": "Now let me show you a special move. You can leap over empty spaces as long as you keep the same direction — we call this a \"Jump\"!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "점프를 사용해서 5개의 카드를 이어 보세요.",
+            "en": "Use a jump to connect 5 cards."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "완벽해요! 이 패는 「쓰리오브어카인드」입니다. 같은 숫자 3장이 있는 패예요. 5점을 드립니다!",
+            "en": "Perfect! This hand is \"Three of a Kind\" — three cards of the same number. Worth 5 points!"
+          },
+          {
+            "ko": "방금 하신 이동이 바로 점프예요. 중간에 빈 공간이 있어도 거침없이 뛰어넘을 수 있답니다.",
+            "en": "That move you just made was a jump — leaping over empty spaces in the same direction."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 4,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "", "",   "",   "9h", "",   "",   "8d",
+      "5c", "",   "",   "6s", "",   "",   "7h"
+    ],
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "STRAIGHT", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "점프는 한 번만이 아니에요! 한 번에 두 번, 세 번도 점프할 수 있답니다. 어떤 경로든 5장만 이으면 되니까요.",
+            "en": "You can jump more than once! Two jumps, three jumps — anything goes as long as you connect 5 cards."
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "두 번 점프를 사용해서 5개의 카드를 이어 보세요.",
+            "en": "Use two jumps to connect 5 cards."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이 패는 「스트레이트」입니다! 연속되는 숫자 5장으로 이루어진 패예요. 10점을 드립니다.",
+            "en": "This hand is a \"Straight\" — five consecutive numbers. Worth 10 points!"
+          },
+          {
+            "ko": "스트레이트에서 A는 1 또는 14가 될 수 있어요. 단, K-A로 이어지는 스트레이트는 10-J-Q-K-A 뿐이에요. A-2-3-4-5도 가능하지만, K-A-2-3-4는 안 된답니다!",
+            "en": "In a Straight, A can be 1 or 14. The only Straight ending with K-A is 10-J-Q-K-A. A-2-3-4-5 works too, but K-A-2-3-4 does not!"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 5,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "2s",   "",   "",   "",   "",   "",   "",
+      "Ad",   "8s",   "",   "",   "",   "",   "",
+      "7h", "7d",   "5s",   "",   "",   "",   "",
+      "3c",   "8h", "6d",   "Js",   "",   "",   "",
+      "Kc",   "6c",   "10h", "3d", "As",   "", ""
+    ],
+    "constraints": {
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "FLUSH", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이번엔 새로운 이동 방향이에요. 지금까지는 가로세로로만 이동했는데, 사실 대각선으로도 이동할 수 있답니다! ↗ ↘ ↙ ↖ 방향 모두 가능해요.",
+            "en": "Time for a new direction! So far you've moved horizontally and vertically, but you can also go diagonally — ↗ ↘ ↙ ↖ all work!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "스페이드(♠) 카드 5장을 대각선으로 이어 보세요.",
+            "en": "Connect the 5 Spade (♠) cards diagonally."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이 패는 「플러시」입니다! 같은 무늬의 카드 5장으로 이루어진 패예요. 15점을 드립니다.",
+            "en": "This hand is a \"Flush\" — five cards of the same suit. Worth 15 points!"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 6,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "5c", "",   "",   "",   "",   "",
+      "2h", "Kd",   "5s", "",   "",   "",   "",
+      "Ad",   "2s", "Jd",   "5h", "",   "",   ""
+    ],
+    "constraints": {
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "FULL_HOUSE", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "대각선도 꺾을 수 있어요! 대각선으로 가다가 다시 다른 방향으로 꺾어도 됩니다. 직선, 꺾기, 대각선, 점프 — 모두 조합해서 쓸 수 있어요.",
+            "en": "You can also bend diagonal paths! Go diagonally, then change direction. Straight, bent, diagonal, jump — mix and match freely!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "대각선으로 꺾어서 5-5-5-2-2를 이어 보세요.",
+            "en": "Connect 5-5-5-2-2 using a bent diagonal path."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이 패는 「풀하우스」입니다! 같은 숫자 3장 + 같은 숫자 2장으로 이루어진 패예요. 20점을 드립니다.",
+            "en": "This hand is a \"Full House\" — three of a kind plus a pair. Worth 20 points!"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 7,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "",
+      "",   "",   "",   "",   "",   "",   "Kc",
+      "",   "", "",   "",   "",   "Kd", "Ad",
+      "",   "",   "",   "",   "",   "5h",   "3d",
+      "",   "Ks", "",   "Kh",   "",   "3h", "2d"
+    ],
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "FOUR_KIND", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이제 모든 이동 방법을 알았으니 자유롭게 써볼 차례예요! 직선, 꺾기, 대각선, 점프를 마음껏 조합해 보세요.",
+            "en": "Now you know all the moves — time to combine them freely! Straight, bent, diagonal, jump — go wild!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "K 카드 4장을 포함한 5장을 어떤 경로로든 연결해 보세요.",
+            "en": "Connect the 4 K cards and one more card using any path."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이 패는 「포카드」입니다! 같은 숫자 4장으로 이루어진 강력한 패예요. 50점을 드립니다.",
+            "en": "This hand is \"Four of a Kind\" — four cards of the same number. A powerful hand worth 50 points!"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 8,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "Jh",    "",    "",    "",
+      "",    "10h", "Kh",  "3c",  "",  "",  "",
+      "",    "Qh",  "Ah",    "3d",    "",    "",    ""
+    ],
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        { "type": "specific_hand", "hand": "ROYAL_FLUSH", "count_gte": 1, "exact": true }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "이제 최강의 패들을 소개할게요. 「스트레이트 플러시」는 같은 무늬의 연속된 숫자 5장이에요. 그 중에서도 10-J-Q-K-A로 구성된 것을 「로열 플러시」라고 부릅니다. 무려 100점짜리 패예요!",
+            "en": "Now let me introduce the top hands! A \"Straight Flush\" is five consecutive cards of the same suit. The best version — 10-J-Q-K-A of the same suit — is called a \"Royal Flush\". Worth 100 points!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "하트(♥) 5장을 한번에 이어 보세요!",
+            "en": "Connect Heart (♥) 5 cards in one go!"
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "「로열 플러시」예요! 포커의 최강 패 중 하나로 100점을 드립니다. 같은 방식으로 만들어지는 모든 패를 스트레이트 플러시라 하고 75점이에요.",
+            "en": "A Royal Flush! One of the strongest hands in poker — 100 points! Any other Straight Flush (same suit, consecutive) earns 75 points."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 9,
+    "restartEnabled": true,
+    "restartMissionComplete": true,
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",  "",  "",    "",    "",    "",  "",
+      "",    "",    "",  "",    "",  "",    "9s",
+      "As",  "",    "",    "6d",  "4h",    "Kd",    "3h"
+    ],
+    "retryDeck": "random",
+    "constraints": {
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "restart_pressed",
+      "conditions": []
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "게임을 하다 보면 패를 만들 수 없는 상황이 오기도 해요. 또는 더 좋은 배치를 원할 때도 있죠. 그럴 땐 리스타트 버튼(↺)을 눌러보세요!",
+            "en": "Sometimes you'll get stuck and can't make any more hands. Or maybe you just want a better layout! That's when you press the Restart button (↺)!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "리스타트 버튼(↺)을 눌러 보세요.",
+            "en": "Press the Restart button (↺)."
+          }
+        ]
+      },
+      {
+        "phase": "result",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "리스타트는 카드를 새로 배치해 줍니다. 단, 1골드가 소비되고 모드에 따라 사용 횟수가 제한되거나 아예 사용할 수 없을 수도 있어요.",
+            "en": "Restart reshuffles the cards. However, it costs 1 Gold, and depending on the mode, it may be limited or unavailable."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": 10,
+    "restartEnabled": false,
+    "initialDeck": [
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "",    "",    "",    "",    "",    "",
+      "",    "10s", "Js",  "Qs",  "Ks",  "As",  "",
+      "",    "",    "",    "",    "",    "",    ""
+    ],
+    "constraints": {
+      "jumpAllowed": false,
+      "diagonalAllowed": false,
+      "diagonalOnly": false
+    },
+    "mission": {
+      "type": "real_time",
+      "conditions": [
+        {
+          "type": "ordered_straight",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 1
+        }
+      ]
+    },
+    "dialogs": [
+      {
+        "phase": "intro",
+        "trigger": "click",
+        "lines": [
+          {
+            "ko": "마지막 단계예요! 우리 게임에만 있는 특별한 규칙을 알려드릴게요.",
+            "en": "Final step! Let me tell you about a special rule unique to our game."
+          },
+          {
+            "ko": "「로열 플러시+」는 로열 플러시를 정확히 10 → J → Q → K → A 순서대로 드래그해서 완성하는 패예요. 무려 250점! 게임 최강의 패입니다.",
+            "en": "\"Royal Flush+\" is a Royal Flush completed in exact order: 10 → J → Q → K → A. Worth 250 points — the ultimate hand in our game!"
+          }
+        ]
+      },
+      {
+        "phase": "instruction",
+        "trigger": "mission_complete",
+        "lines": [
+          {
+            "ko": "스페이드(♠) 10 → J → Q → K → A 를 반드시 이 순서대로 드래그해 보세요!",
+            "en": "Drag Spade (♠) 10 → J → Q → K → A in this exact order!"
+          }
+        ]
+      },
+      {
+        "phase": "complete",
+        "trigger": "auto",
+        "lines": [
+          {
+            "ko": "축하합니다! 튜토리얼을 완료하셨습니다! 이제 진짜 게임을 시작해 볼까요?",
+            "en": "Congratulations! You've completed the tutorial! Ready to start the real game?"
+          }
+        ]
+      }
+    ]
+  }
+]
