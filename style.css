@@ -1114,15 +1114,24 @@ body.debug-mode .card .debug-info { display: block; }
   flex: 1;
   overflow: hidden;
 }
-.tut-click-hint {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.65rem;
-  color: rgba(201,168,76,0.6);
-  text-align: right;
+.tut-next-btn {
+  align-self: flex-end;
   margin-top: 6px;
+  padding: 5px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 6px;
+  cursor: pointer;
   animation: tut-blink 1.2s infinite;
+  touch-action: auto;
+  -webkit-tap-highlight-color: transparent;
 }
-.tut-click-hint.hidden { visibility: hidden; }
+.tut-next-btn:active { transform: scale(0.95); }
+.tut-next-btn.hidden { display: none; }
 
 @keyframes tut-blink {
   0%, 100% { opacity: 1; }

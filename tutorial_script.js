@@ -488,17 +488,43 @@ function setupDragEvents() {
 }
 
 function setupDialogEvents() {
-  const dialogArea = document.getElementById('tutDialogArea');
-  let touched = false;
-  dialogArea.addEventListener('touchend', e => {
+  // NEXT button
+  const nextBtn = document.getElementById('tutNextBtn');
+  let btnTouched = false;
+  nextBtn.addEventListener('touchend', e => {
     e.preventDefault();
     e.stopPropagation();
-    touched = true;
+    btnTouched = true;
     onDialogClick();
   }, { passive: false });
-  dialogArea.addEventListener('click', e => {
+  nextBtn.addEventListener('click', e => {
     e.stopPropagation();
-    if (touched) { touched = false; return; }
+    if (btnTouched) { btnTouched = false; return; }
+    onDialogClick();
+  });
+
+  // Full-screen tap (for non-instruction phases)
+  let bodyTouched = false;
+  document.body.addEventListener('touchend', e => {
+    if (waitingForMission) return;
+    if (tutorialEnded) return;
+    // Ignore if touch was on grid (drag events)
+    if (e.target.closest('.grid-container')) return;
+    if (e.target.closest('.tut-next-btn')) return;
+    if (e.target.closest('.tut-skip-btn')) return;
+    if (e.target.closest('.tut-restart-btn')) return;
+    e.preventDefault();
+    bodyTouched = true;
+    onDialogClick();
+  }, { passive: false });
+  document.body.addEventListener('click', e => {
+    if (waitingForMission) return;
+    if (tutorialEnded) return;
+    if (e.target.closest('.grid-container')) return;
+    if (e.target.closest('.tut-next-btn')) return;
+    if (e.target.closest('.tut-skip-btn')) return;
+    if (e.target.closest('.tut-restart-btn')) return;
+    if (bodyTouched) { bodyTouched = false; return; }
     onDialogClick();
   });
 }
@@ -546,7 +572,7 @@ function showCurrentDialog() {
   const text = line[lang] || line['en'] || line['ko'] || '';
 
   const textEl = document.getElementById('tutDialogText');
-  const hintEl = document.getElementById('tutClickHint');
+  const nextBtn = document.getElementById('tutNextBtn');
   const areaEl = document.getElementById('tutDialogArea');
 
   // Typing effect
@@ -555,17 +581,17 @@ function showCurrentDialog() {
   // Instruction phase = waiting for mission
   if (phase.phase === 'instruction') {
     areaEl.classList.add('instruction-mode');
-    hintEl.classList.add('hidden');
+    nextBtn.classList.add('hidden');
     waitingForMission = true;
   } else {
     areaEl.classList.remove('instruction-mode');
-    hintEl.classList.remove('hidden');
+    nextBtn.classList.remove('hidden');
     waitingForMission = false;
   }
 
   // Auto trigger
   if (phase.trigger === 'auto') {
-    hintEl.classList.remove('hidden');
+    nextBtn.classList.remove('hidden');
     setTimeout(() => advanceDialog(), 3000);
   }
 }
