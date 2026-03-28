@@ -775,17 +775,22 @@ function deductGold(amount, reason) {
   localStorage.setItem('poker_gold', newGold);
   renderCurrencyBar();
 
-  try {
-    const playerId = localStorage.getItem('poker_player_id');
-    if (playerId) {
-      sb.from('players').update({ gold: newGold }).eq('id', playerId)
-        .catch(err => console.error('Gold deduct sync failed:', err));
-      sb.from('gold_transactions').insert({
-        player_id: playerId, amount: -amount, reason: reason,
-        meta: { puzzleId: puzzleConfig.id }
-      }).catch(err => console.error('Transaction insert failed:', err));
-    }
-  } catch(e) { console.error('Gold deduct DB error:', e); }
+  const playerId = localStorage.getItem('poker_player_id');
+  if (playerId) {
+    (async () => {
+      try {
+        const { error: goldErr } = await sb.from('players')
+          .update({ gold: newGold }).eq('id', playerId);
+        if (goldErr) console.error('[Puzzle] Gold deduct DB failed:', goldErr);
+
+        const { error: txErr } = await sb.from('gold_transactions').insert({
+          player_id: playerId, amount: -amount, reason: reason,
+          meta: { puzzleId: puzzleConfig.id }
+        });
+        if (txErr) console.error('[Puzzle] Deduct transaction failed:', txErr);
+      } catch(e) { console.error('[Puzzle] Gold deduct sync error:', e); }
+    })();
+  }
   return true;
 }
 
@@ -809,18 +814,25 @@ function savePuzzleResult(puzzleId, cleared, goldEarned) {
     localStorage.setItem('poker_gold', newGold);
     renderCurrencyBar();
 
-    try {
-      const playerId = localStorage.getItem('poker_player_id');
-      if (playerId) {
-        sb.from('players').update({ gold: newGold }).eq('id', playerId)
-          .catch(err => console.error('Gold save failed:', err));
-        sb.from('gold_transactions').insert({
-          player_id: playerId, amount: goldEarned,
-          reason: 'puzzle_clear_' + puzzleId,
-          meta: { puzzleId, hintLevel, firstClear: true }
-        }).catch(err => console.error('Transaction save failed:', err));
-      }
-    } catch(e) { console.error('Puzzle result DB error:', e); }
+    // DB 골드 업데이트 (async, 에러 로깅)
+    const playerId = localStorage.getItem('poker_player_id');
+    if (playerId) {
+      (async () => {
+        try {
+          const { error: goldErr } = await sb.from('players')
+            .update({ gold: newGold }).eq('id', playerId);
+          if (goldErr) console.error('[Puzzle] Gold DB update failed:', goldErr);
+          else console.log('[Puzzle] Gold synced to DB:', newGold);
+
+          const { error: txErr } = await sb.from('gold_transactions').insert({
+            player_id: playerId, amount: goldEarned,
+            reason: 'puzzle_clear_' + puzzleId,
+            meta: { puzzleId, hintLevel, firstClear: true }
+          });
+          if (txErr) console.error('[Puzzle] Transaction insert failed:', txErr);
+        } catch(e) { console.error('[Puzzle] Gold sync error:', e); }
+      })();
+    }
   }
 }
 
