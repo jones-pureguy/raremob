@@ -877,7 +877,7 @@ function endGame(reason) {
         <button class="btn-play-again" onclick="resetGame()">Play Again</button>
         <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">Menu</a>
         <button class="btn-play-again" id="btnLeaderboard" style="${btnSecondary}" onclick="showLeaderboard()">Leader Board</button>
-        <button class="btn-play-again" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay</button>
+        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">Save Replay<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
       </div>`;
 
     // Show modal immediately (no DB delay)
@@ -927,6 +927,13 @@ function endGame(reason) {
 
 // ─── Game Reset ───
 function resetGame() {
+  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  if (currentGold < 1) {
+    showToast('골드가 부족합니다. (필요: 1 골드)');
+    return;
+  }
+  deductGoldLocal(1, 'restart');
+
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
   document.getElementById('noMovesOverlay').classList.remove('active');
@@ -1055,6 +1062,9 @@ async function saveSessionAndGetStatus(data) {
   try {
     const playerId = await getOrCreatePlayer(data.username);
     if (!playerId) { console.error('[DragON] No player ID, skipping save'); return { leaderboardUpdated, topScore }; }
+
+    // Sync pending gold deductions before DB write
+    await syncGoldDeductToDB('game_end');
 
     // Insert game session
     const { data: sessionData, error: sessionError } = await sb
@@ -1187,8 +1197,16 @@ async function saveReplayToDB(linkToLeaderboard) {
 async function saveReplayFromButton() {
   const btn = document.getElementById('btnSaveReplay');
   if (!btn) return;
+
+  // 골드 확인 및 차감
+  const hasGold = deductGoldLocal(100, 'replay_save');
+  if (!hasGold) return;
+
   btn.disabled = true;
   btn.textContent = '저장 중...';
+
+  // DB 즉시 싱크
+  await syncGoldDeductToDB('replay_save');
 
   const replayId = await saveReplayToDB(false);
   if (replayId) {
@@ -1265,10 +1283,19 @@ updateScoreDisplay();
 renderRemovedCards();
 startTimer();
 
-// Sanity check on start
+// Sanity check on start (reshuffle without gold cost)
 setTimeout(() => {
   if (!scanForValidMoves()) {
     console.warn('[DragON] No valid moves at game start — reshuffling');
-    resetGame();
+    document.getElementById('modalOverlay').classList.remove('active');
+    clearInterval(state.timerInterval);
+    initState();
+    initGrid();
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+    updateScoreDisplay();
+    renderRemovedCards();
+    startTimer();
   }
 }, 100);

@@ -805,3 +805,42 @@ body.debug-mode .card .debug-info { display: block; }
   color: var(--gold);
   min-width: 32px;
 }
+
+/* ─── Gold Cost Badge ─── */
+.btn-gold-cost {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.gold-cost-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gold);
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.cost-icon {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+}
+
+/* restart-btn gold cost override */
+.restart-btn.btn-gold-cost {
+  width: auto;
+  height: auto;
+  min-width: 32px;
+  padding: 4px 6px;
+}
+.restart-btn.btn-gold-cost .gold-cost-badge {
+  font-size: 0.55rem;
+  padding: 1px 4px;
+}

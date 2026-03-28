@@ -25,7 +25,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
   <div class="username-display" id="usernameDisplay"></div>
-  <button class="restart-btn" id="restartBtn" title="재시작">↺</button>
+  <button class="restart-btn btn-gold-cost" id="restartBtn" title="재시작">↺<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display='none'">1</span></button>
   </div>
 </div>
 
@@ -93,8 +93,49 @@
     const chipEl = document.getElementById('chipDisplay');
     if (goldEl) goldEl.textContent = gold.toLocaleString();
     if (chipEl) chipEl.textContent = '0';
+    updateRestartButtonState();
   }
   renderCurrencyBar();
+
+  // ─── Gold helpers ───
+  function deductGoldLocal(amount, reason) {
+    const current = parseInt(localStorage.getItem('poker_gold') || '0');
+    if (current < amount) {
+      showToast('골드가 부족합니다.');
+      return false;
+    }
+    const newGold = current - amount;
+    const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
+    localStorage.setItem('poker_gold', newGold);
+    localStorage.setItem('poker_gold_pending_deduct', pending + amount);
+    renderCurrencyBar();
+    return true;
+  }
+
+  async function syncGoldDeductToDB(reason) {
+    const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
+    if (pending <= 0) return;
+    const playerId = localStorage.getItem('poker_player_id');
+    const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const { error } = await sb.from('players').update({ gold: currentGold }).eq('id', playerId);
+    if (!error) {
+      sb.from('gold_transactions').insert({
+        player_id: playerId,
+        amount: -pending,
+        reason: reason || 'deduct_sync',
+        meta: { synced_amount: pending }
+      }).catch(err => console.error('Transaction log failed:', err));
+      localStorage.setItem('poker_gold_pending_deduct', 0);
+    }
+  }
+
+  function updateRestartButtonState() {
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const btn = document.getElementById('restartBtn');
+    if (!btn) return;
+    btn.style.opacity = gold < 1 ? '0.4' : '1';
+    btn.style.cursor = gold < 1 ? 'not-allowed' : 'pointer';
+  }
 </script>
 <script src="script.js"></script>
 </body>

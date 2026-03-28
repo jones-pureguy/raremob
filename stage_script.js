@@ -1119,6 +1119,14 @@ function retryStage() {
 // ─── Game Reset (stage version) ───
 function resetGame() {
   if (stageFailed || stageCleared) return;
+
+  // 골드 확인
+  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  if (currentGold < 1) {
+    showToast('골드가 부족합니다. (필요: 1 골드)');
+    return;
+  }
+
   if (stageConfig && stageConfig.constraints.resetLimit !== null) {
     const limit = stageConfig.constraints.resetLimit;
     if (limit === 0) return;
@@ -1126,6 +1134,9 @@ function resetGame() {
     resetUsed++;
     updateResetButton();
   }
+
+  // 골드 차감
+  deductGoldLocal(1, 'restart');
 
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
@@ -1145,26 +1156,41 @@ function resetGame() {
   ascendingStreak = 0;
   orderedStraightCount = 0;
 
-  // Sanity check
+  // Sanity check (reshuffle without extra gold cost)
   setTimeout(() => {
-    if (!scanForValidMoves()) resetGame();
+    if (!scanForValidMoves()) {
+      document.getElementById('modalOverlay').classList.remove('active');
+      document.getElementById('gridContainer').classList.remove('no-moves-dim');
+      document.getElementById('noMovesOverlay').classList.remove('active');
+      clearInterval(state.timerInterval);
+      initState();
+      initGrid();
+      renderGrid();
+      updateHandPanel();
+      updateHandPreview();
+      updateScoreDisplay();
+      renderScoreProgress();
+      renderRemovedCards();
+      startTimer();
+    }
   }, 100);
 }
 
 function updateResetButton() {
   const btn = document.getElementById('restartBtn');
   if (!btn || !stageConfig) return;
+  const goldBadge = '<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display=\'none\'">1</span>';
   const limit = stageConfig.constraints.resetLimit;
   if (limit === null) {
-    btn.textContent = '↺';
+    btn.innerHTML = '↺' + goldBadge;
     btn.disabled = false;
   } else if (limit === 0) {
-    btn.textContent = '↺';
+    btn.innerHTML = '↺' + goldBadge;
     btn.disabled = true;
     btn.style.opacity = '0.3';
   } else {
     const remaining = limit - resetUsed;
-    btn.textContent = `↺ (${remaining})`;
+    btn.innerHTML = `↺ (${remaining})` + goldBadge;
     btn.disabled = remaining <= 0;
     if (remaining <= 0) btn.style.opacity = '0.3';
   }
@@ -1214,6 +1240,9 @@ async function saveStageResult(stageId, result, goldEarned) {
   if (!playerId) return;
 
   try {
+    // Sync pending gold deductions before DB write
+    await syncGoldDeductToDB('stage_end');
+
     // Check existing record for clear_count increment
     const { data: existing } = await sb.from('player_stages')
       .select('clear_count, best_score, gold_earned')

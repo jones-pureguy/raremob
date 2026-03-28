@@ -134,7 +134,7 @@
 </div>
 
 <div style="text-align:center;padding:12px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
-  <button class="replay-btn" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY</button>
+  <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/gold.png" class="cost-icon" onerror="this.style.display='none'">500</span></button>
   <a href="index.html" class="menu-btn small">메인메뉴</a>
 </div>
 
@@ -503,11 +503,73 @@ function updateInfo() {
   el.innerHTML = '<span class="gold">' + (replay.username || '?') + '</span> · ' + date + ' · Score: <span class="gold">' + (replay.result ? replay.result.finalScore : '?') + '</span>';
 }
 
+// ─── Gold helpers ───
+function deductGoldLocal(amount, reason) {
+  const current = parseInt(localStorage.getItem('poker_gold') || '0');
+  if (current < amount) return false;
+  const newGold = current - amount;
+  const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
+  localStorage.setItem('poker_gold', newGold);
+  localStorage.setItem('poker_gold_pending_deduct', pending + amount);
+  return true;
+}
+
+async function syncGoldDeductToDB(reason) {
+  const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
+  if (pending <= 0) return;
+  const playerId = localStorage.getItem('poker_player_id');
+  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  const { error } = await sb.from('players').update({ gold: currentGold }).eq('id', playerId);
+  if (!error) {
+    sb.from('gold_transactions').insert({
+      player_id: playerId,
+      amount: -pending,
+      reason: reason || 'deduct_sync',
+      meta: { synced_amount: pending }
+    }).catch(err => console.error('Transaction log failed:', err));
+    localStorage.setItem('poker_gold_pending_deduct', 0);
+  }
+}
+
+// ─── Confirm Modal ───
+function showConfirmModal({ message, confirmText, onConfirm }) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;justify-content:center;align-items:center;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:linear-gradient(145deg,#1a3a22,#0d2818);border:2px solid var(--gold);border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;';
+  box.innerHTML = `
+    <div style="color:#e0e0e0;font-size:0.9rem;margin-bottom:20px;font-family:'IBM Plex Mono',monospace;">${message}</div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button id="confirmYes" style="background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;cursor:pointer;">${confirmText}</button>
+      <button id="confirmNo" style="background:rgba(255,255,255,0.1);color:#e0e0e0;border:1px solid rgba(255,255,255,0.2);padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;cursor:pointer;">취소</button>
+    </div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  box.querySelector('#confirmYes').onclick = () => { overlay.remove(); onConfirm(); };
+  box.querySelector('#confirmNo').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
 // ─── Game Retry ───
 function gameRetry() {
   if (!replay || !replay.initialDeck) return;
-  localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
-  window.location.href = 'game.html';
+
+  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  if (currentGold < 500) {
+    alert('골드가 부족합니다. (필요: 500 골드)');
+    return;
+  }
+
+  showConfirmModal({
+    message: '500 골드를 사용하여 리트라이하시겠습니까?',
+    confirmText: '리트라이 (-500G)',
+    onConfirm: async () => {
+      deductGoldLocal(500, 'game_retry');
+      await syncGoldDeductToDB('game_retry');
+      localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
+      window.location.href = 'game.html';
+    }
+  });
 }
 
 // ─── Init: load from URL param or localStorage ───

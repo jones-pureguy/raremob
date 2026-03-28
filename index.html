@@ -312,13 +312,53 @@
   }
 
   // Currency bar
-  (function renderCurrencyBar() {
+  function renderCurrencyBar() {
     const gold = parseInt(localStorage.getItem('poker_gold') || '0');
     const goldEl = document.getElementById('goldDisplay');
     const chipEl = document.getElementById('chipDisplay');
     if (goldEl) goldEl.textContent = gold.toLocaleString();
     if (chipEl) chipEl.textContent = '0';
-  })();
+  }
+  renderCurrencyBar();
+
+  // ─── Gold sync helpers ───
+  async function syncGoldOnStart() {
+    const playerId = localStorage.getItem('poker_player_id');
+    if (!playerId) return;
+
+    const pending = parseInt(localStorage.getItem('poker_gold_pending_deduct') || '0');
+
+    const { data } = await sb
+      .from('players')
+      .select('gold')
+      .eq('id', playerId)
+      .single();
+
+    if (data) {
+      const actualGold = data.gold - pending;
+      localStorage.setItem('poker_gold', Math.max(0, actualGold));
+
+      if (pending > 0) {
+        const currentGold = Math.max(0, actualGold);
+        const { error } = await sb
+          .from('players')
+          .update({ gold: currentGold })
+          .eq('id', playerId);
+
+        if (!error) {
+          sb.from('gold_transactions').insert({
+            player_id: playerId,
+            amount: -pending,
+            reason: 'startup_sync',
+            meta: { synced_amount: pending }
+          }).catch(err => console.error('Transaction log failed:', err));
+          localStorage.setItem('poker_gold_pending_deduct', 0);
+        }
+      }
+
+      renderCurrencyBar();
+    }
+  }
 
   // 백그라운드 auth + DB 싱크
   (async function checkUserReady() {
@@ -341,8 +381,11 @@
     localStorage.setItem('poker_gold', data.gold || 0);
 
     document.getElementById('menuPlayer').textContent = data.username;
-    const goldEl = document.getElementById('goldDisplay');
-    if (goldEl) goldEl.textContent = parseInt(data.gold || 0).toLocaleString();
+
+    // syncGoldOnStart after setting player data
+    await syncGoldOnStart();
+
+    renderCurrencyBar();
   })();
 
   // Settings

@@ -97,18 +97,39 @@
       }
 
       // auth.uid()로 players 레코드 생성 또는 업데이트
+      const INITIAL_GOLD = 10000;
+      const isNewPlayer = !existing || existing.id === uid;
+      const { data: existingPlayer } = await sb
+        .from('players')
+        .select('id')
+        .eq('id', uid)
+        .maybeSingle();
+
+      const goldToSet = existingPlayer ? undefined : INITIAL_GOLD;
+
+      const upsertObj = { id: uid, username: username };
+      if (!existingPlayer) upsertObj.gold = INITIAL_GOLD;
+
       const { error: upsertErr } = await sb
         .from('players')
-        .upsert({
-          id: uid,
-          username: username,
-          gold: 0
-        }, { onConflict: 'id' });
+        .upsert(upsertObj, { onConflict: 'id' });
 
       if (upsertErr) { msgEl.textContent = '등록 실패: ' + upsertErr.message; msgEl.style.color = '#ff5252'; return; }
 
       localStorage.setItem('poker_username', username);
       localStorage.setItem('poker_player_id', uid);
+
+      // 신규 계정 골드 지급
+      if (!existingPlayer) {
+        localStorage.setItem('poker_gold', INITIAL_GOLD);
+        localStorage.setItem('poker_gold_pending_deduct', 0);
+        sb.from('gold_transactions').insert({
+          player_id: uid,
+          amount: INITIAL_GOLD,
+          reason: 'initial_grant',
+          meta: { note: '신규 계정 초기 지급' }
+        }).catch(err => console.error('Transaction log failed:', err));
+      }
       msgEl.textContent = '등록 완료!';
       msgEl.style.color = '#4CAF50';
       setTimeout(() => { window.location.href = 'index.html'; }, 800);
