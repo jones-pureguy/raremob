@@ -98,7 +98,7 @@
       ]
     },
     "rewards": {
-      "gold": 50
+      "gold": 100
     },
     "unlockCondition": {
       "type": "none"
@@ -106,70 +106,70 @@
   },
   {
     "id": 2,
-    "title": {
-      "ko": "직선의 법칙"
+       "title": {
+      "ko": "순서의 예술"
     },
     "description": {
-      "ko": "직선으로만, 점프 없이 플러시를 1개 만드세요."
+      "ko": "드래그 순서대로 숫자가 이어지는 스트레이트 플러시를 찾으세요."
     },
     "hint": {
       "level1": {
-        "ko": "같은 수트(모양) 카드 5장이 일직선으로 놓여 있어요."
+        "ko": "스트레이트 플러시는 같은 수트의 연속된 숫자 5장이에요. 드래그 순서도 숫자 순서와 일치해야 해요."
       },
       "level2": {
-        "ko": "하트(♥) 카드들을 찾아보세요. 세로 방향으로 배치되어 있어요."
+        "ko": "스페이드(♠) 카드 중 연속된 숫자 5장을 찾아보세요."
       },
       "level3": {
-        "ko": "4열을 위에서 아래로 내려오면 하트 5장이 직선으로 연결돼요."
+        "ko": "5♠ → 6♠ → 7♠ → 8♠ → 9♠ 순서로 드래그하세요. 모두 인접해 있어요."
       }
     },
     "theme": {
-      "bgColor": "#0a1a2e",
-      "accentColor": "#3498db",
+      "bgColor": "#001a0a",
+      "accentColor": "#00e676",
       "cardBack": "default"
     },
     "initialDeck": [
       "",
       "",
       "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Kh",
+      "3d",
+      "Jc",
+      "Ah",
       "2h",
       "",
       "",
+      "Qd",
+      "5s",
+      "6s",
+      "7s",
+      "10c",
       "",
       "",
-      "",
-      "",
-      "5h",
-      "",
-      "",
-      "",
-      "",
-      "Kd",
-      "Qs",
-      "7h",
-      "3c",
+      "4h",
+      "Kc",
+      "8s",
+      "9s",
       "Jd",
       "",
       "",
-      "4s",
-      "Ac",
-      "9h",
-      "8d",
+      "Ad",
+      "3c",
+      "Qs",
       "2c",
+      "Kd",
       "",
       "",
-      "10s",
-      "6d",
+      "10h",
       "Jh",
-      "Qd",
-      "3s",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
+      "4c",
+      "5h",
+      "6d",
       "",
       "",
       "",
@@ -181,7 +181,7 @@
     ],
     "constraints": {
       "resetLimit": 0,
-      "moveMode": "straight",
+      "moveMode": "freehand",
       "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
@@ -195,15 +195,15 @@
       "conditions": [
         {
           "id": "c1",
-          "type": "specific_hand",
-          "hand": "FLUSH",
+          "type": "ordered_straight",
+          "hand": "STRAIGHT_FLUSH",
           "count_gte": 1,
-          "description": "플러시 1개"
+          "description": "순서 있는 스트레이트 플러시 1개"
         }
       ]
     },
     "rewards": {
-      "gold": 80
+      "gold": 150
     },
     "unlockCondition": {
       "type": "puzzle_clear",
@@ -309,7 +309,7 @@
       ]
     },
     "rewards": {
-      "gold": 120
+      "gold": 180
     },
     "unlockCondition": {
       "type": "puzzle_clear",
@@ -425,82 +425,34 @@
   {
     "id": 5,
     "title": {
-      "ko": "순서의 예술"
+      "ko": "로열플러시+"
     },
     "description": {
-      "ko": "드래그 순서대로 숫자가 이어지는 스트레이트 플러시를 찾으세요."
+      "ko": "로열플러시+를 하나 만드세요."
     },
     "hint": {
       "level1": {
-        "ko": "스트레이트 플러시는 같은 수트의 연속된 숫자 5장이에요. 드래그 순서도 숫자 순서와 일치해야 해요."
+        "ko": "첫 턴에는 만들 수 없어요."
       },
       "level2": {
-        "ko": "스페이드(♠) 카드 중 연속된 숫자 5장을 찾아보세요."
+        "ko": "클로버로 연결하려면 가운데를 비워야 해요."
       },
       "level3": {
-        "ko": "5♠ → 6♠ → 7♠ → 8♠ → 9♠ 순서로 드래그하세요. 모두 인접해 있어요."
+        "ko": "첫 턴에 다이아5부터 클로버3까지 투페어 길을 찾아보세요."
       }
     },
     "theme": {
-      "bgColor": "#001a0a",
-      "accentColor": "#00e676",
+      "bgColor": "#1a1000",
+      "accentColor": "#d4ac0d",
       "cardBack": "default"
     },
     "initialDeck": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Kh",
-      "3d",
-      "Jc",
-      "Ah",
-      "2h",
-      "",
-      "",
-      "Qd",
-      "5s",
-      "6s",
-      "7s",
-      "10c",
-      "",
-      "",
-      "4h",
-      "Kc",
-      "8s",
-      "9s",
-      "Jd",
-      "",
-      "",
-      "Ad",
-      "3c",
-      "Qs",
-      "2c",
-      "Kd",
-      "",
-      "",
-      "10h",
-      "Jh",
-      "4c",
-      "5h",
-      "6d",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
+      "8c","3c","2d","6h","9s","2c","10d","Kh","4s","Jd","8s","4h","10h","4c","Ah","7s","10c","5h","Jc","Ac","2h","2s","6s","9c","3d","Kc","Qc","4d","Js","5s","8h","5d","8d","3s","7h","10s","As","3h","6d","7d","9h","Jh","5c","9d","Ks","7c","Ad","6c","Kd"
     ],
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -513,15 +465,15 @@
       "conditions": [
         {
           "id": "c1",
-          "type": "ordered_straight",
-          "hand": "STRAIGHT_FLUSH",
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 1,
-          "description": "순서 있는 스트레이트 플러시 1개"
+          "description": "로열플러시 1개"
         }
       ]
     },
     "rewards": {
-      "gold": 300
+      "gold": 200
     },
     "unlockCondition": {
       "type": "puzzle_clear",
@@ -563,73 +515,25 @@
       ]
     },
     "rewards": {
-      "gold": 150
+      "gold": 220
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 3
+      "puzzleId": 5
     },
     "hint": {
       "level1": {
-        "ko": "카드가 10장뿐이에요. 두 번의 패로 전부 없앨 수 있어요."
+        "ko": "플러시를 먼저 만들면 그다음 수가 없어요."
       },
       "level2": {
-        "ko": "하트 5장, 스페이드 5장이 각각 인접해 있어요."
+        "ko": "두 쌍의 스트레이트를 찾아보세요 ."
       },
       "level3": {
-        "ko": "하트 A→K→Q→J→10, 스페이드 A→K→Q→J→10 순서로 드래그하세요."
+        "ko": "지그재그로 7-8-10-6-9, 5-7-3-6-4 쌍을 찾으세요"
       }
     },
     "initialDeck": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Ah",
-      "Kh",
-      "Qh",
-      "Jh",
-      "10h",
-      "",
-      "",
-      "As",
-      "Ks",
-      "Qs",
-      "Js",
-      "10s",
-      ""
+      "","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","7s","7d","10c","6c","9c","","","5s","8c","3c","6d","4h",""
     ]
   }
 ]
