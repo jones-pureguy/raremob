@@ -1,0 +1,313 @@
+{
+  "game.html": {
+    "buttons": ["↺ (재시작 title)", "← BACK", "Play Again", "게임종료", "Save Replay", "CLOSE"],
+    "toasts": ["골드가 부족합니다."],
+    "modals": [],
+    "alerts": [],
+    "labels": ["(RETRY)", "HI", "NO MORE MOVES", "BEST HANDS", "REMOVED", "DragON POKER"],
+    "placeholders": [],
+    "dynamic_text": ["/9 🃏"]
+  },
+  "stage.html": {
+    "buttons": ["↺ (재시작 title)", "스테이지 선택"],
+    "toasts": ["골드가 부족합니다."],
+    "modals": [],
+    "alerts": [],
+    "labels": ["Stage 1", "STAGE", "0s", "NO MORE MOVES", "BEST HANDS", "REMOVED", "DragON POKER - Stage"],
+    "placeholders": [],
+    "dynamic_text": ["/9"]
+  },
+  "stage_select.html": {
+    "buttons": ["◀", "▶", "도전하기", "다시 도전", "🔒 잠김", "← BACK"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["CHALLENGE MODE", "0 Gold", "스테이지를 선택하세요", "DragON POKER - Stage Select"],
+    "placeholders": [],
+    "dynamic_text": [
+      "${currentPage} / ${totalPages}",
+      "게임 시간: ${stage.timers.gameTime}초",
+      "스테이지 시간: ${stage.timers.stageTime}초",
+      "리셋: 불가",
+      "리셋: ${constraints.resetLimit}회",
+      "점프: 불가",
+      "이동: 대각선만",
+      "이동: 직교만",
+      "이동: 직선만",
+      "금지 족보: ${constraints.forbiddenHands.join(', ')}",
+      "금지 숫자: ${constraints.forbiddenValues.join(', ')}",
+      "Best Score: ${sd.best_score}",
+      "Stage ${stage.id}: ${stage.title}",
+      "보상: ${stage.rewards.gold} Gold",
+      "+ 보너스",
+      "${localGold.toLocaleString()} Gold"
+    ]
+  },
+  "puzzle_select.html": {
+    "buttons": ["◀", "▶", "도전하기", "다시 도전", "🔒 잠김", "← BACK"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["PUZZLE MODE", "0 Gold", "퍼즐을 선택하세요", "DragON POKER - Puzzle Select"],
+    "placeholders": [],
+    "dynamic_text": [
+      "${currentPage} / ${totalPages}",
+      "점프: 불가",
+      "이동: 대각선만",
+      "이동: 직교만",
+      "이동: 직선만",
+      "금지 족보: ${constraints.forbiddenHands.join(', ')}",
+      "금지 숫자: ${constraints.forbiddenValues.join(', ')}",
+      "힌트 없이 클리어",
+      "Lv.${hintUsed} 힌트 사용",
+      "Puzzle ${puzzle.id}: ${puzzle.title}",
+      "보상: ${puzzle.rewards.gold} Gold",
+      "+ 힌트 미사용 보너스",
+      "${localGold.toLocaleString()} Gold"
+    ]
+  },
+  "puzzle.html": {
+    "buttons": ["? (힌트 title)"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["Puzzle 1", "NO MORE MOVES", "퍼즐 선택", "DragON POKER - Puzzle"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
+  "replay.html": {
+    "buttons": ["◀", "▶ Play", "⏸ Pause", "▶▏", "1x", "2x", "4x", "GAME RETRY", "← BACK"],
+    "toasts": [],
+    "modals": [],
+    "alerts": ["골드가 부족합니다. (필요: 500 골드)"],
+    "labels": ["REPLAY", "REMOVED", "DragON POKER - Replay"],
+    "placeholders": [],
+    "dynamic_text": [
+      "리플레이 데이터가 없습니다",
+      "불러오는 중...",
+      "리플레이를 찾을 수 없습니다",
+      "오류 발생",
+      "500 골드를 사용하여 리트라이하시겠습니까?",
+      "리트라이 (-500G)",
+      "취소",
+      "${replay.result.reason.toUpperCase()} — Final: ${replay.result.finalScore}",
+      "${speed}x"
+    ]
+  },
+  "leaderboard.html": {
+    "buttons": ["일반 순위", "RETRY 순위", "← BACK"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["LEADERBOARD", "DragON POKER - Leaderboard", "#", "NAME", "SCORE", "BEST HAND"],
+    "placeholders": [],
+    "dynamic_text": [
+      "불러오는 중...",
+      "오류: ${error.message}",
+      "아직 기록이 없습니다",
+      "오류 발생",
+      "본인이 직접 저장한 리플레이의 경우 리플레이 분석 후 RETRY할 수 있습니다. 별도의 순위로 집계됩니다. 정말 아쉽게 고득점을 놓친 판이 있다면 리플레이 저장 후 더 높은 점수에 도전해 보세요."
+    ]
+  },
+  "id.html": {
+    "buttons": ["닉네임 변경", "저장", "구글 계정 연동 (준비 중)", "← BACK"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["현재 닉네임", "닉네임 설정", "구글 계정을 연동하면 다른 기기에서도 이어할 수 있어요.", "DragON POKER - ID"],
+    "placeholders": ["NAME"],
+    "dynamic_text": [
+      "닉네임을 입력하세요",
+      "확인 중...",
+      "인증 실패",
+      "네트워크 오류, 다시 시도해주세요.",
+      "이미 사용 중인 닉네임입니다.",
+      "등록 완료!",
+      "오류 발생"
+    ]
+  },
+  "index.html": {
+    "buttons": ["BASIC GAME", "Ranking", "Replay", "CHALLENGE MODE", "PUZZLE MODE", "vs MODE", "SETTINGS", "닫기"],
+    "toasts": [],
+    "modals": [],
+    "alerts": ["DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones"],
+    "labels": ["SETTINGS", "닉네임 관리", "구글 계정 연동", "튜토리얼", "사운드 설정", "언어 설정", "앱 정보", "준비 중", "DragON POKER"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
+  "script.js": {
+    "buttons": ["Play Again", "게임종료", "Save Replay", "CLOSE"],
+    "toasts": [
+      "카드 5장을 선택해주세요!",
+      "10 이상의 원페어가 필요합니다!",
+      "골드가 부족합니다. (필요: 1 골드)"
+    ],
+    "modals": [
+      "COMPLETE!",
+      "NO MORE MOVES",
+      "TIME'S UP!",
+      "${state.hands.length}개의 핸드를 완성했습니다",
+      "Score: ${score}",
+      "Best: ${best.label}",
+      "🏆 NEW HIGH SCORE!",
+      "My High Score: ${highScore}",
+      "All User High Score: ...",
+      "All User High Score: ${result.topScore}",
+      "All User High Score: -",
+      "남은 시간 보너스: +${timeBonus}",
+      "남은 카드 ${remainingCards}장 (4장 초과 ${remainingCards - 4}장 × -${penaltyPerCard}) = -${penalty}",
+      "LEADERBOARD",
+      "LEADERBOARD (RETRY)",
+      "Top 10",
+      "No scores yet"
+    ],
+    "alerts": [],
+    "labels": [
+      "High Card", "One Pair", "Two Pair", "Three of a Kind",
+      "Straight", "Flush", "Full House", "Four of a Kind",
+      "Straight Flush", "Royal Flush", "Royal Flush+"
+    ],
+    "placeholders": [],
+    "dynamic_text": [
+      "${cards.length}/5 선택 중...",
+      "${hand.label} ${mark}",
+      "Pair of ${VALUE_NAMES[pairVal]}s",
+      "Four ${VALUE_NAMES[countKeys[0][0]]}s",
+      "Three ${VALUE_NAMES[countKeys[0][0]]}s",
+      "저장 중...",
+      "저장 완료",
+      "저장 실패"
+    ]
+  },
+  "stage_script.js": {
+    "buttons": ["다음 스테이지", "스테이지 선택", "다시 도전"],
+    "toasts": [
+      "카드 5장을 선택해주세요!",
+      "10 이상의 원페어가 필요합니다!",
+      "골드가 부족합니다. (필요: 1 골드)",
+      "리셋 횟수를 모두 사용했습니다!",
+      "스테이지를 찾을 수 없습니다",
+      "스테이지 데이터 로드 실패"
+    ],
+    "modals": [
+      "STAGE CLEAR!",
+      "Stage ${stageConfig.id}: ${stageConfig.title}",
+      "Best: ${best.label}",
+      "Score: ${finalScore}pts",
+      "기본 보상",
+      "+${goldBase} Gold",
+      "합계",
+      "+${totalGold} Gold",
+      "보유 골드: ${currentGold.toLocaleString()} → ${newGold.toLocaleString()}",
+      "이미 클리어한 스테이지입니다. 골드 보상은 첫 클리어 시에만 지급됩니다.",
+      "NEXT STAGE",
+      "Stage ${nextStage.id}: ${nextStage.title}",
+      "보상: ${nextStage.rewards.gold} Gold",
+      "STAGE FAILED",
+      "실패 원인:"
+    ],
+    "alerts": [],
+    "labels": [
+      "High Card", "One Pair", "Two Pair", "Three of a Kind",
+      "Straight", "Flush", "Full House", "Four of a Kind",
+      "Straight Flush", "Royal Flush", "Royal Flush+"
+    ],
+    "placeholders": [],
+    "dynamic_text": [
+      "${cards.length}/5 선택 중...",
+      "${hand.label} ${mark}",
+      "금지된 족보 패를 만들었습니다",
+      "금지된 숫자가 포함된 패를 만들었습니다",
+      "이전보다 낮은 랭크의 패를 만들었습니다",
+      "최고값 카드로 시작하지 않았습니다",
+      "스테이지 제한 시간이 초과되었습니다",
+      "수가 없어졌습니다 (조건 미달성)",
+      "게임 시간이 초과되었습니다",
+      "특정 순서의 패 조건을 만족하지 못했습니다",
+      "스테이지 실패",
+      "끝자리 조건 미달",
+      "점수 조건 미달",
+      "핸드 점수",
+      "타임 보너스",
+      "카드 페널티",
+      "최종 점수",
+      "끝자리",
+      "목표 끝자리",
+      "핸드 점수: ${current} / ${target}점 (${pct}%)",
+      "↺ (${remaining})",
+      "Stage ${stageConfig.id}",
+      "금지: ${stageConfig.constraints.forbiddenHands.join(', ')}",
+      "금지: ${stageConfig.constraints.forbiddenValues.join(', ')}",
+      "리셋불가",
+      "점프불가",
+      "대각선만",
+      "직교만",
+      "Pair of ${VALUE_NAMES[pv]}s",
+      "Four ${VALUE_NAMES[ck[0][0]]}s",
+      "Three ${VALUE_NAMES[ck[0][0]]}s"
+    ]
+  },
+  "puzzle_script.js": {
+    "buttons": ["다음 퍼즐", "퍼즐 선택", "다시 도전", "힌트 보기 -${cost}G", "취소", "확인"],
+    "toasts": [
+      "카드 5장을 선택해주세요!",
+      "10 이상의 원페어가 필요합니다!",
+      "골드가 부족합니다.",
+      "퍼즐을 찾을 수 없습니다",
+      "퍼즐 데이터 로드 실패"
+    ],
+    "modals": [
+      "PUZZLE CLEAR!",
+      "Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}",
+      "힌트 미사용 클리어!",
+      "힌트 Lv.${hintLevel} 사용",
+      "기본 보상",
+      "+${goldBase} Gold",
+      "힌트 미사용",
+      "+${hintBonus} Gold",
+      "합계",
+      "+${totalGold} Gold",
+      "보유 골드: ${currentGold.toLocaleString()} → ${newGold.toLocaleString()}",
+      "이미 클리어한 퍼즐입니다. 골드 보상은 첫 클리어 시에만 지급됩니다.",
+      "NEXT PUZZLE",
+      "Puzzle ${nextPuzzle.id}: ${nextPuzzle.title}",
+      "보상: ${nextPuzzle.rewards.gold} Gold",
+      "PUZZLE FAILED",
+      "실패 원인:",
+      "힌트 Lv.${nextLevel} 보기",
+      "골드 ${cost} 소모",
+      "현재 보유: ${currentGold.toLocaleString()} Gold",
+      "힌트 Lv.${level}"
+    ],
+    "alerts": [],
+    "labels": [
+      "High Card", "One Pair", "Two Pair", "Three of a Kind",
+      "Straight", "Flush", "Full House", "Four of a Kind",
+      "Straight Flush", "Royal Flush", "Royal Flush+"
+    ],
+    "placeholders": [],
+    "dynamic_text": [
+      "${cards.length}/5 선택 중...",
+      "${hand.label} ${mark}",
+      "금지된 족보 패를 만들었습니다",
+      "금지된 숫자가 포함된 패를 만들었습니다",
+      "더 이상 만들 수 있는 패가 없습니다",
+      "퍼즐 실패",
+      "Puzzle ${puzzleConfig.id}: ${puzzleConfig.title}",
+      "금지: ${puzzleConfig.constraints.forbiddenHands.join(', ')}",
+      "금지: ${puzzleConfig.constraints.forbiddenValues.join(', ')}",
+      "Pair of ${VALUE_NAMES[pv]}s",
+      "Four ${VALUE_NAMES[countKeys[0][0]]}s",
+      "Three ${VALUE_NAMES[countKeys[0][0]]}s"
+    ]
+  },
+  "auth.js": {
+    "buttons": [],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": [],
+    "placeholders": [],
+    "dynamic_text": []
+  }
+}

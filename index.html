@@ -271,10 +271,9 @@
         <span class="settings-label">튜토리얼</span>
       </button>
 
-      <button class="settings-item settings-disabled">
-        <span class="settings-icon">🔊</span>
-        <span class="settings-label">사운드 설정</span>
-        <span class="settings-badge">준비 중</span>
+      <button class="settings-item" id="soundToggleBtn" onclick="toggleSound()">
+        <span class="settings-icon" id="soundIcon">🔊</span>
+        <span class="settings-label" id="soundLabel">사운드 ON</span>
       </button>
 
       <button class="settings-item" onclick="showLanguageSelector()">
@@ -303,7 +302,25 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="sound.js"></script>
 <script>
+  // 사운드 토글 초기화
+  (function initSoundUI() {
+    const on = Sound.isEnabled();
+    const icon = document.getElementById('soundIcon');
+    const label = document.getElementById('soundLabel');
+    if (icon) icon.textContent = on ? '🔊' : '🔇';
+    if (label) label.textContent = on ? '사운드 ON' : '사운드 OFF';
+  })();
+
+  function toggleSound() {
+    const next = !Sound.isEnabled();
+    Sound.setEnabled(next);
+    document.getElementById('soundIcon').textContent = next ? '🔊' : '🔇';
+    document.getElementById('soundLabel').textContent = next ? '사운드 ON' : '사운드 OFF';
+    if (next) Sound.stageClear();
+  }
+
   // 온보딩 체크: 튜토리얼 → 닉네임 → 메인
   const tutDone = localStorage.getItem('poker_tutorial_done');
   const savedUsername = localStorage.getItem('poker_username');
