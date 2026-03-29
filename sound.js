@@ -7,6 +7,8 @@ const Sound = (() => {
   function getCtx() {
     if (!ctx) {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (!masterOutput) {
       const compressor = ctx.createDynamicsCompressor();
       compressor.threshold.setValueAtTime(-20, ctx.currentTime);
       compressor.knee.setValueAtTime(10, ctx.currentTime);
