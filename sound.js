@@ -108,9 +108,9 @@ const Sound = (() => {
   function dialogTyping() {
     if (!enabled) return;
     const now = Date.now();
-    if (now - lastTyping < 60) return;
+    if (now - lastTyping < 80) return;
     lastTyping = now;
-    playTone(800 + Math.random()*400, 0.04, { type:'square', volume:0.08 });
+    playTone(120 + Math.random()*100, 0.07, { type:'sine', volume:0.12 });
   }
 
   function stageClear() {
