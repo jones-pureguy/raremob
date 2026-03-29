@@ -6,15 +6,15 @@
   "handScores": {
     "HIGH_CARD":        0,
     "ONE_PAIR":         1,
-    "TWO_PAIR":         2,
-    "THREE_KIND":       5,
-    "STRAIGHT":        10,
-    "FLUSH":           15,
-    "FULL_HOUSE":      20,
+    "TWO_PAIR":         5,
+    "THREE_KIND":      10,
+    "STRAIGHT":        15,
+    "FLUSH":           20,
+    "FULL_HOUSE":      30,
     "FOUR_KIND":       50,
     "STRAIGHT_FLUSH":  75,
     "ROYAL_FLUSH":    100,
-    "ROYAL_FLUSH_PLUS": 250
+    "ROYAL_FLUSH_PLUS": 200
   },
 
   "penalty": {
