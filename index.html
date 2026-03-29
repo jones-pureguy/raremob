@@ -417,12 +417,12 @@
     const current = i18n.getLang();
     const list = document.querySelector('.settings-list');
     list.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
         ${supported.map(lang => `
-          <button class="settings-item${lang === current ? '' : ''}" onclick="i18n.setLang('${lang}')"
-            style="${lang === current ? 'background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);' : ''}">
+          <button class="settings-item" onclick="i18n.setLang('${lang}')"
+            style="justify-content:center;padding:10px 6px;font-size:0.8rem;${lang === current ? 'background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);' : ''}">
             <span class="settings-label">${LANG_NAMES[lang] || lang}</span>
-            ${lang === current ? '<span style="color:var(--gold);">✓</span>' : ''}
+            ${lang === current ? '<span style="color:var(--gold);margin-left:4px;">✓</span>' : ''}
           </button>
         `).join('')}
       </div>`;
