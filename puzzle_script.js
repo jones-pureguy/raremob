@@ -912,6 +912,31 @@ function savePuzzleResult(puzzleId, cleared, goldEarned) {
 }
 
 // ─── Puzzle Init ───
+// ─── Start Overlay ───
+function initStartOverlay(onStart) {
+  const overlay = document.getElementById('startOverlay');
+  const btn = document.getElementById('startBtn');
+  const grid = document.getElementById('gridContainer') || document.getElementById('grid');
+  if (grid) grid.style.pointerEvents = 'none';
+  if (!overlay) {
+    if (grid) grid.style.pointerEvents = '';
+    onStart();
+    return;
+  }
+  function handleStart(e) {
+    e.stopPropagation();
+    Sound.warmup();
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      if (grid) grid.style.pointerEvents = '';
+      onStart();
+    }, 300);
+  }
+  btn.addEventListener('click', handleStart);
+  overlay.addEventListener('click', handleStart);
+}
+
 async function initPuzzle() {
   const params = new URLSearchParams(window.location.search);
   const puzzleId = parseInt(params.get('id'));
@@ -956,14 +981,21 @@ async function initPuzzle() {
   const el = document.getElementById('usernameDisplay');
   if (el) el.textContent = saved;
 
-  // Init puzzle
+  // Init puzzle (render behind overlay)
   initState();
   loadPuzzleDeck(puzzleConfig.initialDeck);
   applyGravityToAll();
   renderGrid();
 
-  // Setup event listeners
-  setupEventListeners();
+  // Overlay에 퍼즐 정보 표시
+  const startTitleEl = document.getElementById('startPuzzleTitle');
+  const startDescEl = document.getElementById('startPuzzleDesc');
+  if (startTitleEl) startTitleEl.textContent = `Puzzle ${puzzleConfig.id}: ${i18n.tField(puzzleConfig.title)}`;
+  if (startDescEl) startDescEl.textContent = i18n.tField(puzzleConfig.description);
+
+  initStartOverlay(() => {
+    setupEventListeners();
+  });
 }
 
 function setupEventListeners() {

@@ -93,17 +93,6 @@
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
 <script src="sound.js"></script>
-<script>
-  (function() {
-    function onFirstInteraction() {
-      Sound.warmup();
-      document.removeEventListener('touchstart', onFirstInteraction);
-      document.removeEventListener('mousedown', onFirstInteraction);
-    }
-    document.addEventListener('touchstart', onFirstInteraction, { passive: true });
-    document.addEventListener('mousedown', onFirstInteraction);
-  })();
-</script>
 <script src="scorepolicy.js"></script>
 <script src="quickref.js"></script>
 <script>
@@ -156,5 +145,12 @@
   document.body.appendChild(s);
 });
 </script>
+<div class="start-overlay" id="startOverlay">
+  <div class="start-box">
+    <div class="start-title">DragON POKER</div>
+    <div class="start-subtitle">BASIC GAME</div>
+    <button class="start-btn" id="startBtn">▶ START</button>
+  </div>
+</div>
 </body>
 </html>

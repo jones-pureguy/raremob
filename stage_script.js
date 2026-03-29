@@ -1348,6 +1348,31 @@ async function saveStageResult(stageId, result, goldEarned) {
 }
 
 // ─── Stage Init ───
+// ─── Start Overlay ───
+function initStartOverlay(onStart) {
+  const overlay = document.getElementById('startOverlay');
+  const btn = document.getElementById('startBtn');
+  const grid = document.getElementById('gridContainer') || document.getElementById('grid');
+  if (grid) grid.style.pointerEvents = 'none';
+  if (!overlay) {
+    if (grid) grid.style.pointerEvents = '';
+    onStart();
+    return;
+  }
+  function handleStart(e) {
+    e.stopPropagation();
+    Sound.warmup();
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      if (grid) grid.style.pointerEvents = '';
+      onStart();
+    }, 300);
+  }
+  btn.addEventListener('click', handleStart);
+  overlay.addEventListener('click', handleStart);
+}
+
 async function initStage() {
   const params = new URLSearchParams(window.location.search);
   const stageId = parseInt(params.get('id'));
@@ -1372,11 +1397,10 @@ async function initStage() {
   document.getElementById('stageTitle').textContent = `Stage ${stageConfig.id}`;
   document.getElementById('stageMission').textContent = i18n.tField(stageConfig.title);
 
-  // Stage timer
+  // Stage timer UI (timer started after overlay)
   const stageTimerEl = document.getElementById('stageTimerWrap');
   if (stageConfig.timers.stageTime) {
     stageTimerEl.style.display = 'flex';
-    startStageTimer(stageConfig.timers.stageTime);
   } else {
     stageTimerEl.style.display = 'none';
   }
@@ -1402,7 +1426,7 @@ async function initStage() {
   // Reset button
   updateResetButton();
 
-  // Init game
+  // Init game (render behind overlay)
   initState();
   initGrid();
   renderGrid();
@@ -1411,18 +1435,30 @@ async function initStage() {
   updateScoreDisplay();
   renderScoreProgress();
   renderRemovedCards();
-  startTimer();
 
-  // 백그라운드에서 DB 싱크 (게임 시작 후 조용히)
-  syncProgressFromDB();
+  // Overlay에 스테이지 정보 표시
+  const startTitleEl = document.getElementById('startStageTitle');
+  const startDescEl = document.getElementById('startStageDesc');
+  if (startTitleEl) startTitleEl.textContent = `Stage ${stageConfig.id}: ${i18n.tField(stageConfig.title)}`;
+  if (startDescEl) startDescEl.textContent = i18n.tField(stageConfig.description);
 
-  // Sanity check
-  setTimeout(() => {
-    if (!scanForValidMoves()) resetGame();
-  }, 100);
-
-  // Setup event listeners
+  // Setup event listeners (grid blocked by overlay pointer-events)
   setupEventListeners();
+
+  initStartOverlay(() => {
+    startTimer();
+    if (stageConfig.timers.stageTime) {
+      startStageTimer(stageConfig.timers.stageTime);
+    }
+
+    // 백그라운드에서 DB 싱크
+    syncProgressFromDB();
+
+    // Sanity check
+    setTimeout(() => {
+      if (!scanForValidMoves()) resetGame();
+    }, 100);
+  });
 }
 
 function setupEventListeners() {

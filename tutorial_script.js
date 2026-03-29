@@ -515,6 +515,31 @@ function checkTutorialMission(mission, lastHand) {
 const isReplay = new URLSearchParams(location.search).get('replay') === '1';
 let typingTimer = null;
 
+// ─── Start Overlay ───
+function initStartOverlay(onStart) {
+  const overlay = document.getElementById('startOverlay');
+  const btn = document.getElementById('startBtn');
+  const grid = document.getElementById('gridContainer') || document.getElementById('grid');
+  if (grid) grid.style.pointerEvents = 'none';
+  if (!overlay) {
+    if (grid) grid.style.pointerEvents = '';
+    onStart();
+    return;
+  }
+  function handleStart(e) {
+    e.stopPropagation();
+    Sound.warmup();
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      if (grid) grid.style.pointerEvents = '';
+      onStart();
+    }, 300);
+  }
+  btn.addEventListener('click', handleStart);
+  overlay.addEventListener('click', handleStart);
+}
+
 async function initTutorial() {
   try {
     const res = await fetch('./tutorials.json');
@@ -527,7 +552,10 @@ async function initTutorial() {
   currentStep = 0;
   setupDragEvents();
   setupDialogEvents();
-  loadStep(currentStep);
+
+  initStartOverlay(() => {
+    loadStep(currentStep);
+  });
 }
 
 function setupDragEvents() {

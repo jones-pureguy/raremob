@@ -1312,6 +1312,31 @@ function escapeHTML(str) {
   if (el) el.textContent = saved;
 })();
 
+// ─── Start Overlay ───
+function initStartOverlay(onStart) {
+  const overlay = document.getElementById('startOverlay');
+  const btn = document.getElementById('startBtn');
+  const grid = document.getElementById('gridContainer') || document.getElementById('grid');
+  if (grid) grid.style.pointerEvents = 'none';
+  if (!overlay) {
+    if (grid) grid.style.pointerEvents = '';
+    onStart();
+    return;
+  }
+  function handleStart(e) {
+    e.stopPropagation();
+    Sound.warmup();
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      if (grid) grid.style.pointerEvents = '';
+      onStart();
+    }, 300);
+  }
+  btn.addEventListener('click', handleStart);
+  overlay.addEventListener('click', handleStart);
+}
+
 // ─── Init ───
 initState();
 initGrid();
@@ -1319,21 +1344,24 @@ renderGrid();
 updateHandPanel();
 updateScoreDisplay();
 renderRemovedCards();
-startTimer();
 
-// Sanity check on start (reshuffle without gold cost)
-setTimeout(() => {
-  if (!scanForValidMoves()) {
-    console.warn('[DragON] No valid moves at game start — reshuffling');
-    document.getElementById('modalOverlay').classList.remove('active');
-    clearInterval(state.timerInterval);
-    initState();
-    initGrid();
-    renderGrid();
-    updateHandPanel();
-    updateHandPreview();
-    updateScoreDisplay();
-    renderRemovedCards();
-    startTimer();
-  }
-}, 100);
+initStartOverlay(() => {
+  startTimer();
+
+  // Sanity check on start (reshuffle without gold cost)
+  setTimeout(() => {
+    if (!scanForValidMoves()) {
+      console.warn('[DragON] No valid moves at game start — reshuffling');
+      document.getElementById('modalOverlay').classList.remove('active');
+      clearInterval(state.timerInterval);
+      initState();
+      initGrid();
+      renderGrid();
+      updateHandPanel();
+      updateHandPreview();
+      updateScoreDisplay();
+      renderRemovedCards();
+      startTimer();
+    }
+  }, 100);
+});
