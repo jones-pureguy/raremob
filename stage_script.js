@@ -1270,12 +1270,17 @@ function syncProgressFromDB() {
   // 골드 싱크 — DB 읽지 않고 localStorage 유지 (세션 중 localStorage가 진실)
   // DB 싱크는 게임 종료 시 syncGoldToDB에서 처리
 
-  // 진도 싱크
+  // 진도 싱크 — DB 데이터가 로컬보다 많을 때만 병합
   sb.from('player_stages').select('*').eq('player_id', playerId)
     .then(({ data }) => {
-      if (!data) return;
+      if (!data || data.length === 0) return; // DB에 데이터 없으면 로컬 유지
+      const local = JSON.parse(localStorage.getItem('poker_stage_progress') || '{}');
+      const localCleared = local.clearedStages || [];
+      const dbCleared = data.filter(s => s.cleared).map(s => s.stage_id);
+      // 로컬과 DB를 병합 (union)
+      const merged = [...new Set([...localCleared, ...dbCleared])];
       const progress = {
-        clearedStages: data.filter(s => s.cleared).map(s => s.stage_id),
+        clearedStages: merged,
         stageData: data,
         lastSynced: new Date().toISOString(),
       };

@@ -242,23 +242,24 @@
     const gold = parseInt(localStorage.getItem('poker_gold') || '0');
     document.getElementById('goldValue').textContent = gold.toLocaleString();
 
-    // 진도 싱크
+    // 진도 싱크 — DB 데이터가 로컬보다 많을 때만 병합
     sb.from('player_stages').select('*').eq('player_id', playerId)
       .then(({ data }) => {
-        if (!data) return;
+        if (!data || data.length === 0) return; // DB에 데이터 없으면 로컬 유지
+        const dbCleared = data.filter(s => s.cleared).map(s => s.stage_id);
+        // 로컬과 DB를 병합 (union) — 어느 쪽도 잃지 않음
+        const merged = [...new Set([...progress.clearedStages, ...dbCleared])];
         const p = {
-          clearedStages: data.filter(s => s.cleared).map(s => s.stage_id),
+          clearedStages: merged,
           stageData: data,
           lastSynced: new Date().toISOString(),
         };
         localStorage.setItem('poker_stage_progress', JSON.stringify(p));
-        // 변경사항 있으면 UI 갱신
         const oldIds = progress.clearedStages.sort().join(',');
-        const newIds = p.clearedStages.sort().join(',');
+        const newIds = merged.sort().join(',');
         if (oldIds !== newIds) {
           progress = p;
           renderStageGrid();
-          // 선택된 스테이지가 있으면 상세정보도 갱신
           if (selectedStageId) selectStage(selectedStageId);
         } else {
           progress = p;
