@@ -604,17 +604,21 @@ function gameRetry() {
   } else if (replayId) {
     document.getElementById('replayInfo').textContent = i18n.t('ui.loading');
     try {
+      console.log('[Replay] Loading from DB, id:', replayId);
       const { data, error } = await sb
         .from('game_replays')
         .select('replay_data')
         .eq('id', replayId)
         .single();
+      console.log('[Replay] DB result:', { data: !!data, error });
       if (error || !data) {
+        console.warn('[Replay] Not found or error:', error);
         document.getElementById('replayInfo').textContent = i18n.t('toast.replayNotFound');
         return;
       }
       loadReplay(data.replay_data);
     } catch(e) {
+      console.error('[Replay] Load error:', e);
       document.getElementById('replayInfo').textContent = i18n.t('toast.errorOccurred');
     }
   }
