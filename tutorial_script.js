@@ -29,6 +29,7 @@ let currentPhaseIdx = 0;
 let currentLineIdx = 0;
 let waitingForMission = false;
 let tutorialEnded = false;
+let tutorialStarted = false;
 let orderedStraightCount = 0;
 
 // ── Game State ──
@@ -418,6 +419,7 @@ function removeCardsAndApplyGravity(rank) {
     Sound.cardDrop();
     state.selectedPath = [];
     renderGrid();
+    updateHandPreview();
   }, 300 + totalRemovalTime);
 }
 
@@ -554,6 +556,7 @@ async function initTutorial() {
   setupDialogEvents();
 
   initStartOverlay(() => {
+    tutorialStarted = true;
     loadStep(currentStep);
   });
 }
@@ -611,11 +614,13 @@ function setupDialogEvents() {
   document.body.addEventListener('touchend', e => {
     if (waitingForMission) return;
     if (tutorialEnded) return;
+    if (!tutorialStarted) return;
     // Ignore if touch was on grid (drag events)
     if (e.target.closest('.grid-container')) return;
     if (e.target.closest('.tut-next-btn')) return;
     if (e.target.closest('.tut-skip-btn')) return;
     if (e.target.closest('.tut-restart-btn')) return;
+    if (e.target.closest('.start-overlay')) return;
     e.preventDefault();
     bodyTouched = true;
     onDialogClick();
@@ -623,10 +628,12 @@ function setupDialogEvents() {
   document.body.addEventListener('click', e => {
     if (waitingForMission) return;
     if (tutorialEnded) return;
+    if (!tutorialStarted) return;
     if (e.target.closest('.grid-container')) return;
     if (e.target.closest('.tut-next-btn')) return;
     if (e.target.closest('.tut-skip-btn')) return;
     if (e.target.closest('.tut-restart-btn')) return;
+    if (e.target.closest('.start-overlay')) return;
     if (bodyTouched) { bodyTouched = false; return; }
     onDialogClick();
   });
@@ -742,6 +749,7 @@ function forceCompleteTyping() {
 
 // ── Dialog Click ──
 function onDialogClick() {
+  if (!tutorialStarted) return;
   if (waitingForMission) return;
   if (tutorialEnded) return;
 
