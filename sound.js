@@ -58,31 +58,31 @@ const Sound = (() => {
 
   function cardSelect(cardIndex) {
     const freq = SELECT_NOTES[Math.min(cardIndex, 3)];
-    playTone(freq, 0.08, { type: 'triangle', volume: 0.5 });
+    playTone(freq, 0.08, { type: 'triangle', volume: 0.65 });
   }
 
   function handComplete(rankValue) {
     if (rankValue >= 10) {
       playSequence([
         [N.C4,0.07,0],[N.D4,0.07,0],[N.E4,0.07,0],[N.F4,0.07,0]
-      ], { type:'triangle', volume:0.45 });
+      ], { type:'triangle', volume:0.58 });
       playSequence([
         [N.G4,0.08,0],[N.A4,0.08,0],[N.B4,0.08,0],[N.C5,0.08,0],[N.D5,0.08,0],[N.E5,0.3,0.5]
-      ], { type:'sine', volume:0.88, startDelay:0.32 });
+      ], { type:'sine', volume:1.0, startDelay:0.32 });
     } else if (rankValue >= 9) {
       playSequence([
         [N.G4,0.12,0],[N.C5,0.12,0],[N.E5,0.12,0],[N.G5,0.35,0.4]
-      ], { type:'sine', volume:0.85 });
+      ], { type:'sine', volume:1.0 });
     } else if (rankValue >= 7) {
       playSequence([
         [N.G4,0.1,0],[N.A4,0.1,0],[N.G4,0.25,0.35]
-      ], { type:'sine', volume:0.78 });
+      ], { type:'sine', volume:1.0 });
     } else if (rankValue >= 3) {
       playSequence([
         [N.G4,0.1,0],[N.G4,0.22,0.3]
-      ], { type:'sine', volume:0.75 });
+      ], { type:'sine', volume:0.97 });
     } else {
-      playTone(N.G4, 0.18, { type:'sine', volume:0.7, decay:0.25 });
+      playTone(N.G4, 0.18, { type:'sine', volume:0.91, decay:0.25 });
     }
   }
 
@@ -98,7 +98,7 @@ const Sound = (() => {
     const flt = c.createBiquadFilter();
     flt.type = 'lowpass'; flt.frequency.value = 200;
     const g = c.createGain();
-    g.gain.setValueAtTime(0.38*volume, c.currentTime);
+    g.gain.setValueAtTime(0.49*volume, c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+0.06);
     src.connect(flt); flt.connect(g); g.connect(c.destination);
     src.start();
@@ -110,19 +110,19 @@ const Sound = (() => {
     const now = Date.now();
     if (now - lastTyping < 80) return;
     lastTyping = now;
-    playTone(120 + Math.random()*100, 0.07, { type:'sine', volume:0.22 });
+    playTone(120 + Math.random()*100, 0.07, { type:'sine', volume:0.29 });
   }
 
   function stageClear() {
     playSequence([
       [N.C4,0.15,0],[N.E4,0.15,0],[N.G4,0.15,0],[N.C5,0.3,0.4]
-    ], { type:'sine', volume:0.80 });
+    ], { type:'sine', volume:1.0 });
   }
 
   function stageFail() {
     playSequence([
       [N.G3,0.15,0],[N.C3,0.3,0.3]
-    ], { type:'sine', volume:0.65 });
+    ], { type:'sine', volume:0.85 });
   }
 
   function setEnabled(bool) {
