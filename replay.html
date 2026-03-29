@@ -147,15 +147,6 @@
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
 <script>
-// BGM
-BGM.loadSettings();
-BGM.play();
-(function() {
-  function onFirst() { BGM.warmupAndPlay(); document.removeEventListener('touchstart', onFirst); document.removeEventListener('click', onFirst); }
-  document.addEventListener('touchstart', onFirst, { passive: true });
-  document.addEventListener('click', onFirst);
-})();
-
 // ─── Replay Engine ───
 const GRID_SIZE = 7;
 const SUITS = ['♠', '♥', '♦', '♣'];

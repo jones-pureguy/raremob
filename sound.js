@@ -163,20 +163,9 @@ Sound.loadSettings();
 
 const BGM = (() => {
   let audio = null;
-  let currentSrc = null;
+  let pendingSrc = null;
   let enabled = true;
   let volume = 0.35;
-
-  const TRACKS = {
-    main: './audio/Main_Theme.mp3',
-    sub:  './audio/Sub_Theme.mp3'
-  };
-
-  function getTrackForPage() {
-    const path = location.pathname;
-    const subPages = ['stage.html', 'stage_select.html', 'puzzle.html', 'puzzle_select.html'];
-    return subPages.some(p => path.includes(p)) ? 'sub' : 'main';
-  }
 
   function loadSettings() {
     const e = localStorage.getItem('poker_music_enabled');
@@ -188,8 +177,8 @@ const BGM = (() => {
   function setEnabled(bool) {
     enabled = bool;
     localStorage.setItem('poker_music_enabled', bool ? '1' : '0');
-    if (!bool) pause();
-    else play();
+    if (!bool) stop();
+    else if (pendingSrc) start();
   }
 
   function setVolume(v) {
@@ -201,59 +190,35 @@ const BGM = (() => {
   function isEnabled() { return enabled; }
   function getVolume() { return volume; }
 
-  function play() {
-    if (!enabled) return;
-    const trackKey = getTrackForPage();
-    const src = TRACKS[trackKey];
+  function init(src) {
+    loadSettings();
+    pendingSrc = src;
+  }
 
-    if (audio && currentSrc === src && !audio.paused) return;
-
-    if (audio && currentSrc !== src) {
-      sessionStorage.setItem('poker_bgm_src', currentSrc);
-      sessionStorage.setItem('poker_bgm_pos_' + currentSrc, audio.currentTime);
-      audio.pause();
-      audio = null;
-    }
-
+  function start() {
+    if (!enabled || !pendingSrc) return;
+    if (audio && !audio.paused) return;
     if (!audio) {
-      audio = new Audio(src);
+      audio = new Audio(pendingSrc);
       audio.loop = true;
       audio.volume = volume;
-      currentSrc = src;
-
-      const savedPos = parseFloat(sessionStorage.getItem('poker_bgm_pos_' + src) || '0');
-      if (savedPos > 0) audio.currentTime = savedPos;
-
-      window.addEventListener('pagehide', savePosition);
-      window.addEventListener('visibilitychange', () => {
-        if (document.hidden) savePosition();
-      });
     }
-
     audio.play().catch(err => {
       console.warn('[BGM] Autoplay blocked:', err.message);
     });
   }
 
-  function savePosition() {
-    if (audio && currentSrc) {
-      sessionStorage.setItem('poker_bgm_src', currentSrc);
-      sessionStorage.setItem('poker_bgm_pos_' + currentSrc, audio.currentTime);
-    }
+  function stop() {
+    if (audio) { audio.pause(); audio.currentTime = 0; }
   }
 
   function pause() {
-    if (audio) { savePosition(); audio.pause(); }
+    if (audio) audio.pause();
   }
 
   function resume() {
     if (enabled && audio && audio.paused) audio.play().catch(() => {});
   }
 
-  function warmupAndPlay() {
-    loadSettings();
-    play();
-  }
-
-  return { play, pause, resume, savePosition, warmupAndPlay, setEnabled, setVolume, isEnabled, getVolume, loadSettings };
+  return { init, start, stop, pause, resume, setEnabled, setVolume, isEnabled, getVolume, loadSettings };
 })();

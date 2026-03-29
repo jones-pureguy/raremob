@@ -1173,15 +1173,133 @@ function showStageFailPopup(reason, customMessage) {
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-// ─── Navigation ───
+// ─── Navigation (in-place for BGM continuity) ───
 function goNextStage() {
   const nextId = stageConfig.id + 1;
-  window.location.href = `stage.html?id=${nextId}`;
+  initStageById(nextId);
 }
 
 function retryStage() {
-  window.location.href = `stage.html?id=${stageConfig.id}`;
+  initStageById(stageConfig.id);
 }
+
+async function initStageById(stageId) {
+  // Stop timers
+  if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+  if (stageTimerInterval) { clearInterval(stageTimerInterval); stageTimerInterval = null; }
+
+  // Clean up DOM
+  document.querySelectorAll('.score-popup, .screen-flash, .popup-particle, .start-overlay').forEach(el => el.remove());
+  document.getElementById('modalOverlay').classList.remove('active');
+
+  // Reset flags
+  stageFailed = false;
+  stageCleared = false;
+  resetUsed = 0;
+  ascendingStreak = 0;
+  orderedStraightCount = 0;
+
+  // Load stage config
+  let stage;
+  try {
+    const res = await fetch('./stages.json');
+    const stages = await res.json();
+    allStages = stages;
+    stage = stages.find(s => s.id === stageId);
+  } catch(e) {
+    location.href = 'stage_select.html';
+    return;
+  }
+  if (!stage) {
+    location.href = 'stage_select.html';
+    return;
+  }
+  stageConfig = stage;
+
+  // Update URL
+  history.pushState({}, '', `stage.html?id=${stageId}`);
+
+  // Apply theme
+  document.body.style.setProperty('--bg', stage.theme.bgColor);
+  document.body.style.setProperty('--felt-dark', stage.theme.bgColor);
+  document.body.style.setProperty('--gold', stage.theme.accentColor);
+  document.body.style.setProperty('--gold-glow', stage.theme.accentColor + '80');
+
+  // Update header
+  document.getElementById('stageTitle').textContent = `Stage ${stage.id}`;
+  document.getElementById('stageMission').textContent = i18n.tField(stage.title);
+
+  // Stage timer UI
+  const stageTimerEl = document.getElementById('stageTimerWrap');
+  stageTimerEl.style.display = stage.timers.stageTime ? 'flex' : 'none';
+
+  // Condition bar
+  const condBar = document.getElementById('stageConditionBar');
+  if (condBar) {
+    let text = i18n.tField(stage.description);
+    const forbidden = [];
+    if (stage.constraints.forbiddenHands.length > 0)
+      forbidden.push(i18n.t('constraint.forbiddenHands', { list: stage.constraints.forbiddenHands.join(', ') }));
+    if (stage.constraints.forbiddenValues.length > 0)
+      forbidden.push(i18n.t('constraint.forbiddenValues', { list: stage.constraints.forbiddenValues.join(', ') }));
+    if (forbidden.length > 0) text += ' [' + forbidden.join(' / ') + ']';
+    condBar.textContent = text;
+  }
+
+  updateResetButton();
+
+  // Init game
+  initState();
+  initGrid();
+  renderGrid();
+  updateHandPanel();
+  updateHandPreview();
+  updateScoreDisplay();
+  renderScoreProgress();
+  renderRemovedCards();
+
+  // Show in-place overlay (no BGM.start — already playing)
+  showInPlaceStartOverlay(stage);
+}
+
+function showInPlaceStartOverlay(stage) {
+  const grid = document.getElementById('gridContainer') || document.getElementById('grid');
+  if (grid) grid.style.pointerEvents = 'none';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'start-overlay';
+  overlay.id = 'startOverlay';
+  overlay.innerHTML = `
+    <div class="start-box">
+      <div class="start-title">Stage ${stage.id}: ${i18n.tField(stage.title)}</div>
+      <div class="start-subtitle">${i18n.tField(stage.description)}</div>
+      <button class="start-btn" id="startBtn">▶ START</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function handleStart(e) {
+    e.stopPropagation();
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      if (grid) grid.style.pointerEvents = '';
+      startTimer();
+      if (stage.timers.stageTime) startStageTimer(stage.timers.stageTime);
+      syncProgressFromDB();
+      setTimeout(() => {
+        if (!scanForValidMoves()) resetGame();
+      }, 100);
+    }, 300);
+  }
+
+  document.getElementById('startBtn').addEventListener('click', handleStart);
+  overlay.addEventListener('click', handleStart);
+}
+
+window.addEventListener('popstate', () => {
+  location.href = 'stage_select.html';
+});
 
 // ─── Game Reset (stage version) ───
 function resetGame() {
@@ -1367,7 +1485,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
-    BGM.warmupAndPlay();
+    BGM.start();
     overlay.classList.add('hiding');
     setTimeout(() => {
       overlay.remove();
@@ -1451,6 +1569,7 @@ async function initStage() {
   // Setup event listeners (grid blocked by overlay pointer-events)
   setupEventListeners();
 
+  BGM.init('./audio/Sub_Theme.mp3');
   initStartOverlay(() => {
     startTimer();
     if (stageConfig.timers.stageTime) {
@@ -1467,7 +1586,10 @@ async function initStage() {
   });
 }
 
+let _stageEventsAttached = false;
 function setupEventListeners() {
+  if (_stageEventsAttached) return;
+  _stageEventsAttached = true;
   const gridEl = document.getElementById('grid');
 
   gridEl.addEventListener('mousedown', e => {

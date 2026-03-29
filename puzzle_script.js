@@ -763,24 +763,111 @@ function showPuzzleFailPopup(reason) {
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-// ─── Navigation ───
+// ─── Navigation (in-place for BGM continuity) ───
 function goNextPuzzle() {
   const nextId = puzzleConfig.id + 1;
-  window.location.href = `puzzle.html?id=${nextId}`;
+  initPuzzleById(nextId);
 }
 
 function retryPuzzle() {
-  // hintLevel is preserved on retry
-  puzzleFailed = false;
-  puzzleCleared = false;
-  orderedStraightCount = 0;
+  initPuzzleById(puzzleConfig.id);
+}
+
+async function initPuzzleById(puzzleId) {
+  // Clean up DOM
+  document.querySelectorAll('.score-popup, .screen-flash, .popup-particle, .start-overlay').forEach(el => el.remove());
   document.getElementById('modalOverlay').classList.remove('active');
 
+  // Reset flags
+  puzzleFailed = false;
+  puzzleCleared = false;
+  hintLevel = 0;
+  orderedStraightCount = 0;
+
+  // Load puzzle config
+  let puzzle;
+  try {
+    const res = await fetch('./puzzles.json');
+    const puzzles = await res.json();
+    allPuzzles = puzzles;
+    puzzle = puzzles.find(p => p.id === puzzleId);
+  } catch(e) {
+    location.href = 'puzzle_select.html';
+    return;
+  }
+  if (!puzzle) {
+    location.href = 'puzzle_select.html';
+    return;
+  }
+  puzzleConfig = puzzle;
+
+  // Update URL
+  history.pushState({}, '', `puzzle.html?id=${puzzleId}`);
+
+  // Apply theme
+  document.body.style.setProperty('--bg', puzzle.theme.bgColor);
+  document.body.style.setProperty('--felt-dark', puzzle.theme.bgColor);
+  document.body.style.setProperty('--gold', puzzle.theme.accentColor);
+  document.body.style.setProperty('--gold-glow', puzzle.theme.accentColor + '80');
+
+  // Update header
+  document.getElementById('puzzleTitle').textContent = `Puzzle ${puzzle.id}: ${i18n.tField(puzzle.title)}`;
+
+  // Condition bar
+  const condBar = document.getElementById('puzzleConditionBar');
+  if (condBar) {
+    let text = i18n.tField(puzzle.description);
+    const forbidden = [];
+    if (puzzle.constraints.forbiddenHands.length > 0)
+      forbidden.push(i18n.t('constraint.forbiddenHands', { list: puzzle.constraints.forbiddenHands.join(', ') }));
+    if (puzzle.constraints.forbiddenValues.length > 0)
+      forbidden.push(i18n.t('constraint.forbiddenValues', { list: puzzle.constraints.forbiddenValues.join(', ') }));
+    if (forbidden.length > 0) text += ' [' + forbidden.join(' / ') + ']';
+    condBar.textContent = text;
+  }
+
+  // Init puzzle
   initState();
-  loadPuzzleDeck(puzzleConfig.initialDeck);
+  loadPuzzleDeck(puzzle.initialDeck);
   applyGravityToAll();
   renderGrid();
+
+  // Show in-place overlay (no BGM.start — already playing)
+  showInPlacePuzzleOverlay(puzzle);
 }
+
+function showInPlacePuzzleOverlay(puzzle) {
+  const grid = document.getElementById('gridContainer') || document.getElementById('grid');
+  if (grid) grid.style.pointerEvents = 'none';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'start-overlay';
+  overlay.id = 'startOverlay';
+  overlay.innerHTML = `
+    <div class="start-box">
+      <div class="start-title">Puzzle ${puzzle.id}: ${i18n.tField(puzzle.title)}</div>
+      <div class="start-subtitle">${i18n.tField(puzzle.description)}</div>
+      <button class="start-btn" id="startBtn">▶ START</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function handleStart(e) {
+    e.stopPropagation();
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      if (grid) grid.style.pointerEvents = '';
+    }, 300);
+  }
+
+  document.getElementById('startBtn').addEventListener('click', handleStart);
+  overlay.addEventListener('click', handleStart);
+}
+
+window.addEventListener('popstate', () => {
+  location.href = 'puzzle_select.html';
+});
 
 // ─── Hint System ───
 function onHintButtonClick() {
@@ -926,7 +1013,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
-    BGM.warmupAndPlay();
+    BGM.start();
     overlay.classList.add('hiding');
     setTimeout(() => {
       overlay.remove();
@@ -994,12 +1081,16 @@ async function initPuzzle() {
   if (startTitleEl) startTitleEl.textContent = `Puzzle ${puzzleConfig.id}: ${i18n.tField(puzzleConfig.title)}`;
   if (startDescEl) startDescEl.textContent = i18n.tField(puzzleConfig.description);
 
+  BGM.init('./audio/Sub_Theme.mp3');
   initStartOverlay(() => {
     setupEventListeners();
   });
 }
 
+let _puzzleEventsAttached = false;
 function setupEventListeners() {
+  if (_puzzleEventsAttached) return;
+  _puzzleEventsAttached = true;
   const gridEl = document.getElementById('grid');
 
   gridEl.addEventListener('mousedown', e => {

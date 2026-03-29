@@ -1352,7 +1352,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
-    BGM.warmupAndPlay();
+    BGM.start();
     overlay.classList.add('hiding');
     setTimeout(() => {
       overlay.remove();
@@ -1372,6 +1372,7 @@ updateHandPanel();
 updateScoreDisplay();
 renderRemovedCards();
 
+BGM.init('./audio/Main_Theme.mp3');
 initStartOverlay(() => {
   startTimer();
 
