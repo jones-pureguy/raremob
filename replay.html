@@ -93,6 +93,7 @@
 
 <div class="header">
   <div class="title">REPLAY</div>
+  <div id="replayUser" style="color:rgba(255,255,255,0.5);font-size:0.75rem;font-family:'IBM Plex Mono',monospace;"></div>
 </div>
 
 <div class="status-bar">
@@ -171,7 +172,8 @@ function cardFromId(id) {
 
 function loadReplay(data) {
   replay = data;
-  document.getElementById('replayUser').textContent = data.username || '';
+  const userEl = document.getElementById('replayUser');
+  if (userEl) userEl.textContent = data.username || '';
   document.getElementById('totalHands').textContent = data.actions.length;
 
   // Show removed panel
