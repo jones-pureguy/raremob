@@ -1072,7 +1072,7 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
         <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:4px;">${i18n.t('modal.nextStageLabel')}</div>
         <div style="color:var(--gold);font-size:0.85rem;font-weight:700;">Stage ${nextStage.id}: ${i18n.tField(nextStage.title)}</div>
         <div style="color:rgba(255,255,255,0.6);font-size:0.75rem;margin-top:2px;">${i18n.tField(nextStage.description)}</div>
-        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">${i18n.t('modal.reward')}: ${nextStage.rewards.gold} Gold</div>
+        <div style="color:var(--gold);font-size:0.75rem;margin-top:4px;">보상: <img src="./images/coin.png" alt="gold" style="width:14px;height:14px;vertical-align:middle;" onerror="this.style.display='none'"> ${nextStage.rewards.gold}</div>
         ${metaStr}
       </div>
     `;
