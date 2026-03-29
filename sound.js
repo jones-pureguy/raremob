@@ -155,11 +155,11 @@ const Sound = (() => {
   function warmup() {
     if (ctx) return;
     try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
-      const src = ctx.createBufferSource();
+      const c = getCtx(); // creates ctx + masterOutput + compressor
+      const buf = c.createBuffer(1, 1, c.sampleRate);
+      const src = c.createBufferSource();
       src.buffer = buf;
-      src.connect(ctx.destination);
+      src.connect(c.destination);
       src.start(0);
       console.log('[Sound] AudioContext warmed up');
     } catch(e) {
