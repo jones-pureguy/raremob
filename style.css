@@ -2,6 +2,34 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ── 가로모드 차단 오버레이 ── */
+.landscape-block {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg, #0a1f14);
+  color: var(--gold, #C9A84C);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: center;
+}
+.landscape-block .rotate-icon {
+  font-size: 3rem;
+}
+.landscape-block .rotate-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-block { display: flex; }
+}
+
 :root {
   --gold: #C9A84C;
   --gold-glow: rgba(201, 168, 76, 0.5);
