@@ -49,7 +49,9 @@
     "nickname": "닉네임 관리",
     "googleLink": "구글 계정 연동",
     "tutorial": "튜토리얼",
-    "sound": "사운드 설정",
+    "sound": "효과음 설정",
+    "music": "음악 설정",
+    "musicVolume": "음악 볼륨",
     "language": "언어 설정",
     "appInfo": "앱 정보",
     "appInfoContent": "DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones"

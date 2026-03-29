@@ -49,7 +49,9 @@
     "nickname": "Nickname",
     "googleLink": "Link Google Account",
     "tutorial": "Tutorial",
-    "sound": "Sound",
+    "sound": "Sound Effects",
+    "music": "Music",
+    "musicVolume": "Music Volume",
     "language": "Language",
     "appInfo": "App Info",
     "appInfoContent": "DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones"

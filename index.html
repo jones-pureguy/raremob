@@ -166,6 +166,22 @@
   .settings-label { flex: 1; }
   .settings-value { font-size: 0.8rem; color: var(--gold); }
   .settings-arrow { color: var(--gold); font-size: 1.1rem; }
+  .settings-slider-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: default;
+  }
+  .settings-slider-item .settings-label {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+  }
+  .settings-slider {
+    width: 100%;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+  .settings-slider-item.hidden { display: none; }
   .settings-badge {
     font-size: 0.65rem;
     background: rgba(201,168,76,0.2);
@@ -277,6 +293,18 @@
         <span class="settings-label" id="soundLabel">사운드 ON</span>
       </button>
 
+      <button class="settings-item" onclick="toggleMusic()">
+        <span class="settings-icon" id="musicIcon">🎵</span>
+        <span class="settings-label" id="musicLabel">음악 ON</span>
+      </button>
+
+      <div class="settings-item settings-slider-item" id="musicVolumeRow">
+        <span class="settings-label">음악 볼륨</span>
+        <input type="range" class="settings-slider" id="musicVolumeSlider"
+               min="0" max="100" step="5"
+               oninput="onMusicVolumeChange(this.value)">
+      </div>
+
       <button class="settings-item" onclick="showLanguageSelector()">
         <span class="settings-icon">🌐</span>
         <span class="settings-label">언어 설정</span>
@@ -305,13 +333,24 @@
 <script src="i18n.js"></script>
 <script src="sound.js"></script>
 <script>
+  // BGM 시작 (첫 인터랙션 또는 페이지 전환 시)
+  BGM.loadSettings();
+  BGM.play();
+  (function() {
+    function onFirst() {
+      BGM.warmupAndPlay();
+      document.removeEventListener('touchstart', onFirst);
+      document.removeEventListener('click', onFirst);
+    }
+    document.addEventListener('touchstart', onFirst, { passive: true });
+    document.addEventListener('click', onFirst);
+  })();
+
   // 사운드 토글 초기화
   (function initSoundUI() {
     const on = Sound.isEnabled();
-    const icon = document.getElementById('soundIcon');
-    const label = document.getElementById('soundLabel');
-    if (icon) icon.textContent = on ? '🔊' : '🔇';
-    if (label) label.textContent = on ? '사운드 ON' : '사운드 OFF';
+    document.getElementById('soundIcon').textContent = on ? '🔊' : '🔇';
+    document.getElementById('soundLabel').textContent = on ? '사운드 ON' : '사운드 OFF';
   })();
 
   function toggleSound() {
@@ -320,6 +359,28 @@
     document.getElementById('soundIcon').textContent = next ? '🔊' : '🔇';
     document.getElementById('soundLabel').textContent = next ? '사운드 ON' : '사운드 OFF';
     if (next) Sound.stageClear();
+  }
+
+  // 음악 토글 초기화
+  (function initMusicUI() {
+    BGM.loadSettings();
+    const on = BGM.isEnabled();
+    document.getElementById('musicIcon').textContent = on ? '🎵' : '🔇';
+    document.getElementById('musicLabel').textContent = on ? '음악 ON' : '음악 OFF';
+    document.getElementById('musicVolumeSlider').value = Math.round(BGM.getVolume() * 100);
+    document.getElementById('musicVolumeRow').classList.toggle('hidden', !on);
+  })();
+
+  function toggleMusic() {
+    const next = !BGM.isEnabled();
+    BGM.setEnabled(next);
+    document.getElementById('musicIcon').textContent = next ? '🎵' : '🔇';
+    document.getElementById('musicLabel').textContent = next ? '음악 ON' : '음악 OFF';
+    document.getElementById('musicVolumeRow').classList.toggle('hidden', !next);
+  }
+
+  function onMusicVolumeChange(val) {
+    BGM.setVolume(val / 100);
   }
 
   // 온보딩 체크: 튜토리얼 → 닉네임 → 메인

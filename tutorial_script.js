@@ -531,6 +531,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
+    BGM.warmupAndPlay();
     overlay.classList.add('hiding');
     setTimeout(() => {
       overlay.remove();
