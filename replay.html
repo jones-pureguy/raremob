@@ -577,7 +577,31 @@ function gameRetry() {
     if (raw) {
       try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
     } else {
-      document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
+      // localStorage 없으면 DB에서 최근 리플레이 조회
+      const username = (localStorage.getItem('poker_username') || '').trim();
+      let found = false;
+      if (username) {
+        try {
+          const { data: player } = await sb
+            .from('players').select('id').eq('username', username).single();
+          if (player) {
+            const { data: latest } = await sb
+              .from('game_replays')
+              .select('replay_data')
+              .eq('player_id', player.id)
+              .order('id', { ascending: false })
+              .limit(1)
+              .single();
+            if (latest) {
+              loadReplay(latest.replay_data);
+              found = true;
+            }
+          }
+        } catch(e) { console.warn('[Replay] DB fallback failed:', e); }
+      }
+      if (!found) {
+        document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
+      }
     }
   } else if (replayId) {
     document.getElementById('replayInfo').textContent = i18n.t('ui.loading');
