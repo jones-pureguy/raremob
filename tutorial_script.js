@@ -681,15 +681,22 @@ function showCurrentDialog() {
   // Typing effect
   typeText(textEl, text);
 
+  // Action prompt
+  const prompt = document.getElementById('tutActionPrompt');
+  const promptText = document.getElementById('tutActionText');
+
   // Instruction phase = waiting for mission
   if (phase.phase === 'instruction') {
     areaEl.classList.add('instruction-mode');
     nextBtn.classList.add('hidden');
     waitingForMission = true;
+    if (promptText) promptText.textContent = i18n.t('tutorial.actionPrompt') || '드래그 해보세요!';
+    if (prompt) prompt.classList.add('active');
   } else {
     areaEl.classList.remove('instruction-mode');
     nextBtn.classList.remove('hidden');
     waitingForMission = false;
+    if (prompt) prompt.classList.remove('active');
   }
 
   // Auto trigger
@@ -783,6 +790,8 @@ function onTutorialHandComplete(handData) {
   currentPhaseIdx++;
   currentLineIdx = 0;
   document.getElementById('tutDialogArea').classList.remove('instruction-mode');
+  const prompt = document.getElementById('tutActionPrompt');
+  if (prompt) prompt.classList.remove('active');
   setTimeout(() => showCurrentDialog(), 500);
 }
 
@@ -801,6 +810,8 @@ function tutorialRestart() {
     currentLineIdx = 0;
     document.getElementById('tutDialogArea').classList.remove('instruction-mode');
     document.getElementById('tutNextBtn').classList.remove('hidden');
+    const prompt = document.getElementById('tutActionPrompt');
+    if (prompt) prompt.classList.remove('active');
     setTimeout(() => showCurrentDialog(), 400);
     return;
   }

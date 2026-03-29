@@ -199,6 +199,7 @@
     "clearedWithHint": "Lv.${n} 힌트 사용"
   },
   "tutorial": {
+    "actionPrompt": "위 그리드에서 드래그 해보세요!",
     "skipConfirm": "튜토리얼을 건너뛰시겠습니까?",
     "tapContinue": "▼ 터치하여 계속",
     "step1": {

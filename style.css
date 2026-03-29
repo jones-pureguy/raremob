@@ -1322,6 +1322,36 @@ body.debug-mode .card .debug-info { display: block; }
   cursor: not-allowed;
 }
 
+/* ── Tutorial Action Prompt ── */
+.tut-action-prompt {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 0;
+  flex-shrink: 0;
+}
+.tut-action-prompt.active {
+  display: flex;
+  animation: actionPulse 1.2s ease-in-out infinite;
+}
+.tut-action-arrow {
+  font-size: 1.1rem;
+  color: var(--gold);
+  line-height: 1;
+}
+.tut-action-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+@keyframes actionPulse {
+  0%, 100% { opacity: 1;   transform: translateY(0); }
+  50%       { opacity: 0.3; transform: translateY(-3px); }
+}
+
 .tut-dialog-area {
   flex-shrink: 0;
   min-height: 140px;

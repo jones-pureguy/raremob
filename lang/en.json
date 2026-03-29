@@ -199,6 +199,7 @@
     "clearedWithHint": "Lv.${n} hint used"
   },
   "tutorial": {
+    "actionPrompt": "Try dragging on the grid above!",
     "skipConfirm": "Skip the tutorial?",
     "tapContinue": "▼ tap to continue",
     "step1": {
