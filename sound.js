@@ -1,10 +1,21 @@
 const Sound = (() => {
   let ctx = null;
+  let masterOutput = null;
   let enabled = true;
   let volume = 0.5;
 
   function getCtx() {
-    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-20, ctx.currentTime);
+      compressor.knee.setValueAtTime(10, ctx.currentTime);
+      compressor.ratio.setValueAtTime(4, ctx.currentTime);
+      compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+      compressor.release.setValueAtTime(0.1, ctx.currentTime);
+      compressor.connect(ctx.destination);
+      masterOutput = compressor;
+    }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
@@ -15,7 +26,7 @@ const Sound = (() => {
     const osc = c.createOscillator();
     const gain = c.createGain();
     osc.connect(gain);
-    gain.connect(c.destination);
+    gain.connect(masterOutput);
     osc.type = opts.type || 'sine';
     osc.frequency.setValueAtTime(freq, c.currentTime);
     const vol = (opts.volume || 0.3) * volume;
@@ -34,7 +45,7 @@ const Sound = (() => {
       const osc = c.createOscillator();
       const gain = c.createGain();
       osc.connect(gain);
-      gain.connect(c.destination);
+      gain.connect(masterOutput);
       osc.type = opts.type || 'sine';
       osc.frequency.setValueAtTime(freq, time);
       const vol = (opts.volume || 0.3) * volume;
@@ -100,7 +111,7 @@ const Sound = (() => {
     const g = c.createGain();
     g.gain.setValueAtTime(0.49*volume, c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+0.06);
-    src.connect(flt); flt.connect(g); g.connect(c.destination);
+    src.connect(flt); flt.connect(g); g.connect(masterOutput);
     src.start();
   }
 
