@@ -141,7 +141,22 @@ const Sound = (() => {
   }
   function isEnabled() { return enabled; }
 
-  return { cardSelect, handComplete, cardDrop, dialogTyping, stageClear, stageFail, setEnabled, setVolume, loadSettings, isEnabled };
+  function warmup() {
+    if (ctx) return;
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      console.log('[Sound] AudioContext warmed up');
+    } catch(e) {
+      console.warn('[Sound] Warmup failed:', e);
+    }
+  }
+
+  return { cardSelect, handComplete, cardDrop, dialogTyping, stageClear, stageFail, setEnabled, setVolume, loadSettings, isEnabled, warmup };
 })();
 
 Sound.loadSettings();

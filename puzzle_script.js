@@ -209,7 +209,10 @@ function extendPath(row, col) {
       const prev = state.selectedPath[state.selectedPath.length - 2];
       if (prev[0] === row && prev[1] === col) {
         state.selectedPath.pop();
-        Sound.cardSelect(Math.min(state.selectedPath.length - 1, 3));
+        const pathLenAfterRemove = state.selectedPath.length;
+        if (pathLenAfterRemove >= 1 && pathLenAfterRemove <= 3) {
+          Sound.cardSelect(pathLenAfterRemove - 1);
+        }
         updateSelectionVisuals();
       }
     }
@@ -237,7 +240,10 @@ function extendPath(row, col) {
   if (!isValidPuzzleMove(last[0], last[1], row, col)) return;
 
   state.selectedPath.push([row, col]);
-  Sound.cardSelect(state.selectedPath.length - 1);
+  const pathLen = state.selectedPath.length;
+  if (pathLen >= 1 && pathLen <= 4) {
+    Sound.cardSelect(pathLen - 1);
+  }
   updateSelectionVisuals();
 }
 

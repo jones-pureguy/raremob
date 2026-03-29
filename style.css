@@ -156,113 +156,162 @@ body::before {
 }
 .high-score span { color: rgba(201,168,76,0.6); }
 
-/* Floating score popup */
+/* ── Score Popup Base ── */
 .score-popup {
   position: fixed;
   left: 50%;
-  transform: translateX(-50%) scale(0.8);
+  transform: translateX(-50%) scale(0.85);
   z-index: 60;
   pointer-events: none;
   text-align: center;
-  padding: 10px 28px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(201, 168, 76, 0.4);
-  border-radius: 12px;
-  backdrop-filter: blur(6px);
+  padding: 10px 26px 12px;
+  background: linear-gradient(
+    160deg,
+    rgba(13, 40, 24, 0.92) 0%,
+    rgba(8, 24, 14, 0.96) 100%
+  );
+  border: 1.5px solid rgba(201, 168, 76, 0.6);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(201, 168, 76, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
   animation: scorePopup 1.8s forwards;
 }
+
 .score-popup .popup-rank {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--gold);
-  text-shadow: 0 0 10px rgba(201, 168, 76, 0.5), 0 2px 4px rgba(0,0,0,0.8);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  text-shadow:
+    0 0 12px rgba(201, 168, 76, 0.6),
+    0 1px 3px rgba(0, 0, 0, 0.8);
 }
+
 .score-popup .popup-pts {
-  font-size: 2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.7rem;
   font-weight: 800;
-  color: #4CAF50;
-  text-shadow: 0 0 12px rgba(76, 175, 80, 0.5), 0 2px 6px rgba(0,0,0,0.8);
-  margin-top: 2px;
-}
-@keyframes scorePopup {
-  0%   { opacity: 0; top: 42%; transform: translateX(-50%) scale(0.8); }
-  10%  { opacity: 1; top: 40%; transform: translateX(-50%) scale(1.05); }
-  20%  { transform: translateX(-50%) scale(1); }
-  75%  { opacity: 1; }
-  100% { opacity: 0; top: 22%; transform: translateX(-50%) scale(0.95); }
+  color: #5CDB7A;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 0 14px rgba(92, 219, 122, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.8);
+  margin-top: 1px;
+  line-height: 1.1;
 }
 
-/* ── tier별 팝업 스타일 ── */
-.score-popup.tier-1,
-.score-popup.tier-2 {
-  /* 기본 (변경 없음) */
-}
-
+/* ── tier 3 (Full House, Four Kind) ── */
 .score-popup.tier-3 {
-  transform: translateX(-50%) scale(1.0);
-  border-color: rgba(201, 168, 76, 0.7);
+  border-color: rgba(201, 168, 76, 0.8);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 16px rgba(201, 168, 76, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .score-popup.tier-3 .popup-rank {
-  font-size: 1.45rem;
-  text-shadow: 0 0 14px rgba(201, 168, 76, 0.7),
-               0 2px 4px rgba(0,0,0,0.8);
+  font-size: 1.2rem;
+  text-shadow:
+    0 0 16px rgba(201, 168, 76, 0.8),
+    0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
+/* ── tier 4 (SF) — teal ── */
 .score-popup.tier-4 {
-  border-color: rgba(32, 200, 180, 0.8);
-  box-shadow: 0 0 20px rgba(32, 200, 180, 0.3);
+  border-color: rgba(32, 200, 180, 0.9);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(32, 200, 180, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .score-popup.tier-4 .popup-rank {
-  font-size: 1.55rem;
+  font-size: 1.3rem;
   color: #20C8B4;
-  text-shadow: 0 0 16px rgba(32, 200, 180, 0.8),
-               0 2px 4px rgba(0,0,0,0.8);
+  text-shadow:
+    0 0 18px rgba(32, 200, 180, 0.9),
+    0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
+/* ── tier 5 (RF) — gold enhanced ── */
 .score-popup.tier-5 {
   border-color: rgba(201, 168, 76, 1);
-  box-shadow: 0 0 24px rgba(201, 168, 76, 0.5);
+  border-width: 2px;
+  background: linear-gradient(
+    160deg,
+    rgba(20, 50, 30, 0.95) 0%,
+    rgba(10, 28, 16, 0.98) 100%
+  );
+  box-shadow:
+    0 4px 32px rgba(0, 0, 0, 0.6),
+    0 0 32px rgba(201, 168, 76, 0.35),
+    inset 0 1px 0 rgba(201, 168, 76, 0.15);
   animation: scorePopup 1.8s forwards, goldPulse 0.6s ease-out;
 }
 .score-popup.tier-5 .popup-rank {
-  font-size: 1.65rem;
-  text-shadow: 0 0 20px rgba(201, 168, 76, 1),
-               0 2px 4px rgba(0,0,0,0.8);
+  font-size: 1.4rem;
+  text-shadow:
+    0 0 20px rgba(201, 168, 76, 1),
+    0 0 40px rgba(201, 168, 76, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
+/* ── tier 6 (RF+) — premium ── */
 .score-popup.tier-6 {
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  box-shadow: 0 0 0 2px var(--gold),
-              0 0 30px rgba(201, 168, 76, 0.6);
+  border-color: var(--gold);
+  border-width: 2px;
+  background: linear-gradient(
+    160deg,
+    rgba(25, 55, 35, 0.97) 0%,
+    rgba(12, 32, 18, 0.99) 100%
+  );
+  box-shadow:
+    0 4px 40px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(201, 168, 76, 0.5),
+    0 0 80px rgba(201, 168, 76, 0.2),
+    inset 0 1px 0 rgba(201, 168, 76, 0.2);
   animation: scorePopupRFP 1.5s 0.32s forwards;
 }
 .score-popup.tier-6 .popup-rank {
-  font-size: 1.8rem;
-  background: linear-gradient(90deg, #C9A84C, #fff, #C9A84C);
+  font-size: 1.5rem;
+  background: linear-gradient(
+    90deg,
+    #C9A84C 0%, #fff8dc 40%, #C9A84C 60%, #fff8dc 100%
+  );
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer 1s 0.32s ease-out forwards;
+  animation: shimmer 1.2s 0.32s ease-out forwards;
 }
 
-@keyframes goldPulse {
-  0%   { box-shadow: 0 0 0px rgba(201,168,76,0); }
-  50%  { box-shadow: 0 0 30px rgba(201,168,76,0.8); }
-  100% { box-shadow: 0 0 24px rgba(201,168,76,0.5); }
+/* ── Animations ── */
+@keyframes scorePopup {
+  0%   { opacity: 0; top: 42%; transform: translateX(-50%) scale(0.85); }
+  10%  { opacity: 1; top: 40%; transform: translateX(-50%) scale(1.05); }
+  20%  { transform: translateX(-50%) scale(1.0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; top: 24%; transform: translateX(-50%) scale(0.95); }
 }
 
 @keyframes scorePopupRFP {
   0%   { opacity: 0; top: 42%; transform: translateX(-50%) scale(0.7); }
-  15%  { opacity: 1; top: 39%; transform: translateX(-50%) scale(1.1); }
-  25%  { transform: translateX(-50%) scale(1.0); }
+  15%  { opacity: 1; top: 38%; transform: translateX(-50%) scale(1.12); }
+  28%  { transform: translateX(-50%) scale(1.0); }
   75%  { opacity: 1; }
   100% { opacity: 0; top: 22%; transform: translateX(-50%) scale(0.95); }
 }
 
+@keyframes goldPulse {
+  0%   { box-shadow: 0 0 0 rgba(201,168,76,0); }
+  40%  { box-shadow: 0 0 40px rgba(201,168,76,0.8); }
+  100% { box-shadow: 0 0 32px rgba(201,168,76,0.35); }
+}
+
 @keyframes shimmer {
-  0%   { background-position: -200% center; }
+  0%   { background-position: 0% center; }
   100% { background-position: 200% center; }
 }
 
