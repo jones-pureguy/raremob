@@ -2593,7 +2593,7 @@
       "ko": "에이스 금지"
     },
     "description": {
-      "ko": "에이스(A)가 포함된 패를 만들지 않고 6개 이상 패를 완성하세요."
+      "ko": "에이스(A)가 포함된 패를 만들지 않고 7개 이상 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a0a1f",
@@ -2616,15 +2616,15 @@
       ]
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_value_used",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 6,
-          "description": "6개 이상 패 완성 (에이스 없이)"
+          "count_gte": 7,
+          "description": "7개 이상 패 완성 (에이스 없이)"
         }
       ]
     },
@@ -2690,7 +2690,7 @@
   {
     "id": 53,
     "title": {
-      "ko": "스티플 듀오"
+      "ko": "스티플 트리플"
     },
     "description": {
       "ko": "스트레이트 플러시를 3개 이상 만들고 종료하세요."
