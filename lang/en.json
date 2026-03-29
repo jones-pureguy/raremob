@@ -72,7 +72,7 @@
     "puzzleNotFound": "Puzzle not found",
     "puzzleLoadFailed": "Failed to load puzzle data",
     "replayNotFound": "Replay not found",
-    "replayNoData": "No replay data",
+    "replayNoData": "No saved replays",
     "networkError": "Network error, please try again.",
     "authFailed": "Authentication failed",
     "registerComplete": "Registration complete!",

@@ -22,6 +22,9 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.9rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   .stage-grid {
     display: grid;
@@ -164,7 +167,7 @@
 <div class="menu-container">
   <div class="stage-select-header">
     <div class="stage-select-title">CHALLENGE MODE</div>
-    <div class="gold-display" id="goldDisplay">0 Gold</div>
+    <div class="gold-display" id="goldDisplay"><img src="./images/coin.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span> <span id="goldValue">0</span></div>
   </div>
 
   <div class="pagination" id="pagination"></div>
@@ -198,7 +201,7 @@
   async function init() {
     // 1. 즉시 로컬 골드 표시
     const localGold = parseInt(localStorage.getItem('poker_gold') || '0');
-    document.getElementById('goldDisplay').textContent = localGold.toLocaleString() + ' Gold';
+    document.getElementById('goldValue').textContent = localGold.toLocaleString();
 
     // 2. 즉시 로컬 진도 로드
     progress = JSON.parse(localStorage.getItem('poker_stage_progress') || '{"clearedStages":[]}');
@@ -235,8 +238,7 @@
 
     // 골드 — localStorage 값 그대로 표시 (DB 싱크는 index.html에서만)
     const gold = parseInt(localStorage.getItem('poker_gold') || '0');
-    document.getElementById('goldDisplay').textContent =
-      gold.toLocaleString() + ' Gold';
+    document.getElementById('goldValue').textContent = gold.toLocaleString();
 
     // 진도 싱크
     sb.from('player_stages').select('*').eq('player_id', playerId)
@@ -354,7 +356,7 @@
       <div class="stage-detail-title">${cleared ? '✓ ' : ''}Stage ${stage.id}: ${i18n.tField(stage.title)}</div>
       <div class="stage-detail-desc">${i18n.tField(stage.description)}</div>
       ${metaLines.length > 0 ? `<div class="stage-detail-meta">${metaLines.join('<br>')}</div>` : ''}
-      <div class="stage-detail-reward">보상: ${stage.rewards.gold} Gold${stage.rewards.bonus.length > 0 ? ' + 보너스' : ''}</div>
+      <div class="stage-detail-reward">보상: <img src="./images/coin.png" alt="gold" class="currency-icon" style="width:16px;height:16px;vertical-align:middle;" onerror="this.style.display='none'"> ${stage.rewards.gold}${stage.rewards.bonus.length > 0 ? ' + 보너스' : ''}</div>
       ${bestLine}
     `;
 

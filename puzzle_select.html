@@ -22,6 +22,9 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.9rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   .puzzle-grid {
     display: grid;
@@ -172,7 +175,7 @@
 <div class="menu-container">
   <div class="puzzle-select-header">
     <div class="puzzle-select-title">PUZZLE MODE</div>
-    <div class="gold-display" id="goldDisplay">0 Gold</div>
+    <div class="gold-display" id="goldDisplay"><img src="./images/coin.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span> <span id="goldValue">0</span></div>
   </div>
 
   <div class="pagination" id="pagination"></div>
@@ -199,7 +202,7 @@
   async function init() {
     // 1. 즉시 로컬 골드 표시
     const localGold = parseInt(localStorage.getItem('poker_gold') || '0');
-    document.getElementById('goldDisplay').textContent = localGold.toLocaleString() + ' Gold';
+    document.getElementById('goldValue').textContent = localGold.toLocaleString();
 
     // 2. 즉시 로컬 진도 로드
     progress = JSON.parse(localStorage.getItem('poker_puzzle_progress') || '{"clearedPuzzles":[],"hintUsed":{}}');
@@ -322,7 +325,7 @@
       <div class="puzzle-detail-title">${cleared ? '✓ ' : ''}Puzzle ${puzzle.id}: ${i18n.tField(puzzle.title)}</div>
       <div class="puzzle-detail-desc">${i18n.tField(puzzle.description)}</div>
       ${metaLines.length > 0 ? `<div class="puzzle-detail-meta">${metaLines.join('<br>')}</div>` : ''}
-      <div class="puzzle-detail-reward">보상: ${puzzle.rewards.gold} Gold${hintLine ? ' + 힌트 미사용 보너스' : ''}</div>
+      <div class="puzzle-detail-reward">보상: <img src="./images/coin.png" alt="gold" class="currency-icon" style="width:16px;height:16px;vertical-align:middle;" onerror="this.style.display='none'"> ${puzzle.rewards.gold}${hintLine ? ' + 힌트 미사용 보너스' : ''}</div>
       ${hintLine}
     `;
 

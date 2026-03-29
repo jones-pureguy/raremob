@@ -127,7 +127,7 @@
 
 <div class="replay-action-log" id="actionLog"></div>
 
-<div class="removed-panel">
+<div class="removed-panel" id="removedPanel" style="display:none;">
   <div class="removed-panel-title">REMOVED</div>
   <div class="removed-cards" id="removedCards"></div>
 </div>
@@ -173,6 +173,10 @@ function loadReplay(data) {
   replay = data;
   document.getElementById('replayUser').textContent = data.username || '';
   document.getElementById('totalHands').textContent = data.actions.length;
+
+  // Show removed panel
+  const removedPanel = document.getElementById('removedPanel');
+  if (removedPanel) removedPanel.style.display = '';
 
   // Show GAME RETRY only if replay belongs to current user
   const myUsername = (localStorage.getItem('poker_username') || '').trim().toLowerCase();
