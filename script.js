@@ -22,8 +22,11 @@ const RANK = {
   ROYAL_FLUSH_PLUS: 10,
 };
 
+const RANK_NAME_BY_VALUE = {};
+Object.entries(RANK).forEach(([k, v]) => RANK_NAME_BY_VALUE[v] = k);
+
 function getRankScore(rank) {
-  return ScorePolicy.getHandScore(rank);
+  return ScorePolicy.getHandScore(RANK_NAME_BY_VALUE[rank] || 'HIGH_CARD');
 }
 
 function getPenaltyPerCard() {
@@ -246,6 +249,7 @@ function startDrag(row, col) {
   if (!state.grid[row][col].card) return;
   state.isDragging = true;
   state.selectedPath = [[row, col]];
+  Sound.cardSelect(0);
   updateSelectionVisuals();
 }
 

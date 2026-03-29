@@ -173,6 +173,7 @@ function startDrag(row, col) {
   if (!state.grid[row][col].card) return;
   state.isDragging = true;
   state.selectedPath = [[row, col]];
+  Sound.cardSelect(0);
   updateSelectionVisuals();
 }
 
@@ -292,7 +293,7 @@ function finalizePath() {
     if (rankName && puzzleConfig.constraints.forbiddenHands.includes(rankName[0])) {
       if (puzzleConfig.mission.failTrigger === 'forbidden_hand_made') {
         state.hands.push(handData);
-        showScorePopup(hand.label, undefined, hand.rank);
+        showScorePopup(hand.label, hand.rank);
         removeCardsAndApplyGravity(hand.rank);
         setTimeout(() => triggerPuzzleFail('forbidden_hand'), 350);
         return;
@@ -305,7 +306,7 @@ function finalizePath() {
     const hasForbidden = cards.some(c => puzzleConfig.constraints.forbiddenValues.includes(c.value));
     if (hasForbidden && puzzleConfig.mission.failTrigger === 'forbidden_value_used') {
       state.hands.push(handData);
-      showScorePopup(hand.label, undefined, hand.rank);
+      showScorePopup(hand.label, hand.rank);
       removeCardsAndApplyGravity(hand.rank);
       setTimeout(() => triggerPuzzleFail('forbidden_value'), 350);
       return;
@@ -336,7 +337,7 @@ function finalizePath() {
   // Add hand
   state.hands.push(handData);
   Sound.handComplete(hand.rankValue);
-  showScorePopup(hand.label, undefined, hand.rank);
+  showScorePopup(hand.label, hand.rank);
   removeCardsAndApplyGravity(hand.rank);
 
   // Check real_time mission completion
@@ -617,13 +618,11 @@ function spawnParticles(count) {
   }
 }
 
-function showScorePopup(label, pts, rank) {
+function showScorePopup(label, rank) {
   const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
   const popup = document.createElement('div');
   popup.className = `score-popup tier-${tier}`;
-  const ptsHTML = (pts !== undefined)
-    ? `<div class="popup-pts">+${pts}</div>` : '';
-  popup.innerHTML = `<div class="popup-rank">${label}</div>${ptsHTML}`;
+  popup.innerHTML = `<div class="popup-rank">${label}</div>`;
   if (tier >= 6) {
     popup.style.animationDelay = '0.32s';
     popup.style.opacity = '0';
