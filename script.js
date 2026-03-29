@@ -903,7 +903,10 @@ function endGame(reason) {
       if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScore', { score: result.topScore });
 
       if (result.leaderboardUpdated) {
-        saveReplayToDB(true);
+        saveReplayToDB(true).then(id => {
+          if (id) console.log('[DragON] Auto-replay saved:', id);
+          else console.warn('[DragON] Auto-replay save failed');
+        }).catch(err => console.error('[DragON] Auto-replay error:', err));
         const btnReplay = document.getElementById('btnSaveReplay');
         if (btnReplay) btnReplay.remove();
       }
@@ -1243,15 +1246,38 @@ async function saveReplayFromButton() {
   btn.disabled = true;
   btn.textContent = i18n.t('ui.saving');
 
-  // DB 즉시 싱크
-  await syncGoldToDB('replay_save');
+  try {
+    // DB 즉시 싱크
+    await syncGoldToDB('replay_save');
 
-  const replayId = await saveReplayToDB(false);
-  if (replayId) {
-    btn.textContent = i18n.t('ui.saved');
-    btn.style.color = '#4CAF50';
-    btn.style.borderColor = '#4CAF50';
-  } else {
+    const replayId = await saveReplayToDB(false);
+    if (replayId) {
+      // 저장 검증: DB에서 다시 읽어서 확인
+      const { data: verify, error: verifyErr } = await sb
+        .from('game_replays')
+        .select('id')
+        .eq('id', replayId)
+        .single();
+
+      if (verifyErr || !verify) {
+        console.error('[DragON] Replay verify failed:', verifyErr);
+        btn.textContent = i18n.t('ui.saveFailed');
+        btn.style.color = '#ff5252';
+        btn.disabled = false;
+        return;
+      }
+
+      btn.textContent = i18n.t('ui.saved');
+      btn.style.color = '#4CAF50';
+      btn.style.borderColor = '#4CAF50';
+      console.log('[DragON] Replay verified in DB:', replayId);
+    } else {
+      btn.textContent = i18n.t('ui.saveFailed');
+      btn.style.color = '#ff5252';
+      btn.disabled = false;
+    }
+  } catch (err) {
+    console.error('[DragON] saveReplayFromButton error:', err);
     btn.textContent = i18n.t('ui.saveFailed');
     btn.style.color = '#ff5252';
     btn.disabled = false;

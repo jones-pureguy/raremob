@@ -578,24 +578,20 @@ function gameRetry() {
       try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
     } else {
       // localStorage 없으면 DB에서 최근 리플레이 조회
-      const username = (localStorage.getItem('poker_username') || '').trim();
+      const playerId = localStorage.getItem('poker_player_id');
       let found = false;
-      if (username) {
+      if (playerId) {
         try {
-          const { data: player } = await sb
-            .from('players').select('id').eq('username', username).single();
-          if (player) {
-            const { data: latest } = await sb
-              .from('game_replays')
-              .select('replay_data')
-              .eq('player_id', player.id)
-              .order('id', { ascending: false })
-              .limit(1)
-              .single();
-            if (latest) {
-              loadReplay(latest.replay_data);
-              found = true;
-            }
+          const { data: latest, error } = await sb
+            .from('game_replays')
+            .select('replay_data')
+            .eq('player_id', playerId)
+            .order('id', { ascending: false })
+            .limit(1)
+            .single();
+          if (!error && latest) {
+            loadReplay(latest.replay_data);
+            found = true;
           }
         } catch(e) { console.warn('[Replay] DB fallback failed:', e); }
       }
