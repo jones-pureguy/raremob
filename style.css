@@ -193,6 +193,118 @@ body::before {
   100% { opacity: 0; top: 22%; transform: translateX(-50%) scale(0.95); }
 }
 
+/* ── tier별 팝업 스타일 ── */
+.score-popup.tier-1,
+.score-popup.tier-2 {
+  /* 기본 (변경 없음) */
+}
+
+.score-popup.tier-3 {
+  transform: translateX(-50%) scale(1.0);
+  border-color: rgba(201, 168, 76, 0.7);
+}
+.score-popup.tier-3 .popup-rank {
+  font-size: 1.45rem;
+  text-shadow: 0 0 14px rgba(201, 168, 76, 0.7),
+               0 2px 4px rgba(0,0,0,0.8);
+}
+
+.score-popup.tier-4 {
+  border-color: rgba(32, 200, 180, 0.8);
+  box-shadow: 0 0 20px rgba(32, 200, 180, 0.3);
+}
+.score-popup.tier-4 .popup-rank {
+  font-size: 1.55rem;
+  color: #20C8B4;
+  text-shadow: 0 0 16px rgba(32, 200, 180, 0.8),
+               0 2px 4px rgba(0,0,0,0.8);
+}
+
+.score-popup.tier-5 {
+  border-color: rgba(201, 168, 76, 1);
+  box-shadow: 0 0 24px rgba(201, 168, 76, 0.5);
+  animation: scorePopup 1.8s forwards, goldPulse 0.6s ease-out;
+}
+.score-popup.tier-5 .popup-rank {
+  font-size: 1.65rem;
+  text-shadow: 0 0 20px rgba(201, 168, 76, 1),
+               0 2px 4px rgba(0,0,0,0.8);
+}
+
+.score-popup.tier-6 {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 0 2px var(--gold),
+              0 0 30px rgba(201, 168, 76, 0.6);
+  animation: scorePopupRFP 1.5s 0.32s forwards;
+}
+.score-popup.tier-6 .popup-rank {
+  font-size: 1.8rem;
+  background: linear-gradient(90deg, #C9A84C, #fff, #C9A84C);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 1s 0.32s ease-out forwards;
+}
+
+@keyframes goldPulse {
+  0%   { box-shadow: 0 0 0px rgba(201,168,76,0); }
+  50%  { box-shadow: 0 0 30px rgba(201,168,76,0.8); }
+  100% { box-shadow: 0 0 24px rgba(201,168,76,0.5); }
+}
+
+@keyframes scorePopupRFP {
+  0%   { opacity: 0; top: 42%; transform: translateX(-50%) scale(0.7); }
+  15%  { opacity: 1; top: 39%; transform: translateX(-50%) scale(1.1); }
+  25%  { transform: translateX(-50%) scale(1.0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; top: 22%; transform: translateX(-50%) scale(0.95); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── 화면 플래시 ── */
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  animation: flashFade 0.5s forwards;
+}
+
+@keyframes flashFade {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── 파티클 (RF+) ── */
+.popup-particle {
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  pointer-events: none;
+  z-index: 61;
+  animation: particleFly 0.9s ease-out forwards;
+}
+
+@keyframes particleFly {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--tx)),
+      calc(-50% + var(--ty))
+    ) scale(0);
+    opacity: 0;
+  }
+}
+
 /* Grid */
 .grid-container {
   position: relative;

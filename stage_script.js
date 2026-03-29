@@ -222,6 +222,7 @@ function extendPath(row, col) {
       const prev = state.selectedPath[state.selectedPath.length - 2];
       if (prev[0] === row && prev[1] === col) {
         state.selectedPath.pop();
+        Sound.cardSelect(Math.min(state.selectedPath.length - 1, 3));
         updateSelectionVisuals();
       }
     }
@@ -250,6 +251,7 @@ function extendPath(row, col) {
   if (!isValidStageMove(last[0], last[1], row, col)) return;
 
   state.selectedPath.push([row, col]);
+  Sound.cardSelect(state.selectedPath.length - 1);
   updateSelectionVisuals();
 }
 
@@ -302,8 +304,8 @@ function finalizePath() {
         state.currentScore += earnedScore;
         state.hands.push(handData);
         updateScoreDisplay();
-        showScorePopup(hand.label, earnedScore);
-        removeCardsAndApplyGravity();
+        showScorePopup(hand.label, earnedScore, hand.rank);
+        removeCardsAndApplyGravity(hand.rank);
         setTimeout(() => triggerStageFail('forbidden_hand'), 350);
         return;
       }
@@ -317,8 +319,8 @@ function finalizePath() {
       state.currentScore += earnedScore;
       state.hands.push(handData);
       updateScoreDisplay();
-      showScorePopup(hand.label, earnedScore);
-      removeCardsAndApplyGravity();
+      showScorePopup(hand.label, earnedScore, hand.rank);
+      removeCardsAndApplyGravity(hand.rank);
       setTimeout(() => triggerStageFail('forbidden_value'), 350);
       return;
     }
@@ -332,8 +334,8 @@ function finalizePath() {
       state.currentScore += earnedScore;
       state.hands.push(handData);
       updateScoreDisplay();
-      showScorePopup(hand.label, earnedScore);
-      removeCardsAndApplyGravity();
+      showScorePopup(hand.label, earnedScore, hand.rank);
+      removeCardsAndApplyGravity(hand.rank);
       setTimeout(() => triggerStageFail('high_card_start'), 350);
       return;
     }
@@ -347,8 +349,8 @@ function finalizePath() {
         state.currentScore += earnedScore;
         state.hands.push(handData);
         updateScoreDisplay();
-        showScorePopup(hand.label, earnedScore);
-        removeCardsAndApplyGravity();
+        showScorePopup(hand.label, earnedScore, hand.rank);
+        removeCardsAndApplyGravity(hand.rank);
         setTimeout(() => triggerStageFail('ascending_rank'), 350);
         return;
       }
@@ -398,10 +400,11 @@ function finalizePath() {
   // Add hand normally
   state.currentScore += earnedScore;
   state.hands.push(handData);
+  Sound.handComplete(hand.rankValue);
   updateScoreDisplay();
-  showScorePopup(hand.label, earnedScore);
+  showScorePopup(hand.label, earnedScore, hand.rank);
   renderScoreProgress();
-  removeCardsAndApplyGravity();
+  removeCardsAndApplyGravity(hand.rank);
 
   // Check nth_hand_condition (immediate fail if violated)
   if (stageConfig && !stageFailed && !stageCleared) {
@@ -508,14 +511,33 @@ function isValidHand(hand) {
 }
 
 // ─── Gravity ───
-function removeCardsAndApplyGravity() {
+function removeCardsAndApplyGravity(rank) {
   const gridEl = document.getElementById('grid');
   const positions = [...state.selectedPath];
-  positions.forEach(([r, c]) => { gridEl.children[r * GRID_SIZE + c].classList.add('removing'); });
+  const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
+
+  const intervals = [0, 0, 0, 50, 40, 30];
+  const interval = intervals[Math.min(tier, 5)] || 0;
+
+  if (interval === 0) {
+    positions.forEach(([r, c]) => {
+      gridEl.children[r * GRID_SIZE + c].classList.add('removing');
+    });
+  } else {
+    positions.forEach(([r, c], i) => {
+      setTimeout(() => {
+        const cell = gridEl.children[r * GRID_SIZE + c];
+        if (cell) cell.classList.add('removing');
+      }, i * interval);
+    });
+  }
+
+  const totalRemovalTime = interval * (positions.length - 1);
   setTimeout(() => {
     positions.forEach(([r, c]) => { state.grid[r][c].card = null; });
     const cols = [...new Set(positions.map(p => p[1]))];
     cols.forEach(col => applyGravityToColumn(col));
+    Sound.cardDrop();
     state.selectedPath = [];
     renderGrid();
     updateHandPanel();
@@ -530,7 +552,7 @@ function removeCardsAndApplyGravity() {
         }
       }, 200);
     }
-  }, 300);
+  }, 300 + totalRemovalTime);
 }
 
 function applyGravityToColumn(col) {
@@ -670,12 +692,60 @@ function updateScoreDisplay() {
   document.getElementById('currentScore').textContent = state.currentScore;
 }
 
-function showScorePopup(label, pts) {
+function getHandTier(rank) {
+  if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
+  if (rank >= RANK.ROYAL_FLUSH) return 5;
+  if (rank >= RANK.STRAIGHT_FLUSH) return 4;
+  if (rank >= RANK.FULL_HOUSE) return 3;
+  if (rank >= RANK.THREE_KIND) return 2;
+  return 1;
+}
+
+function triggerScreenFlash(tier) {
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash';
+  const colors = {
+    4: 'rgba(32, 200, 180, 0.18)',
+    5: 'rgba(201, 168, 76, 0.25)',
+    6: 'rgba(201, 168, 76, 0.4)'
+  };
+  flash.style.background = colors[Math.min(tier, 6)] || colors[4];
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 500);
+}
+
+function spawnParticles(count) {
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'popup-particle';
+    const angle = (360 / count) * i + Math.random() * 20;
+    const dist  = 60 + Math.random() * 40;
+    const rad   = angle * Math.PI / 180;
+    const tx    = Math.cos(rad) * dist;
+    const ty    = Math.sin(rad) * dist;
+    p.style.setProperty('--tx', `${tx}px`);
+    p.style.setProperty('--ty', `${ty}px`);
+    p.style.animationDelay = `${0.32 + Math.random() * 0.1}s`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+function showScorePopup(label, pts, rank) {
+  const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
   const popup = document.createElement('div');
-  popup.className = 'score-popup';
-  popup.innerHTML = `<div class="popup-rank">${label}</div><div class="popup-pts">+${pts}</div>`;
+  popup.className = `score-popup tier-${tier}`;
+  const ptsHTML = (pts !== undefined)
+    ? `<div class="popup-pts">+${pts}</div>` : '';
+  popup.innerHTML = `<div class="popup-rank">${label}</div>${ptsHTML}`;
+  if (tier >= 6) {
+    popup.style.animationDelay = '0.32s';
+    popup.style.opacity = '0';
+  }
   document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 1600);
+  if (tier >= 4) triggerScreenFlash(tier);
+  if (tier >= 6) spawnParticles(4);
+  setTimeout(() => popup.remove(), 1800);
 }
 
 function renderRemovedCards() {
@@ -875,6 +945,7 @@ function triggerStageComplete() {
   if (stageCleared) return;
   stageCleared = true;
   state.phase = 'complete';
+  Sound.stageClear();
   clearInterval(state.timerInterval);
   clearInterval(stageTimerInterval);
 
@@ -934,6 +1005,7 @@ function triggerStageFail(reason, customMessage) {
   if (stageFailed || stageCleared) return;
   stageFailed = true;
   state.phase = 'failed';
+  Sound.stageFail();
   clearInterval(state.timerInterval);
   clearInterval(stageTimerInterval);
 
