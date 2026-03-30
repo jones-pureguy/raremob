@@ -81,7 +81,8 @@
     "errorOccurred": "오류 발생",
     "checking": "확인 중...",
     "nicknameRequired": "닉네임을 입력하세요",
-    "nicknameDuplicate": "이미 사용 중인 닉네임입니다."
+    "nicknameDuplicate": "이미 사용 중인 닉네임입니다.",
+    "shuffleLimit": "셔플 횟수를 모두 사용했습니다."
   },
   "modal": {
     "complete": "COMPLETE!",

@@ -45,6 +45,49 @@
   body.infinite-mode .drag-line { stroke:#00D4FF; }
   body.infinite-mode .card.selected { border-color:#00D4FF; box-shadow:0 0 8px rgba(0,212,255,0.5); }
   .start-combo-hint { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#00D4FF; text-align:center; margin-top:4px; letter-spacing:0.05em; }
+
+  /* ── Shuffle 버튼 ── */
+  .inf-shuffle-wrap {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .inf-shuffle-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1.5px solid rgba(0, 212, 255, 0.4);
+    color: #00D4FF;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .inf-shuffle-btn:active {
+    background: rgba(0, 212, 255, 0.25);
+  }
+  .inf-shuffle-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+  .inf-shuffle-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    color: rgba(0, 212, 255, 0.6);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  .inf-shuffle-btn.no-gold {
+    border-color: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.2);
+  }
 </style>
 </head>
 <body class="game-page infinite-mode">
@@ -77,6 +120,10 @@
   </div>
   <div style="display:flex;align-items:center;gap:6px;">
     <button class="qr-btn">?</button>
+  </div>
+  <div class="inf-shuffle-wrap">
+    <button class="inf-shuffle-btn" id="shuffleBtn" onclick="doShuffle()">⇄</button>
+    <div class="inf-shuffle-count" id="shuffleCount">10</div>
   </div>
 </div>
 
@@ -146,6 +193,7 @@
     <div class="start-title">INFINITE MODE</div>
     <div class="start-subtitle">600초 동안 최고 점수를 노려라!</div>
     <div class="start-combo-hint">✦ 풀하우스 이상 패를 연속하면 콤보 점수!</div>
+    <div class="start-combo-hint" style="margin-top:4px;">⇄ 셔플 <img src="./images/coin.png" alt="gold" style="width:14px;height:14px;vertical-align:-2px;">5 — 카드 전체 재배치, 최대 10회</div>
     <button class="start-btn" id="startBtn">▶ START</button>
   </div>
 </div>

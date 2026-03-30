@@ -81,7 +81,8 @@
     "errorOccurred": "An error occurred",
     "checking": "Checking...",
     "nicknameRequired": "Please enter a nickname",
-    "nicknameDuplicate": "This nickname is already in use."
+    "nicknameDuplicate": "This nickname is already in use.",
+    "shuffleLimit": "No shuffles remaining."
   },
   "modal": {
     "complete": "COMPLETE!",

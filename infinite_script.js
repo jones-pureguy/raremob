@@ -56,6 +56,11 @@ let comboCount = 0;
 let totalHands = 0;
 let infiniteScore = 0;
 
+// ─── Shuffle system ───
+const SHUFFLE_MAX_COUNT  = 10;
+const SHUFFLE_GOLD_COST  = 5;
+let   shuffleRemaining   = SHUFFLE_MAX_COUNT;
+
 // ─── Game State ───
 let state = {};
 let outsideCards = []; // 16 cards outside the grid
@@ -624,6 +629,100 @@ function findHandFrom(r, c, path, depth) {
   return false;
 }
 
+// ─── Gold helpers ───
+function getGoldLocal() {
+  return parseInt(localStorage.getItem('poker_gold') || '0');
+}
+
+function deductGoldLocal(amount, reason) {
+  const current = getGoldLocal();
+  if (current < amount) return false;
+  localStorage.setItem('poker_gold', current - amount);
+  renderCurrencyBar();
+  return true;
+}
+
+// ─── Shuffle ───
+function doShuffle() {
+  if (state.phase !== 'playing') return;
+
+  if (shuffleRemaining <= 0) {
+    showToast(i18n.t('toast.shuffleLimit') || '셔플 횟수를 모두 사용했습니다.');
+    return;
+  }
+
+  const gold = getGoldLocal();
+  if (gold < SHUFFLE_GOLD_COST) {
+    showToast(i18n.t('toast.goldInsufficient'));
+    return;
+  }
+
+  deductGoldLocal(SHUFFLE_GOLD_COST, 'infinite_shuffle');
+
+  shuffleRemaining--;
+  updateShuffleUI();
+
+  // Collect all cards (grid + outside)
+  const allCards = [];
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const card = state.grid[r][c].card;
+      if (card) {
+        allCards.push(card);
+        state.grid[r][c].card = null;
+      }
+    }
+  }
+  allCards.push(...outsideCards);
+
+  // Shuffle all
+  allCards.sort(() => Math.random() - 0.5);
+
+  // 36 → grid
+  let idx = 0;
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      state.grid[r][c].card = allCards[idx++] || null;
+    }
+  }
+
+  // Remaining 16 → outsideCards
+  outsideCards = allCards.slice(GRID_SIZE * GRID_SIZE);
+
+  // Apply gravity & render
+  for (let col = 0; col < GRID_SIZE; col++) applyGravityToColumn(col);
+  renderGrid();
+  renderOutsideCards();
+
+  showShuffleEffect();
+}
+
+function updateShuffleUI() {
+  const btn     = document.getElementById('shuffleBtn');
+  const countEl = document.getElementById('shuffleCount');
+  const gold    = getGoldLocal();
+
+  if (!btn || !countEl) return;
+
+  countEl.textContent = shuffleRemaining;
+
+  const isDisabled = shuffleRemaining <= 0;
+  const noGold     = gold < SHUFFLE_GOLD_COST;
+
+  btn.disabled = isDisabled;
+  btn.classList.toggle('no-gold', noGold && !isDisabled);
+  btn.title = `셔플 (${SHUFFLE_GOLD_COST}G) — ${shuffleRemaining}회 남음`;
+}
+
+function showShuffleEffect() {
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash';
+  flash.style.background = 'rgba(0, 212, 255, 0.15)';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 400);
+  Sound.cardDrop();
+}
+
 // ─── Toast ───
 function showToast(msg) {
   const el = document.getElementById('toast');
@@ -719,11 +818,14 @@ function restartGame() {
   infiniteScore = 0;
   HAND_DISPLAY_ORDER.forEach(r => { handCounts[r] = 0; });
 
+  shuffleRemaining = SHUFFLE_MAX_COUNT;
+
   renderGrid();
   updateHandPanel();
   updateHandPreview();
   updateScoreDisplay();
   renderOutsideCards();
+  updateShuffleUI();
   startTimer();
 }
 
@@ -773,6 +875,7 @@ renderGrid();
 updateHandPanel();
 updateScoreDisplay();
 renderOutsideCards();
+updateShuffleUI();
 
 setupEventListeners();
 
