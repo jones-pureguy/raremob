@@ -51,7 +51,7 @@ let handCounts = {};
 HAND_DISPLAY_ORDER.forEach(r => { handCounts[r] = 0; });
 
 // ─── Combo system ───
-const COMBO_RANKS = new Set([RANK.FOUR_KIND, RANK.STRAIGHT_FLUSH, RANK.ROYAL_FLUSH, RANK.ROYAL_FLUSH_PLUS]);
+const COMBO_RANKS = new Set([RANK.FULL_HOUSE, RANK.FOUR_KIND, RANK.STRAIGHT_FLUSH, RANK.ROYAL_FLUSH, RANK.ROYAL_FLUSH_PLUS]);
 let comboCount = 0;
 let totalHands = 0;
 let infiniteScore = 0;
