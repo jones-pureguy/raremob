@@ -84,9 +84,9 @@
       const uid = await initAuth();
       if (!uid) { msgEl.textContent = i18n.t('toast.authFailed'); msgEl.style.color = '#ff5252'; return; }
 
-      // 중복 체크 (다른 유저가 이미 사용 중인 이름인지)
+      // 중복 체크 (대소문자 구분 없이)
       const { data: existing, error: fetchErr } = await sbRetry(() =>
-        sb.from('players').select('id').eq('username', username).maybeSingle()
+        sb.from('players').select('id').ilike('username', username).maybeSingle()
       );
 
       if (fetchErr) { msgEl.textContent = i18n.t('toast.networkError'); msgEl.style.color = '#ff5252'; return; }
