@@ -68,8 +68,9 @@
   }
   .m-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .m-btn.btn-large  { flex: 1; min-height: 110px; font-size: 1.0rem; }
-  .m-btn.btn-medium { flex: 1; min-height: 90px; font-size: 1.0rem; }
+  .m-btn.btn-large  { flex: 1; min-height: 96px; font-size: 1.0rem; }
+  .m-btn.btn-medium { flex: 1; min-height: 80px; font-size: 1.0rem; }
+  .m-btn.btn-third  { flex: 1; min-height: 74px; font-size: 0.78rem; color: var(--gold); letter-spacing: 0.08em; }
   .m-btn.btn-wide   { width: 100%; min-height: 60px; font-size: 1.0rem; }
   .m-btn.btn-small  { width: 100%; min-height: 48px; font-size: 0.85rem; letter-spacing: 0.1em; }
 
@@ -82,8 +83,8 @@
     border: 1px solid rgba(201,168,76,0.2);
   }
   .btn-infinite {
-    background: linear-gradient(160deg, #1a0a3a 0%, #110722 100%);
-    border: 1px solid rgba(201,168,76,0.3);
+    background: linear-gradient(160deg, #144a40 0%, #0d322b 100%);
+    border: 1px solid rgba(201,168,76,0.25);
   }
   .btn-challenge {
     background: linear-gradient(160deg, #2a4a1a 0%, #1c3211 100%);
@@ -241,29 +242,20 @@
       </div>
     </div>
 
-    <!-- Row 2: INFINITE MODE -->
+    <!-- Row 2: CHALLENGE / PUZZLE / INFINITE (1/3씩) -->
     <div class="menu-row">
-      <button class="m-btn btn-large btn-infinite" onclick="location.href='infinite.html'">
-        INFINITE<br>MODE
-      </button>
-      <div class="menu-col-small">
-        <button class="m-btn btn-small btn-sub" onclick="location.href='leaderboard.html?mode=infinite'">
-          Ranking
-        </button>
-      </div>
-    </div>
-
-    <!-- Row 3: CHALLENGE + PUZZLE -->
-    <div class="menu-row">
-      <button class="m-btn btn-medium btn-challenge" onclick="location.href='stage_select.html'">
+      <button class="m-btn btn-third btn-challenge" onclick="location.href='stage_select.html'">
         CHALLENGE<br>MODE
       </button>
-      <button class="m-btn btn-medium btn-puzzle" onclick="location.href='puzzle_select.html'">
+      <button class="m-btn btn-third btn-puzzle" onclick="location.href='puzzle_select.html'">
         PUZZLE<br>MODE
+      </button>
+      <button class="m-btn btn-third btn-infinite" onclick="location.href='infinite.html'">
+        INFINITE<br>MODE
       </button>
     </div>
 
-    <!-- Row 3: vs MODE -->
+    <!-- Row 3: VS MODE -->
     <div class="menu-row">
       <button class="m-btn btn-medium btn-vs" disabled>
         vs MODE

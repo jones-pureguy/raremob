@@ -45,6 +45,7 @@
   <div class="lb-tabs">
     <button class="lb-tab active" id="tabNormal" onclick="switchTab('normal')">일반 순위</button>
     <button class="lb-tab" id="tabRetry" onclick="switchTab('retry')">RETRY 순위</button>
+    <button class="lb-tab" id="tabInfinite" onclick="switchTab('infinite')">INFINITE</button>
   </div>
   <div class="leaderboard-wrap" id="leaderboardWrap">
     <div class="loading">불러오는 중...</div>
@@ -79,31 +80,45 @@
     currentTab = tab;
     document.getElementById('tabNormal').classList.toggle('active', tab === 'normal');
     document.getElementById('tabRetry').classList.toggle('active', tab === 'retry');
+    document.getElementById('tabInfinite').classList.toggle('active', tab === 'infinite');
     document.getElementById('retryDesc').style.display = tab === 'retry' ? 'block' : 'none';
     loadLeaderboard();
   }
 
   async function loadLeaderboard() {
     const wrap = document.getElementById('leaderboardWrap');
-    const table = currentTab === 'retry' ? 'leaderboard_r' : 'leaderboard';
     wrap.innerHTML = '<div class="loading">불러오는 중...</div>';
+
+    let table, hasReplay;
+    if (currentTab === 'infinite') {
+      table = 'leaderboard_infinite';
+      hasReplay = false;
+    } else if (currentTab === 'retry') {
+      table = 'leaderboard_r';
+      hasReplay = true;
+    } else {
+      table = 'leaderboard';
+      hasReplay = true;
+    }
+
     try {
+      const selectCols = hasReplay ? 'username, score, best_hand, replay_id' : 'username, score, best_hand';
       const { data: rows, error } = await sb
         .from(table)
-        .select('username, score, best_hand, replay_id')
+        .select(selectCols)
         .order('score', { ascending: false })
         .limit(20);
 
       if (error) { wrap.innerHTML = '<div class="loading" style="color:#ff5252;">오류: ' + error.message + '</div>'; return; }
       if (!rows || rows.length === 0) { wrap.innerHTML = '<div class="loading">아직 기록이 없습니다</div>'; return; }
 
-      let html = '<table class="leaderboard-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th><th></th></tr></thead><tbody>';
+      let html = '<table class="leaderboard-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th>' + (hasReplay ? '<th></th>' : '') + '</tr></thead><tbody>';
       rows.forEach((row, i) => {
         const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
-        const replayBtn = row.replay_id
+        const replayBtn = hasReplay && row.replay_id
           ? '<a href="replay.html?id=' + row.replay_id + '" class="lb-replay-btn" title="Replay">▶</a>'
           : '';
-        html += '<tr' + hl + '><td>' + (i + 1) + '</td><td>' + escapeHTML(row.username) + '</td><td>' + row.score + '</td><td>' + escapeHTML(row.best_hand || '-') + '</td><td>' + replayBtn + '</td></tr>';
+        html += '<tr' + hl + '><td>' + (i + 1) + '</td><td>' + escapeHTML(row.username) + '</td><td>' + row.score + '</td><td>' + escapeHTML(row.best_hand || '-') + '</td>' + (hasReplay ? '<td>' + replayBtn + '</td>' : '') + '</tr>';
       });
       html += '</tbody></table>';
       wrap.innerHTML = html;
@@ -112,7 +127,10 @@
     }
   }
 
-  loadLeaderboard();
+  // Auto-select tab from URL param
+  const urlTab = new URLSearchParams(location.search).get('mode');
+  if (urlTab === 'infinite') switchTab('infinite');
+  else loadLeaderboard();
 </script>
 </body>
 </html>
