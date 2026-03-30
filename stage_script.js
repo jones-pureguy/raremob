@@ -73,7 +73,7 @@ let stageCleared = false;
 function initState() {
   state = {
     grid: [], hands: [], selectedPath: [], isDragging: false,
-    timer: stageConfig ? Math.floor(stageConfig.timers.gameTime / 2) : 100,
+    timer: stageConfig ? stageConfig.timers.gameTime : 200,
     phase: 'playing', timerInterval: null, debugMode: false,
     currentScore: 0, removedCards: [],
   };
@@ -634,24 +634,24 @@ function dfsScan(r, c, cards, visited, path) {
 
 // ─── Timer ───
 function startTimer() {
-  const gameTimeCounts = stageConfig ? Math.floor(stageConfig.timers.gameTime / 2) : 100;
-  state.timer = gameTimeCounts;
+  const gameTime = stageConfig ? stageConfig.timers.gameTime : 200;
+  state.timer = gameTime;
   updateTimerDisplay();
   state.timerInterval = setInterval(() => {
     if (state.phase !== 'playing' || stageFailed || stageCleared) return;
     state.timer--;
     updateTimerDisplay();
     if (state.timer <= 0) endGame('gameover');
-  }, 2000);
+  }, 1000);
 }
 
 function updateTimerDisplay() {
-  const gameTimeCounts = stageConfig ? Math.floor(stageConfig.timers.gameTime / 2) : 100;
+  const gameTime = stageConfig ? stageConfig.timers.gameTime : 200;
   const numEl = document.getElementById('timerNum');
   const ringEl = document.getElementById('timerRing');
   const circumference = 2 * Math.PI * 16;
   numEl.textContent = Math.max(0, state.timer);
-  const offset = circumference * (1 - state.timer / gameTimeCounts);
+  const offset = circumference * (1 - state.timer / gameTime);
   ringEl.style.strokeDashoffset = offset;
   numEl.classList.remove('warning', 'urgent');
   if (state.timer <= 10) { numEl.classList.add('urgent'); ringEl.style.stroke = '#ff3333'; }

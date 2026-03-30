@@ -1,6 +1,6 @@
 // ─── DragON POKER — Infinite Mode ───
 
-const TIMER_SECONDS = 300;
+const TIMER_SECONDS = 600;
 const GRID_SIZE = 6;
 const HAND_SIZE = 5;
 
@@ -450,7 +450,7 @@ function startTimer() {
     state.timer--;
     updateTimerDisplay();
     if (state.timer <= 0) endGame('gameover');
-  }, 2000);
+  }, 1000);
 }
 
 function updateTimerDisplay() {

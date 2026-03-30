@@ -1,5 +1,5 @@
 // ─── Constants ───
-const TIMER_SECONDS = 100;
+const TIMER_SECONDS = 200;
 const GRID_SIZE = 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;
@@ -700,7 +700,7 @@ function startTimer() {
     if (state.timer <= 0) {
       endGame('gameover');
     }
-  }, 2000);
+  }, 1000);
 }
 
 function updateTimerDisplay() {

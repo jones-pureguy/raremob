@@ -25,7 +25,7 @@
 
   "timeBonus": {
     "enabled": true,
-    "perSecond": 1,
-    "_comment": "게임 종료 시 남은 초당 perSecond점 보너스"
+    "perSecond": 2,
+    "_comment": "게임 종료 시 남은 초당 2점 보너스 (실제 초수 기준)"
   }
 }
