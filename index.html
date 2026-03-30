@@ -81,6 +81,10 @@
     background: linear-gradient(160deg, #194f28 0%, #11361b 100%);
     border: 1px solid rgba(201,168,76,0.2);
   }
+  .btn-infinite {
+    background: linear-gradient(160deg, #1a0a3a 0%, #110722 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+  }
   .btn-challenge {
     background: linear-gradient(160deg, #2a4a1a 0%, #1c3211 100%);
     border: 1px solid rgba(201,168,76,0.25);
@@ -237,7 +241,19 @@
       </div>
     </div>
 
-    <!-- Row 2: CHALLENGE + PUZZLE -->
+    <!-- Row 2: INFINITE MODE -->
+    <div class="menu-row">
+      <button class="m-btn btn-large btn-infinite" onclick="location.href='infinite.html'">
+        INFINITE<br>MODE
+      </button>
+      <div class="menu-col-small">
+        <button class="m-btn btn-small btn-sub" onclick="location.href='leaderboard.html?mode=infinite'">
+          Ranking
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 3: CHALLENGE + PUZZLE -->
     <div class="menu-row">
       <button class="m-btn btn-medium btn-challenge" onclick="location.href='stage_select.html'">
         CHALLENGE<br>MODE

@@ -382,6 +382,69 @@ body::before {
   }
 }
 
+/* ── Combo Badge (Infinite Mode) ── */
+.combo-badge {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  top: 35%;
+  z-index: 61;
+  pointer-events: none;
+  text-align: center;
+  padding: 12px 32px;
+  background: linear-gradient(160deg, rgba(13,40,24,0.95) 0%, rgba(8,24,14,0.98) 100%);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(201,168,76,0.5);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.combo-badge.active {
+  opacity: 1;
+  animation: comboPop 1.5s forwards;
+}
+.combo-rank {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+}
+.combo-count {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(201,168,76,0.8);
+}
+.combo-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  color: #5CDB7A;
+  margin-top: 2px;
+}
+@keyframes comboPop {
+  0%   { opacity: 0; top: 38%; transform: translateX(-50%) scale(0.8); }
+  15%  { opacity: 1; top: 35%; transform: translateX(-50%) scale(1.1); }
+  25%  { transform: translateX(-50%) scale(1.0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; top: 20%; transform: translateX(-50%) scale(0.95); }
+}
+
+/* ── Infinite COLLECTED panel ── */
+.inf-hand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.3);
+  border-bottom: 0.5px solid rgba(255,255,255,0.05);
+}
+.inf-hand-row.active { color: var(--gold); }
+.inf-hand-row:last-child { border-bottom: none; }
+.inf-hand-label { flex: 1; }
+.inf-hand-count { font-weight: 700; min-width: 36px; text-align: right; }
+
 /* ── START Overlay ── */
 .start-overlay {
   position: fixed;
