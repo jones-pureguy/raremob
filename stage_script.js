@@ -882,6 +882,10 @@ function checkCondition(cond) {
     case 'ordered_straight': {
       return orderedStraightCount >= (cond.count_gte || 1);
     }
+    case 'unique_hands_gte': {
+      const uniqueRanks = new Set(state.hands.map(h => h.rank));
+      return uniqueRanks.size >= cond.count;
+    }
     case 'high_card_start': {
       // All hands must have started with highest value card — checked in finalizePath failTrigger
       return state.hands.length >= cond.count;

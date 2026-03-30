@@ -570,6 +570,10 @@ function checkCondition(cond) {
     case 'ordered_straight': {
       return orderedStraightCount >= (cond.count_gte || 1);
     }
+    case 'unique_hands_gte': {
+      const uniqueRanks = new Set(state.hands.map(h => h.rank));
+      return uniqueRanks.size >= cond.count;
+    }
     case 'grid_empty': {
       const remaining = state.grid.flat().filter(cell => cell && cell.card !== null).length;
       return remaining === 0;

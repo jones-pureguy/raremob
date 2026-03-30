@@ -506,6 +506,10 @@ function checkTutorialMission(mission, lastHand) {
     if (cond.type === 'hands_complete') {
       return state.hands.length >= (cond.count_gte || cond.count || MAX_HANDS);
     }
+    if (cond.type === 'unique_hands_gte') {
+      const uniqueRanks = new Set(state.hands.map(h => h.rank));
+      return uniqueRanks.size >= cond.count;
+    }
     return false;
   });
 }
