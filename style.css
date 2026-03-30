@@ -790,7 +790,7 @@ body::before {
 .removed-card {
   width: 36px;
   height: 36px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.557);
   border-radius: 4px;
   position: relative;
   display: flex;
