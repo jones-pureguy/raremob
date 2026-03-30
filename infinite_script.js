@@ -654,27 +654,30 @@ function endGame(reason) {
 }
 
 async function saveInfiniteLeaderboard(score) {
-  const playerId = localStorage.getItem('poker_player_id');
   const username = (localStorage.getItem('poker_username') || '').trim();
-  if (!playerId || !username || score <= 0) return;
+  if (!username || score <= 0) return;
 
   try {
-    const { data: existing } = await sb
+    // Ensure auth is initialized
+    const playerId = await initAuth();
+    if (!playerId) { console.warn('[Infinite] No auth, skipping leaderboard'); return; }
+
+    const { data: existing, error: fetchErr } = await sb
       .from('leaderboard_infinite')
       .select('score')
       .eq('player_id', playerId)
       .maybeSingle();
 
+    if (fetchErr) console.warn('[Infinite] Fetch existing:', fetchErr.message);
+
     if (!existing || score > existing.score) {
-      await sb.from('leaderboard_infinite').upsert({
+      const { error: upsertErr } = await sb.from('leaderboard_infinite').upsert({
         player_id: playerId,
         username,
         score,
-        best_hand: (() => {
-          const sorted = [...state.hands].sort((a,b) => b.rankValue - a.rankValue);
-          return sorted[0] ? sorted[0].label : null;
-        })(),
       }, { onConflict: 'player_id' });
+      if (upsertErr) console.error('[Infinite] Upsert error:', upsertErr.message);
+      else console.log('[Infinite] Leaderboard saved:', score);
     }
 
     // Fetch top score
