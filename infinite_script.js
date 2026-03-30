@@ -466,7 +466,10 @@ function updateTimerDisplay() {
 // ─── COLLECTED panel (rank counter) ───
 function updateHandPanel() {
   const panel = document.getElementById('handPanel');
-  panel.innerHTML = HAND_DISPLAY_ORDER.map(rankName => {
+  const col1 = HAND_DISPLAY_ORDER.slice(0, 5);
+  const col2 = HAND_DISPLAY_ORDER.slice(5, 10);
+
+  const renderCol = (ranks) => ranks.map(rankName => {
     const count = handCounts[rankName] || 0;
     const label = getInfiniteHandLabel(rankName);
     return `<div class="inf-hand-row ${count > 0 ? 'active' : ''}">
@@ -474,6 +477,11 @@ function updateHandPanel() {
       <span class="inf-hand-count">${count > 0 ? '×' + count : '—'}</span>
     </div>`;
   }).join('');
+
+  panel.innerHTML = `
+    <div class="inf-hand-col">${renderCol(col1)}</div>
+    <div class="inf-hand-col">${renderCol(col2)}</div>
+  `;
   document.getElementById('totalHandCount').textContent = totalHands;
 }
 

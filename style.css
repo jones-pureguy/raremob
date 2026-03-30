@@ -429,21 +429,31 @@ body::before {
   100% { opacity: 0; top: 20%; transform: translateX(-50%) scale(0.95); }
 }
 
-/* ── Infinite COLLECTED panel ── */
+/* ── Infinite COLLECTED panel (2-column) ── */
+.inf-hand-panel {
+  display: flex;
+  gap: 6px;
+  padding: 4px 8px;
+}
+.inf-hand-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .inf-hand-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 8px;
+  padding: 3px 6px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.3);
-  border-bottom: 0.5px solid rgba(255,255,255,0.05);
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.25);
+  border-bottom: 0.5px solid rgba(255,255,255,0.04);
 }
-.inf-hand-row.active { color: var(--gold); }
 .inf-hand-row:last-child { border-bottom: none; }
-.inf-hand-label { flex: 1; }
-.inf-hand-count { font-weight: 700; min-width: 36px; text-align: right; }
+.inf-hand-row.active { color: var(--gold); }
+.inf-hand-label { flex: 1; white-space: nowrap; overflow: hidden; }
+.inf-hand-count { font-weight: 700; min-width: 28px; text-align: right; }
 
 /* ── START Overlay ── */
 .start-overlay {

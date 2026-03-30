@@ -9,8 +9,31 @@
 <link rel="manifest" href="manifest.json">
 <title>DragON POKER - Infinite</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  body.infinite-mode { background: #0a0f1e; --inf-accent: #00D4FF; --inf-border: rgba(0,212,255,0.3); }
+  body.infinite-mode .timer-ring-fg { stroke: #00D4FF; }
+  body.infinite-mode .timer-num { color: #00D4FF; }
+  body.infinite-mode .current-score { color: #00D4FF; text-shadow: 0 0 12px rgba(0,212,255,0.5); }
+  body.infinite-mode .high-score span { color: rgba(0,212,255,0.6); }
+  body.infinite-mode .inf-panel-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,212,255,0.25); padding:6px 10px; }
+  body.infinite-mode .inf-panel-title { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(0,212,255,0.6); letter-spacing:0.12em; }
+  body.infinite-mode .inf-panel-count { font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:700; color:#00D4FF; }
+  body.infinite-mode .inf-hand-row.active { color:#00D4FF; }
+  body.infinite-mode .inf-hand-row.active .inf-hand-count { text-shadow:0 0 8px rgba(0,212,255,0.6); }
+  body.infinite-mode .inf-hand-row { border-color:rgba(0,212,255,0.08); }
+  body.infinite-mode .combo-badge { border-color:#00D4FF; box-shadow:0 0 30px rgba(0,212,255,0.5); }
+  body.infinite-mode .combo-count { color:#00D4FF; text-shadow:0 0 20px rgba(0,212,255,0.8); }
+  body.infinite-mode .hand-preview.valid { color:#00D4FF; border-color:#00D4FF; }
+  body.infinite-mode .start-box { border-color:rgba(0,212,255,0.5); box-shadow:0 4px 32px rgba(0,0,0,0.6),0 0 40px rgba(0,212,255,0.15); }
+  body.infinite-mode .start-title { color:#00D4FF; text-shadow:0 0 16px rgba(0,212,255,0.5); }
+  body.infinite-mode .start-btn { background:linear-gradient(160deg,#0a2a3a 0%,#061520 100%); border-color:rgba(0,212,255,0.6); color:#00D4FF; }
+  body.infinite-mode .modal { border-color:rgba(0,212,255,0.4); box-shadow:0 0 40px rgba(0,212,255,0.2); }
+  body.infinite-mode .drag-line { stroke:#00D4FF; }
+  body.infinite-mode .card.selected { border-color:#00D4FF; box-shadow:0 0 8px rgba(0,212,255,0.5); }
+  .start-combo-hint { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#00D4FF; text-align:center; margin-top:4px; letter-spacing:0.05em; }
+</style>
 </head>
-<body class="game-page">
+<body class="game-page infinite-mode">
 <div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
 
 <div class="back-fixed"><a href="index.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
@@ -53,10 +76,11 @@
 <!-- Combo badge -->
 <div class="combo-badge" id="comboBadge"></div>
 
-<div class="hand-panel">
-  <div class="hand-panel-title">COLLECTED <span>[ 총 <span id="totalHandCount">0</span>패 ]</span></div>
-  <div class="hand-slots" id="handPanel"></div>
+<div class="inf-panel-header">
+  <span class="inf-panel-title">COLLECTED</span>
+  <span class="inf-panel-count" id="totalHandCount">0</span>
 </div>
+<div class="hand-panel inf-hand-panel" id="handPanel"></div>
 
 <div class="removed-panel">
   <div class="removed-panel-title">REMOVED</div>
@@ -108,8 +132,9 @@
 </script>
 <div class="start-overlay" id="startOverlay">
   <div class="start-box">
-    <div class="start-title">DragON POKER</div>
-    <div class="start-subtitle">INFINITE MODE</div>
+    <div class="start-title">INFINITE MODE</div>
+    <div class="start-subtitle">600초 동안 최고 점수를 노려라!</div>
+    <div class="start-combo-hint">✦ 포카드 이상 패를 연속하면 콤보 점수!</div>
     <button class="start-btn" id="startBtn">▶ START</button>
   </div>
 </div>
