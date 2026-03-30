@@ -719,7 +719,7 @@ renderRemovedCards();
 
 setupEventListeners();
 
-BGM.init('./audio/Main_Theme.mp3');
+BGM.init('./audio/Infinite_Theme.mp3');
 initStartOverlay(() => {
   startTimer();
 });
