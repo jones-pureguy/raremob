@@ -275,8 +275,10 @@ function finalizePath() {
 
   updateScoreDisplay();
   updateHandPanel();
-  const displayLabel = getInfiniteHandLabel(rankName);
-  showScorePopup(displayLabel, earnedScore, hand.rank);
+  if (!COMBO_RANKS.has(hand.rank)) {
+    const displayLabel = getInfiniteHandLabel(rankName);
+    showScorePopup(displayLabel, earnedScore, hand.rank);
+  }
   removeCardsAndRefill(hand.rank);
 }
 
