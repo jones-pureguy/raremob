@@ -1,7 +1,7 @@
 // ─── DragON POKER — Infinite Mode ───
 
 const TIMER_SECONDS = 300;
-const GRID_SIZE = 7;
+const GRID_SIZE = 6;
 const HAND_SIZE = 5;
 
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -58,7 +58,7 @@ let infiniteScore = 0;
 
 // ─── Game State ───
 let state = {};
-let removedPool = []; // current REMOVED 3 cards
+let outsideCards = []; // 16 cards outside the grid
 
 function initState() {
   state = {
@@ -91,15 +91,15 @@ function cardFromId(id) {
 
 // ─── Grid Init & Render ───
 function initGrid() {
-  const deck = shuffle(createDeck());
-  state.removedCards = deck.splice(0, 3);
-  removedPool = [...state.removedCards];
-  const cards = deck.slice(0, 49);
+  const deck = shuffle(createDeck()); // 52 cards
+  const gridCards = deck.slice(0, 36);  // 6×6 = 36
+  outsideCards = deck.slice(36);         // remaining 16
+
   state.grid = [];
   let idx = 0;
   for (let r = 0; r < GRID_SIZE; r++) {
     const row = [];
-    for (let c = 0; c < GRID_SIZE; c++) row.push({ card: cards[idx++], row: r, col: c });
+    for (let c = 0; c < GRID_SIZE; c++) row.push({ card: gridCards[idx++], row: r, col: c });
     state.grid.push(row);
   }
 }
@@ -396,11 +396,11 @@ function removeCardsAndRefill(rank) {
     affectedCols.forEach(col => applyGravityToColumn(col));
     Sound.cardDrop();
 
-    // Pool = 5 removed + 3 REMOVED = 8, pick 5 for grid, 3 become new REMOVED
-    const pool = [...removedCards, ...removedPool].filter(Boolean);
-    const shuffled = pool.sort(() => Math.random() - 0.5);
-    const toGrid = shuffled.slice(0, 5);
-    const newRemoved = shuffled.slice(5);
+    // Pool = 16 outside + 5 removed = 21, pick 5 for grid, 16 remain outside
+    const pool = [...outsideCards, ...removedCards].filter(Boolean);
+    shuffle(pool);
+    const toGrid = pool.slice(0, 5);
+    outsideCards = pool.slice(5); // always 16
 
     // Find empty cells (after gravity)
     const emptyCells = [];
@@ -409,17 +409,13 @@ function removeCardsAndRefill(rank) {
         if (!state.grid[r][c].card) emptyCells.push([r, c]);
       }
     }
-    emptyCells.sort(() => Math.random() - 0.5);
+    shuffle(emptyCells);
     toGrid.forEach((card, i) => {
       if (i < emptyCells.length) {
         const [r, c] = emptyCells[i];
         state.grid[r][c].card = card;
       }
     });
-
-    // Update REMOVED
-    removedPool = newRemoved;
-    state.removedCards = removedPool;
 
     // Apply gravity again after refill
     for (let col = 0; col < GRID_SIZE; col++) applyGravityToColumn(col);
@@ -428,7 +424,14 @@ function removeCardsAndRefill(rank) {
     renderGrid();
     updateHandPanel();
     updateHandPreview();
-    renderRemovedCards();
+    renderOutsideCards();
+
+    // NO MORE MOVES check
+    setTimeout(() => {
+      if (state.phase === 'playing' && !scanForValidMoves()) {
+        endGame('nomoves');
+      }
+    }, 500);
   }, 300 + totalRemovalTime);
 }
 
@@ -446,7 +449,7 @@ function startTimer() {
     if (state.phase !== 'playing') return;
     state.timer--;
     updateTimerDisplay();
-    if (state.timer <= 0) endGame();
+    if (state.timer <= 0) endGame('gameover');
   }, 2000);
 }
 
@@ -559,16 +562,53 @@ function showComboBadge(handLabel, count, score) {
   setTimeout(() => badge.classList.remove('active'), 1500);
 }
 
-// ─── Removed Cards ───
-function renderRemovedCards() {
-  const container = document.getElementById('removedCards');
-  container.innerHTML = removedPool.map(card => {
+// ─── Outside Cards (8×2) ───
+function renderOutsideCards() {
+  const area = document.getElementById('outsideCardsArea');
+  if (!area) return;
+  const slots = Array(16).fill(null).map((_, i) => outsideCards[i] || null);
+  area.innerHTML = slots.map(card => {
+    if (!card) return `<div class="outside-card-slot empty"></div>`;
     const suitClass = 'suit-' + SUIT_NAMES[card.suit];
-    return `<div class="removed-card ${suitClass}">
-      <span class="card-value">${VALUE_NAMES[card.value]}</span>
-      <span class="card-suit">${card.suit}</span>
+    return `<div class="outside-card-slot ${suitClass}">
+      <span class="oc-val">${VALUE_NAMES[card.value]}</span>
+      <span class="oc-suit">${card.suit}</span>
     </div>`;
   }).join('');
+}
+
+// ─── Valid Move Scanner ───
+function scanForValidMoves() {
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (!state.grid[r][c].card) continue;
+      if (findHandFrom(r, c, [[r, c]], 1)) return true;
+    }
+  }
+  return false;
+}
+
+function findHandFrom(r, c, path, depth) {
+  if (depth >= HAND_SIZE) {
+    const cards = path.map(([pr, pc]) => state.grid[pr][pc].card);
+    const hand = evaluateHand(cards);
+    return isValidHand(hand);
+  }
+  const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  for (const [dr, dc] of dirs) {
+    let nr = r + dr, nc = c + dc;
+    while (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+      if (state.grid[nr][nc].card && !path.some(p => p[0] === nr && p[1] === nc)) {
+        path.push([nr, nc]);
+        if (findHandFrom(nr, nc, path, depth + 1)) return true;
+        path.pop();
+        break;
+      }
+      if (state.grid[nr][nc].card) break;
+      nr += dr; nc += dc;
+    }
+  }
+  return false;
 }
 
 // ─── Toast ───
@@ -579,8 +619,8 @@ function showToast(msg) {
   setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// ─── Game End (TIME UP only) ───
-function endGame() {
+// ─── Game End ───
+function endGame(reason) {
   state.phase = 'gameover';
   clearInterval(state.timerInterval);
 
@@ -588,13 +628,14 @@ function endGame() {
   const isNewHi = saveHighScore(finalScore);
   const highScore = Math.max(getHighScore(), finalScore);
 
-  // Best hand
   const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
   const best = sorted[0];
 
+  const title = reason === 'nomoves' ? i18n.t('modal.noMoreMoves') : i18n.t('modal.timeUp');
+
   const modal = document.getElementById('modal');
   modal.innerHTML = `
-    <h2>${i18n.t('modal.timeUp')}</h2>
+    <h2>${title}</h2>
     <div class="subtitle">${totalHands}패 완성</div>
     ${best ? `<div class="best-hand">${i18n.t('modal.best', { hand: best.label })}</div>` : ''}
     <div class="score">${i18n.t('modal.score', { score: finalScore })}</div>
@@ -666,7 +707,7 @@ function restartGame() {
   updateHandPanel();
   updateHandPreview();
   updateScoreDisplay();
-  renderRemovedCards();
+  renderOutsideCards();
   startTimer();
 }
 
@@ -715,7 +756,7 @@ initGrid();
 renderGrid();
 updateHandPanel();
 updateScoreDisplay();
-renderRemovedCards();
+renderOutsideCards();
 
 setupEventListeners();
 

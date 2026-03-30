@@ -19,7 +19,16 @@
   body.infinite-mode .inf-panel-title { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(0,212,255,0.75); letter-spacing:0.12em; }
   body.infinite-mode .inf-panel-count { font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:700; color:#00D4FF; }
   body.infinite-mode .inf-hand-row { font-size:0.72rem; }
-  body.infinite-mode .removed-panel-title { color:rgba(0,212,255,0.55); }
+  body.infinite-mode .grid { grid-template-columns: repeat(6, 1fr); }
+  .outside-cards-area { display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(2,1fr); gap:3px; padding:6px 8px; border-bottom:0.5px solid rgba(0,212,255,0.15); margin-bottom:4px; }
+  .outside-card-slot { aspect-ratio:3/4; background:white; border-radius:3px; border:0.5px solid rgba(0,0,0,0.1); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; line-height:1; }
+  .outside-card-slot.empty { background:rgba(0,212,255,0.04); border:0.5px dashed rgba(0,212,255,0.15); }
+  .outside-card-slot.suit-s { color:#1A1A1A; }
+  .outside-card-slot.suit-h { color:#2E7D32; }
+  .outside-card-slot.suit-d { color:#D32F2F; }
+  .outside-card-slot.suit-c { color:#1565C0; }
+  .oc-val { font-size:0.58rem; line-height:1; }
+  .oc-suit { font-size:0.65rem; line-height:1; }
   body.infinite-mode .inf-hand-row.active { color:#00D4FF; }
   body.infinite-mode .inf-hand-row.active .inf-hand-count { text-shadow:0 0 8px rgba(0,212,255,0.6); }
   body.infinite-mode .inf-hand-row { border-color:rgba(0,212,255,0.08); }
@@ -78,16 +87,13 @@
 <!-- Combo badge -->
 <div class="combo-badge" id="comboBadge"></div>
 
+<div class="outside-cards-area" id="outsideCardsArea"></div>
+
 <div class="inf-panel-header">
   <span class="inf-panel-title">COLLECTED</span>
   <span class="inf-panel-count" id="totalHandCount">0</span>
 </div>
 <div class="hand-panel inf-hand-panel" id="handPanel"></div>
-
-<div class="removed-panel">
-  <div class="removed-panel-title">REMOVED</div>
-  <div class="removed-cards" id="removedCards"></div>
-</div>
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modal"></div>
