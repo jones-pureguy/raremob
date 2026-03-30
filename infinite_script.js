@@ -829,10 +829,6 @@ function restartGame() {
   startTimer();
 }
 
-// ─── Quick Reference ───
-document.querySelector('.qr-btn').addEventListener('click', () => {
-  if (typeof QuickRef !== 'undefined') QuickRef.toggle();
-});
 
 // ─── Start Overlay ───
 function initStartOverlay(onStart) {
