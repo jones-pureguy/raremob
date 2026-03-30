@@ -562,17 +562,30 @@ function showComboBadge(handLabel, count, score) {
   setTimeout(() => badge.classList.remove('active'), 1500);
 }
 
-// ─── Outside Cards (8×2) ───
+// ─── Outside Cards (4-row suit-sorted) ───
+const SUIT_CONFIG = [
+  { suit: '♠', cls: 'spade',   symbol: '♠' },
+  { suit: '♥', cls: 'heart',   symbol: '♥' },
+  { suit: '♦', cls: 'diamond', symbol: '♦' },
+  { suit: '♣', cls: 'club',    symbol: '♣' }
+];
+
 function renderOutsideCards() {
   const area = document.getElementById('outsideCardsArea');
   if (!area) return;
-  const slots = Array(16).fill(null).map((_, i) => outsideCards[i] || null);
-  area.innerHTML = slots.map(card => {
-    if (!card) return `<div class="outside-card-slot empty"></div>`;
-    const suitClass = 'suit-' + SUIT_NAMES[card.suit];
-    return `<div class="outside-card-slot ${suitClass}">
-      <span class="oc-val">${VALUE_NAMES[card.value]}</span>
-      <span class="oc-suit">${card.suit}</span>
+
+  area.innerHTML = SUIT_CONFIG.map(({ suit, cls, symbol }) => {
+    const suitCards = outsideCards
+      .filter(card => card.suit === suit)
+      .sort((a, b) => b.value - a.value); // 내림차순 (A=14 first)
+
+    const cardsHTML = suitCards.map(card =>
+      `<span class="oc-card ${cls}">${VALUE_NAMES[card.value]}</span>`
+    ).join('');
+
+    return `<div class="oc-row">
+      <span class="oc-suit-label ${cls}">${symbol}</span>
+      <div class="oc-card-list">${cardsHTML || '<span class="oc-empty">—</span>'}</div>
     </div>`;
   }).join('');
 }
