@@ -412,16 +412,22 @@
 
     if (data) {
       const dbGold = data.gold || 0;
-      const localGold = parseInt(localStorage.getItem('poker_gold') || '0');
+      const localRaw = localStorage.getItem('poker_gold');
+      const localGold = parseInt(localRaw || '0');
 
-      if (localGold !== dbGold) {
-        // 차이가 있으면 더 높은 쪽을 신뢰 (로컬 획득 or DB 획득 모두 보존)
-        const resolvedGold = Math.max(localGold, dbGold);
-        localStorage.setItem('poker_gold', resolvedGold);
-        if (resolvedGold !== dbGold) {
-          sb.from('players').update({ gold: resolvedGold }).eq('id', playerId)
-            .then(({ error }) => { if (error) console.error('Gold sync error:', error); });
-        }
+      let resolvedGold;
+      if (localRaw === null) {
+        // 첫 진입 — DB 값을 local에 세팅
+        resolvedGold = dbGold;
+      } else {
+        // local storage가 source of truth
+        resolvedGold = localGold;
+      }
+
+      localStorage.setItem('poker_gold', resolvedGold);
+      if (resolvedGold !== dbGold) {
+        sb.from('players').update({ gold: resolvedGold }).eq('id', playerId)
+          .then(({ error }) => { if (error) console.error('Gold sync error:', error); });
       }
 
       localStorage.removeItem('poker_gold_pending_deduct');
