@@ -1389,6 +1389,7 @@ body.debug-mode .card .debug-info { display: block; }
   width: 100%;
 }
 .tut-grid-area .grid-container {
+  position: relative;
   max-width: 340px;
   width: 90%;
   margin: 0 auto;
@@ -1396,11 +1397,12 @@ body.debug-mode .card .debug-info { display: block; }
 }
 .tut-grid-area .hand-preview {
   position: absolute;
-  bottom: 4px;
+  bottom: -24px;
   left: 50%;
   transform: translateX(-50%);
   width: auto;
   padding: 4px 16px;
+  z-index: 5;
 }
 
 .tut-restart-btn {
