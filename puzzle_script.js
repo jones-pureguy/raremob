@@ -48,7 +48,7 @@ function getFailMessage(reason) {
   return messages[reason];
 }
 
-const HINT_COSTS = { 1: 30, 2: 60, 3: 90 };
+const HINT_COSTS = { 1: 30, 2: 30, 3: 30 };
 
 // ─── Game State ───
 let state = {};
@@ -666,7 +666,7 @@ function triggerPuzzleComplete() {
   state.phase = 'complete';
 
   const goldBase = puzzleConfig.rewards.gold;
-  const hintBonus = hintLevel === 0 ? Math.floor(goldBase * 0.6) : 0;
+  const hintBonus = hintLevel === 0 ? Math.floor(goldBase * 1) : 0;
   const totalGold = goldBase + hintBonus;
 
   const progress = JSON.parse(localStorage.getItem('poker_puzzle_progress') || '{}');
