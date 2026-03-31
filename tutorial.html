@@ -30,23 +30,25 @@
 
     <!-- 리스타트 버튼 -->
     <button class="tut-restart-btn" id="tutRestartBtn" onclick="tutorialRestart()" disabled>↺</button>
+
+    <!-- 대화 오버레이 (그리드 위에 뜨는 반투명 패널) -->
+    <div class="tut-dialog-overlay" id="tutDialogOverlay">
+      <div class="tut-dialog-inner">
+        <div class="tut-character">
+          <img src="./images/portrait.webp" alt="Dragon" class="tut-dragon-img">
+        </div>
+        <div class="tut-bubble">
+          <p class="tut-dialog-text" id="tutDialogText"></p>
+          <button class="tut-next-btn" id="tutNextBtn">NEXT ▶</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- 액션 프롬프트 -->
+  <!-- instruction phase용 하단 힌트 -->
   <div class="tut-action-prompt" id="tutActionPrompt">
     <span class="tut-action-arrow">↑</span>
     <span class="tut-action-text" id="tutActionText">드래그 해보세요!</span>
-  </div>
-
-  <!-- 다이얼로그 영역 -->
-  <div class="tut-dialog-area" id="tutDialogArea">
-    <div class="tut-character">
-      <img src="./images/portrait.webp" alt="Dragon" class="tut-dragon-img">
-    </div>
-    <div class="tut-bubble">
-      <p class="tut-dialog-text" id="tutDialogText"></p>
-      <button class="tut-next-btn" id="tutNextBtn">NEXT ▶</button>
-    </div>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

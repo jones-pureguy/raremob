@@ -598,47 +598,23 @@ function setupDragEvents() {
 }
 
 function setupDialogEvents() {
-  // NEXT button
-  const nextBtn = document.getElementById('tutNextBtn');
-  let btnTouched = false;
-  nextBtn.addEventListener('touchend', e => {
-    e.preventDefault();
-    e.stopPropagation();
-    btnTouched = true;
-    onDialogClick();
-  }, { passive: false });
-  nextBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    if (btnTouched) { btnTouched = false; return; }
-    onDialogClick();
-  });
+  const overlay = document.getElementById('tutDialogOverlay');
 
-  // Full-screen tap (for non-instruction phases)
-  let bodyTouched = false;
-  document.body.addEventListener('touchend', e => {
+  // Overlay tap/click (covers NEXT button and background)
+  let overlayTouched = false;
+  overlay.addEventListener('touchend', e => {
     if (waitingForMission) return;
     if (tutorialEnded) return;
     if (!tutorialStarted) return;
-    // Ignore if touch was on grid (drag events)
-    if (e.target.closest('.grid-container')) return;
-    if (e.target.closest('.tut-next-btn')) return;
-    if (e.target.closest('.tut-skip-btn')) return;
-    if (e.target.closest('.tut-restart-btn')) return;
-    if (e.target.closest('.start-overlay')) return;
     e.preventDefault();
-    bodyTouched = true;
+    overlayTouched = true;
     onDialogClick();
   }, { passive: false });
-  document.body.addEventListener('click', e => {
+  overlay.addEventListener('click', e => {
     if (waitingForMission) return;
     if (tutorialEnded) return;
     if (!tutorialStarted) return;
-    if (e.target.closest('.grid-container')) return;
-    if (e.target.closest('.tut-next-btn')) return;
-    if (e.target.closest('.tut-skip-btn')) return;
-    if (e.target.closest('.tut-restart-btn')) return;
-    if (e.target.closest('.start-overlay')) return;
-    if (bodyTouched) { bodyTouched = false; return; }
+    if (overlayTouched) { overlayTouched = false; return; }
     onDialogClick();
   });
 }
@@ -687,7 +663,7 @@ function showCurrentDialog() {
 
   const textEl = document.getElementById('tutDialogText');
   const nextBtn = document.getElementById('tutNextBtn');
-  const areaEl = document.getElementById('tutDialogArea');
+  const overlay = document.getElementById('tutDialogOverlay');
 
   // Typing effect
   typeText(textEl, text);
@@ -698,13 +674,13 @@ function showCurrentDialog() {
 
   // Instruction phase = waiting for mission
   if (phase.phase === 'instruction') {
-    areaEl.classList.add('instruction-mode');
+    overlay.classList.add('hidden');
     nextBtn.classList.add('hidden');
     waitingForMission = true;
     if (promptText) promptText.textContent = i18n.t('tutorial.actionPrompt') || '드래그 해보세요!';
     if (prompt) prompt.classList.add('active');
   } else {
-    areaEl.classList.remove('instruction-mode');
+    overlay.classList.remove('hidden');
     nextBtn.classList.remove('hidden');
     waitingForMission = false;
     if (prompt) prompt.classList.remove('active');
@@ -801,7 +777,6 @@ function onTutorialHandComplete(handData) {
   waitingForMission = false;
   currentPhaseIdx++;
   currentLineIdx = 0;
-  document.getElementById('tutDialogArea').classList.remove('instruction-mode');
   const prompt = document.getElementById('tutActionPrompt');
   if (prompt) prompt.classList.remove('active');
   setTimeout(() => showCurrentDialog(), 500);
@@ -820,7 +795,6 @@ function tutorialRestart() {
     waitingForMission = false;
     currentPhaseIdx++;
     currentLineIdx = 0;
-    document.getElementById('tutDialogArea').classList.remove('instruction-mode');
     document.getElementById('tutNextBtn').classList.remove('hidden');
     const prompt = document.getElementById('tutActionPrompt');
     if (prompt) prompt.classList.remove('active');
@@ -841,7 +815,7 @@ function tutorialRestart() {
     currentPhaseIdx = instrIdx;
     currentLineIdx = 0;
     waitingForMission = true;
-    document.getElementById('tutDialogArea').classList.add('instruction-mode');
+    document.getElementById('tutDialogOverlay').classList.add('hidden');
     document.getElementById('tutNextBtn').classList.add('hidden');
     showCurrentDialog();
   }

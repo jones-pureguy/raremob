@@ -1454,20 +1454,34 @@ body.debug-mode .card .debug-info { display: block; }
   50%       { opacity: 0.3; transform: translateY(-3px); }
 }
 
-.tut-dialog-area {
-  flex-shrink: 0;
-  min-height: 140px;
-  max-height: 200px;
+/* ── Tutorial Dialog Overlay ── */
+.tut-dialog-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(10, 31, 20, 0.88);
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  background: rgba(0,0,0,0.35);
-  border-top: 1px solid rgba(201,168,76,0.2);
+  align-items: flex-end;
+  padding: 16px 14px;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: auto;
+  transition: opacity 0.25s ease;
+}
+.tut-dialog-overlay.hidden {
+  display: none;
+}
+
+.tut-dialog-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 120px;
 }
 
 .tut-character {
@@ -1522,13 +1536,4 @@ body.debug-mode .card .debug-info { display: block; }
 @keyframes tut-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
-}
-
-.tut-dialog-area.instruction-mode {
-  border-top: 1px solid rgba(201,168,76,0.6);
-  background: rgba(201,168,76,0.06);
-}
-.tut-dialog-area.instruction-mode .tut-dragon-img {
-  border-color: var(--gold);
-  box-shadow: 0 0 12px rgba(201,168,76,0.4);
 }
