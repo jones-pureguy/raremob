@@ -677,7 +677,8 @@ function showCurrentDialog() {
     overlay.classList.add('hidden');
     nextBtn.classList.add('hidden');
     waitingForMission = true;
-    if (promptText) promptText.textContent = i18n.t('tutorial.actionPrompt') || '드래그 해보세요!';
+    const instrText = text || i18n.t('tutorial.actionPrompt') || '드래그 해보세요!';
+    if (promptText) promptText.textContent = instrText;
     if (prompt) prompt.classList.add('active');
   } else {
     overlay.classList.remove('hidden');
