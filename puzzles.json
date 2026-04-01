@@ -536,7 +536,7 @@
       "","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","7s","7d","10c","6c","9c","","","5s","8c","3c","6d","4h",""
     ]
   },
-    {
+   {
     "id": 7,
     "title": {
       "ko": "포카드로 가는 길"
@@ -592,6 +592,64 @@
     },
     "initialDeck": [
       "","","","","","","","","","","","As","Jh","","","","Ah","","Kc","10s","","","","2h","2s","9c","9s","","","3s","7d","Ad","4s","Js","","4c","2d","8d","8h","3d","Qs","","Ac","6h","8s","5h","3c","6s",""																					
+    ]
+  },
+  {
+    "id": 8,
+    "title": {
+      "ko": "어떤 마크가 진짜?"
+    },
+    "description": {
+      "ko": "점프없이 로열플러쉬PLUS를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 1,
+          "description": "로열플러쉬PLUS 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 7
+    },
+    "hint": {
+      "level1": {
+        "ko": "패를 만들 수 있는 건 ♥ 뿐이에요. 10♥ → J♥ → Q♥ → K♥ → A♥ 순서로 드래그하려면?"
+      },
+      "level2": {
+        "ko": "첫 턴에 J♦ → Q♦ → K♦ → A♦ → 10♣ 순서로 드래그하세요."
+      },
+      "level3": {
+        "ko": "두번째 턴에 J♠ → Q♠ → 6♥ → K♠ → J♣ 순서로 드래그하세요."
+      }
+    },
+    "initialDeck": [
+      "7c","3s","4s","5s","6s","7s","8s","Ac","9c","10h","4c","10d","2h","3h","6c","8c","10s","5c","Kh","4h","5h","5d","6d","Jd","As","Jc","7h","8h","4d","7d","Qd","Jh","Ks","9h","9s","3d","8d","Kd","Ah","6h","Qs","Js","2d","9d","Ad","10c","Qh","Qc","Kc"
     ]
   }
 ]
