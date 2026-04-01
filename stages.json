@@ -41,7 +41,7 @@
       ]
     },
     "rewards": {
-      "gold": 30,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -89,7 +89,7 @@
       ]
     },
     "rewards": {
-      "gold": 40,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -138,7 +138,7 @@
       ]
     },
     "rewards": {
-      "gold": 40,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -189,7 +189,7 @@
       ]
     },
     "rewards": {
-      "gold": 50,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -240,7 +240,7 @@
       ]
     },
     "rewards": {
-      "gold": 60,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -291,7 +291,7 @@
       ]
     },
     "rewards": {
-      "gold": 60,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -341,7 +341,7 @@
       ]
     },
     "rewards": {
-      "gold": 70,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -390,7 +390,7 @@
       ]
     },
     "rewards": {
-      "gold": 70,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -439,7 +439,7 @@
       ]
     },
     "rewards": {
-      "gold": 70,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -490,7 +490,7 @@
       ]
     },
     "rewards": {
-      "gold": 80,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -539,7 +539,7 @@
       ]
     },
     "rewards": {
-      "gold": 90,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -595,7 +595,7 @@
       ]
     },
     "rewards": {
-      "gold": 100,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -650,7 +650,7 @@
       ]
     },
     "rewards": {
-      "gold": 100,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -699,11 +699,11 @@
       ]
     },
     "rewards": {
-      "gold": 100,
+      "gold": 10,
       "bonus": [
         {
           "condition": "finalScore >= 200",
-          "gold": 50,
+          "gold": 10,
           "description": "200점 이상 보너스"
         }
       ]
@@ -754,7 +754,7 @@
       ]
     },
     "rewards": {
-      "gold": 110,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -805,7 +805,7 @@
       ]
     },
     "rewards": {
-      "gold": 120,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -855,7 +855,7 @@
       ]
     },
     "rewards": {
-      "gold": 120,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -906,7 +906,7 @@
       ]
     },
     "rewards": {
-      "gold": 130,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -955,7 +955,7 @@
       ]
     },
     "rewards": {
-      "gold": 130,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -1004,11 +1004,11 @@
       ]
     },
     "rewards": {
-      "gold": 140,
+      "gold": 10,
       "bonus": [
         {
           "condition": "finalScore >= 300",
-          "gold": 70,
+          "gold": 10,
           "description": "300점 이상 보너스"
         }
       ]
@@ -1061,7 +1061,7 @@
       ]
     },
     "rewards": {
-      "gold": 140,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -1112,7 +1112,7 @@
       ]
     },
     "rewards": {
-      "gold": 140,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -1161,7 +1161,7 @@
       ]
     },
     "rewards": {
-      "gold": 150,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -1212,11 +1212,11 @@
       ]
     },
     "rewards": {
-      "gold": 150,
+      "gold": 10,
       "bonus": [
         {
           "condition": "resetUsed === 0",
-          "gold": 70,
+          "gold": 10,
           "description": "리셋 미사용 보너스"
         }
       ]
@@ -1267,7 +1267,7 @@
       ]
     },
     "rewards": {
-      "gold": 150,
+      "gold": 10,
       "bonus": []
     },
     "unlockCondition": {
@@ -1317,11 +1317,11 @@
       ]
     },
     "rewards": {
-      "gold": 160,
+      "gold": 15,
       "bonus": [
         {
           "condition": "stageTimeRemaining >= 150",
-          "gold": 80,
+          "gold": 10,
           "description": "150초 이상 남기기"
         }
       ]
@@ -1379,7 +1379,7 @@
       ]
     },
     "rewards": {
-      "gold": 160,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1430,7 +1430,7 @@
       ]
     },
     "rewards": {
-      "gold": 170,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1479,7 +1479,7 @@
       ]
     },
     "rewards": {
-      "gold": 170,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1528,7 +1528,7 @@
       ]
     },
     "rewards": {
-      "gold": 180,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1578,7 +1578,7 @@
       ]
     },
     "rewards": {
-      "gold": 180,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1631,7 +1631,7 @@
       ]
     },
     "rewards": {
-      "gold": 190,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1680,7 +1680,7 @@
       ]
     },
     "rewards": {
-      "gold": 190,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1731,7 +1731,7 @@
       ]
     },
     "rewards": {
-      "gold": 200,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1780,7 +1780,7 @@
       ]
     },
     "rewards": {
-      "gold": 200,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1829,7 +1829,7 @@
       ]
     },
     "rewards": {
-      "gold": 210,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1879,7 +1879,7 @@
       ]
     },
     "rewards": {
-      "gold": 210,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1934,7 +1934,7 @@
       ]
     },
     "rewards": {
-      "gold": 200,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -1946,7 +1946,7 @@
   {
     "id": 39,
     "title": {
-      "ko": "점프 활용 패 만들기"
+      "ko": "점프 입문"
     },
     "description": {
       "ko": "점프 이동을 사용한 패를 2개 이상 만들고 9개 패를 완성하세요."
@@ -1989,7 +1989,7 @@
       ]
     },
     "rewards": {
-      "gold": 210,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2004,7 +2004,7 @@
       "ko": "쓰리카인드 컬렉터"
     },
     "description": {
-      "ko": "쓰리오브어카인드를 4개 이상 만드세요."
+      "ko": "쓰리오브어카인드를 5개 이상 만드세요."
     },
     "theme": {
       "bgColor": "#1a0a1a",
@@ -2033,14 +2033,14 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "THREE_KIND",
-          "count_gte": 4,
+          "count_gte": 5,
           "exact": true,
-          "description": "쓰리카인드 4개 이상"
+          "description": "쓰리카인드 5개 이상"
         }
       ]
     },
     "rewards": {
-      "gold": 220,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2089,7 +2089,7 @@
       ]
     },
     "rewards": {
-      "gold": 230,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2138,7 +2138,7 @@
       ]
     },
     "rewards": {
-      "gold": 230,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2189,7 +2189,7 @@
       ]
     },
     "rewards": {
-      "gold": 240,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2240,7 +2240,7 @@
       ]
     },
     "rewards": {
-      "gold": 240,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2291,7 +2291,7 @@
       ]
     },
     "rewards": {
-      "gold": 250,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2342,7 +2342,7 @@
       ]
     },
     "rewards": {
-      "gold": 250,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2357,7 +2357,7 @@
       "ko": "원,투페어 금지"
     },
     "description": {
-      "ko": "원페어와 투페어를 한 번도 만들지 않고 7개 이상의 패를 완성하세요."
+      "ko": "원페어와 투페어를 한 번도 만들지 않고 8개 이상의 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a1a2e",
@@ -2388,13 +2388,13 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 7,
-          "description": "7개 이상 패 완성 (원,투페어 없이)"
+          "count_gte": 8,
+          "description": "8개 이상 패 완성 (원,투페어 없이)"
         }
       ]
     },
     "rewards": {
-      "gold": 260,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2409,7 +2409,7 @@
       "ko": "클로버 수호자"
     },
     "description": {
-      "ko": "9개 패 완성 시 그리드에 클로버가 4장 이상 남아있어야 합니다.(40점 이상)"
+      "ko": "9개 패 완성 시 그리드에 클로버가 4장 이상 남아있어야 합니다.(75점 이상)"
     },
     "theme": {
       "bgColor": "#0a1f0a",
@@ -2450,13 +2450,13 @@
         {
           "id": "c3",
           "type": "score_gte",
-          "value": 40,
-          "description": "40점 이상"
+          "value": 75,
+          "description": "75점 이상"
         }
       ]
     },
     "rewards": {
-      "gold": 260,
+      "gold": 15,
       "bonus": []
     },
     "unlockCondition": {
@@ -2517,11 +2517,11 @@
       ]
     },
     "rewards": {
-      "gold": 280,
+      "gold": 15,
       "bonus": [
         {
           "condition": "stageTimeRemaining >= 70",
-          "gold": 120,
+          "gold": 10,
           "description": "70초 이상 남기기"
         }
       ]
@@ -2572,11 +2572,11 @@
       ]
     },
     "rewards": {
-      "gold": 300,
+      "gold": 15,
       "bonus": [
         {
           "condition": "finalScore >= 350",
-          "gold": 150,
+          "gold": 10,
           "description": "350점 이상 보너스"
         }
       ]
@@ -2593,7 +2593,7 @@
       "ko": "에이스 금지"
     },
     "description": {
-      "ko": "에이스(A)가 포함된 패를 만들지 않고 7개 이상 패를 완성하세요."
+      "ko": "에이스(A)가 포함된 패를 만들지 않고 8개 이상 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a0a1f",
@@ -2623,13 +2623,13 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 7,
-          "description": "7개 이상 패 완성 (에이스 없이)"
+          "count_gte": 8,
+          "description": "8개 이상 패 완성 (에이스 없이)"
         }
       ]
     },
     "rewards": {
-      "gold": 280,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2678,7 +2678,7 @@
       ]
     },
     "rewards": {
-      "gold": 290,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2728,7 +2728,7 @@
       ]
     },
     "rewards": {
-      "gold": 290,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2777,7 +2777,7 @@
       ]
     },
     "rewards": {
-      "gold": 300,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2826,7 +2826,7 @@
       ]
     },
     "rewards": {
-      "gold": 300,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2876,7 +2876,7 @@
       ]
     },
     "rewards": {
-      "gold": 300,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2927,7 +2927,7 @@
       ]
     },
     "rewards": {
-      "gold": 310,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -2939,45 +2939,52 @@
   {
     "id": 58,
     "title": {
-      "ko": "막다른 길 심화"
+      "ko": "Royal Flush+"
     },
     "description": {
-      "ko": "5개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)"
+      "ko": "50초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!"
     },
     "theme": {
-      "bgColor": "#1a0a0a",
-      "accentColor": "#c0392b",
+      "bgColor": "#1a1200",
+      "accentColor": "#f1c40f",
       "cardBack": "default"
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": null
+      "stageTime": 300
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "nomoves_before",
-          "count_lte": 5,
-          "description": "5개 완성까지 NO MORE MOVES"
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 1,
+          "description": "Royal Flush+ 1개"
         }
       ]
     },
     "rewards": {
-      "gold": 310,
-      "bonus": []
+      "gold": 20,
+      "bonus": [
+        {
+          "condition": "stageTimeRemaining >= 10",
+          "gold": 10,
+          "description": "10초 이상 남기기"
+        }
+      ]
     },
     "unlockCondition": {
       "type": "stage_clear",
@@ -3025,7 +3032,7 @@
       ]
     },
     "rewards": {
-      "gold": 320,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3080,7 +3087,7 @@
       ]
     },
     "rewards": {
-      "gold": 300,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3131,7 +3138,7 @@
       ]
     },
     "rewards": {
-      "gold": 320,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3146,7 +3153,7 @@
       "ko": "스페이드 수호자"
     },
     "description": {
-      "ko": "9개 패 완성 시 그리드에 스페이드가 4장 이상 남아있어야 합니다.(80점 이상)"
+      "ko": "9개 패 완성 시 그리드에 스페이드가 4장 이상 남아있어야 합니다.(100점 이상)"
     },
     "theme": {
       "bgColor": "#0a0a1a",
@@ -3187,13 +3194,13 @@
         {
           "id": "c3",
           "type": "score_gte",
-          "value": 80,
-          "description": "80점 이상"
+          "value": 100,
+          "description": "100점 이상"
         }
       ]
     },
     "rewards": {
-      "gold": 320,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3242,7 +3249,7 @@
       ]
     },
     "rewards": {
-      "gold": 330,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3291,7 +3298,7 @@
       ]
     },
     "rewards": {
-      "gold": 330,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3340,7 +3347,7 @@
       ]
     },
     "rewards": {
-      "gold": 340,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3391,11 +3398,11 @@
       ]
     },
     "rewards": {
-      "gold": 350,
+      "gold": 20,
       "bonus": [
         {
           "condition": "stageTimeRemaining >= 20",
-          "gold": 150,
+          "gold": 10,
           "description": "20초 이상 남기기"
         }
       ]
@@ -3412,7 +3419,7 @@
       "ko": "복합 도전 II"
     },
     "description": {
-      "ko": "리셋 없이, 직선만으로 150점 이상 달성하세요."
+      "ko": "리셋 없이, 점프 없이, 직선만으로 150점 이상 달성하세요."
     },
     "theme": {
       "bgColor": "#1a0a1a",
@@ -3426,7 +3433,7 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": false,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -3441,12 +3448,12 @@
           "id": "c1",
           "type": "score_gte",
           "value": 150,
-          "description": "150점 이상 (직선만, 리셋 없이)"
+          "description": "150점 이상 (직선만, 점프 없이, 리셋 없이)"
         }
       ]
     },
     "rewards": {
-      "gold": 360,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3503,7 +3510,7 @@
       ]
     },
     "rewards": {
-      "gold": 370,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3558,7 +3565,7 @@
       ]
     },
     "rewards": {
-      "gold": 380,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3607,11 +3614,11 @@
       ]
     },
     "rewards": {
-      "gold": 400,
+      "gold": 20,
       "bonus": [
         {
           "condition": "finalScore >= 400",
-          "gold": 200,
+          "gold": 10,
           "description": "400점 이상 보너스"
         }
       ]
@@ -3663,11 +3670,11 @@
       ]
     },
     "rewards": {
-      "gold": 420,
+      "gold": 20,
       "bonus": [
         {
           "condition": "stageTimeRemaining >= 100",
-          "gold": 180,
+          "gold": 10,
           "description": "100초 이상 남기기"
         }
       ]
@@ -3684,7 +3691,7 @@
       "ko": "4수트 수호자"
     },
     "description": {
-      "ko": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.(80점 이상)"
+      "ko": "9개 패 완성 시 4가지 수트가 각각 1장 이상 그리드에 남아있어야 합니다.(160점 이상)"
     },
     "theme": {
       "bgColor": "#0a0a1f",
@@ -3746,13 +3753,13 @@
         {
           "id": "c6",
           "type": "score_gte",
-          "value": 80,
-          "description": "80점 이상"
+          "value": 160,
+          "description": "160점 이상"
         }
       ]
     },
     "rewards": {
-      "gold": 420,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3807,7 +3814,7 @@
       ]
     },
     "rewards": {
-      "gold": 380,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3822,7 +3829,7 @@
       "ko": "복합 도전 III"
     },
     "description": {
-      "ko": "점프 없이, 에이스 금지, 플러시를 3개 이상 만들고 종료하세요."
+      "ko": "점프 없이, 에이스 금지, 플러시를 6개 이상 만들고 종료하세요."
     },
     "theme": {
       "bgColor": "#0a1a2e",
@@ -3853,14 +3860,14 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 3,
+          "count_gte": 6,
           "exact": true,
-          "description": "플러시 3개 이상 (점프 없이, 에이스 없이)"
+          "description": "플러시 6개 이상 (점프 없이, 에이스 없이)"
         }
       ]
     },
     "rewards": {
-      "gold": 400,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3872,10 +3879,10 @@
   {
     "id": 75,
     "title": {
-      "ko": "플스플스"
+      "ko": "플스플스플스플"
     },
     "description": {
-      "ko": "플러쉬와 스트레이트를 3개 이상씩 만드세요."
+      "ko": "플러쉬4개, 스트레이트를 3개 만드세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -3904,9 +3911,9 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "FLUSH",
-          "count_gte": 3,
+          "count_gte": 4,
           "exact": true,
-          "description": "플러시 3개 이상"
+          "description": "플러시 4개 이상"
         },
         {
           "id": "c2",
@@ -3919,7 +3926,7 @@
       ]
     },
     "rewards": {
-      "gold": 420,
+      "gold": 20,
       "bonus": []
     },
     "unlockCondition": {
@@ -3968,7 +3975,7 @@
       ]
     },
     "rewards": {
-      "gold": 420,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -3980,52 +3987,45 @@
   {
     "id": 77,
     "title": {
-      "ko": "Royal Flush+"
+      "ko": "막다른 길 심화"
     },
     "description": {
-      "ko": "50초 안에 Royal Flush+ 패를 하나 만드세요. 리셋을 활용하세요!"
+      "ko": "5개 패 완성 이내에 NO MORE MOVES 상황을 만드세요.(힌트 : 점프불가이니 양쪽 벽 사이를 비우세요)"
     },
     "theme": {
-      "bgColor": "#1a1200",
-      "accentColor": "#f1c40f",
+      "bgColor": "#1a0a0a",
+      "accentColor": "#c0392b",
       "cardBack": "default"
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": 300
+      "stageTime": null
     },
     "constraints": {
-      "resetLimit": null,
+      "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
+      "type": "end_of_game",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "specific_hand",
-          "hand": "ROYAL_FLUSH_PLUS",
-          "count_gte": 1,
-          "description": "Royal Flush+ 1개"
+          "type": "nomoves_before",
+          "count_lte": 5,
+          "description": "5개 완성까지 NO MORE MOVES"
         }
       ]
     },
     "rewards": {
-      "gold": 450,
-      "bonus": [
-        {
-          "condition": "stageTimeRemaining >= 10",
-          "gold": 200,
-          "description": "10초 이상 남기기"
-        }
-      ]
+      "gold": 25,
+      "bonus": []
     },
     "unlockCondition": {
       "type": "stage_clear",
@@ -4081,7 +4081,7 @@
       ]
     },
     "rewards": {
-      "gold": 480,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4132,7 +4132,7 @@
       ]
     },
     "rewards": {
-      "gold": 480,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4181,11 +4181,11 @@
       ]
     },
     "rewards": {
-      "gold": 550,
+      "gold": 25,
       "bonus": [
         {
           "condition": "finalScore >= 500",
-          "gold": 250,
+          "gold": 10,
           "description": "500점 이상 보너스"
         }
       ]
@@ -4245,11 +4245,11 @@
       ]
     },
     "rewards": {
-      "gold": 580,
+      "gold": 25,
       "bonus": [
         {
           "condition": "timeRemaining >= 50",
-          "gold": 250,
+          "gold": 10,
           "description": "50초 이상 남기기"
         }
       ]
@@ -4304,7 +4304,7 @@
       ]
     },
     "rewards": {
-      "gold": 560,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4328,7 +4328,7 @@
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": 600
+      "stageTime": 300
     },
     "constraints": {
       "resetLimit": null,
@@ -4354,7 +4354,7 @@
       ]
     },
     "rewards": {
-      "gold": 600,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4409,7 +4409,7 @@
       ]
     },
     "rewards": {
-      "gold": 580,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4458,7 +4458,7 @@
       ]
     },
     "rewards": {
-      "gold": 550,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4513,7 +4513,7 @@
       ]
     },
     "rewards": {
-      "gold": 620,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4537,7 +4537,7 @@
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": 700
+      "stageTime": 400
     },
     "constraints": {
       "resetLimit": null,
@@ -4563,11 +4563,11 @@
       ]
     },
     "rewards": {
-      "gold": 700,
+      "gold": 25,
       "bonus": [
         {
           "condition": "stageTimeRemaining >= 350",
-          "gold": 300,
+          "gold": 10,
           "description": "350초 이상 남기기"
         }
       ]
@@ -4618,7 +4618,7 @@
       ]
     },
     "rewards": {
-      "gold": 700,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4672,7 +4672,7 @@
       ]
     },
     "rewards": {
-      "gold": 680,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4684,14 +4684,14 @@
   {
     "id": 90,
     "title": {
-      "ko": "9연속 오름차순 + 점프 없이"
+      "ko": "1,3,5는 홀수 패"
     },
     "description": {
-      "ko": "점프 없이, 9개의 패를 모두 오름차순 랭크로 완성하세요."
+      "ko": "1,3,5,7,9번째 패를 홀수카드만으로 만들고,9개 패를 모두 완성하세요. (A홀수 인정)"
     },
     "theme": {
-      "bgColor": "#0a1f14",
-      "accentColor": "#00e5ff",
+      "bgColor": "#0a0a1f",
+      "accentColor": "#a29bfe",
       "cardBack": "default"
     },
     "timers": {
@@ -4701,27 +4701,41 @@
     "constraints": {
       "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
-      "failTrigger": "ascending_rank_broken",
+      "type": "end_of_game",
+      "failTrigger": "nth_hand_condition_violated",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "ascending_ranks",
-          "trackCount": 9,
-          "description": "점프 없이 9연속 오름차순"
+          "type": "nth_hand_condition",
+          "targets": [
+            1,
+            3,
+            5,
+            7,
+            9
+          ],
+          "condition": "all_odd",
+          "failMessage": "1,3,5,7,9번째 패는 홀수 카드만으로 구성해야 합니다",
+          "description": "1,3,5,7,9번째 패: 홀수 카드만"
+        },
+        {
+          "id": "c2",
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 완성"
         }
       ]
     },
     "rewards": {
-      "gold": 700,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4773,7 +4787,7 @@
       ]
     },
     "rewards": {
-      "gold": 720,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4823,7 +4837,7 @@
       ]
     },
     "rewards": {
-      "gold": 700,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4835,10 +4849,10 @@
   {
     "id": 93,
     "title": {
-      "ko": "전문가 복합 III"
+      "ko": "All different"
     },
     "description": {
-      "ko": "리셋 없이, 점프 없이, 9연속 오름차순으로 9개 패를 완성하고 400점 이상을 달성하세요."
+      "ko": "리셋 없이, 모두 다른 패로 9개를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a0000",
@@ -4852,37 +4866,31 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
-      "failTrigger": "ascending_rank_broken",
+      "type": "end_of_game",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "ascending_ranks",
-          "trackCount": 9,
-          "description": "9연속 오름차순"
-        },
-        {
-          "id": "c2",
-          "type": "score_gte",
-          "value": 400,
-          "description": "400점 이상"
+          "type": "unique_hands_gte",
+          "count": 9,
+          "description": "9개 패 모두 다른 패"
         }
       ]
     },
     "rewards": {
-      "gold": 800,
+      "gold": 25,
       "bonus": [
         {
           "condition": "finalScore >= 500",
-          "gold": 400,
+          "gold": 10,
           "description": "500점 이상 보너스"
         }
       ]
@@ -4896,10 +4904,10 @@
   {
     "id": 94,
     "title": {
-      "ko": "전문가 보스 III"
+      "ko": "대각선 매니아"
     },
     "description": {
-      "ko": "리셋 없이, 점프 없이, 대각선만으로, 스트레이트 이상 패를 3개 포함하여 300점 이상으로 종료하세요."
+      "ko": "리셋 없이, 대각선만으로, 스트레이트 이상 패를 4개 포함하여 250점 이상으로 종료하세요."
     },
     "theme": {
       "bgColor": "#1a0000",
@@ -4928,19 +4936,19 @@
           "id": "c1",
           "type": "specific_hand",
           "hand": "STRAIGHT",
-          "count_gte": 3,
-          "description": "스트레이트 이상 3개"
+          "count_gte": 4,
+          "description": "스트레이트 이상 4개"
         },
         {
           "id": "c2",
           "type": "score_gte",
-          "value": 300,
-          "description": "300점 이상"
+          "value": 250,
+          "description": "250점 이상"
         }
       ]
     },
     "rewards": {
-      "gold": 850,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -4990,29 +4998,29 @@
           "id": "c2",
           "type": "suit_remaining",
           "suit": "♠",
-          "count_gte": 3,
-          "description": "스페이드 3장 이상"
+          "count_gte": 1,
+          "description": "스페이드 1장 이상"
         },
         {
           "id": "c3",
           "type": "suit_remaining",
           "suit": "♥",
-          "count_gte": 3,
-          "description": "하트 3장 이상"
+          "count_gte": 1,
+          "description": "하트 1장 이상"
         },
         {
           "id": "c4",
           "type": "suit_remaining",
           "suit": "♦",
-          "count_gte": 3,
-          "description": "다이아 3장 이상"
+          "count_gte": 1,
+          "description": "다이아 1장 이상"
         },
         {
           "id": "c5",
           "type": "suit_remaining",
           "suit": "♣",
-          "count_gte": 3,
-          "description": "클로버 3장 이상"
+          "count_gte": 1,
+          "description": "클로버 1장 이상"
         },
         {
           "id": "c6",
@@ -5023,7 +5031,7 @@
       ]
     },
     "rewards": {
-      "gold": 850,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -5035,10 +5043,10 @@
   {
     "id": 96,
     "title": {
-      "ko": "전문가 복합 IV"
+      "ko": "오름차순 극한"
     },
     "description": {
-      "ko": "리셋 없이, 대각선만, 9연속 오름차순으로 9개 패를 완성하세요."
+      "ko": "9연속으로 등급을 올려가며 9개 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#001a00",
@@ -5052,9 +5060,9 @@
     "constraints": {
       "resetLimit": 0,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
-      "diagonalOnly": true,
+      "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": []
     },
@@ -5067,12 +5075,12 @@
           "id": "c1",
           "type": "ascending_ranks",
           "trackCount": 9,
-          "description": "대각선만으로 9연속 오름차순"
+          "description": "9연속 오름차순"
         }
       ]
     },
     "rewards": {
-      "gold": 900,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -5084,7 +5092,7 @@
   {
     "id": 97,
     "title": {
-      "ko": "전문가 보스 IV"
+      "ko": "원투쓰리 금지 + 350점"
     },
     "description": {
       "ko": "리셋 없이, 원페어/투페어/쓰리카인드 금지, 9개 패를 완성하고 350점 이상을 달성하세요."
@@ -5099,7 +5107,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": true,
       "diagonalAllowed": true,
@@ -5131,7 +5139,7 @@
       ]
     },
     "rewards": {
-      "gold": 950,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -5146,7 +5154,7 @@
       "ko": "타임 어택 극한"
     },
     "description": {
-      "ko": "20초 안에 8개 이상의 패를 완성하세요."
+      "ko": "20초 안에 9개의 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#1f0000",
@@ -5167,20 +5175,20 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
+      "type": "end_of_game",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 8,
-          "description": "8개 이상 완성"
+          "count_gte": 9,
+          "description": "9개 이상 완성"
         }
       ]
     },
     "rewards": {
-      "gold": 900,
+      "gold": 25,
       "bonus": []
     },
     "unlockCondition": {
@@ -5195,7 +5203,7 @@
       "ko": "전문가 최종 보스"
     },
     "description": {
-      "ko": "리셋 없이, 점프 없이, 원페어/투페어 금지, 9개 패를 완성하고 450점 이상으로 종료하세요."
+      "ko": "150초 안에 550점 이상으로 종료하세요."
     },
     "theme": {
       "bgColor": "#0a0000",
@@ -5203,46 +5211,37 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 150,
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": false,
-      "forbiddenHands": [
-        "ONE_PAIR",
-        "TWO_PAIR"
-      ],
+      "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
       "type": "end_of_game",
-      "failTrigger": "forbidden_hand_made",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "hands_complete",
-          "count": 9,
-          "description": "9개 패 완성"
-        },
-        {
-          "id": "c2",
           "type": "score_gte",
-          "value": 450,
-          "description": "450점 이상"
+          "value": 550,
+          "description": "550점 이상"
         }
       ]
     },
     "rewards": {
-      "gold": 1000,
+      "gold": 25,
       "bonus": [
         {
           "condition": "finalScore >= 550",
-          "gold": 500,
+          "gold": 10,
           "description": "550점 이상 보너스"
         }
       ]
@@ -5255,13 +5254,13 @@
   },
   {
     "id": 100,
-    "title": {
-      "ko": "DRAGON MASTER"
+        "title": {
+      "ko": "점프 그랜드 마스터"
     },
     "description": {
-      "ko": "리셋 없이, 대각선만, 원페어/투페어 금지, 9연속 오름차순으로 9개 패를 완성하고 300점 이상을 달성하세요."
+      "ko": "점프 이동을 사용한 패를 8개 이상 만들고 9개 패를 완성하세요."
     },
-    "theme": {
+   "theme": {
       "bgColor": "#000000",
       "accentColor": "#ffd700",
       "cardBack": "default"
@@ -5271,42 +5270,39 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
-      "diagonalOnly": true,
-      "forbiddenHands": [
-        "ONE_PAIR",
-        "TWO_PAIR"
-      ],
+      "diagonalOnly": false,
+      "forbiddenHands": [],
       "forbiddenValues": []
     },
     "mission": {
-      "type": "real_time",
-      "failTrigger": "ascending_rank_broken",
+      "type": "end_of_game",
+      "failTrigger": null,
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
-          "type": "ascending_ranks",
-          "trackCount": 9,
-          "description": "9연속 오름차순"
+          "type": "jump_hands_gte",
+          "count_gte": 8,
+          "description": "점프 사용 패 8개 이상"
         },
         {
           "id": "c2",
-          "type": "score_gte",
-          "value": 300,
-          "description": "300점 이상"
+          "type": "hands_complete",
+          "count": 9,
+          "description": "9개 패 완성"
         }
       ]
     },
     "rewards": {
-      "gold": 2000,
+      "gold": 25,
       "bonus": [
         {
           "condition": "finalScore >= 400",
-          "gold": 1000,
+          "gold": 10,
           "description": "400점 이상 보너스"
         }
       ]
