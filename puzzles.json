@@ -535,5 +535,63 @@
     "initialDeck": [
       "","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","7s","7d","10c","6c","9c","","","5s","8c","3c","6d","4h",""
     ]
+  },
+    {
+    "id": 7,
+    "title": {
+      "ko": "포카드로 가는 길"
+    },
+    "description": {
+      "ko": "포커드 패를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": false,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 1,
+          "description": "포카드 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 6
+    },
+    "hint": {
+      "level1": {
+        "ko": "네 장이 있는 카드는 A뿐이에요."
+      },
+      "level2": {
+        "ko": "첫 두 턴에 K♦ → 3♠ → K♥ → 2♠ → K♣와 8♦ → 8♠ → 5♥ → 3♣ → 3♦."
+      },
+      "level3": {
+        "ko": "6-9-8-7-10 순서의 스트레이트를 만들기 위해 ♠플러쉬를 잘 만들어보세요."
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","As","","","","","Ah","","Kc","10s","","","","Kh","2s","9c","9s","","","3s","7d","Ad","4s","Js","","4c","Kd","8d","8h","3d","Qs","","Ac","6h","8s","5h","3c","6s",""																					
+    ]
   }
 ]
