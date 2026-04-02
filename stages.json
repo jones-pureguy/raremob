@@ -1852,8 +1852,8 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
-      "stageTime": 400
+      "gameTime": 50,
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
@@ -1949,7 +1949,7 @@
       "ko": "점프 입문"
     },
     "description": {
-      "ko": "점프 이동을 사용한 패를 2개 이상 만들고 9개 패를 완성하세요."
+      "ko": "점프 이동을 사용한 패를 4개 이상 만들고 9개 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a1a2e",
@@ -1977,8 +1977,8 @@
         {
           "id": "c1",
           "type": "jump_hands_gte",
-          "count_gte": 2,
-          "description": "점프 사용 패 2개 이상"
+          "count_gte": 4,
+          "description": "점프 사용 패 4개 이상"
         },
         {
           "id": "c2",
@@ -2950,8 +2950,8 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
-      "stageTime": 300
+      "gameTime": 50,
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
@@ -3362,7 +3362,7 @@
       "ko": "포카드 트리플"
     },
     "description": {
-      "ko": "100초 안에 포카드 패를 3개 이상 만드세요. 리셋을 활용하세요!"
+      "ko": "100초 안에 포카드 패를 3개 이상 만드세요."
     },
     "theme": {
       "bgColor": "#0a0a1f",
@@ -3371,7 +3371,7 @@
     },
     "timers": {
       "gameTime": 100,
-      "stageTime": 100
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
@@ -3419,7 +3419,7 @@
       "ko": "복합 도전 II"
     },
     "description": {
-      "ko": "리셋 없이, 점프 없이, 직선만으로 150점 이상 달성하세요."
+      "ko": "대각선 불가, 점프 없이 150점 이상 달성하세요."
     },
     "theme": {
       "bgColor": "#1a0a1a",
@@ -3431,7 +3431,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": false,
       "diagonalAllowed": false,
@@ -3448,7 +3448,7 @@
           "id": "c1",
           "type": "score_gte",
           "value": 150,
-          "description": "150점 이상 (직선만, 점프 없이, 리셋 없이)"
+          "description": "150점 이상 (직선만, 점프 없이)"
         }
       ]
     },
@@ -3525,7 +3525,7 @@
       "ko": "점프 마스터"
     },
     "description": {
-      "ko": "점프 이동을 사용한 패를 5개 이상 만들고 9개 패를 완성하세요."
+      "ko": "점프 이동을 사용한 패를 6개 이상 만들고 9개 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a1a2e",
@@ -3553,8 +3553,8 @@
         {
           "id": "c1",
           "type": "jump_hands_gte",
-          "count_gte": 5,
-          "description": "점프 사용 패 5개 이상"
+          "count_gte": 6,
+          "description": "점프 사용 패 6개 이상"
         },
         {
           "id": "c2",
@@ -3852,7 +3852,7 @@
       ]
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_value_used",
       "completionMode": "all",
       "conditions": [
@@ -4002,7 +4002,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": false,
       "diagonalAllowed": true,
@@ -4117,7 +4117,7 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
       "conditions": [
@@ -4266,7 +4266,7 @@
       "ko": "티끌모아 태산"
     },
     "description": {
-      "ko": "스트레이트 플러시 이상의 패를 쓰지 않고 9개 패를 완성해서 250점 이상으로 종료하세요."
+      "ko": "스트레이트 플러시 이상의 패를 쓰지 않고 9개 패를 완성해서 350점 이상으로 종료하세요."
     },
     "theme": {
       "bgColor": "#1a0a0a",
@@ -4298,8 +4298,8 @@
         {
           "id": "c1",
           "type": "score_gte",
-          "value": 250,
-          "description": "250점 이상"
+          "value": 350,
+          "description": "350점 이상"
         }
       ]
     },
@@ -4319,7 +4319,7 @@
       "ko": "최고의 영예"
     },
     "description": {
-      "ko": "600초 안에 로열플러시+를 2개 만드세요."
+      "ko": "로열플러시+를 2개 만드세요."
     },
     "theme": {
       "bgColor": "#001a0a",
@@ -4328,7 +4328,7 @@
     },
     "timers": {
       "gameTime": 200,
-      "stageTime": 300
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
