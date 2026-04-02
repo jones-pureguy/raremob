@@ -4238,7 +4238,7 @@
         {
           "id": "c2",
           "type": "specific_hand",
-          "hand": "STRAIGHT FLUSH",
+          "hand": "STRAIGHT_FLUSH",
           "count_gte": 2,
           "description": "스트레이트 플러시 2개 이상"
         }
