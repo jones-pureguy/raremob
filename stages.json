@@ -4525,10 +4525,10 @@
   {
     "id": 87,
     "title": {
-      "ko": "순서 있는 SF 3"
+      "ko": "순서 있는 SF 2"
     },
     "description": {
-      "ko": "700초 안에 순서 있는 스트레이트 플러시를 3개 만드세요."
+      "ko": "300초 안에 순서 있는 스트레이트 플러시를 2개 만드세요."
     },
     "theme": {
       "bgColor": "#001a0a",
@@ -4536,8 +4536,8 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
-      "stageTime": 400
+      "gameTime": 300,
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
@@ -4557,20 +4557,14 @@
           "id": "c1",
           "type": "ordered_straight",
           "hand": "STRAIGHT_FLUSH",
-          "count_gte": 3,
-          "description": "순서 있는 SF 3개"
+          "count_gte": 2,
+          "description": "순서 있는 SF 2개"
         }
       ]
     },
     "rewards": {
       "gold": 25,
-      "bonus": [
-        {
-          "condition": "stageTimeRemaining >= 350",
-          "gold": 10,
-          "description": "350초 이상 남기기"
-        }
-      ]
+      "bonus": []
     },
     "unlockCondition": {
       "type": "stage_clear",
