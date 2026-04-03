@@ -1543,7 +1543,7 @@
       "ko": "순서 있는 스트레이트"
     },
     "description": {
-      "ko": "순서대로 드래그한 스트레이트를 2개 만드세요.(스티플인정/A2345불가)"
+      "ko": "순서대로 드래그한 스트레이트를 2개 만드세요.(스티플인정)"
     },
     "theme": {
       "bgColor": "#001a1a",
@@ -2841,7 +2841,7 @@
       "ko": "순서 있는 스트레이트 II"
     },
     "description": {
-      "ko": "순서대로 드래그한 스트레이트를 3개 만드세요.(스티플인정/A2345불가)"
+      "ko": "순서대로 드래그한 스트레이트를 3개 만드세요.(스티플인정)"
     },
     "theme": {
       "bgColor": "#001a1a",
@@ -3643,8 +3643,8 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
-      "stageTime": 400
+      "gameTime": 400,
+      "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
@@ -4528,7 +4528,7 @@
       "ko": "순서 있는 SF 2"
     },
     "description": {
-      "ko": "300초 안에 순서 있는 스트레이트 플러시를 2개 만드세요."
+      "ko": "300초 안에 A를 사용하지 않고 순서대로 이어지는 스트레이트 플러시를 2개 만드세요."
     },
     "theme": {
       "bgColor": "#001a0a",
@@ -4546,11 +4546,11 @@
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
-      "forbiddenValues": []
+      "forbiddenValues": [14]
     },
     "mission": {
       "type": "real_time",
-      "failTrigger": null,
+      "failTrigger": "forbidden_value_used",
       "completionMode": "all",
       "conditions": [
         {
