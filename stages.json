@@ -4627,7 +4627,7 @@
       "ko": "전문가 복합 I"
     },
     "description": {
-      "ko": "J/Q/K/A 금지, 200점 이상을 획득하세요."
+      "ko": "Q/K/A 금지, 200점 이상을 획득하세요."
     },
     "theme": {
       "bgColor": "#0a0000",
@@ -4646,7 +4646,6 @@
       "diagonalOnly": false,
       "forbiddenHands": [],
       "forbiddenValues": [
-        11,
         12,
         13,
         14
@@ -4744,7 +4743,7 @@
       "ko": "전문가 복합 II"
     },
     "description": {
-      "ko": "리셋 없이, 대각선만, 원페어/투페어 금지, 6개 이상 패를 완성하세요."
+      "ko": "대각선만, 원페어/투페어 금지, 6개 이상 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#1a0a2e",
@@ -4756,7 +4755,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": false,
       "diagonalAllowed": true,
@@ -4846,7 +4845,7 @@
       "ko": "All different"
     },
     "description": {
-      "ko": "리셋 없이, 모두 다른 패로 9개를 완성하세요."
+      "ko": "모두 다른 패로 9개를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a0000",
@@ -4858,7 +4857,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": true,
       "diagonalAllowed": true,
@@ -4901,7 +4900,7 @@
       "ko": "대각선 매니아"
     },
     "description": {
-      "ko": "리셋 없이, 대각선만으로, 스트레이트 이상 패를 4개 포함하여 250점 이상으로 종료하세요."
+      "ko": "대각선만으로, 스트레이트 이상 패를 4개 포함하여 250점 이상으로 종료하세요."
     },
     "theme": {
       "bgColor": "#1a0000",
@@ -4913,7 +4912,7 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
       "jumpAllowed": false,
       "diagonalAllowed": true,
@@ -5040,7 +5039,7 @@
       "ko": "오름차순 극한"
     },
     "description": {
-      "ko": "9연속으로 등급을 올려가며 9개 패를 완성하세요."
+      "ko": "점프없이 7연속으로 등급을 올려가며 7개 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#001a00",
@@ -5052,9 +5051,9 @@
       "stageTime": null
     },
     "constraints": {
-      "resetLimit": 0,
+      "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": true,
+      "jumpAllowed": false,
       "diagonalAllowed": true,
       "diagonalOnly": false,
       "forbiddenHands": [],
@@ -5068,8 +5067,8 @@
         {
           "id": "c1",
           "type": "ascending_ranks",
-          "trackCount": 9,
-          "description": "9연속 오름차순"
+          "trackCount": 7,
+          "description": "7연속 오름차순"
         }
       ]
     },
@@ -5089,7 +5088,7 @@
       "ko": "원투쓰리 금지 + 350점"
     },
     "description": {
-      "ko": "리셋 없이, 원페어/투페어/쓰리카인드 금지, 9개 패를 완성하고 350점 이상을 달성하세요."
+      "ko": "원페어/투페어/쓰리카인드 금지, 9개 패를 완성하고 350점 이상을 달성하세요."
     },
     "theme": {
       "bgColor": "#000a00",
@@ -5148,7 +5147,7 @@
       "ko": "타임 어택 극한"
     },
     "description": {
-      "ko": "20초 안에 9개의 패를 완성하세요."
+      "ko": "25초 안에 9개의 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#1f0000",
@@ -5156,7 +5155,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 20,
+      "gameTime": 25,
       "stageTime": null
     },
     "constraints": {
