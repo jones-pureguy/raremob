@@ -651,5 +651,61 @@
     "initialDeck": [
       "7c","3s","4s","5s","6s","7s","8s","Ac","9c","10h","4c","10d","2h","3h","6c","8c","10s","5c","Kh","4h","5h","5d","6d","Jd","As","Jc","7h","8h","4d","7d","Qd","Jh","Ks","9h","9s","3d","8d","Kd","Ah","6h","Qs","Js","2d","9d","Ad","10c","Qh","Qc","Kc"
     ]
-  }
+  },
+  {
+    "id": 9,
+    "title": {
+      "ko": "대청소"
+    },
+    "description": {
+      "ko": "그리드의 모든 카드를 없애세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "grid_empty",
+          "description": "그리드의 모든 카드를 없애세요"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 8
+    },
+    "hint": {
+      "level1": {
+        "ko": "첫번 째는 같은 마크 5개 로열플러쉬에요."
+      },
+      "level2": {
+        "ko": "스트레이트 두쌍이 가능해요."
+      },
+      "level3": {
+        "ko": "6-7-8-9-10과 2-3-4-5-6 스트레이트를 만드세요."
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","","","","","","","","2c","","","","6c","","","7s","","","","Qh","5s","","10s","","","","10h","9d","Ah","Jh","","","","3d","Kh","8d","6d","4s",""
+    ]
+  }  																					
 ]
