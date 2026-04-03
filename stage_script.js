@@ -384,14 +384,20 @@ function finalizePath() {
     const osConditions = stageConfig.mission.conditions.filter(c => c.type === 'ordered_straight');
     if (osConditions.length > 0) {
       const dragValues = cards.map(c => c.value);
-      let isOrdered = true;
-      // Check ascending
+      // Check ascending/descending
       let ascending = true, descending = true;
       for (let i = 1; i < dragValues.length; i++) {
         if (dragValues[i] !== dragValues[i-1] + 1) ascending = false;
         if (dragValues[i] !== dragValues[i-1] - 1) descending = false;
       }
-      isOrdered = ascending || descending;
+      // Also check with Ace as low (1) for A-2-3-4-5
+      const lowAceValues = dragValues.map(v => v === 14 ? 1 : v);
+      let ascLow = true, descLow = true;
+      for (let i = 1; i < lowAceValues.length; i++) {
+        if (lowAceValues[i] !== lowAceValues[i-1] + 1) ascLow = false;
+        if (lowAceValues[i] !== lowAceValues[i-1] - 1) descLow = false;
+      }
+      const isOrdered = ascending || descending || ascLow || descLow;
 
       for (const osc of osConditions) {
         const requiredRank = RANK_BY_NAME[osc.hand];
