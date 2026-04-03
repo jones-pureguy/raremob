@@ -536,7 +536,7 @@
       "","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","7s","7d","10c","6c","9c","","","5s","8c","3c","6d","4h",""
     ]
   },
-   {
+  {
     "id": 7,
     "title": {
       "ko": "포카드로 가는 길"
@@ -706,6 +706,64 @@
     },
     "initialDeck": [
       "","","","","","","","","","","","","","","","","","","2c","","","","6c","","","7s","","","","Qh","5s","","10s","","","","10h","9d","Ah","Jh","","","","3d","Kh","8d","6d","4s",""
+    ]
+  },
+  {
+    "id": 10,
+    "title": {
+      "ko": "스트레이트플러쉬 종합셋트"
+    },
+    "description": {
+      "ko": "스트레이트플러쉬 4개를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 4,
+          "description": "스트레이트플러쉬 4개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 9
+    },
+    "hint": {
+      "level1": {
+        "ko": "포카드를 먼저 만들어야 해요."
+      },
+      "level2": {
+        "ko": "K를 포함한 A포카드를 먼저 만드세요."
+      },
+      "level3": {
+        "ko": "하트-클로버-다이아-스페이드 순서로 2-3-4-5-6 스트레이트플러쉬를 만드세요."
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","","","","4s","","5d","","","","","3s","","5h","","Ac","4c","","5s","4d","4h","Ad","3d","Ah","","6d","2s","Ks","6c","5c","2h","","2d","As","3c","6h","3h","2c","6s"
     ]
   }  																					
 ]
