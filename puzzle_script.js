@@ -1,7 +1,11 @@
 // ─── Puzzle Mode Game Engine ───
 // Based on stage_script.js — no timer, no score, no reset, fixed deck
 
-// ─── Constants ───
+// =============================================
+// [LOGIC] 게임 로직 — Expo 전환 시 재활용
+// =============================================
+
+// ─── Constants ─── // [REUSE]
 const GRID_SIZE = 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;
@@ -32,14 +36,14 @@ const RANK_LABELS = {
   [RANK.ROYAL_FLUSH_PLUS]: 'Royal Flush+',
 };
 
-const RANK_CSS = {
+const RANK_CSS = { // [REUSE] (CSS 클래스 매핑 — Expo에서도 스타일 키로 재활용 가능)
   [RANK.ONE_PAIR]: 'one-pair', [RANK.TWO_PAIR]: 'two-pair', [RANK.THREE_KIND]: 'three-kind',
   [RANK.STRAIGHT]: 'straight', [RANK.FLUSH]: 'flush', [RANK.FULL_HOUSE]: 'full-house',
   [RANK.FOUR_KIND]: 'four-kind', [RANK.STRAIGHT_FLUSH]: 'straight-flush',
   [RANK.ROYAL_FLUSH]: 'royal-flush', [RANK.ROYAL_FLUSH_PLUS]: 'royal-flush-plus',
 };
 
-function getFailMessage(reason) {
+function getFailMessage(reason) { // [REUSE]
   const messages = {
     'forbidden_hand':    i18n.t('failReasons.forbiddenHand'),
     'forbidden_value':   i18n.t('failReasons.forbiddenValue'),
@@ -48,9 +52,9 @@ function getFailMessage(reason) {
   return messages[reason];
 }
 
-const HINT_COSTS = { 1: 30, 2: 30, 3: 30 };
+const HINT_COSTS = { 1: 30, 2: 30, 3: 30 }; // [REUSE]
 
-// ─── Game State ───
+// ─── Game State ─── // [REUSE]
 let state = {};
 let puzzleConfig = null;
 let allPuzzles = null;
@@ -59,24 +63,24 @@ let puzzleCleared = false;
 let hintLevel = 0;
 let orderedStraightCount = 0;
 
-function initState() {
+function initState() { // [REUSE]
   state = {
     grid: [], hands: [], selectedPath: [], isDragging: false,
     phase: 'playing',
   };
 }
 
-// ─── Card ───
-function cardFromId(id) {
+// ─── Card ─── // [REUSE]
+function cardFromId(id) { // [REUSE]
   const suitCode = id[id.length - 1];
   const valueName = id.slice(0, -1);
   return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
 }
 
-function cardDisplay(card) { return VALUE_NAMES[card.value] + card.suit; }
+function cardDisplay(card) { return VALUE_NAMES[card.value] + card.suit; } // [REUSE]
 
-// ─── Puzzle Deck Loader ───
-function loadPuzzleDeck(initialDeck) {
+// ─── Puzzle Deck Loader ─── // [REUSE]
+function loadPuzzleDeck(initialDeck) { // [REUSE]
   const normalized = initialDeck.map(id =>
     (!id || id.trim() === '') ? null : id.trim()
   );
@@ -102,14 +106,229 @@ function loadPuzzleDeck(initialDeck) {
   return true;
 }
 
-function applyGravityToAll() {
+function applyGravityToAll() { // [REUSE]
   for (let col = 0; col < GRID_SIZE; col++) {
     applyGravityToColumn(col);
   }
 }
 
-// ─── Grid Render ───
-function renderGrid() {
+// ─── Hand Evaluation ─── // [REUSE]
+function evaluateHand(cards) { // [REUSE]
+  if (cards.length < 5) return partialEval(cards);
+  const values = cards.map(c => c.value).sort((a, b) => a - b);
+  const suits = cards.map(c => c.suit);
+  const isFlush = suits.every(s => s === suits[0]);
+  let isStraight = false;
+  const unique = [...new Set(values)];
+  if (unique.length === 5) {
+    if (unique[4] - unique[0] === 4) isStraight = true;
+    if (unique[0] === 2 && unique[1] === 3 && unique[2] === 4 && unique[3] === 5 && unique[4] === 14) isStraight = true;
+  }
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const countValues = Object.values(counts).sort((a, b) => b - a);
+  const countKeys = Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  let rank, label;
+  const isRoyal = (values[0]===10&&values[1]===11&&values[2]===12&&values[3]===13&&values[4]===14);
+  if (isFlush && isStraight) {
+    if (isRoyal) { rank = RANK.ROYAL_FLUSH; label = 'Royal Flush'; }
+    else { rank = RANK.STRAIGHT_FLUSH; label = 'Straight Flush'; }
+  } else if (countValues[0] === 4) { rank = RANK.FOUR_KIND; label = `Four ${VALUE_NAMES[countKeys[0][0]]}s`; }
+  else if (countValues[0] === 3 && countValues[1] === 2) { rank = RANK.FULL_HOUSE; label = 'Full House'; }
+  else if (isFlush) { rank = RANK.FLUSH; label = 'Flush'; }
+  else if (isStraight) { rank = RANK.STRAIGHT; label = 'Straight'; }
+  else if (countValues[0] === 3) { rank = RANK.THREE_KIND; label = `Three ${VALUE_NAMES[countKeys[0][0]]}s`; }
+  else if (countValues[0] === 2 && countValues[1] === 2) { rank = RANK.TWO_PAIR; label = 'Two Pair'; }
+  else if (countValues[0] === 2) { rank = RANK.ONE_PAIR; label = `Pair of ${VALUE_NAMES[parseInt(countKeys[0][0])]}s`; }
+  else { rank = RANK.HIGH_CARD; label = 'High Card'; }
+
+  const pairValue = rank === RANK.ONE_PAIR ? parseInt(countKeys[0][0]) : 0;
+  return { rank, rankValue: rank, label, pairValue };
+}
+
+function partialEval(cards) { // [REUSE]
+  if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
+  const values = cards.map(c => c.value);
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const cv = Object.values(counts).sort((a, b) => b - a);
+  const ck = Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  if (cv[0] >= 4) return { rank: RANK.FOUR_KIND, rankValue: RANK.FOUR_KIND, label: `Four ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
+  if (cv[0] === 3 && cv[1] === 2) return { rank: RANK.FULL_HOUSE, rankValue: RANK.FULL_HOUSE, label: 'Full House', pairValue: 0 };
+  if (cv[0] === 3) return { rank: RANK.THREE_KIND, rankValue: RANK.THREE_KIND, label: `Three ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
+  if (cv[0] === 2 && cv[1] === 2) return { rank: RANK.TWO_PAIR, rankValue: RANK.TWO_PAIR, label: 'Two Pair', pairValue: 0 };
+  if (cv[0] === 2) { const pv = parseInt(ck[0][0]); return { rank: RANK.ONE_PAIR, rankValue: RANK.ONE_PAIR, label: `Pair of ${VALUE_NAMES[pv]}s`, pairValue: pv }; }
+  return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
+}
+
+function isValidHand(hand) { // [REUSE]
+  if (hand.rank >= RANK.TWO_PAIR) return true;
+  if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
+  return false;
+}
+
+// ─── Gravity ───
+function applyGravityToColumn(col) { // [REUSE]
+  const cards = [];
+  for (let r = GRID_SIZE - 1; r >= 0; r--) { if (state.grid[r][col].card) cards.push(state.grid[r][col].card); }
+  for (let r = GRID_SIZE - 1; r >= 0; r--) { const idx = GRID_SIZE - 1 - r; state.grid[r][col].card = idx < cards.length ? cards[idx] : null; }
+}
+
+// ─── Movement Constraint Check ─── // [REUSE]
+function isValidPuzzleMove(fromR, fromC, toR, toC) { // [REUSE]
+  if (!puzzleConfig) return true;
+  const c = puzzleConfig.constraints;
+  const dr = toR - fromR, dc = toC - fromC;
+  const adr = Math.abs(dr), adc = Math.abs(dc);
+  const isDiag = adr >= 1 && adc >= 1 && adr === adc;
+  const isOrtho = (adr >= 1 && adc === 0) || (adr === 0 && adc >= 1);
+
+  if (c.diagonalOnly && !isDiag) return false;
+  if (!c.diagonalAllowed && isDiag) return false;
+  if (c.moveMode === 'orthogonal' && !isOrtho) return false;
+
+  if (c.moveMode === 'straight' && state.selectedPath.length >= 2) {
+    const p0 = state.selectedPath[0], p1 = state.selectedPath[1];
+    const origDr = Math.sign(p1[0] - p0[0]), origDc = Math.sign(p1[1] - p0[1]);
+    const newDr = Math.sign(dr), newDc = Math.sign(dc);
+    if (newDr !== origDr || newDc !== origDc) return false;
+  }
+
+  return true;
+}
+
+// ─── Move Scanner ─── // [REUSE]
+function scanForValidMoves() { // [REUSE]
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (!state.grid[r][c].card) continue;
+      const visited = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(false));
+      if (dfsScan(r, c, [state.grid[r][c].card], visited, [[r, c]])) return true;
+    }
+  }
+  return false;
+}
+
+function getReachableCards(r, c, visited) { // [REUSE]
+  const results = [];
+  const jumpAllowed = puzzleConfig ? puzzleConfig.constraints.jumpAllowed : true;
+  const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+  for (const [dr, dc] of dirs) {
+    let nr = r + dr, nc = c + dc;
+    if (!jumpAllowed) {
+      if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE && state.grid[nr][nc].card && !visited[nr][nc]) {
+        if (isValidPuzzleMove(r, c, nr, nc)) results.push([nr, nc]);
+      }
+    } else {
+      while (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+        if (state.grid[nr][nc].card) {
+          if (!visited[nr][nc] && isValidPuzzleMove(r, c, nr, nc)) results.push([nr, nc]);
+          break;
+        }
+        nr += dr; nc += dc;
+      }
+    }
+  }
+  return results;
+}
+
+function dfsScan(r, c, cards, visited, path) { // [REUSE]
+  visited[r][c] = true;
+  if (cards.length === HAND_SIZE) {
+    const hand = evaluateHand(cards);
+    visited[r][c] = false;
+    return isValidHand(hand);
+  }
+  let reachable = getReachableCards(r, c, visited);
+  if (puzzleConfig && puzzleConfig.constraints.moveMode === 'straight' && path.length >= 2) {
+    const origDr = Math.sign(path[1][0] - path[0][0]);
+    const origDc = Math.sign(path[1][1] - path[0][1]);
+    reachable = reachable.filter(([nr, nc]) => Math.sign(nr - r) === origDr && Math.sign(nc - c) === origDc);
+  }
+  for (const [nr, nc] of reachable) {
+    cards.push(state.grid[nr][nc].card);
+    path.push([nr, nc]);
+    if (dfsScan(nr, nc, cards, visited, path)) return true;
+    cards.pop();
+    path.pop();
+  }
+  visited[r][c] = false;
+  return false;
+}
+
+// ─── Mission Condition Checker ─── // [REUSE]
+function checkAllConditionsMet() { // [REUSE]
+  if (!puzzleConfig) return false;
+  const m = puzzleConfig.mission;
+  return m.conditions.every(cond => checkCondition(cond));
+}
+
+function checkCondition(cond) { // [REUSE]
+  switch (cond.type) {
+    case 'specific_hand': {
+      const targetRank = RANK_BY_NAME[cond.hand];
+      const count = state.hands.filter(h =>
+        cond.exact === true ? h.rank === targetRank : h.rank >= targetRank
+      ).length;
+      return count >= (cond.count_gte || 1);
+    }
+    case 'hands_complete': {
+      const target = cond.count || cond.count_gte || MAX_HANDS;
+      return state.hands.length >= target;
+    }
+    case 'ordered_straight': {
+      return orderedStraightCount >= (cond.count_gte || 1);
+    }
+    case 'unique_hands_gte': {
+      const uniqueRanks = new Set(state.hands.map(h => h.rank));
+      return uniqueRanks.size >= cond.count;
+    }
+    case 'grid_empty': {
+      const remaining = state.grid.flat().filter(cell => cell && cell.card !== null).length;
+      return remaining === 0;
+    }
+    default: return false;
+  }
+}
+
+// ─── UI Helpers (Pure) ───
+function getHandTier(rank) { // [REUSE]
+  if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
+  if (rank >= RANK.ROYAL_FLUSH) return 5;
+  if (rank >= RANK.STRAIGHT_FLUSH) return 4;
+  if (rank >= RANK.FULL_HOUSE) return 3;
+  if (rank >= RANK.THREE_KIND) return 2;
+  return 1;
+}
+
+// =============================================
+// [ADAPTER] 플랫폼 어댑터 — Expo 전환 시 교체
+// =============================================
+
+// ─── localStorage 래퍼 ─── // [ADAPTER] Expo: AsyncStorage / SecureStore
+function saveLocal(key, value) { // [ADAPTER]
+  localStorage.setItem(key, value);
+}
+
+function loadLocal(key) { // [ADAPTER]
+  return localStorage.getItem(key);
+}
+
+function removeLocal(key) { // [ADAPTER]
+  localStorage.removeItem(key);
+}
+
+// ─── 페이지 이동 래퍼 ─── // [ADAPTER] Expo: navigation.navigate()
+function navigateTo(page) { // [ADAPTER]
+  location.href = page;
+}
+
+// =============================================
+// [UI] DOM / 렌더링 — Expo 전환 시 재작성
+// =============================================
+
+// ─── Grid Render ─── // [REWRITE]
+function renderGrid() { // [REWRITE]
   const gridEl = document.getElementById('grid');
   gridEl.innerHTML = '';
   for (let r = 0; r < GRID_SIZE; r++) {
@@ -132,14 +351,14 @@ function renderGrid() {
   updateDragLine();
 }
 
-// ─── Drag Interaction ───
-function getEventCoords(e) {
+// ─── Drag Interaction ─── // [REWRITE]
+function getEventCoords(e) { // [REWRITE]
   if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
   return { x: e.clientX, y: e.clientY };
 }
 
-function getCellFromEvent(e) {
+function getCellFromEvent(e) { // [REWRITE]
   const { x, y } = getEventCoords(e);
   const gridEl = document.getElementById('grid');
   const children = gridEl.children;
@@ -156,7 +375,7 @@ function getCellFromEvent(e) {
   return null;
 }
 
-function updateSelectionVisuals() {
+function updateSelectionVisuals() { // [REWRITE]
   const gridEl = document.getElementById('grid');
   const children = gridEl.children;
   for (let i = 0; i < children.length; i++) {
@@ -168,7 +387,7 @@ function updateSelectionVisuals() {
   updateHandPreview();
 }
 
-function startDrag(row, col) {
+function startDrag(row, col) { // [REWRITE]
   if (state.phase !== 'playing' || puzzleFailed || puzzleCleared) return;
   if (!state.grid[row][col].card) return;
   state.isDragging = true;
@@ -177,30 +396,7 @@ function startDrag(row, col) {
   updateSelectionVisuals();
 }
 
-// ─── Movement Constraint Check ───
-function isValidPuzzleMove(fromR, fromC, toR, toC) {
-  if (!puzzleConfig) return true;
-  const c = puzzleConfig.constraints;
-  const dr = toR - fromR, dc = toC - fromC;
-  const adr = Math.abs(dr), adc = Math.abs(dc);
-  const isDiag = adr >= 1 && adc >= 1 && adr === adc;
-  const isOrtho = (adr >= 1 && adc === 0) || (adr === 0 && adc >= 1);
-
-  if (c.diagonalOnly && !isDiag) return false;
-  if (!c.diagonalAllowed && isDiag) return false;
-  if (c.moveMode === 'orthogonal' && !isOrtho) return false;
-
-  if (c.moveMode === 'straight' && state.selectedPath.length >= 2) {
-    const p0 = state.selectedPath[0], p1 = state.selectedPath[1];
-    const origDr = Math.sign(p1[0] - p0[0]), origDc = Math.sign(p1[1] - p0[1]);
-    const newDr = Math.sign(dr), newDc = Math.sign(dc);
-    if (newDr !== origDr || newDc !== origDc) return false;
-  }
-
-  return true;
-}
-
-function extendPath(row, col) {
+function extendPath(row, col) { // [REWRITE]
   if (!state.isDragging) return;
   if (!state.grid[row][col].card) return;
 
@@ -248,7 +444,7 @@ function extendPath(row, col) {
   updateSelectionVisuals();
 }
 
-function finalizePath() {
+function finalizePath() { // [REWRITE]
   if (!state.isDragging) return;
   state.isDragging = false;
 
@@ -350,13 +546,13 @@ function finalizePath() {
   }
 }
 
-function clearSelection() {
+function clearSelection() { // [REWRITE]
   state.selectedPath = [];
   updateSelectionVisuals();
 }
 
-// ─── Drag Line & Preview ───
-function updateDragLine() {
+// ─── Drag Line & Preview ─── // [REWRITE]
+function updateDragLine() { // [REWRITE]
   const line = document.getElementById('dragLine');
   if (state.selectedPath.length < 2) { line.setAttribute('points', ''); return; }
   const gridEl = document.getElementById('grid');
@@ -372,7 +568,7 @@ function updateDragLine() {
   line.setAttribute('points', points);
 }
 
-function updateHandPreview() {
+function updateHandPreview() { // [REWRITE]
   const previewEl = document.getElementById('handPreview');
   if (state.selectedPath.length === 0) { previewEl.textContent = ''; previewEl.className = 'hand-preview'; return; }
   const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
@@ -384,63 +580,8 @@ function updateHandPreview() {
   previewEl.className = 'hand-preview ' + (cards.length === 5 ? (valid ? 'valid' : 'invalid') : '');
 }
 
-// ─── Hand Evaluation ───
-function evaluateHand(cards) {
-  if (cards.length < 5) return partialEval(cards);
-  const values = cards.map(c => c.value).sort((a, b) => a - b);
-  const suits = cards.map(c => c.suit);
-  const isFlush = suits.every(s => s === suits[0]);
-  let isStraight = false;
-  const unique = [...new Set(values)];
-  if (unique.length === 5) {
-    if (unique[4] - unique[0] === 4) isStraight = true;
-    if (unique[0] === 2 && unique[1] === 3 && unique[2] === 4 && unique[3] === 5 && unique[4] === 14) isStraight = true;
-  }
-  const counts = {};
-  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
-  const countValues = Object.values(counts).sort((a, b) => b - a);
-  const countKeys = Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
-  let rank, label;
-  const isRoyal = (values[0]===10&&values[1]===11&&values[2]===12&&values[3]===13&&values[4]===14);
-  if (isFlush && isStraight) {
-    if (isRoyal) { rank = RANK.ROYAL_FLUSH; label = 'Royal Flush'; }
-    else { rank = RANK.STRAIGHT_FLUSH; label = 'Straight Flush'; }
-  } else if (countValues[0] === 4) { rank = RANK.FOUR_KIND; label = `Four ${VALUE_NAMES[countKeys[0][0]]}s`; }
-  else if (countValues[0] === 3 && countValues[1] === 2) { rank = RANK.FULL_HOUSE; label = 'Full House'; }
-  else if (isFlush) { rank = RANK.FLUSH; label = 'Flush'; }
-  else if (isStraight) { rank = RANK.STRAIGHT; label = 'Straight'; }
-  else if (countValues[0] === 3) { rank = RANK.THREE_KIND; label = `Three ${VALUE_NAMES[countKeys[0][0]]}s`; }
-  else if (countValues[0] === 2 && countValues[1] === 2) { rank = RANK.TWO_PAIR; label = 'Two Pair'; }
-  else if (countValues[0] === 2) { rank = RANK.ONE_PAIR; label = `Pair of ${VALUE_NAMES[parseInt(countKeys[0][0])]}s`; }
-  else { rank = RANK.HIGH_CARD; label = 'High Card'; }
-
-  const pairValue = rank === RANK.ONE_PAIR ? parseInt(countKeys[0][0]) : 0;
-  return { rank, rankValue: rank, label, pairValue };
-}
-
-function partialEval(cards) {
-  if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
-  const values = cards.map(c => c.value);
-  const counts = {};
-  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
-  const cv = Object.values(counts).sort((a, b) => b - a);
-  const ck = Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
-  if (cv[0] >= 4) return { rank: RANK.FOUR_KIND, rankValue: RANK.FOUR_KIND, label: `Four ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
-  if (cv[0] === 3 && cv[1] === 2) return { rank: RANK.FULL_HOUSE, rankValue: RANK.FULL_HOUSE, label: 'Full House', pairValue: 0 };
-  if (cv[0] === 3) return { rank: RANK.THREE_KIND, rankValue: RANK.THREE_KIND, label: `Three ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
-  if (cv[0] === 2 && cv[1] === 2) return { rank: RANK.TWO_PAIR, rankValue: RANK.TWO_PAIR, label: 'Two Pair', pairValue: 0 };
-  if (cv[0] === 2) { const pv = parseInt(ck[0][0]); return { rank: RANK.ONE_PAIR, rankValue: RANK.ONE_PAIR, label: `Pair of ${VALUE_NAMES[pv]}s`, pairValue: pv }; }
-  return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
-}
-
-function isValidHand(hand) {
-  if (hand.rank >= RANK.TWO_PAIR) return true;
-  if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
-  return false;
-}
-
-// ─── Gravity ───
-function removeCardsAndApplyGravity(rank) {
+// ─── Gravity (DOM) ─── // [REWRITE]
+function removeCardsAndApplyGravity(rank) { // [REWRITE]
   const gridEl = document.getElementById('grid');
   const positions = [...state.selectedPath];
   const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
@@ -482,117 +623,8 @@ function removeCardsAndApplyGravity(rank) {
   }, 300 + totalRemovalTime);
 }
 
-function applyGravityToColumn(col) {
-  const cards = [];
-  for (let r = GRID_SIZE - 1; r >= 0; r--) { if (state.grid[r][col].card) cards.push(state.grid[r][col].card); }
-  for (let r = GRID_SIZE - 1; r >= 0; r--) { const idx = GRID_SIZE - 1 - r; state.grid[r][col].card = idx < cards.length ? cards[idx] : null; }
-}
-
-// ─── Move Scanner ───
-function scanForValidMoves() {
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (!state.grid[r][c].card) continue;
-      const visited = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(false));
-      if (dfsScan(r, c, [state.grid[r][c].card], visited, [[r, c]])) return true;
-    }
-  }
-  return false;
-}
-
-function getReachableCards(r, c, visited) {
-  const results = [];
-  const jumpAllowed = puzzleConfig ? puzzleConfig.constraints.jumpAllowed : true;
-  const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
-  for (const [dr, dc] of dirs) {
-    let nr = r + dr, nc = c + dc;
-    if (!jumpAllowed) {
-      if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE && state.grid[nr][nc].card && !visited[nr][nc]) {
-        if (isValidPuzzleMove(r, c, nr, nc)) results.push([nr, nc]);
-      }
-    } else {
-      while (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-        if (state.grid[nr][nc].card) {
-          if (!visited[nr][nc] && isValidPuzzleMove(r, c, nr, nc)) results.push([nr, nc]);
-          break;
-        }
-        nr += dr; nc += dc;
-      }
-    }
-  }
-  return results;
-}
-
-function dfsScan(r, c, cards, visited, path) {
-  visited[r][c] = true;
-  if (cards.length === HAND_SIZE) {
-    const hand = evaluateHand(cards);
-    visited[r][c] = false;
-    return isValidHand(hand);
-  }
-  let reachable = getReachableCards(r, c, visited);
-  if (puzzleConfig && puzzleConfig.constraints.moveMode === 'straight' && path.length >= 2) {
-    const origDr = Math.sign(path[1][0] - path[0][0]);
-    const origDc = Math.sign(path[1][1] - path[0][1]);
-    reachable = reachable.filter(([nr, nc]) => Math.sign(nr - r) === origDr && Math.sign(nc - c) === origDc);
-  }
-  for (const [nr, nc] of reachable) {
-    cards.push(state.grid[nr][nc].card);
-    path.push([nr, nc]);
-    if (dfsScan(nr, nc, cards, visited, path)) return true;
-    cards.pop();
-    path.pop();
-  }
-  visited[r][c] = false;
-  return false;
-}
-
-// ─── Mission Condition Checker ───
-function checkAllConditionsMet() {
-  if (!puzzleConfig) return false;
-  const m = puzzleConfig.mission;
-  return m.conditions.every(cond => checkCondition(cond));
-}
-
-function checkCondition(cond) {
-  switch (cond.type) {
-    case 'specific_hand': {
-      const targetRank = RANK_BY_NAME[cond.hand];
-      const count = state.hands.filter(h =>
-        cond.exact === true ? h.rank === targetRank : h.rank >= targetRank
-      ).length;
-      return count >= (cond.count_gte || 1);
-    }
-    case 'hands_complete': {
-      const target = cond.count || cond.count_gte || MAX_HANDS;
-      return state.hands.length >= target;
-    }
-    case 'ordered_straight': {
-      return orderedStraightCount >= (cond.count_gte || 1);
-    }
-    case 'unique_hands_gte': {
-      const uniqueRanks = new Set(state.hands.map(h => h.rank));
-      return uniqueRanks.size >= cond.count;
-    }
-    case 'grid_empty': {
-      const remaining = state.grid.flat().filter(cell => cell && cell.card !== null).length;
-      return remaining === 0;
-    }
-    default: return false;
-  }
-}
-
-// ─── UI Helpers ───
-function getHandTier(rank) {
-  if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
-  if (rank >= RANK.ROYAL_FLUSH) return 5;
-  if (rank >= RANK.STRAIGHT_FLUSH) return 4;
-  if (rank >= RANK.FULL_HOUSE) return 3;
-  if (rank >= RANK.THREE_KIND) return 2;
-  return 1;
-}
-
-function triggerScreenFlash(tier) {
+// ─── Screen Effects ─── // [REWRITE]
+function triggerScreenFlash(tier) { // [REWRITE]
   const flash = document.createElement('div');
   flash.className = 'screen-flash';
   const colors = {
@@ -605,7 +637,7 @@ function triggerScreenFlash(tier) {
   setTimeout(() => flash.remove(), 500);
 }
 
-function spawnParticles(count) {
+function spawnParticles(count) { // [REWRITE]
   for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
     p.className = 'popup-particle';
@@ -622,7 +654,7 @@ function spawnParticles(count) {
   }
 }
 
-function showScorePopup(label, rank) {
+function showScorePopup(label, rank) { // [REWRITE]
   const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
   const popup = document.createElement('div');
   popup.className = `score-popup tier-${tier}`;
@@ -637,15 +669,15 @@ function showScorePopup(label, rank) {
   setTimeout(() => popup.remove(), 1800);
 }
 
-function showToast(msg) {
+function showToast(msg) { // [REWRITE]
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// ─── Game End ───
-function endPuzzle(reason) {
+// ─── Game End ─── // [REWRITE]
+function endPuzzle(reason) { // [REWRITE]
   if (puzzleFailed || puzzleCleared) return;
   state.phase = reason;
 
@@ -659,8 +691,8 @@ function endPuzzle(reason) {
   triggerPuzzleFail('nomoves');
 }
 
-// ─── Puzzle Complete ───
-function triggerPuzzleComplete() {
+// ─── Puzzle Complete ─── // [REWRITE]
+function triggerPuzzleComplete() { // [REWRITE]
   if (puzzleCleared) return;
   puzzleCleared = true;
   state.phase = 'complete';
@@ -669,7 +701,7 @@ function triggerPuzzleComplete() {
   const hintBonus = hintLevel === 0 ? Math.floor(goldBase * 1) : 0;
   const totalGold = goldBase + hintBonus;
 
-  const progress = JSON.parse(localStorage.getItem('poker_puzzle_progress') || '{}');
+  const progress = JSON.parse(loadLocal('poker_puzzle_progress') || '{}');
   const isFirstClear = !progress.clearedPuzzles || !progress.clearedPuzzles.includes(puzzleConfig.id);
   const actualGold = isFirstClear ? totalGold : 0;
 
@@ -677,8 +709,8 @@ function triggerPuzzleComplete() {
   savePuzzleResult(puzzleConfig.id, true, actualGold);
 }
 
-// ─── Puzzle Fail ───
-function triggerPuzzleFail(reason) {
+// ─── Puzzle Fail ─── // [REWRITE]
+function triggerPuzzleFail(reason) { // [REWRITE]
   if (puzzleFailed || puzzleCleared) return;
   puzzleFailed = true;
   state.phase = 'failed';
@@ -686,10 +718,10 @@ function triggerPuzzleFail(reason) {
   showPuzzleFailPopup(reason);
 }
 
-// ─── Popups ───
-function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) {
+// ─── Popups ─── // [REWRITE]
+function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) { // [REWRITE]
   const modal = document.getElementById('modal');
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  const currentGold = parseInt(loadLocal('poker_gold') || '0');
   const actualGold = isFirstClear ? totalGold : 0;
   const newGold = currentGold + actualGold;
 
@@ -748,7 +780,7 @@ function showPuzzleClearPopup({ goldBase, hintBonus, totalGold, isFirstClear }) 
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-function showPuzzleFailPopup(reason) {
+function showPuzzleFailPopup(reason) { // [REWRITE]
   const modal = document.getElementById('modal');
   const msg = getFailMessage(reason) || i18n.t('failReasons.puzzleFail');
 
@@ -767,17 +799,17 @@ function showPuzzleFailPopup(reason) {
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-// ─── Navigation (in-place for BGM continuity) ───
-function goNextPuzzle() {
+// ─── Navigation (in-place for BGM continuity) ─── // [REWRITE]
+function goNextPuzzle() { // [REWRITE]
   const nextId = puzzleConfig.id + 1;
   initPuzzleById(nextId);
 }
 
-function retryPuzzle() {
+function retryPuzzle() { // [REWRITE]
   initPuzzleById(puzzleConfig.id);
 }
 
-async function initPuzzleById(puzzleId) {
+async function initPuzzleById(puzzleId) { // [REWRITE]
   // Clean up DOM
   document.querySelectorAll('.score-popup, .screen-flash, .popup-particle, .start-overlay').forEach(el => el.remove());
   document.getElementById('modalOverlay').classList.remove('active');
@@ -796,11 +828,11 @@ async function initPuzzleById(puzzleId) {
     allPuzzles = puzzles;
     puzzle = puzzles.find(p => p.id === puzzleId);
   } catch(e) {
-    location.href = 'puzzle_select.html';
+    navigateTo('puzzle_select.html');
     return;
   }
   if (!puzzle) {
-    location.href = 'puzzle_select.html';
+    navigateTo('puzzle_select.html');
     return;
   }
   puzzleConfig = puzzle;
@@ -840,7 +872,7 @@ async function initPuzzleById(puzzleId) {
   showInPlacePuzzleOverlay(puzzle);
 }
 
-function showInPlacePuzzleOverlay(puzzle) {
+function showInPlacePuzzleOverlay(puzzle) { // [REWRITE]
   const grid = document.getElementById('gridContainer') || document.getElementById('grid');
   if (grid) grid.style.pointerEvents = 'none';
 
@@ -869,12 +901,12 @@ function showInPlacePuzzleOverlay(puzzle) {
   overlay.addEventListener('click', handleStart);
 }
 
-window.addEventListener('popstate', () => {
-  location.href = 'puzzle_select.html';
+window.addEventListener('popstate', () => { // [REWRITE]
+  navigateTo('puzzle_select.html');
 });
 
-// ─── Hint System ───
-function onHintButtonClick() {
+// ─── Hint System ─── // [REWRITE]
+function onHintButtonClick() { // [REWRITE]
   if (!puzzleConfig || !puzzleConfig.hint) return;
   const hint = puzzleConfig.hint;
   const nextLevel = Math.min(hintLevel + 1, 3);
@@ -886,7 +918,7 @@ function onHintButtonClick() {
   }
 
   const cost = HINT_COSTS[nextLevel];
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  const currentGold = parseInt(loadLocal('poker_gold') || '0');
 
   const modal = document.getElementById('modal');
   modal.innerHTML = `
@@ -905,14 +937,14 @@ function onHintButtonClick() {
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-function confirmHint(level, cost) {
+function confirmHint(level, cost) { // [REWRITE]
   if (!deductGold(cost, 'puzzle_hint_' + puzzleConfig.id + '_lv' + level)) return;
   hintLevel = level;
   const hintText = i18n.tField(puzzleConfig.hint['level' + level]);
   showHintDisplayModal(level, hintText);
 }
 
-function showHintDisplayModal(level, text) {
+function showHintDisplayModal(level, text) { // [REWRITE]
   const modal = document.getElementById('modal');
   modal.innerHTML = `
     <h2 style="color:var(--gold);">${i18n.t('modal.hintTitle', { n: level })}</h2>
@@ -926,22 +958,22 @@ function showHintDisplayModal(level, text) {
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-function closeHintModal() {
+function closeHintModal() { // [REWRITE]
   document.getElementById('modalOverlay').classList.remove('active');
 }
 
-// ─── Gold ───
-function deductGold(amount, reason) {
-  const current = parseInt(localStorage.getItem('poker_gold') || '0');
+// ─── Gold ─── // [REWRITE] (localStorage + DB sync)
+function deductGold(amount, reason) { // [REWRITE]
+  const current = parseInt(loadLocal('poker_gold') || '0');
   if (current < amount) {
     showToast(i18n.t('toast.goldInsufficient'));
     return false;
   }
   const newGold = current - amount;
-  localStorage.setItem('poker_gold', newGold);
+  saveLocal('poker_gold', newGold);
   renderCurrencyBar();
 
-  const playerId = localStorage.getItem('poker_player_id');
+  const playerId = loadLocal('poker_player_id');
   if (playerId) {
     (async () => {
       try {
@@ -960,9 +992,9 @@ function deductGold(amount, reason) {
   return true;
 }
 
-// ─── Save Progress ───
-function savePuzzleResult(puzzleId, cleared, goldEarned) {
-  const progress = JSON.parse(localStorage.getItem('poker_puzzle_progress') || '{}');
+// ─── Save Progress ─── // [REWRITE] (localStorage + DB sync)
+function savePuzzleResult(puzzleId, cleared, goldEarned) { // [REWRITE]
+  const progress = JSON.parse(loadLocal('poker_puzzle_progress') || '{}');
   if (!progress.clearedPuzzles) progress.clearedPuzzles = [];
   if (!progress.hintUsed) progress.hintUsed = {};
 
@@ -972,16 +1004,16 @@ function savePuzzleResult(puzzleId, cleared, goldEarned) {
     progress.clearedPuzzles.push(puzzleId);
   }
   progress.hintUsed[puzzleId] = hintLevel;
-  localStorage.setItem('poker_puzzle_progress', JSON.stringify(progress));
+  saveLocal('poker_puzzle_progress', JSON.stringify(progress));
 
   if (isFirstClear && goldEarned > 0) {
-    const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const currentGold = parseInt(loadLocal('poker_gold') || '0');
     const newGold = currentGold + goldEarned;
-    localStorage.setItem('poker_gold', newGold);
+    saveLocal('poker_gold', newGold);
     renderCurrencyBar();
 
     // DB 골드 업데이트 (async, 에러 로깅)
-    const playerId = localStorage.getItem('poker_player_id');
+    const playerId = loadLocal('poker_player_id');
     if (playerId) {
       (async () => {
         try {
@@ -1002,9 +1034,9 @@ function savePuzzleResult(puzzleId, cleared, goldEarned) {
   }
 }
 
-// ─── Puzzle Init ───
-// ─── Start Overlay ───
-function initStartOverlay(onStart) {
+// ─── Puzzle Init ─── // [REWRITE]
+// ─── Start Overlay ─── // [REWRITE]
+function initStartOverlay(onStart) { // [REWRITE]
   const overlay = document.getElementById('startOverlay');
   const btn = document.getElementById('startBtn');
   const grid = document.getElementById('gridContainer') || document.getElementById('grid');
@@ -1029,10 +1061,10 @@ function initStartOverlay(onStart) {
   overlay.addEventListener('click', handleStart);
 }
 
-async function initPuzzle() {
+async function initPuzzle() { // [REWRITE]
   const params = new URLSearchParams(window.location.search);
   const puzzleId = parseInt(params.get('id'));
-  if (!puzzleId) { window.location.href = 'puzzle_select.html'; return; }
+  if (!puzzleId) { navigateTo('puzzle_select.html'); return; }
 
   // Load puzzles.json
   try {
@@ -1069,7 +1101,7 @@ async function initPuzzle() {
   }
 
   // Username
-  const saved = localStorage.getItem('poker_username') || '';
+  const saved = loadLocal('poker_username') || '';
   const el = document.getElementById('usernameDisplay');
   if (el) el.textContent = saved;
 
@@ -1092,7 +1124,7 @@ async function initPuzzle() {
 }
 
 let _puzzleEventsAttached = false;
-function setupEventListeners() {
+function setupEventListeners() { // [REWRITE]
   if (_puzzleEventsAttached) return;
   _puzzleEventsAttached = true;
   const gridEl = document.getElementById('grid');
@@ -1131,3 +1163,31 @@ function setupEventListeners() {
 
 // ─── Boot ───
 initPuzzle();
+
+// =============================================
+// EXPO 전환 체크리스트
+// REUSE   : 21개 함수 (변경 불필요)
+//   - cardFromId, cardDisplay, initState, loadPuzzleDeck
+//   - applyGravityToAll, applyGravityToColumn
+//   - evaluateHand, partialEval, isValidHand
+//   - isValidPuzzleMove, scanForValidMoves, getReachableCards, dfsScan
+//   - checkAllConditionsMet, checkCondition
+//   - getHandTier, getFailMessage
+//   - 상수: GRID_SIZE, RANK, RANK_BY_NAME, HINT_COSTS 등
+// ADAPTER : 4개 함수 (내부 구현 교체 필요)
+//   - saveLocal(key, value)  → AsyncStorage.setItem(key, value)
+//   - loadLocal(key)         → await AsyncStorage.getItem(key)
+//   - removeLocal(key)       → await AsyncStorage.removeItem(key)
+//   - navigateTo(page)       → navigation.navigate(screenName)
+// REWRITE : 28개 함수 (전면 재작성)
+//   - renderGrid, updateSelectionVisuals, updateDragLine, updateHandPreview
+//   - getEventCoords, getCellFromEvent, startDrag, extendPath, finalizePath
+//   - clearSelection, removeCardsAndApplyGravity
+//   - triggerScreenFlash, spawnParticles, showScorePopup, showToast
+//   - endPuzzle, triggerPuzzleComplete, triggerPuzzleFail
+//   - showPuzzleClearPopup, showPuzzleFailPopup
+//   - goNextPuzzle, retryPuzzle, initPuzzleById, showInPlacePuzzleOverlay
+//   - onHintButtonClick, confirmHint, showHintDisplayModal, closeHintModal
+//   - deductGold, savePuzzleResult
+//   - initStartOverlay, initPuzzle, setupEventListeners
+// =============================================

@@ -1,6 +1,11 @@
 // ─── Supabase Anonymous Auth ───
 // Shared auth initialization for all pages
 
+// =============================================
+// [ADAPTER] 플랫폼 어댑터 — Expo 전환 시 교체
+// =============================================
+
+// [ADAPTER] 익명 인증 초기화 — Expo 전환 시 Supabase React Native SDK로 교체
 async function initAuth() {
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -25,7 +30,11 @@ async function initAuth() {
   }
 }
 
-// DB 요청 재시도 헬퍼 (최대 2회 재시도, 1초 간격)
+// =============================================
+// [LOGIC] 게임 로직 — Expo 전환 시 재활용
+// =============================================
+
+// [REUSE] DB 요청 재시도 헬퍼 (최대 2회 재시도, 1초 간격)
 async function sbRetry(fn, retries = 2) {
   for (let i = 0; i <= retries; i++) {
     try {
@@ -46,9 +55,20 @@ async function sbRetry(fn, retries = 2) {
   return { data: null, error: 'max retries' };
 }
 
-// Listen for auth state changes
+// [ADAPTER] 인증 상태 변경 리스너 — Expo 전환 시 Supabase React Native onAuthStateChange
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
     localStorage.setItem('poker_player_id', session.user.id);
   }
 });
+
+// =============================================
+// EXPO 전환 체크리스트
+// REUSE   : 1개 함수 (변경 불필요)
+//   - sbRetry
+// ADAPTER : 2개 함수/블록 (내부 구현 교체 필요)
+//   - initAuth → Supabase React Native SDK
+//   - onAuthStateChange 리스너 → Supabase React Native SDK
+//   - localStorage → AsyncStorage
+// REWRITE : 0개
+// =============================================

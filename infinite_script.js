@@ -1,26 +1,41 @@
 // ─── DragON POKER — Infinite Mode ───
+// =====================================================================
+//  Expo Migration Tags:
+//    [REUSE]   — Pure logic, no platform dependency. Copy as-is.
+//    [ADAPTER] — Platform-dependent I/O. Replace with RN/Expo equivalent.
+//    [REWRITE] — DOM / CSS / event-based UI. Rewrite in React Native.
+// =====================================================================
 
-const TIMER_SECONDS = 600;
-const GRID_SIZE = 6;
-const HAND_SIZE = 5;
 
-const SUITS = ['♠', '♥', '♦', '♣'];
-const SUIT_NAMES = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
-const VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
+// =====================================================================
+// ██  SECTION 1 — CONSTANTS & PURE DATA  [REUSE]
+// =====================================================================
 
+const TIMER_SECONDS = 600; // [REUSE]
+const GRID_SIZE = 6; // [REUSE]
+const HAND_SIZE = 5; // [REUSE]
+
+const SUITS = ['♠', '♥', '♦', '♣']; // [REUSE]
+const SUIT_NAMES = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' }; // [REUSE]
+const VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' }; // [REUSE]
+
+// [REUSE]
 const RANK = {
   HIGH_CARD: 0, ONE_PAIR: 1, TWO_PAIR: 2, THREE_KIND: 3,
   STRAIGHT: 4, FLUSH: 5, FULL_HOUSE: 6, FOUR_KIND: 7,
   STRAIGHT_FLUSH: 8, ROYAL_FLUSH: 9, ROYAL_FLUSH_PLUS: 10,
 };
 
+// [REUSE]
 const RANK_NAME_BY_VALUE = {};
 Object.entries(RANK).forEach(([k, v]) => RANK_NAME_BY_VALUE[v] = k);
 
+// [REUSE]
 function getRankScore(rank) {
   return ScorePolicy.getHandScore(RANK_NAME_BY_VALUE[rank] || 'HIGH_CARD');
 }
 
+// [REUSE]
 const RANK_LABELS = {
   [RANK.HIGH_CARD]: 'High Card', [RANK.ONE_PAIR]: 'One Pair', [RANK.TWO_PAIR]: 'Two Pair',
   [RANK.THREE_KIND]: 'Three of a Kind', [RANK.STRAIGHT]: 'Straight', [RANK.FLUSH]: 'Flush',
@@ -29,6 +44,7 @@ const RANK_LABELS = {
   [RANK.ROYAL_FLUSH_PLUS]: 'Royal Flush+',
 };
 
+// [REWRITE] — CSS class mapping, web-only
 const RANK_CSS = {
   [RANK.ONE_PAIR]: 'one-pair', [RANK.TWO_PAIR]: 'two-pair', [RANK.THREE_KIND]: 'three-kind',
   [RANK.STRAIGHT]: 'straight', [RANK.FLUSH]: 'flush', [RANK.FULL_HOUSE]: 'full-house',
@@ -37,34 +53,115 @@ const RANK_CSS = {
 };
 
 // ─── COLLECTED panel (rank-based counter) ───
+// [REUSE]
 const HAND_DISPLAY_ORDER = [
   'ROYAL_FLUSH_PLUS', 'ROYAL_FLUSH', 'STRAIGHT_FLUSH', 'FOUR_KIND',
   'FULL_HOUSE', 'FLUSH', 'STRAIGHT', 'THREE_KIND', 'TWO_PAIR', 'ONE_PAIR'
 ];
 
+// [REUSE]
 function getInfiniteHandLabel(rankName) {
   const fixed = { ONE_PAIR: 'One Pair (10+)', THREE_KIND: 'Three of a Kind' };
   return fixed[rankName] || RANK_LABELS[RANK[rankName]] || rankName;
 }
 
+// [REUSE] — state counters
 let handCounts = {};
 HAND_DISPLAY_ORDER.forEach(r => { handCounts[r] = 0; });
 
 // ─── Combo system ───
+// [REUSE]
 const COMBO_RANKS = new Set([RANK.FOUR_KIND, RANK.STRAIGHT_FLUSH, RANK.ROYAL_FLUSH, RANK.ROYAL_FLUSH_PLUS]);
 let comboCount = 0;
 let totalHands = 0;
 let infiniteScore = 0;
 
 // ─── Shuffle system ───
+// [REUSE]
 const SHUFFLE_MAX_COUNT  = 10;
 const SHUFFLE_GOLD_COST  = 5;
 let   shuffleRemaining   = SHUFFLE_MAX_COUNT;
 
+// [REUSE] — suit lookup tables
+const SUIT_BY_CODE = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const VALUE_BY_NAME = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
+
+// [REWRITE] — CSS suit config for outside-cards panel
+const SUIT_CONFIG = [
+  { suit: '♠', cls: 'spade',   symbol: '♠' },
+  { suit: '♥', cls: 'heart',   symbol: '♥' },
+  { suit: '♦', cls: 'diamond', symbol: '♦' },
+  { suit: '♣', cls: 'club',    symbol: '♣' }
+];
+
+
+// =====================================================================
+// ██  SECTION 2 — ADAPTER WRAPPERS  [ADAPTER]
+// =====================================================================
+// Platform-dependent I/O extracted into thin wrappers.
+// Expo migration: replace bodies with AsyncStorage / expo-av / router.
+
+// [ADAPTER] localStorage → AsyncStorage
+function saveLocal(key, value) {
+  localStorage.setItem(key, value);
+}
+
+// [ADAPTER] localStorage → AsyncStorage
+function loadLocal(key) {
+  return localStorage.getItem(key);
+}
+
+// [ADAPTER] localStorage → AsyncStorage
+function removeLocal(key) {
+  localStorage.removeItem(key);
+}
+
+// [ADAPTER] page navigation → expo-router
+function navigateTo(page) {
+  location.href = page;
+}
+
+// [ADAPTER] Sound playback — wraps global Sound module
+function playCardSelect(index) {
+  Sound.cardSelect(index);
+}
+
+// [ADAPTER] Sound playback
+function playHandComplete(rankValue) {
+  Sound.handComplete(rankValue);
+}
+
+// [ADAPTER] Sound playback
+function playCardDrop() {
+  Sound.cardDrop();
+}
+
+// [ADAPTER] Sound warmup
+function playSoundWarmup() {
+  Sound.warmup();
+}
+
+// [ADAPTER] BGM control
+function bgmInit(path) {
+  BGM.init(path);
+}
+
+// [ADAPTER] BGM control
+function bgmStart() {
+  BGM.start();
+}
+
+
+// =====================================================================
+// ██  SECTION 3 — GAME STATE & PURE LOGIC  [REUSE]
+// =====================================================================
+
 // ─── Game State ───
+// [REUSE]
 let state = {};
 let outsideCards = []; // 16 cards outside the grid
 
+// [REUSE]
 function initState() {
   state = {
     grid: [], hands: [], selectedPath: [], isDragging: false,
@@ -74,27 +171,31 @@ function initState() {
 }
 
 // ─── Deck & Cards ───
+// [REUSE]
 function createDeck() {
   const deck = [];
   for (const s of SUITS) for (let v = 2; v <= 14; v++) deck.push({ suit: s, value: v, id: VALUE_NAMES[v] + SUIT_NAMES[s] });
   return deck;
 }
+// [REUSE]
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
   return arr;
 }
+// [REUSE]
 function cardDisplay(card) { return VALUE_NAMES[card.value] + card.suit; }
+// [REUSE]
 function isRedSuit(suit) { return suit === '♥' || suit === '♦'; }
 
-const SUIT_BY_CODE = { s: '♠', h: '♥', d: '♦', c: '♣' };
-const VALUE_BY_NAME = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
+// [REUSE]
 function cardFromId(id) {
   const suitCode = id[id.length - 1];
   const valueName = id.slice(0, -1);
   return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
 }
 
-// ─── Grid Init & Render ───
+// ─── Grid Init ───
+// [REUSE]
 function initGrid() {
   const deck = shuffle(createDeck()); // 52 cards
   const gridCards = deck.slice(0, 36);  // 6×6 = 36
@@ -109,6 +210,154 @@ function initGrid() {
   }
 }
 
+// ─── Hand Evaluation ───
+// [REUSE]
+function evaluateHand(cards) {
+  if (cards.length < 5) return partialEval(cards);
+  const values = cards.map(c => c.value).sort((a, b) => a - b);
+  const suits = cards.map(c => c.suit);
+  const isFlush = suits.every(s => s === suits[0]);
+  let isStraight = false;
+  const unique = [...new Set(values)];
+  if (unique.length === 5) {
+    if (unique[4] - unique[0] === 4) isStraight = true;
+    if (unique[0]===2&&unique[1]===3&&unique[2]===4&&unique[3]===5&&unique[4]===14) isStraight = true;
+  }
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v]||0)+1);
+  const cv = Object.values(counts).sort((a,b)=>b-a);
+  const ck = Object.entries(counts).sort((a,b)=>b[1]-a[1]||b[0]-a[0]);
+  let rank, label;
+  const isRoyal = (values[0]===10&&values[1]===11&&values[2]===12&&values[3]===13&&values[4]===14);
+  if (isFlush && isStraight) {
+    if (isRoyal) { rank = RANK.ROYAL_FLUSH; label = 'Royal Flush'; }
+    else { rank = RANK.STRAIGHT_FLUSH; label = 'Straight Flush'; }
+  } else if (cv[0]===4) { rank = RANK.FOUR_KIND; label = `Four ${VALUE_NAMES[ck[0][0]]}s`; }
+  else if (cv[0]===3&&cv[1]===2) { rank = RANK.FULL_HOUSE; label = 'Full House'; }
+  else if (isFlush) { rank = RANK.FLUSH; label = 'Flush'; }
+  else if (isStraight) { rank = RANK.STRAIGHT; label = 'Straight'; }
+  else if (cv[0]===3) { rank = RANK.THREE_KIND; label = `Three ${VALUE_NAMES[ck[0][0]]}s`; }
+  else if (cv[0]===2&&cv[1]===2) { rank = RANK.TWO_PAIR; label = 'Two Pair'; }
+  else if (cv[0]===2) { rank = RANK.ONE_PAIR; label = `Pair of ${VALUE_NAMES[parseInt(ck[0][0])]}s`; }
+  else { rank = RANK.HIGH_CARD; label = 'High Card'; }
+  const pairValue = rank === RANK.ONE_PAIR ? parseInt(ck[0][0]) : 0;
+  return { rank, rankValue: rank, label, pairValue };
+}
+
+// [REUSE]
+function partialEval(cards) {
+  if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
+  const values = cards.map(c => c.value);
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v]||0)+1);
+  const cv = Object.values(counts).sort((a,b)=>b-a);
+  const ck = Object.entries(counts).sort((a,b)=>b[1]-a[1]||b[0]-a[0]);
+  if (cv[0]>=4) return { rank: RANK.FOUR_KIND, rankValue: RANK.FOUR_KIND, label: `Four ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
+  if (cv[0]===3&&cv[1]===2) return { rank: RANK.FULL_HOUSE, rankValue: RANK.FULL_HOUSE, label: 'Full House', pairValue: 0 };
+  if (cv[0]===3) return { rank: RANK.THREE_KIND, rankValue: RANK.THREE_KIND, label: `Three ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
+  if (cv[0]===2&&cv[1]===2) return { rank: RANK.TWO_PAIR, rankValue: RANK.TWO_PAIR, label: 'Two Pair', pairValue: 0 };
+  if (cv[0]===2) { const pv = parseInt(ck[0][0]); return { rank: RANK.ONE_PAIR, rankValue: RANK.ONE_PAIR, label: `Pair of ${VALUE_NAMES[pv]}s`, pairValue: pv }; }
+  return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
+}
+
+// [REUSE]
+function isValidHand(hand) {
+  if (hand.rank >= RANK.TWO_PAIR) return true;
+  if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
+  return false;
+}
+
+// [REUSE]
+function applyGravityToColumn(col) {
+  const cards = [];
+  for (let r = GRID_SIZE - 1; r >= 0; r--) { if (state.grid[r][col].card) cards.push(state.grid[r][col].card); }
+  for (let r = GRID_SIZE - 1; r >= 0; r--) { const idx = GRID_SIZE - 1 - r; state.grid[r][col].card = idx < cards.length ? cards[idx] : null; }
+}
+
+// ─── Valid Move Scanner ───
+// [REUSE]
+function scanForValidMoves() {
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (!state.grid[r][c].card) continue;
+      if (findHandFrom(r, c, [[r, c]], 1)) return true;
+    }
+  }
+  return false;
+}
+
+// [REUSE]
+function findHandFrom(r, c, path, depth) {
+  if (depth >= HAND_SIZE) {
+    const cards = path.map(([pr, pc]) => state.grid[pr][pc].card);
+    const hand = evaluateHand(cards);
+    return isValidHand(hand);
+  }
+  const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  for (const [dr, dc] of dirs) {
+    let nr = r + dr, nc = c + dc;
+    while (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+      if (state.grid[nr][nc].card && !path.some(p => p[0] === nr && p[1] === nc)) {
+        path.push([nr, nc]);
+        if (findHandFrom(nr, nc, path, depth + 1)) return true;
+        path.pop();
+        break;
+      }
+      if (state.grid[nr][nc].card) break;
+      nr += dr; nc += dc;
+    }
+  }
+  return false;
+}
+
+// ─── Visual tier (pure calc) ───
+// [REUSE]
+function getHandTier(rank) {
+  if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
+  if (rank >= RANK.ROYAL_FLUSH) return 5;
+  if (rank >= RANK.STRAIGHT_FLUSH) return 4;
+  if (rank >= RANK.FULL_HOUSE) return 3;
+  if (rank >= RANK.THREE_KIND) return 2;
+  return 1;
+}
+
+
+// =====================================================================
+// ██  SECTION 4 — ADAPTER-CONSUMING LOGIC (localStorage wrappers)
+// =====================================================================
+
+// ─── High Score ───
+// [ADAPTER]
+function getHighScore() { return parseInt(loadLocal('poker_infinite_hi') || '0'); }
+// [ADAPTER]
+function saveHighScore(score) {
+  const cur = getHighScore();
+  if (score > cur) { saveLocal('poker_infinite_hi', score); return true; }
+  return false;
+}
+
+// ─── Gold helpers ───
+// [ADAPTER]
+function getGoldLocal() {
+  return parseInt(loadLocal('poker_gold') || '0');
+}
+
+// [ADAPTER]
+function deductGoldLocal(amount, reason) {
+  const current = getGoldLocal();
+  if (current < amount) return false;
+  saveLocal('poker_gold', current - amount);
+  renderCurrencyBar();
+  return true;
+}
+
+
+// =====================================================================
+// ██  SECTION 5 — DOM RENDERING & UI  [REWRITE]
+// =====================================================================
+
+// ─── Grid Render ───
+// [REWRITE]
 function renderGrid() {
   const gridEl = document.getElementById('grid');
   gridEl.innerHTML = '';
@@ -133,12 +382,14 @@ function renderGrid() {
 }
 
 // ─── Drag Interaction ───
+// [REWRITE]
 function getEventCoords(e) {
   if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
   return { x: e.clientX, y: e.clientY };
 }
 
+// [REWRITE]
 function getCellFromEvent(e) {
   const { x, y } = getEventCoords(e);
   const gridEl = document.getElementById('grid');
@@ -155,6 +406,7 @@ function getCellFromEvent(e) {
   return null;
 }
 
+// [REWRITE]
 function updateSelectionVisuals() {
   const gridEl = document.getElementById('grid');
   const children = gridEl.children;
@@ -167,15 +419,17 @@ function updateSelectionVisuals() {
   updateHandPreview();
 }
 
+// [REWRITE]
 function startDrag(row, col) {
   if (state.phase !== 'playing') return;
   if (!state.grid[row][col].card) return;
   state.isDragging = true;
   state.selectedPath = [[row, col]];
-  Sound.cardSelect(0);
+  playCardSelect(0);
   updateSelectionVisuals();
 }
 
+// [REWRITE]
 function extendPath(row, col) {
   if (!state.isDragging) return;
   if (!state.grid[row][col].card) return;
@@ -186,7 +440,7 @@ function extendPath(row, col) {
       if (prev[0] === row && prev[1] === col) {
         state.selectedPath.pop();
         const pathLenAfterRemove = state.selectedPath.length;
-        if (pathLenAfterRemove >= 1 && pathLenAfterRemove <= 3) Sound.cardSelect(pathLenAfterRemove - 1);
+        if (pathLenAfterRemove >= 1 && pathLenAfterRemove <= 3) playCardSelect(pathLenAfterRemove - 1);
         updateSelectionVisuals();
       }
     }
@@ -208,10 +462,11 @@ function extendPath(row, col) {
 
   state.selectedPath.push([row, col]);
   const pathLen = state.selectedPath.length;
-  if (pathLen >= 1 && pathLen <= 4) Sound.cardSelect(pathLen - 1);
+  if (pathLen >= 1 && pathLen <= 4) playCardSelect(pathLen - 1);
   updateSelectionVisuals();
 }
 
+// [REWRITE]
 function finalizePath() {
   if (!state.isDragging) return;
   state.isDragging = false;
@@ -257,11 +512,11 @@ function finalizePath() {
     comboCount++;
     earnedScore = baseScore * comboCount;
     showComboBadge(hand.label, comboCount, earnedScore);
-    Sound.handComplete(RANK.ROYAL_FLUSH_PLUS);
+    playHandComplete(RANK.ROYAL_FLUSH_PLUS);
   } else {
     comboCount = 0;
     earnedScore = baseScore;
-    Sound.handComplete(hand.rankValue);
+    playHandComplete(hand.rankValue);
   }
 
   infiniteScore += earnedScore;
@@ -282,12 +537,14 @@ function finalizePath() {
   removeCardsAndRefill(hand.rank);
 }
 
+// [REWRITE]
 function clearSelection() {
   state.selectedPath = [];
   updateSelectionVisuals();
 }
 
 // ─── Drag Line & Preview ───
+// [REWRITE]
 function updateDragLine() {
   const line = document.getElementById('dragLine');
   if (state.selectedPath.length < 2) { line.setAttribute('points', ''); return; }
@@ -304,6 +561,7 @@ function updateDragLine() {
   line.setAttribute('points', points);
 }
 
+// [REWRITE]
 function updateHandPreview() {
   const previewEl = document.getElementById('handPreview');
   if (state.selectedPath.length === 0) { previewEl.textContent = ''; previewEl.className = 'hand-preview'; return; }
@@ -316,61 +574,8 @@ function updateHandPreview() {
   previewEl.className = 'hand-preview ' + (cards.length === 5 ? (valid ? 'valid' : 'invalid') : '');
 }
 
-// ─── Hand Evaluation ───
-function evaluateHand(cards) {
-  if (cards.length < 5) return partialEval(cards);
-  const values = cards.map(c => c.value).sort((a, b) => a - b);
-  const suits = cards.map(c => c.suit);
-  const isFlush = suits.every(s => s === suits[0]);
-  let isStraight = false;
-  const unique = [...new Set(values)];
-  if (unique.length === 5) {
-    if (unique[4] - unique[0] === 4) isStraight = true;
-    if (unique[0]===2&&unique[1]===3&&unique[2]===4&&unique[3]===5&&unique[4]===14) isStraight = true;
-  }
-  const counts = {};
-  values.forEach(v => counts[v] = (counts[v]||0)+1);
-  const cv = Object.values(counts).sort((a,b)=>b-a);
-  const ck = Object.entries(counts).sort((a,b)=>b[1]-a[1]||b[0]-a[0]);
-  let rank, label;
-  const isRoyal = (values[0]===10&&values[1]===11&&values[2]===12&&values[3]===13&&values[4]===14);
-  if (isFlush && isStraight) {
-    if (isRoyal) { rank = RANK.ROYAL_FLUSH; label = 'Royal Flush'; }
-    else { rank = RANK.STRAIGHT_FLUSH; label = 'Straight Flush'; }
-  } else if (cv[0]===4) { rank = RANK.FOUR_KIND; label = `Four ${VALUE_NAMES[ck[0][0]]}s`; }
-  else if (cv[0]===3&&cv[1]===2) { rank = RANK.FULL_HOUSE; label = 'Full House'; }
-  else if (isFlush) { rank = RANK.FLUSH; label = 'Flush'; }
-  else if (isStraight) { rank = RANK.STRAIGHT; label = 'Straight'; }
-  else if (cv[0]===3) { rank = RANK.THREE_KIND; label = `Three ${VALUE_NAMES[ck[0][0]]}s`; }
-  else if (cv[0]===2&&cv[1]===2) { rank = RANK.TWO_PAIR; label = 'Two Pair'; }
-  else if (cv[0]===2) { rank = RANK.ONE_PAIR; label = `Pair of ${VALUE_NAMES[parseInt(ck[0][0])]}s`; }
-  else { rank = RANK.HIGH_CARD; label = 'High Card'; }
-  const pairValue = rank === RANK.ONE_PAIR ? parseInt(ck[0][0]) : 0;
-  return { rank, rankValue: rank, label, pairValue };
-}
-
-function partialEval(cards) {
-  if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
-  const values = cards.map(c => c.value);
-  const counts = {};
-  values.forEach(v => counts[v] = (counts[v]||0)+1);
-  const cv = Object.values(counts).sort((a,b)=>b-a);
-  const ck = Object.entries(counts).sort((a,b)=>b[1]-a[1]||b[0]-a[0]);
-  if (cv[0]>=4) return { rank: RANK.FOUR_KIND, rankValue: RANK.FOUR_KIND, label: `Four ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
-  if (cv[0]===3&&cv[1]===2) return { rank: RANK.FULL_HOUSE, rankValue: RANK.FULL_HOUSE, label: 'Full House', pairValue: 0 };
-  if (cv[0]===3) return { rank: RANK.THREE_KIND, rankValue: RANK.THREE_KIND, label: `Three ${VALUE_NAMES[ck[0][0]]}s`, pairValue: 0 };
-  if (cv[0]===2&&cv[1]===2) return { rank: RANK.TWO_PAIR, rankValue: RANK.TWO_PAIR, label: 'Two Pair', pairValue: 0 };
-  if (cv[0]===2) { const pv = parseInt(ck[0][0]); return { rank: RANK.ONE_PAIR, rankValue: RANK.ONE_PAIR, label: `Pair of ${VALUE_NAMES[pv]}s`, pairValue: pv }; }
-  return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
-}
-
-function isValidHand(hand) {
-  if (hand.rank >= RANK.TWO_PAIR) return true;
-  if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
-  return false;
-}
-
 // ─── Card Removal + Refill (Infinite Mode core) ───
+// [REWRITE]
 function removeCardsAndRefill(rank) {
   const gridEl = document.getElementById('grid');
   const positions = [...state.selectedPath];
@@ -401,7 +606,7 @@ function removeCardsAndRefill(rank) {
     // Apply gravity first
     const affectedCols = [...new Set(positions.map(p => p[1]))];
     affectedCols.forEach(col => applyGravityToColumn(col));
-    Sound.cardDrop();
+    playCardDrop();
 
     // Pool = 16 outside + 5 removed = 21, pick 5 for grid, 16 remain outside
     const pool = [...outsideCards, ...removedCards].filter(Boolean);
@@ -442,13 +647,8 @@ function removeCardsAndRefill(rank) {
   }, 300 + totalRemovalTime);
 }
 
-function applyGravityToColumn(col) {
-  const cards = [];
-  for (let r = GRID_SIZE - 1; r >= 0; r--) { if (state.grid[r][col].card) cards.push(state.grid[r][col].card); }
-  for (let r = GRID_SIZE - 1; r >= 0; r--) { const idx = GRID_SIZE - 1 - r; state.grid[r][col].card = idx < cards.length ? cards[idx] : null; }
-}
-
 // ─── Timer ───
+// [REWRITE]
 function startTimer() {
   state.timer = TIMER_SECONDS;
   updateTimerDisplay();
@@ -460,6 +660,7 @@ function startTimer() {
   }, 1000);
 }
 
+// [REWRITE]
 function updateTimerDisplay() {
   const numEl = document.getElementById('timerNum');
   const ringEl = document.getElementById('timerRing');
@@ -474,6 +675,7 @@ function updateTimerDisplay() {
 }
 
 // ─── COLLECTED panel (rank counter) ───
+// [REWRITE]
 function updateHandPanel() {
   const panel = document.getElementById('handPanel');
   const col1 = HAND_DISPLAY_ORDER.slice(0, 5);
@@ -496,28 +698,14 @@ function updateHandPanel() {
 }
 
 // ─── Score Display ───
+// [REWRITE]
 function updateScoreDisplay() {
   document.getElementById('currentScore').textContent = infiniteScore;
   document.getElementById('highScoreDisplay').textContent = getHighScore();
 }
 
-function getHighScore() { return parseInt(localStorage.getItem('poker_infinite_hi') || '0'); }
-function saveHighScore(score) {
-  const cur = getHighScore();
-  if (score > cur) { localStorage.setItem('poker_infinite_hi', score); return true; }
-  return false;
-}
-
 // ─── Visual Effects ───
-function getHandTier(rank) {
-  if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
-  if (rank >= RANK.ROYAL_FLUSH) return 5;
-  if (rank >= RANK.STRAIGHT_FLUSH) return 4;
-  if (rank >= RANK.FULL_HOUSE) return 3;
-  if (rank >= RANK.THREE_KIND) return 2;
-  return 1;
-}
-
+// [REWRITE]
 function triggerScreenFlash(tier) {
   const flash = document.createElement('div');
   flash.className = 'screen-flash';
@@ -527,6 +715,7 @@ function triggerScreenFlash(tier) {
   setTimeout(() => flash.remove(), 500);
 }
 
+// [REWRITE]
 function spawnParticles(count) {
   for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
@@ -542,6 +731,7 @@ function spawnParticles(count) {
   }
 }
 
+// [REWRITE]
 function showScorePopup(label, pts, rank) {
   const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
   const popup = document.createElement('div');
@@ -556,6 +746,7 @@ function showScorePopup(label, pts, rank) {
 }
 
 // ─── Combo Badge ───
+// [REWRITE]
 function showComboBadge(handLabel, count, score) {
   const badge = document.getElementById('comboBadge');
   badge.innerHTML = `
@@ -570,13 +761,7 @@ function showComboBadge(handLabel, count, score) {
 }
 
 // ─── Outside Cards (4-row suit-sorted) ───
-const SUIT_CONFIG = [
-  { suit: '♠', cls: 'spade',   symbol: '♠' },
-  { suit: '♥', cls: 'heart',   symbol: '♥' },
-  { suit: '♦', cls: 'diamond', symbol: '♦' },
-  { suit: '♣', cls: 'club',    symbol: '♣' }
-];
-
+// [REWRITE]
 function renderOutsideCards() {
   const area = document.getElementById('outsideCardsArea');
   if (!area) return;
@@ -597,54 +782,8 @@ function renderOutsideCards() {
   }).join('');
 }
 
-// ─── Valid Move Scanner ───
-function scanForValidMoves() {
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (!state.grid[r][c].card) continue;
-      if (findHandFrom(r, c, [[r, c]], 1)) return true;
-    }
-  }
-  return false;
-}
-
-function findHandFrom(r, c, path, depth) {
-  if (depth >= HAND_SIZE) {
-    const cards = path.map(([pr, pc]) => state.grid[pr][pc].card);
-    const hand = evaluateHand(cards);
-    return isValidHand(hand);
-  }
-  const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-  for (const [dr, dc] of dirs) {
-    let nr = r + dr, nc = c + dc;
-    while (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-      if (state.grid[nr][nc].card && !path.some(p => p[0] === nr && p[1] === nc)) {
-        path.push([nr, nc]);
-        if (findHandFrom(nr, nc, path, depth + 1)) return true;
-        path.pop();
-        break;
-      }
-      if (state.grid[nr][nc].card) break;
-      nr += dr; nc += dc;
-    }
-  }
-  return false;
-}
-
-// ─── Gold helpers ───
-function getGoldLocal() {
-  return parseInt(localStorage.getItem('poker_gold') || '0');
-}
-
-function deductGoldLocal(amount, reason) {
-  const current = getGoldLocal();
-  if (current < amount) return false;
-  localStorage.setItem('poker_gold', current - amount);
-  renderCurrencyBar();
-  return true;
-}
-
 // ─── Shuffle ───
+// [REWRITE]
 function doShuffle() {
   if (state.phase !== 'playing') return;
 
@@ -699,6 +838,7 @@ function doShuffle() {
   showShuffleEffect();
 }
 
+// [REWRITE]
 function updateShuffleUI() {
   const btn     = document.getElementById('shuffleBtn');
   const countEl = document.getElementById('shuffleCount');
@@ -716,16 +856,18 @@ function updateShuffleUI() {
   btn.title = `셔플 (${SHUFFLE_GOLD_COST}G) — ${shuffleRemaining}회 남음`;
 }
 
+// [REWRITE]
 function showShuffleEffect() {
   const flash = document.createElement('div');
   flash.className = 'screen-flash';
   flash.style.background = 'rgba(0, 212, 255, 0.15)';
   document.body.appendChild(flash);
   setTimeout(() => flash.remove(), 400);
-  Sound.cardDrop();
+  playCardDrop();
 }
 
 // ─── Toast ───
+// [REWRITE]
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -734,6 +876,7 @@ function showToast(msg) {
 }
 
 // ─── Game End ───
+// [REWRITE]
 function endGame(reason) {
   state.phase = 'gameover';
   clearInterval(state.timerInterval);
@@ -767,8 +910,9 @@ function endGame(reason) {
   saveInfiniteLeaderboard(finalScore);
 }
 
+// [ADAPTER] — Supabase network call + DOM update
 async function saveInfiniteLeaderboard(score) {
-  const username = (localStorage.getItem('poker_username') || '').trim();
+  const username = (loadLocal('poker_username') || '').trim();
   if (!username || score <= 0) return;
 
   try {
@@ -809,6 +953,7 @@ async function saveInfiniteLeaderboard(score) {
 }
 
 // ─── Restart ───
+// [REWRITE]
 function restartGame() {
   document.getElementById('modalOverlay').classList.remove('active');
   clearInterval(state.timerInterval);
@@ -833,6 +978,7 @@ function restartGame() {
 
 
 // ─── Start Overlay ───
+// [REWRITE]
 function initStartOverlay(onStart) {
   const overlay = document.getElementById('startOverlay');
   const btn = document.getElementById('startBtn');
@@ -841,8 +987,8 @@ function initStartOverlay(onStart) {
   if (!overlay) { if (grid) grid.style.pointerEvents = ''; onStart(); return; }
   function handleStart(e) {
     e.stopPropagation();
-    Sound.warmup();
-    BGM.start();
+    playSoundWarmup();
+    bgmStart();
     overlay.classList.add('hiding');
     setTimeout(() => {
       overlay.remove();
@@ -855,6 +1001,7 @@ function initStartOverlay(onStart) {
 }
 
 // ─── Event Listeners ───
+// [REWRITE]
 function setupEventListeners() {
   const gridEl = document.getElementById('grid');
   gridEl.addEventListener('mousedown', e => { const cell = getCellFromEvent(e); if (cell) startDrag(cell[0], cell[1]); });
@@ -865,6 +1012,11 @@ function setupEventListeners() {
   document.addEventListener('touchend', e => { if (state.isDragging) { e.preventDefault(); finalizePath(); } }, { passive: false });
   document.addEventListener('touchcancel', () => { if (state.isDragging) { state.isDragging = false; clearSelection(); } });
 }
+
+
+// =====================================================================
+// ██  SECTION 6 — BOOTSTRAP  [REWRITE]
+// =====================================================================
 
 // ─── Init ───
 initState();
@@ -877,7 +1029,48 @@ updateShuffleUI();
 
 setupEventListeners();
 
-BGM.init('./audio/Infinite_Theme.mp3');
+bgmInit('./audio/Infinite_Theme.mp3');
 initStartOverlay(() => {
   startTimer();
 });
+
+
+// =====================================================================
+// ██  EXPO 전환 체크리스트
+// =====================================================================
+//
+//  [REUSE]   — 순수 로직, 그대로 복사        : 18개
+//    Constants/data: TIMER_SECONDS, GRID_SIZE, HAND_SIZE, SUITS,
+//      SUIT_NAMES, VALUE_NAMES, RANK, RANK_NAME_BY_VALUE, RANK_LABELS,
+//      HAND_DISPLAY_ORDER, COMBO_RANKS, SHUFFLE_MAX_COUNT, SHUFFLE_GOLD_COST,
+//      SUIT_BY_CODE, VALUE_BY_NAME
+//    Functions: getRankScore, getInfiniteHandLabel, createDeck, shuffle,
+//      cardDisplay, isRedSuit, cardFromId, initState, initGrid,
+//      evaluateHand, partialEval, isValidHand, applyGravityToColumn,
+//      scanForValidMoves, findHandFrom, getHandTier
+//    State vars: handCounts, comboCount, totalHands, infiniteScore,
+//      shuffleRemaining, state, outsideCards
+//
+//  [ADAPTER] — 플랫폼 래퍼, Expo 대체 필요   : 11개
+//    Storage wrappers: saveLocal, loadLocal, removeLocal
+//    Navigation: navigateTo
+//    Sound wrappers: playCardSelect, playHandComplete, playCardDrop,
+//      playSoundWarmup
+//    BGM wrappers: bgmInit, bgmStart
+//    Consuming functions: getHighScore, saveHighScore, getGoldLocal,
+//      deductGoldLocal, saveInfiniteLeaderboard
+//
+//  [REWRITE] — DOM/CSS/이벤트, RN 재작성 필요 : 27개
+//    RANK_CSS, SUIT_CONFIG
+//    Rendering: renderGrid, renderOutsideCards, updateHandPanel,
+//      updateScoreDisplay, updateTimerDisplay, updateHandPreview,
+//      updateDragLine, updateShuffleUI
+//    Effects: triggerScreenFlash, spawnParticles, showScorePopup,
+//      showComboBadge, showShuffleEffect, showToast
+//    Interaction: getEventCoords, getCellFromEvent, updateSelectionVisuals,
+//      startDrag, extendPath, finalizePath, clearSelection
+//    Game flow: removeCardsAndRefill, startTimer, endGame, restartGame,
+//      doShuffle
+//    Setup: initStartOverlay, setupEventListeners, bootstrap block
+//
+// =====================================================================

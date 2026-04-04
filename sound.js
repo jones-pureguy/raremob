@@ -1,9 +1,14 @@
+// =============================================
+// [ADAPTER] 사운드 모듈 — Expo 전환 시 expo-av로 교체
+// =============================================
+
 const Sound = (() => {
   let ctx = null;
   let masterOutput = null;
   let enabled = true;
   let volume = 0.5;
 
+  // [ADAPTER] AudioContext 초기화 — Expo 전환 시 expo-av
   function getCtx() {
     if (!ctx) {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -22,6 +27,7 @@ const Sound = (() => {
     return ctx;
   }
 
+  // [ADAPTER] 톤 재생 — Expo 전환 시 expo-av
   function playTone(freq, duration, opts = {}) {
     if (!enabled) return;
     const c = getCtx();
@@ -39,6 +45,7 @@ const Sound = (() => {
     osc.stop(c.currentTime + duration + (opts.decay || 0) + 0.05);
   }
 
+  // [ADAPTER] 시퀀스 재생 — Expo 전환 시 expo-av
   function playSequence(notes, opts = {}) {
     if (!enabled) return;
     const c = getCtx();
@@ -60,6 +67,7 @@ const Sound = (() => {
     });
   }
 
+  // [REUSE] 음계 상수
   const N = {
     C3: 130.8, G3: 196.0,
     C4: 261.6, D4: 293.7, E4: 329.6, F4: 349.2,
@@ -67,13 +75,16 @@ const Sound = (() => {
     C5: 523.3, D5: 587.3, E5: 659.3, G5: 784.0
   };
 
+  // [REUSE] 카드 선택 음계 매핑
   const SELECT_NOTES = [N.C4, N.D4, N.E4, N.F4];
 
+  // [ADAPTER] 카드 선택 효과음
   function cardSelect(cardIndex) {
     const freq = SELECT_NOTES[Math.min(cardIndex, 3)];
     playTone(freq, 0.08, { type: 'triangle', volume: 0.65 });
   }
 
+  // [ADAPTER] 핸드 완성 효과음
   function handComplete(rankValue) {
     if (rankValue >= 10) {
       playSequence([
@@ -99,6 +110,7 @@ const Sound = (() => {
     }
   }
 
+  // [ADAPTER] 카드 드롭 효과음
   function cardDrop() {
     if (!enabled) return;
     const c = getCtx();
@@ -118,6 +130,7 @@ const Sound = (() => {
   }
 
   let lastTyping = 0;
+  // [ADAPTER] 다이얼로그 타이핑 효과음
   function dialogTyping() {
     if (!enabled) return;
     const now = Date.now();
@@ -126,38 +139,45 @@ const Sound = (() => {
     playTone(120 + Math.random()*100, 0.07, { type:'sine', volume:0.29 });
   }
 
+  // [ADAPTER] 스테이지 클리어 효과음
   function stageClear() {
     playSequence([
       [N.C4,0.15,0],[N.E4,0.15,0],[N.G4,0.15,0],[N.C5,0.3,0.4]
     ], { type:'sine', volume:1.0 });
   }
 
+  // [ADAPTER] 스테이지 실패 효과음
   function stageFail() {
     playSequence([
       [N.G3,0.15,0],[N.C3,0.3,0.3]
     ], { type:'sine', volume:0.85 });
   }
 
+  // [ADAPTER] 사운드 활성화 설정 — Expo 전환 시 AsyncStorage
   function setEnabled(bool) {
     enabled = bool;
     localStorage.setItem('poker_sound_enabled', bool ? '1' : '0');
   }
+  // [ADAPTER] 볼륨 설정 — Expo 전환 시 AsyncStorage
   function setVolume(v) {
     volume = Math.max(0, Math.min(1, v));
     localStorage.setItem('poker_sound_volume', volume);
   }
+  // [ADAPTER] 설정 로드 — Expo 전환 시 AsyncStorage
   function loadSettings() {
     const e = localStorage.getItem('poker_sound_enabled');
     const v = localStorage.getItem('poker_sound_volume');
     if (e !== null) enabled = e === '1';
     if (v !== null) volume = parseFloat(v);
   }
+  // [REUSE] 사운드 활성화 여부
   function isEnabled() { return enabled; }
 
+  // [ADAPTER] AudioContext 웜업
   function warmup() {
     if (ctx) return;
     try {
-      const c = getCtx(); // creates ctx + masterOutput + compressor
+      const c = getCtx();
       const buf = c.createBuffer(1, 1, c.sampleRate);
       const src = c.createBufferSource();
       src.buffer = buf;
@@ -174,12 +194,17 @@ const Sound = (() => {
 
 Sound.loadSettings();
 
+// =============================================
+// [ADAPTER] BGM 모듈 — Expo 전환 시 expo-av로 교체
+// =============================================
+
 const BGM = (() => {
   let audio = null;
   let pendingSrc = null;
   let enabled = true;
   let volume = 0.35;
 
+  // [ADAPTER] BGM 설정 로드 — Expo 전환 시 AsyncStorage
   function loadSettings() {
     const e = localStorage.getItem('poker_music_enabled');
     const v = localStorage.getItem('poker_music_volume');
@@ -187,6 +212,7 @@ const BGM = (() => {
     if (v !== null) volume = parseFloat(v);
   }
 
+  // [ADAPTER] BGM 활성화 설정 — Expo 전환 시 AsyncStorage
   function setEnabled(bool) {
     enabled = bool;
     localStorage.setItem('poker_music_enabled', bool ? '1' : '0');
@@ -194,20 +220,25 @@ const BGM = (() => {
     else if (pendingSrc) start();
   }
 
+  // [ADAPTER] BGM 볼륨 설정 — Expo 전환 시 AsyncStorage
   function setVolume(v) {
     volume = Math.max(0, Math.min(1, v));
     localStorage.setItem('poker_music_volume', volume);
     if (audio) audio.volume = volume;
   }
 
+  // [REUSE] BGM 활성화 여부
   function isEnabled() { return enabled; }
+  // [REUSE] BGM 볼륨 반환
   function getVolume() { return volume; }
 
+  // [ADAPTER] BGM 초기화
   function init(src) {
     loadSettings();
     pendingSrc = src;
   }
 
+  // [ADAPTER] BGM 재생 — Expo 전환 시 expo-av Audio.Sound
   function start() {
     if (!enabled || !pendingSrc) return;
     if (audio && !audio.paused) return;
@@ -221,17 +252,38 @@ const BGM = (() => {
     });
   }
 
+  // [ADAPTER] BGM 정지
   function stop() {
     if (audio) { audio.pause(); audio.currentTime = 0; }
   }
 
+  // [ADAPTER] BGM 일시정지
   function pause() {
     if (audio) audio.pause();
   }
 
+  // [ADAPTER] BGM 재개
   function resume() {
     if (enabled && audio && audio.paused) audio.play().catch(() => {});
   }
 
   return { init, start, stop, pause, resume, setEnabled, setVolume, isEnabled, getVolume, loadSettings };
 })();
+
+// =============================================
+// EXPO 전환 체크리스트
+// Sound 모듈:
+// REUSE   : 2개 (N 음계 상수, SELECT_NOTES, isEnabled)
+// ADAPTER : 12개 함수 (내부 구현 교체 필요)
+//   - getCtx, playTone, playSequence → expo-av
+//   - cardSelect, handComplete, cardDrop, dialogTyping → expo-av
+//   - stageClear, stageFail → expo-av
+//   - setEnabled, setVolume, loadSettings → AsyncStorage
+//   - warmup → expo-av
+// BGM 모듈:
+// REUSE   : 2개 (isEnabled, getVolume)
+// ADAPTER : 8개 함수 (내부 구현 교체 필요)
+//   - init, start, stop, pause, resume → expo-av Audio.Sound
+//   - loadSettings, setEnabled, setVolume → AsyncStorage
+// REWRITE : 0개
+// =============================================

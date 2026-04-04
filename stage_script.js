@@ -1,6 +1,21 @@
 // ─── Stage Mode Game Engine ───
 // Based on script.js with stage-specific: constraints, missions, dual timer, fail/clear
 
+// =============================================
+// [ADAPTER] 플랫폼 어댑터 — Expo 전환 시 교체
+// =============================================
+
+// [ADAPTER] localStorage 래퍼 — Expo 전환 시 AsyncStorage로 교체
+function saveLocal(key, value) { localStorage.setItem(key, value); }
+function loadLocal(key) { return localStorage.getItem(key); }
+
+// [ADAPTER] 페이지 이동 래퍼 — Expo 전환 시 React Navigation으로 교체
+function navigateTo(page) { location.href = page; }
+
+// =============================================
+// [LOGIC] 게임 로직 — Expo 전환 시 재활용
+// =============================================
+
 // ─── Constants ───
 const GRID_SIZE = 7;
 const MAX_HANDS = 9;
@@ -25,9 +40,11 @@ const RANK_BY_NAME = {
 const RANK_NAME_BY_VALUE = {};
 Object.entries(RANK).forEach(([k, v]) => RANK_NAME_BY_VALUE[v] = k);
 
+// [REUSE] 족보별 점수 반환
 function getRankScore(rank) {
   return ScorePolicy.getHandScore(RANK_NAME_BY_VALUE[rank] || 'HIGH_CARD');
 }
+// [REUSE] 카드당 패널티 반환
 function getPenaltyPerCard() {
   return ScorePolicy.get().penalty.perCard;
 }
@@ -70,6 +87,7 @@ let orderedStraightCount = 0;
 let stageFailed = false;
 let stageCleared = false;
 
+// [REUSE] 게임 상태 초기화
 function initState() {
   state = {
     grid: [], hands: [], selectedPath: [], isDragging: false,
@@ -80,6 +98,7 @@ function initState() {
 }
 
 // ─── Card / Deck ───
+// [REUSE] 덱 생성
 function createDeck() {
   const deck = [];
   for (const suit of SUITS) {
@@ -90,6 +109,7 @@ function createDeck() {
   return deck;
 }
 
+// [REUSE] 배열 셔플
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -98,9 +118,11 @@ function shuffle(arr) {
   return arr;
 }
 
+// [REUSE] 카드 표시 문자열
 function cardDisplay(card) { return VALUE_NAMES[card.value] + card.suit; }
 
 // ─── Grid Init & Render ───
+// [REUSE] 그리드 초기화
 function initGrid() {
   const deck = shuffle(createDeck());
   state.removedCards = deck.splice(0, 3);
@@ -116,6 +138,11 @@ function initGrid() {
   }
 }
 
+// =============================================
+// [UI] DOM / 렌더링 — Expo 전환 시 재작성
+// =============================================
+
+// [REWRITE] 그리드 렌더링
 function renderGrid() {
   const gridEl = document.getElementById('grid');
   gridEl.innerHTML = '';
@@ -140,12 +167,14 @@ function renderGrid() {
 }
 
 // ─── Drag Interaction ───
+// [REWRITE] 이벤트 좌표 추출
 function getEventCoords(e) {
   if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
   return { x: e.clientX, y: e.clientY };
 }
 
+// [REWRITE] 이벤트에서 셀 좌표 추출
 function getCellFromEvent(e) {
   const { x, y } = getEventCoords(e);
   const gridEl = document.getElementById('grid');
@@ -165,6 +194,7 @@ function getCellFromEvent(e) {
   return null;
 }
 
+// [REWRITE] 선택 시각 효과 업데이트
 function updateSelectionVisuals() {
   const gridEl = document.getElementById('grid');
   const children = gridEl.children;
@@ -177,6 +207,7 @@ function updateSelectionVisuals() {
   updateHandPreview();
 }
 
+// [REWRITE] 드래그 시작
 function startDrag(row, col) {
   if (state.phase !== 'playing' || stageFailed || stageCleared) return;
   if (!state.grid[row][col].card) return;
@@ -187,6 +218,7 @@ function startDrag(row, col) {
 }
 
 // ─── Movement Constraint Check ───
+// [REUSE] 스테이지 이동 제약 조건 체크
 function isValidStageMove(fromR, fromC, toR, toC) {
   if (!stageConfig) return true;
   const c = stageConfig.constraints;
@@ -216,6 +248,7 @@ function isValidStageMove(fromR, fromC, toR, toC) {
   return true;
 }
 
+// [REUSE] 경로 확장 로직
 function extendPath(row, col) {
   if (!state.isDragging) return;
   if (!state.grid[row][col].card) return;
@@ -265,6 +298,7 @@ function extendPath(row, col) {
   updateSelectionVisuals();
 }
 
+// [REUSE] 경로 확정 및 핸드 처리
 function finalizePath() {
   if (!state.isDragging) return;
   state.isDragging = false;
@@ -439,12 +473,14 @@ function finalizePath() {
   }
 }
 
+// [REWRITE] 선택 초기화
 function clearSelection() {
   state.selectedPath = [];
   updateSelectionVisuals();
 }
 
 // ─── Drag Line & Preview ───
+// [REWRITE] 드래그 라인 SVG 업데이트
 function updateDragLine() {
   const line = document.getElementById('dragLine');
   if (state.selectedPath.length < 2) { line.setAttribute('points', ''); return; }
@@ -461,6 +497,7 @@ function updateDragLine() {
   line.setAttribute('points', points);
 }
 
+// [REWRITE] 핸드 프리뷰 업데이트
 function updateHandPreview() {
   const previewEl = document.getElementById('handPreview');
   if (state.selectedPath.length === 0) { previewEl.textContent = ''; previewEl.className = 'hand-preview'; return; }
@@ -474,6 +511,7 @@ function updateHandPreview() {
 }
 
 // ─── Hand Evaluation ───
+// [REUSE] 족보 판정
 function evaluateHand(cards) {
   if (cards.length < 5) return partialEval(cards);
   const values = cards.map(c => c.value).sort((a, b) => a - b);
@@ -505,6 +543,7 @@ function evaluateHand(cards) {
   return { rank, rankValue: rank, label, pairValue: countValues[0]===2 ? parseInt(countKeys[0][0]) : 0 };
 }
 
+// [REUSE] 부분 족보 판정 (5장 미만)
 function partialEval(cards) {
   if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
   const values = cards.map(c => c.value);
@@ -520,6 +559,7 @@ function partialEval(cards) {
   return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
 }
 
+// [REUSE] 유효 핸드 판정
 function isValidHand(hand) {
   if (hand.rank >= RANK.TWO_PAIR) return true;
   if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
@@ -527,6 +567,7 @@ function isValidHand(hand) {
 }
 
 // ─── Gravity ───
+// [REWRITE] 카드 제거 애니메이션 + 중력 적용
 function removeCardsAndApplyGravity(rank) {
   const gridEl = document.getElementById('grid');
   const positions = [...state.selectedPath];
@@ -571,6 +612,7 @@ function removeCardsAndApplyGravity(rank) {
   }, 300 + totalRemovalTime);
 }
 
+// [REUSE] 컬럼 중력 적용
 function applyGravityToColumn(col) {
   const cards = [];
   for (let r = GRID_SIZE - 1; r >= 0; r--) { if (state.grid[r][col].card) cards.push(state.grid[r][col].card); }
@@ -578,6 +620,7 @@ function applyGravityToColumn(col) {
 }
 
 // ─── Move Scanner (with stage constraints) ───
+// [REUSE] 유효 이동 존재 여부 스캔
 function scanForValidMoves() {
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
@@ -589,6 +632,7 @@ function scanForValidMoves() {
   return false;
 }
 
+// [REUSE] 도달 가능한 카드 목록
 function getReachableCards(r, c, visited) {
   const results = [];
   const jumpAllowed = stageConfig ? stageConfig.constraints.jumpAllowed : true;
@@ -613,6 +657,7 @@ function getReachableCards(r, c, visited) {
   return results;
 }
 
+// [REUSE] DFS 유효 이동 탐색
 function dfsScan(r, c, cards, visited, path) {
   visited[r][c] = true;
   if (cards.length === HAND_SIZE) {
@@ -639,6 +684,7 @@ function dfsScan(r, c, cards, visited, path) {
 }
 
 // ─── Timer ───
+// [REWRITE] 게임 타이머 시작
 function startTimer() {
   const gameTime = stageConfig ? stageConfig.timers.gameTime : 200;
   state.timer = gameTime;
@@ -651,6 +697,7 @@ function startTimer() {
   }, 1000);
 }
 
+// [REWRITE] 타이머 표시 업데이트
 function updateTimerDisplay() {
   const gameTime = stageConfig ? stageConfig.timers.gameTime : 200;
   const numEl = document.getElementById('timerNum');
@@ -666,6 +713,7 @@ function updateTimerDisplay() {
 }
 
 // ─── Stage Timer ───
+// [REWRITE] 스테이지 타이머 시작
 function startStageTimer(seconds) {
   if (!seconds) return;
   stageTimer = seconds;
@@ -681,6 +729,7 @@ function startStageTimer(seconds) {
   }, 1000);
 }
 
+// [REWRITE] 스테이지 타이머 UI 업데이트
 function updateStageTimerUI() {
   const el = document.getElementById('stageTimerNum');
   if (el) {
@@ -691,6 +740,7 @@ function updateStageTimerUI() {
 }
 
 // ─── UI Updates ───
+// [REWRITE] 핸드 패널 업데이트
 function updateHandPanel() {
   const slotsEl = document.getElementById('handSlots');
   const countEl = document.getElementById('handCount');
@@ -704,10 +754,12 @@ function updateHandPanel() {
   slotsEl.innerHTML = html;
 }
 
+// [REWRITE] 스코어 표시 업데이트
 function updateScoreDisplay() {
   document.getElementById('currentScore').textContent = state.currentScore;
 }
 
+// [REUSE] 족보 티어 분류
 function getHandTier(rank) {
   if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
   if (rank >= RANK.ROYAL_FLUSH) return 5;
@@ -717,6 +769,7 @@ function getHandTier(rank) {
   return 1;
 }
 
+// [REWRITE] 화면 플래시 효과
 function triggerScreenFlash(tier) {
   const flash = document.createElement('div');
   flash.className = 'screen-flash';
@@ -730,6 +783,7 @@ function triggerScreenFlash(tier) {
   setTimeout(() => flash.remove(), 500);
 }
 
+// [REWRITE] 파티클 효과 생성
 function spawnParticles(count) {
   for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
@@ -747,6 +801,7 @@ function spawnParticles(count) {
   }
 }
 
+// [REWRITE] 점수 팝업 표시
 function showScorePopup(label, pts, rank) {
   const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
   const popup = document.createElement('div');
@@ -764,6 +819,7 @@ function showScorePopup(label, pts, rank) {
   setTimeout(() => popup.remove(), 1800);
 }
 
+// [REWRITE] 제거된 카드 렌더링
 function renderRemovedCards() {
   const container = document.getElementById('removedCards');
   container.innerHTML = state.removedCards.map(card => {
@@ -772,6 +828,7 @@ function renderRemovedCards() {
   }).join('');
 }
 
+// [REWRITE] 토스트 메시지 표시
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -779,6 +836,7 @@ function showToast(msg) {
   setTimeout(() => el.classList.remove('show'), 2000);
 }
 
+// [REUSE] 남은 카드 수 계산
 function countRemainingCards() {
   let count = 0;
   for (let r = 0; r < GRID_SIZE; r++) for (let c = 0; c < GRID_SIZE; c++) if (state.grid[r][c].card) count++;
@@ -786,6 +844,7 @@ function countRemainingCards() {
 }
 
 // ─── Jump Detection ───
+// [REUSE] 점프 사용 여부 판정
 function wasJumpUsed(path) {
   for (let i = 0; i < path.length - 1; i++) {
     const [r1, c1] = path[i];
@@ -798,6 +857,7 @@ function wasJumpUsed(path) {
 }
 
 // ─── Nth Hand Sub-Condition Checker ───
+// [REUSE] N번째 핸드 서브 조건 체크
 function checkHandSubCondition(hand, condition) {
   switch (condition) {
     case 'all_odd': {
@@ -815,6 +875,7 @@ function checkHandSubCondition(hand, condition) {
   }
 }
 
+// [REUSE] N번째 핸드 조건 체크
 function checkNthHandConditions() {
   if (!stageConfig) return true;
   const nthConditions = stageConfig.mission.conditions.filter(c => c.type === 'nth_hand_condition');
@@ -834,12 +895,14 @@ function checkNthHandConditions() {
 }
 
 // ─── Mission Condition Checker ───
+// [REUSE] 미션 전체 조건 충족 여부
 function checkAllConditionsMet() {
   if (!stageConfig) return false;
   const m = stageConfig.mission;
   return m.conditions.every(cond => checkCondition(cond));
 }
 
+// [REUSE] 개별 조건 체크
 function checkCondition(cond) {
   switch (cond.type) {
     case 'specific_hand': {
@@ -912,6 +975,7 @@ function checkCondition(cond) {
   }
 }
 
+// [REWRITE] 점수 진행도 렌더링
 function renderScoreProgress() {
   const el = document.getElementById('scoreProgress');
   if (!el) return;
@@ -925,6 +989,7 @@ function renderScoreProgress() {
   el.textContent = i18n.t('modal.scoreBreakdown.scoreProgress', { current, target, pct });
 }
 
+// [REUSE] 최종 점수 계산
 function calcFinalScore() {
   const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
   const timeBonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
@@ -934,6 +999,7 @@ function calcFinalScore() {
 }
 
 // ─── Game End (stage version) ───
+// [REUSE] 게임 종료 처리
 function endGame(reason) {
   if (stageFailed || stageCleared) return;
   state.phase = reason;
@@ -961,6 +1027,7 @@ function endGame(reason) {
 }
 
 // ─── Stage Complete ───
+// [REUSE] 스테이지 클리어 처리 (보상 계산 + UI 호출)
 function triggerStageComplete() {
   if (stageCleared) return;
   stageCleared = true;
@@ -1007,7 +1074,7 @@ function triggerStageComplete() {
   const totalGold = goldBase + bonuses.reduce((s, b) => s + b.gold, 0);
 
   // Check first clear from local cache (synchronous — no DB wait)
-  const progress = JSON.parse(localStorage.getItem('poker_stage_progress') || '{}');
+  const progress = JSON.parse(loadLocal('poker_stage_progress') || '{}');
   const isFirstClear = !progress.clearedStages || !progress.clearedStages.includes(stageConfig.id);
   const actualGold = isFirstClear ? totalGold : 0;
 
@@ -1021,6 +1088,7 @@ function triggerStageComplete() {
 }
 
 // ─── Stage Fail ───
+// [REUSE] 스테이지 실패 처리
 function triggerStageFail(reason, customMessage) {
   if (stageFailed || stageCleared) return;
   stageFailed = true;
@@ -1033,9 +1101,10 @@ function triggerStageFail(reason, customMessage) {
 }
 
 // ─── Popups ───
+// [REWRITE] 스테이지 클리어 팝업 표시
 function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, isFirstClear }) {
   const modal = document.getElementById('modal');
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  const currentGold = parseInt(loadLocal('poker_gold') || '0');
   const actualGold = isFirstClear ? totalGold : 0;
   const newGold = currentGold + actualGold;
 
@@ -1106,6 +1175,7 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
   document.getElementById('modalOverlay').classList.add('active');
 }
 
+// [REWRITE] 점수 분석 HTML 생성
 function buildScoreBreakdownHTML(accentColor) {
   if (!stageConfig) return '';
   const conditions = stageConfig.mission.conditions || [];
@@ -1152,6 +1222,7 @@ function buildScoreBreakdownHTML(accentColor) {
     </div>`;
 }
 
+// [REWRITE] 스테이지 실패 팝업 표시
 function showStageFailPopup(reason, customMessage) {
   const modal = document.getElementById('modal');
   const msg = customMessage || (FAIL_MESSAGES[reason] ? FAIL_MESSAGES[reason]() : i18n.t('failReasons.stageFail'));
@@ -1184,15 +1255,18 @@ function showStageFailPopup(reason, customMessage) {
 }
 
 // ─── Navigation (in-place for BGM continuity) ───
+// [REWRITE] 다음 스테이지 이동
 function goNextStage() {
   const nextId = stageConfig.id + 1;
   initStageById(nextId);
 }
 
+// [REWRITE] 스테이지 재시도
 function retryStage() {
   initStageById(stageConfig.id);
 }
 
+// [REWRITE] 스테이지 ID로 초기화 (인플레이스)
 async function initStageById(stageId) {
   // Stop timers
   if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
@@ -1217,11 +1291,11 @@ async function initStageById(stageId) {
     allStages = stages;
     stage = stages.find(s => s.id === stageId);
   } catch(e) {
-    location.href = 'stage_select.html';
+    navigateTo('stage_select.html');
     return;
   }
   if (!stage) {
-    location.href = 'stage_select.html';
+    navigateTo('stage_select.html');
     return;
   }
   stageConfig = stage;
@@ -1272,6 +1346,7 @@ async function initStageById(stageId) {
   showInPlaceStartOverlay(stage);
 }
 
+// [REWRITE] 인플레이스 스타트 오버레이
 function showInPlaceStartOverlay(stage) {
   const grid = document.getElementById('gridContainer') || document.getElementById('grid');
   if (grid) grid.style.pointerEvents = 'none';
@@ -1308,15 +1383,16 @@ function showInPlaceStartOverlay(stage) {
 }
 
 window.addEventListener('popstate', () => {
-  location.href = 'stage_select.html';
+  navigateTo('stage_select.html');
 });
 
 // ─── Game Reset (stage version) ───
+// [REWRITE] 게임 리셋
 function resetGame() {
   if (stageFailed || stageCleared) return;
 
   // 골드 확인
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  const currentGold = parseInt(loadLocal('poker_gold') || '0');
   if (currentGold < 1) {
     showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
     return;
@@ -1371,6 +1447,7 @@ function resetGame() {
   }, 100);
 }
 
+// [REWRITE] 리셋 버튼 상태 업데이트
 function updateResetButton() {
   const btn = document.getElementById('restartBtn');
   if (!btn || !stageConfig) return;
@@ -1391,8 +1468,9 @@ function updateResetButton() {
 }
 
 // ─── DB Functions ───
+// [REUSE] DB 진행도 동기화
 function syncProgressFromDB() {
-  const playerId = localStorage.getItem('poker_player_id');
+  const playerId = loadLocal('poker_player_id');
   if (!playerId) return;
 
   // 골드 싱크 — DB 읽지 않고 localStorage 유지 (세션 중 localStorage가 진실)
@@ -1402,7 +1480,7 @@ function syncProgressFromDB() {
   sb.from('player_stages').select('*').eq('player_id', playerId)
     .then(({ data }) => {
       if (!data || data.length === 0) return; // DB에 데이터 없으면 로컬 유지
-      const local = JSON.parse(localStorage.getItem('poker_stage_progress') || '{}');
+      const local = JSON.parse(loadLocal('poker_stage_progress') || '{}');
       const localCleared = local.clearedStages || [];
       const dbCleared = data.filter(s => s.cleared).map(s => s.stage_id);
       // 로컬과 DB를 병합 (union)
@@ -1412,13 +1490,14 @@ function syncProgressFromDB() {
         stageData: data,
         lastSynced: new Date().toISOString(),
       };
-      localStorage.setItem('poker_stage_progress', JSON.stringify(progress));
+      saveLocal('poker_stage_progress', JSON.stringify(progress));
     })
     .then(result => { if (result && result.error) console.error('Stage progress sync failed:', result.error); });
 }
 
+// [REUSE] 첫 클리어 여부 확인
 async function checkFirstClear(stageId) {
-  const playerId = localStorage.getItem('poker_player_id');
+  const playerId = loadLocal('poker_player_id');
   if (!playerId) return true;
   try {
     const { data } = await sb.from('player_stages')
@@ -1428,8 +1507,9 @@ async function checkFirstClear(stageId) {
   } catch(e) { return true; }
 }
 
+// [REUSE] 스테이지 결과 DB 저장
 async function saveStageResult(stageId, result, goldEarned) {
-  const playerId = localStorage.getItem('poker_player_id');
+  const playerId = loadLocal('poker_player_id');
   if (!playerId) return;
 
   try {
@@ -1467,21 +1547,22 @@ async function saveStageResult(stageId, result, goldEarned) {
       const { data: player } = await sb.from('players').select('gold').eq('id', playerId).single();
       const currentGold = player ? player.gold : 0;
       await sb.from('players').update({ gold: currentGold + goldEarned }).eq('id', playerId);
-      localStorage.setItem('poker_gold', currentGold + goldEarned);
+      saveLocal('poker_gold', currentGold + goldEarned);
     }
 
     // Update local cache
-    const progress = JSON.parse(localStorage.getItem('poker_stage_progress') || '{}');
+    const progress = JSON.parse(loadLocal('poker_stage_progress') || '{}');
     if (!progress.clearedStages) progress.clearedStages = [];
     if (result.success && !progress.clearedStages.includes(stageId)) {
       progress.clearedStages.push(stageId);
     }
-    localStorage.setItem('poker_stage_progress', JSON.stringify(progress));
+    saveLocal('poker_stage_progress', JSON.stringify(progress));
   } catch(e) { console.error('Failed to save stage result:', e); }
 }
 
 // ─── Stage Init ───
 // ─── Start Overlay ───
+// [REWRITE] 스타트 오버레이 초기화
 function initStartOverlay(onStart) {
   const overlay = document.getElementById('startOverlay');
   const btn = document.getElementById('startBtn');
@@ -1507,10 +1588,11 @@ function initStartOverlay(onStart) {
   overlay.addEventListener('click', handleStart);
 }
 
+// [REWRITE] 스테이지 메인 초기화
 async function initStage() {
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search); // [ADAPTER] URL 파싱 — Expo 전환 시 React Navigation params로 교체
   const stageId = parseInt(params.get('id'));
-  if (!stageId) { window.location.href = 'stage_select.html'; return; }
+  if (!stageId) { window.navigateTo('stage_select.html'); return; }
 
   // Load stages.json
   try {
@@ -1553,7 +1635,7 @@ async function initStage() {
   }
 
   // Username
-  const saved = localStorage.getItem('poker_username') || '';
+  const saved = loadLocal('poker_username') || '';
   const el = document.getElementById('usernameDisplay');
   if (el) el.textContent = saved;
 
@@ -1597,6 +1679,7 @@ async function initStage() {
 }
 
 let _stageEventsAttached = false;
+// [REWRITE] 이벤트 리스너 설정
 function setupEventListeners() {
   if (_stageEventsAttached) return;
   _stageEventsAttached = true;
@@ -1636,3 +1719,31 @@ function setupEventListeners() {
 
 // ─── Boot ───
 initStage();
+
+// =============================================
+// EXPO 전환 체크리스트
+// REUSE   : 24개 함수 (변경 불필요)
+//   - getRankScore, getPenaltyPerCard, initState, createDeck, shuffle
+//   - cardDisplay, initGrid, evaluateHand, partialEval, isValidHand
+//   - isValidStageMove, extendPath, finalizePath, applyGravityToColumn
+//   - scanForValidMoves, getReachableCards, dfsScan, countRemainingCards
+//   - wasJumpUsed, checkHandSubCondition, checkNthHandConditions
+//   - checkAllConditionsMet, checkCondition, calcFinalScore, getHandTier
+//   - endGame, triggerStageComplete, triggerStageFail
+//   - syncProgressFromDB, checkFirstClear, saveStageResult
+// ADAPTER : 3개 함수 (내부 구현 교체 필요)
+//   - saveLocal → AsyncStorage
+//   - loadLocal → AsyncStorage
+//   - navigateTo → React Navigation
+// REWRITE : 24개 함수 (전면 재작성)
+//   - renderGrid, updateSelectionVisuals, getEventCoords, getCellFromEvent
+//   - startDrag, clearSelection, updateDragLine, updateHandPreview
+//   - removeCardsAndApplyGravity, startTimer, updateTimerDisplay
+//   - startStageTimer, updateStageTimerUI, updateHandPanel, updateScoreDisplay
+//   - triggerScreenFlash, spawnParticles, showScorePopup
+//   - renderRemovedCards, showToast, renderScoreProgress
+//   - showStageClearPopup, buildScoreBreakdownHTML, showStageFailPopup
+//   - goNextStage, retryStage, initStageById, showInPlaceStartOverlay
+//   - resetGame, updateResetButton, initStartOverlay, initStage
+//   - setupEventListeners
+// =============================================

@@ -1,9 +1,13 @@
-// Quick Reference Modal — shared across game/stage/puzzle pages
+// =============================================
+// [UI] Quick Reference Modal — Expo 전환 시 재작성
+// =============================================
 
+// [REUSE] 점수 정책 조회
 function getQRScores() {
   return ScorePolicy.get().handScores;
 }
 
+// [REWRITE] 미니 카드 HTML 생성
 function miniCard(val, suit, dim) {
   const cls = {'\u2660':'s','\u2665':'h','\u2666':'d','\u2663':'c'}[suit] || '';
   return `<div class="qr-mini-card ${cls}${dim?' dim':''}">
@@ -12,6 +16,7 @@ function miniCard(val, suit, dim) {
   </div>`;
 }
 
+// [REWRITE] 족보 행 HTML 생성
 function qrRow(nameStr, scoreStr, descStr, cardsHTML) {
   return `
     <div class="qr-row">
@@ -23,6 +28,7 @@ function qrRow(nameStr, scoreStr, descStr, cardsHTML) {
     </div>`;
 }
 
+// [REUSE] 족보 카드 데이터
 const QR_HANDS = [
   { rank: 'STRAIGHT_FLUSH', cards: [['5','\u2666',false],['6','\u2666',false],['7','\u2666',false],['8','\u2666',false],['9','\u2666',false]] },
   { rank: 'FOUR_KIND',      cards: [['7','\u2660',true],['K','\u2660',false],['K','\u2665',false],['K','\u2666',false],['K','\u2663',false]] },
@@ -34,7 +40,7 @@ const QR_HANDS = [
   { rank: 'ONE_PAIR',       cards: [['2','\u2660',true],['7','\u2663',true],['K','\u2666',true],['A','\u2660',false],['A','\u2665',false]] }
 ];
 
-// Fallback hand names (used if i18n data not yet loaded)
+// [REUSE] 폴백 족보명/설명
 const QR_FALLBACK_NAMES = {
   ROYAL_FLUSH_PLUS: 'Royal Flush+', ROYAL_FLUSH: 'Royal Flush',
   STRAIGHT_FLUSH: 'Straight Flush', FOUR_KIND: 'Four of a Kind',
@@ -54,27 +60,28 @@ const QR_FALLBACK_DESCS = {
   ONE_PAIR: 'A pair (10s or higher only)'
 };
 
+// [REUSE] i18n 기반 족보명 조회
 function qrName(rank) {
   const v = i18n.t(`handNames.${rank}`);
   return (v && !v.startsWith('handNames.')) ? v : QR_FALLBACK_NAMES[rank] || rank;
 }
+// [REUSE] i18n 기반 족보 설명 조회
 function qrDesc(rank) {
   const v = i18n.t(`quickRef.desc.${rank}`);
   return (v && !v.startsWith('quickRef.')) ? v : QR_FALLBACK_DESCS[rank] || '';
 }
 
+// [REWRITE] Quick Reference 패널 빌드
 function buildQuickRef() {
   const scores = getQRScores();
   const list = document.getElementById('qrHandList');
   if (!list) return;
 
-  // Royal Flush+ — mini cards with orange arrows
   const rfPlusCards = [['10','\u2660'],['J','\u2660'],['Q','\u2660'],['K','\u2660'],['A','\u2660']];
   const rfPlusHTML = rfPlusCards.map(([v,s], i) =>
     miniCard(v, s, false) + (i < 4 ? '<span class="qr-arrow">\u2192</span>' : '')
   ).join('');
 
-  // Royal Flush — mini cards without arrows
   const rfCards = [['10','\u2660'],['J','\u2660'],['Q','\u2660'],['K','\u2660'],['A','\u2660']];
   const rfHTML = rfCards.map(([v,s]) => miniCard(v, s, false)).join('');
 
@@ -93,8 +100,8 @@ function buildQuickRef() {
   list.innerHTML = rows;
 }
 
+// [REWRITE] Quick Reference 모달 표시
 async function showQuickRef() {
-  // Ensure i18n is loaded before building content
   if (typeof i18n !== 'undefined' && i18n.t('handNames.ROYAL_FLUSH') === 'handNames.ROYAL_FLUSH') {
     await i18n.init();
   }
@@ -104,6 +111,7 @@ async function showQuickRef() {
   el.classList.add('active');
 }
 
+// [REWRITE] Quick Reference 모달 닫기
 function closeQuickRef() {
   const el = document.getElementById('qrOverlay');
   if (!el) return;
@@ -111,7 +119,7 @@ function closeQuickRef() {
   el.style.display = 'none';
 }
 
-// Bind button events via JS for reliable mobile touch handling
+// [REWRITE] 버튼 이벤트 바인딩
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.qr-btn').forEach(btn => {
     btn.removeAttribute('onclick');
@@ -131,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Overlay close — touch + click
   const overlay = document.getElementById('qrOverlay');
   if (overlay) {
     overlay.addEventListener('touchend', e => {
@@ -146,6 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// [REWRITE] ESC 키 바인딩
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeQuickRef();
 });
+
+// =============================================
+// EXPO 전환 체크리스트
+// REUSE   : 6개 (getQRScores, QR_HANDS, QR_FALLBACK_*, qrName, qrDesc)
+// ADAPTER : 0개
+// REWRITE : 7개 함수/블록 (전면 재작성)
+//   - miniCard, qrRow → React Native 컴포넌트
+//   - buildQuickRef, showQuickRef, closeQuickRef → Modal 컴포넌트
+//   - DOMContentLoaded 이벤트, keydown 이벤트 → RN 이벤트
+// =============================================

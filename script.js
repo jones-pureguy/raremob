@@ -1,4 +1,32 @@
-// ─── Constants ───
+// =============================================
+// [ADAPTER] 플랫폼 어댑터 — Expo 전환 시 교체
+// =============================================
+
+// [ADAPTER] localStorage wrapper → Expo: AsyncStorage / SecureStore
+function saveLocal(key, value) {
+  localStorage.setItem(key, value);
+}
+
+// [ADAPTER] localStorage wrapper → Expo: AsyncStorage / SecureStore
+function loadLocal(key) {
+  return localStorage.getItem(key);
+}
+
+// [ADAPTER] localStorage wrapper → Expo: AsyncStorage / SecureStore
+function removeLocal(key) {
+  localStorage.removeItem(key);
+}
+
+// [ADAPTER] page navigation → Expo: navigation.navigate() / expo-router
+function navigateTo(page) {
+  location.href = page;
+}
+
+// =============================================
+// [LOGIC] 게임 로직 — Expo 전환 시 재활용
+// =============================================
+
+// ─── Constants ─── // [REUSE]
 const TIMER_SECONDS = 200;
 const GRID_SIZE = 7;
 const MAX_HANDS = 9;
@@ -8,7 +36,7 @@ const SUITS = ['♠', '♥', '♦', '♣'];
 const SUIT_NAMES = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
 
-const RANK = {
+const RANK = { // [REUSE]
   HIGH_CARD: 0,
   ONE_PAIR: 1,
   TWO_PAIR: 2,
@@ -22,18 +50,18 @@ const RANK = {
   ROYAL_FLUSH_PLUS: 10,
 };
 
-const RANK_NAME_BY_VALUE = {};
+const RANK_NAME_BY_VALUE = {}; // [REUSE]
 Object.entries(RANK).forEach(([k, v]) => RANK_NAME_BY_VALUE[v] = k);
 
-function getRankScore(rank) {
+function getRankScore(rank) { // [REUSE]
   return ScorePolicy.getHandScore(RANK_NAME_BY_VALUE[rank] || 'HIGH_CARD');
 }
 
-function getPenaltyPerCard() {
+function getPenaltyPerCard() { // [REUSE]
   return ScorePolicy.get().penalty.perCard;
 }
 
-const RANK_LABELS = {
+const RANK_LABELS = { // [REUSE]
   [RANK.HIGH_CARD]: 'High Card',
   [RANK.ONE_PAIR]: 'One Pair',
   [RANK.TWO_PAIR]: 'Two Pair',
@@ -47,7 +75,7 @@ const RANK_LABELS = {
   [RANK.ROYAL_FLUSH_PLUS]: 'Royal Flush+',
 };
 
-const RANK_CSS = {
+const RANK_CSS = { // [REUSE]
   [RANK.ONE_PAIR]: 'one-pair',
   [RANK.TWO_PAIR]: 'two-pair',
   [RANK.THREE_KIND]: 'three-kind',
@@ -60,13 +88,13 @@ const RANK_CSS = {
   [RANK.ROYAL_FLUSH_PLUS]: 'royal-flush-plus',
 };
 
-// ─── Game State ───
+// ─── Game State ─── // [REUSE]
 let state = {};
 let currentPlayerId = null; // cached player uuid
 let replayLog = null; // current game replay data
 let isRetryMode = false; // true when game started via GAME RETRY
 
-function initState() {
+function initState() { // [REUSE]
   state = {
     grid: [],
     hands: [],
@@ -82,7 +110,7 @@ function initState() {
 }
 
 // ─── Card / Deck Utilities ───
-function createDeck() {
+function createDeck() { // [REUSE]
   const deck = [];
   for (const suit of SUITS) {
     for (let v = 2; v <= 14; v++) {
@@ -92,7 +120,7 @@ function createDeck() {
   return deck;
 }
 
-function shuffle(arr) {
+function shuffle(arr) { // [REUSE]
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -100,30 +128,30 @@ function shuffle(arr) {
   return arr;
 }
 
-function cardDisplay(card) {
+function cardDisplay(card) { // [REUSE]
   return VALUE_NAMES[card.value] + card.suit;
 }
 
-function isRedSuit(suit) {
+function isRedSuit(suit) { // [REUSE]
   return suit === '♥' || suit === '♦';
 }
 
 // ─── Card ID Parser ───
-const SUIT_BY_CODE = { s: '♠', h: '♥', d: '♦', c: '♣' };
-const VALUE_BY_NAME = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
+const SUIT_BY_CODE = { s: '♠', h: '♥', d: '♦', c: '♣' }; // [REUSE]
+const VALUE_BY_NAME = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 }; // [REUSE]
 
-function cardFromId(id) {
+function cardFromId(id) { // [REUSE]
   const suitCode = id[id.length - 1];
   const valueName = id.slice(0, -1);
   return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
 }
 
-// ─── Grid Init & Render ───
-function initGrid() {
+// ─── Grid Init ───
+function initGrid() { // [REUSE] (uses ADAPTER: saveLocal/loadLocal/removeLocal)
   let deck;
-  const retryRaw = localStorage.getItem('poker_retry_deck');
+  const retryRaw = loadLocal('poker_retry_deck');
   if (retryRaw) {
-    localStorage.removeItem('poker_retry_deck');
+    removeLocal('poker_retry_deck');
     const deckIds = JSON.parse(retryRaw);
     deck = deckIds.map(id => cardFromId(id));
     isRetryMode = true;
@@ -150,327 +178,15 @@ function initGrid() {
   replayLog = {
     version: 1,
     timestamp: new Date().toISOString(),
-    username: (localStorage.getItem('poker_username') || '').trim(),
+    username: (loadLocal('poker_username') || '').trim(),
     initialDeck: [...state.removedCards, ...cards].map(c => c.id),
     actions: [],
     result: null,
   };
 }
 
-function renderGrid() {
-  const gridEl = document.getElementById('grid');
-  gridEl.innerHTML = '';
-
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      const cell = state.grid[r][c];
-      const div = document.createElement('div');
-      div.dataset.row = r;
-      div.dataset.col = c;
-
-      if (cell.card) {
-        const card = cell.card;
-        const suitClass = 'suit-' + SUIT_NAMES[card.suit];
-        div.className = `card ${suitClass}`;
-
-        const vn = VALUE_NAMES[card.value];
-        div.innerHTML = `
-          <span class="card-value">${vn}</span>
-          <span class="card-suit">${card.suit}</span>
-          <span class="debug-info">${r},${c}</span>
-        `;
-
-        // Check selected
-        if (state.selectedPath.some(p => p[0] === r && p[1] === c)) {
-          div.classList.add('selected');
-        }
-      } else {
-        div.className = 'card empty';
-        div.innerHTML = `<span class="debug-info">${r},${c}</span>`;
-      }
-
-      gridEl.appendChild(div);
-    }
-  }
-
-  updateDragLine();
-}
-
-// ─── Drag Interaction ───
-function getEventCoords(e) {
-  if (e.touches && e.touches.length > 0) {
-    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }
-  if (e.changedTouches && e.changedTouches.length > 0) {
-    return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-  }
-  return { x: e.clientX, y: e.clientY };
-}
-
-function getCellFromEvent(e) {
-  const { x, y } = getEventCoords(e);
-  const gridEl = document.getElementById('grid');
-  const children = gridEl.children;
-  const inset = 0.15; // shrink hit area to center 70% to help diagonal drags
-  for (let i = 0; i < children.length; i++) {
-    const cardEl = children[i];
-    if (cardEl.classList.contains('empty')) continue;
-    const rect = cardEl.getBoundingClientRect();
-    const mx = rect.width * inset;
-    const my = rect.height * inset;
-    if (x >= rect.left + mx && x <= rect.right - mx &&
-        y >= rect.top + my && y <= rect.bottom - my) {
-      const row = parseInt(cardEl.dataset.row);
-      const col = parseInt(cardEl.dataset.col);
-      if (isNaN(row) || isNaN(col)) return null;
-      return [row, col];
-    }
-  }
-  return null;
-}
-
-// Update selection visuals without rebuilding DOM (safe for touch)
-function updateSelectionVisuals() {
-  const gridEl = document.getElementById('grid');
-  const children = gridEl.children;
-  for (let i = 0; i < children.length; i++) {
-    const el = children[i];
-    const r = parseInt(el.dataset.row);
-    const c = parseInt(el.dataset.col);
-    const isSelected = state.selectedPath.some(p => p[0] === r && p[1] === c);
-    el.classList.toggle('selected', isSelected);
-  }
-  updateDragLine();
-  updateHandPreview();
-}
-
-function startDrag(row, col) {
-  if (state.phase !== 'playing') return;
-  if (!state.grid[row][col].card) return;
-  state.isDragging = true;
-  state.selectedPath = [[row, col]];
-  Sound.cardSelect(0);
-  updateSelectionVisuals();
-}
-
-function extendPath(row, col) {
-  if (!state.isDragging) return;
-  if (!state.grid[row][col].card) return;
-
-  // Already in path? Allow backtracking even at 5 cards
-  if (state.selectedPath.some(p => p[0] === row && p[1] === col)) {
-    if (state.selectedPath.length >= 2) {
-      const prev = state.selectedPath[state.selectedPath.length - 2];
-      if (prev[0] === row && prev[1] === col) {
-        state.selectedPath.pop();
-        const pathLenAfterRemove = state.selectedPath.length;
-        if (pathLenAfterRemove >= 1 && pathLenAfterRemove <= 3) {
-          Sound.cardSelect(pathLenAfterRemove - 1);
-        }
-        updateSelectionVisuals();
-      }
-    }
-    return;
-  }
-
-  // Can't add beyond 5
-  if (state.selectedPath.length >= HAND_SIZE) return;
-
-  const last = state.selectedPath[state.selectedPath.length - 1];
-
-  // 8방향 + 빈칸 건너뛰기
-  const dr = row - last[0];
-  const dc = col - last[1];
-  if (dr === 0 && dc === 0) return;
-  if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
-  const stepR = Math.sign(dr);
-  const stepC = Math.sign(dc);
-  let cr = last[0] + stepR;
-  let cc = last[1] + stepC;
-  while (cr !== row || cc !== col) {
-    if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
-    if (state.grid[cr][cc].card !== null) return;
-    cr += stepR;
-    cc += stepC;
-  }
-
-  state.selectedPath.push([row, col]);
-  const pathLen = state.selectedPath.length;
-  if (pathLen >= 1 && pathLen <= 4) {
-    Sound.cardSelect(pathLen - 1);
-  }
-  updateSelectionVisuals();
-}
-
-function finalizePath() {
-  if (!state.isDragging) return;
-  state.isDragging = false;
-
-  if (state.selectedPath.length < HAND_SIZE) {
-    showToast(i18n.t('toast.selectFiveCards'));
-    clearSelection();
-    return;
-  }
-
-  const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card);
-  const hand = evaluateHand(cards);
-
-  // Royal Flush+ : Royal Flush with perfect drag order (10→J→Q→K→A)
-  if (hand.rank === RANK.ROYAL_FLUSH) {
-    const dragValues = cards.map(c => c.value);
-    if (dragValues[0] === 10 && dragValues[1] === 11 && dragValues[2] === 12 && dragValues[3] === 13 && dragValues[4] === 14) {
-      hand.rank = RANK.ROYAL_FLUSH_PLUS;
-      hand.rankValue = RANK.ROYAL_FLUSH_PLUS;
-      hand.label = 'Royal Flush+';
-    }
-  }
-
-  if (!isValidHand(hand)) {
-    // Invalid: shake + message
-    const gridEl = document.getElementById('grid');
-    state.selectedPath.forEach(([r, c]) => {
-      const idx = r * GRID_SIZE + c;
-      const el = gridEl.children[idx];
-      el.classList.add('invalid-shake');
-      el.style.borderColor = '#ff5252';
-      setTimeout(() => {
-        el.classList.remove('invalid-shake');
-        el.style.borderColor = '';
-      }, 400);
-    });
-    showToast(i18n.t('toast.needHigherPair'));
-    setTimeout(() => clearSelection(), 400);
-    return;
-  }
-
-  // Valid hand!
-  const earnedScore = getRankScore(hand.rank);
-  state.currentScore += earnedScore;
-  state.hands.push({
-    cards: [...cards],
-    rank: hand.rank,
-    rankValue: hand.rankValue,
-    label: hand.label,
-  });
-
-  // Record action for replay
-  if (replayLog) {
-    replayLog.actions.push({
-      t: state.timer,
-      path: state.selectedPath.map(([r, c]) => [r, c]),
-      hand: hand.label,
-      score: earnedScore,
-    });
-  }
-
-  Sound.handComplete(hand.rankValue);
-  updateScoreDisplay();
-  showScorePopup(hand.label, earnedScore, hand.rank);
-  removeCardsAndApplyGravity(hand.rank);
-}
-
-function clearSelection() {
-  state.selectedPath = [];
-  updateSelectionVisuals();
-}
-
-function updateDragLine() {
-  const line = document.getElementById('dragLine');
-  if (state.selectedPath.length < 2) {
-    line.setAttribute('points', '');
-    return;
-  }
-
-  const gridEl = document.getElementById('grid');
-  const containerEl = document.getElementById('gridContainer');
-  const containerRect = containerEl.getBoundingClientRect();
-
-  const points = state.selectedPath.map(([r, c]) => {
-    const idx = r * GRID_SIZE + c;
-    const cardEl = gridEl.children[idx];
-    if (!cardEl) return '0,0';
-    const rect = cardEl.getBoundingClientRect();
-    const x = rect.left + rect.width / 2 - containerRect.left;
-    const y = rect.top + rect.height / 2 - containerRect.top;
-    return `${x},${y}`;
-  }).join(' ');
-
-  line.setAttribute('points', points);
-}
-
-function updateHandPreview() {
-  const previewEl = document.getElementById('handPreview');
-  if (state.selectedPath.length === 0) {
-    previewEl.textContent = '';
-    previewEl.className = 'hand-preview';
-    return;
-  }
-
-  const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
-  if (cards.length < 2) {
-    previewEl.textContent = i18n.t('ui.selecting', { count: cards.length });
-    previewEl.className = 'hand-preview';
-    return;
-  }
-
-  const hand = evaluateHand(cards);
-  const valid = cards.length === 5 && isValidHand(hand);
-  const mark = cards.length === 5 ? (valid ? '✓' : '✗') : '';
-
-  previewEl.textContent = `${hand.label} ${mark}`;
-  previewEl.className = 'hand-preview ' + (cards.length === 5 ? (valid ? 'valid' : 'invalid') : '');
-}
-
-// ─── Event Listeners ───
-const gridEl = document.getElementById('grid');
-
-gridEl.addEventListener('mousedown', e => {
-  const cell = getCellFromEvent(e);
-  if (cell) startDrag(cell[0], cell[1]);
-});
-
-gridEl.addEventListener('mousemove', e => {
-  const cell = getCellFromEvent(e);
-  if (cell) extendPath(cell[0], cell[1]);
-});
-
-document.addEventListener('mouseup', () => {
-  if (state.isDragging) finalizePath();
-});
-
-gridEl.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const cell = getCellFromEvent(e);
-  if (cell) startDrag(cell[0], cell[1]);
-}, { passive: false });
-
-document.addEventListener('touchmove', e => {
-  if (!state.isDragging) return;
-  e.preventDefault();
-  const cell = getCellFromEvent(e);
-  if (cell) extendPath(cell[0], cell[1]);
-}, { passive: false });
-
-document.addEventListener('touchend', e => {
-  if (state.isDragging) {
-    e.preventDefault();
-    finalizePath();
-  }
-}, { passive: false });
-
-document.addEventListener('touchcancel', () => {
-  if (state.isDragging) {
-    state.isDragging = false;
-    clearSelection();
-  }
-});
-
-document.getElementById('restartBtn').addEventListener('click', () => {
-  resetGame();
-});
-
 // ─── Hand Evaluation (Poker Logic) ───
-function evaluateHand(cards) {
+function evaluateHand(cards) { // [REUSE]
   if (cards.length < 5) {
     // Partial eval for preview
     return partialEval(cards);
@@ -542,7 +258,7 @@ function evaluateHand(cards) {
   return { rank, rankValue: rank, label, pairValue: countValues[0] === 2 ? parseInt(countKeys[0][0]) : 0 };
 }
 
-function partialEval(cards) {
+function partialEval(cards) { // [REUSE]
   if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
 
   const values = cards.map(c => c.value);
@@ -563,63 +279,14 @@ function partialEval(cards) {
   return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
 }
 
-function isValidHand(hand) {
+function isValidHand(hand) { // [REUSE]
   if (hand.rank >= RANK.TWO_PAIR) return true;
   if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
   return false;
 }
 
-// ─── Card Removal + Gravity ───
-function removeCardsAndApplyGravity(rank) {
-  const gridEl = document.getElementById('grid');
-  const positions = [...state.selectedPath];
-  const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
-
-  const intervals = [0, 0, 0, 50, 40, 30];
-  const interval = intervals[Math.min(tier, 5)] || 0;
-
-  if (interval === 0) {
-    positions.forEach(([r, c]) => {
-      gridEl.children[r * GRID_SIZE + c].classList.add('removing');
-    });
-  } else {
-    positions.forEach(([r, c], i) => {
-      setTimeout(() => {
-        const cell = gridEl.children[r * GRID_SIZE + c];
-        if (cell) cell.classList.add('removing');
-      }, i * interval);
-    });
-  }
-
-  const totalRemovalTime = interval * (positions.length - 1);
-  setTimeout(() => {
-    positions.forEach(([r, c]) => {
-      state.grid[r][c].card = null;
-    });
-    const affectedCols = [...new Set(positions.map(p => p[1]))];
-    affectedCols.forEach(col => {
-      applyGravityToColumn(col);
-    });
-    Sound.cardDrop();
-
-    state.selectedPath = [];
-    renderGrid();
-    updateHandPanel();
-    updateHandPreview();
-
-    if (state.hands.length >= MAX_HANDS) {
-      endGame('complete');
-    } else {
-      setTimeout(() => {
-        if (state.phase === 'playing' && !scanForValidMoves()) {
-          endGame('nomoves');
-        }
-      }, 500);
-    }
-  }, 300 + totalRemovalTime);
-}
-
-function applyGravityToColumn(col) {
+// ─── Grid State Utilities ───
+function applyGravityToColumn(col) { // [REUSE]
   // Collect non-null cards from bottom to top
   const cards = [];
   for (let r = GRID_SIZE - 1; r >= 0; r--) {
@@ -637,7 +304,7 @@ function applyGravityToColumn(col) {
 
 // ─── No More Moves Scanner (8방향 + 빈칸 건너뛰기) ───
 
-function scanForValidMoves() {
+function scanForValidMoves() { // [REUSE]
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
       if (!state.grid[r][c].card) continue;
@@ -649,7 +316,7 @@ function scanForValidMoves() {
 }
 
 // 8방향에서 빈칸을 건너뛰어 도달 가능한 카드 좌표 목록 반환
-function getReachableCards(r, c, visited) {
+function getReachableCards(r, c, visited) { // [REUSE]
   const results = [];
   // 8방향: 상하좌우 + 대각선
   const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
@@ -669,7 +336,7 @@ function getReachableCards(r, c, visited) {
   return results;
 }
 
-function dfsScan(r, c, cards, visited) {
+function dfsScan(r, c, cards, visited) { // [REUSE]
   visited[r][c] = true;
 
   if (cards.length === HAND_SIZE) {
@@ -688,80 +355,8 @@ function dfsScan(r, c, cards, visited) {
   return false;
 }
 
-// ─── Timer ───
-function startTimer() {
-  state.timer = TIMER_SECONDS;
-  updateTimerDisplay();
-
-  state.timerInterval = setInterval(() => {
-    if (state.phase !== 'playing') return;
-    state.timer--;
-    updateTimerDisplay();
-    if (state.timer <= 0) {
-      endGame('gameover');
-    }
-  }, 1000);
-}
-
-function updateTimerDisplay() {
-  const numEl = document.getElementById('timerNum');
-  const ringEl = document.getElementById('timerRing');
-  const circumference = 2 * Math.PI * 16; // r=16
-
-  numEl.textContent = Math.max(0, state.timer);
-  const offset = circumference * (1 - state.timer / TIMER_SECONDS);
-  ringEl.style.strokeDashoffset = offset;
-
-  numEl.classList.remove('warning', 'urgent');
-  if (state.timer <= 10) {
-    numEl.classList.add('urgent');
-    ringEl.style.stroke = '#ff3333';
-  } else if (state.timer <= 30) {
-    numEl.classList.add('warning');
-    ringEl.style.stroke = 'orange';
-  } else {
-    ringEl.style.stroke = 'var(--gold)';
-  }
-}
-
-// ─── Hand Panel ───
-function updateHandPanel() {
-  const slotsEl = document.getElementById('handSlots');
-  const countEl = document.getElementById('handCount');
-  countEl.textContent = state.hands.length;
-
-  // Sort by rank descending
-  const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
-
-  let html = '';
-  for (let i = 0; i < MAX_HANDS; i++) {
-    if (i < sorted.length) {
-      const h = sorted[i];
-      const css = RANK_CSS[h.rank] || '';
-      html += `<div class="hand-badge ${css}">${h.label}</div>`;
-    } else {
-      html += `<div class="hand-badge empty-slot">—</div>`;
-    }
-  }
-  slotsEl.innerHTML = html;
-}
-
-// ─── High Score ───
-function saveHighScore(score) {
-  const current = parseInt(localStorage.getItem('poker_highscore') || '0', 10);
-  if (score > current) {
-    localStorage.setItem('poker_highscore', score);
-    return true;
-  }
-  return false;
-}
-
-function getHighScore() {
-  return parseInt(localStorage.getItem('poker_highscore') || '0', 10);
-}
-
 // ─── Remaining Cards Count ───
-function countRemainingCards() {
+function countRemainingCards() { // [REUSE]
   let count = 0;
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
@@ -771,185 +366,7 @@ function countRemainingCards() {
   return count;
 }
 
-// ─── Game End ───
-function endGame(reason) {
-  state.phase = reason === 'complete' ? 'complete' : (reason === 'nomoves' ? 'nomoves' : 'gameover');
-  clearInterval(state.timerInterval);
-
-  const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
-  const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
-  const best = sorted[0];
-
-  // Time bonus
-  const timeBonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
-
-  // Remaining cards penalty
-  const remainingCards = countRemainingCards();
-  const penaltyPerCard = getPenaltyPerCard();
-  const penalty = ScorePolicy.getPenalty(remainingCards);
-  const score = Math.max(0, handScore + timeBonus - penalty);
-
-  // High score
-  const prevHighScore = getHighScore();
-  const isNewHighScore = saveHighScore(score);
-  const highScore = Math.max(prevHighScore, score);
-
-  // Finalize replay log
-  if (replayLog) {
-    replayLog.result = {
-      reason,
-      finalScore: score,
-      handsCollected: state.hands.length,
-      bestHand: best ? best.label : null,
-      timeRemaining: Math.max(0, state.timer),
-    };
-    localStorage.setItem('poker_last_replay', JSON.stringify(replayLog));
-    console.log('[DragON] Replay saved to localStorage');
-  }
-
-  const modal = document.getElementById('modal');
-  let title;
-  if (reason === 'complete') title = i18n.t('modal.complete');
-  else if (reason === 'nomoves') title = i18n.t('modal.noMoreMoves');
-  else title = i18n.t('modal.timeUp');
-
-  let handListHTML = '';
-  sorted.forEach((h, i) => {
-    const cardsStr = h.cards.map(c => cardDisplay(c)).join(' ');
-    const pts = getRankScore(h.rank);
-    handListHTML += `<div class="hand-list-item">
-      <span class="rank-label">${i === 0 ? '🏆 ' : ''}${h.label}</span>
-      <span class="cards-str">${cardsStr} (+${pts})</span>
-    </div>`;
-  });
-
-  let timeBonusHTML = '';
-  if (timeBonus > 0) {
-    timeBonusHTML = `<div style="color:#4CAF50;font-size:0.85rem;margin-bottom:4px;">${i18n.t('modal.timeBonus', { n: timeBonus })}</div>`;
-  }
-
-  let penaltyHTML = '';
-  if (penalty > 0) {
-    penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">${i18n.t('modal.cardPenalty', { total: remainingCards, over: remainingCards - 4, per: penaltyPerCard, penalty })}</div>`;
-  }
-
-  // NO MORE MOVES: special animated sequence
-  if (reason === 'nomoves') {
-    const gridContainer = document.getElementById('gridContainer');
-    gridContainer.classList.add('no-moves-dim');
-
-    const noMovesOverlay = document.getElementById('noMovesOverlay');
-    setTimeout(() => {
-      noMovesOverlay.classList.add('active');
-    }, 300);
-
-    setTimeout(() => {
-      noMovesOverlay.classList.remove('active');
-      gridContainer.classList.remove('no-moves-dim');
-      buildAndShowEndModal();
-    }, 1200);
-  } else {
-    buildAndShowEndModal();
-  }
-
-  function buildAndShowEndModal() {
-    const username = (localStorage.getItem('poker_username') || '').trim();
-
-    let highScoreHTML = '';
-    if (isNewHighScore && score > 0) {
-      highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:4px;">${i18n.t('modal.newHighScore')}</div>`;
-    }
-    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.myHighScore', { score: highScore })}</div>`;
-    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;" id="allUserTopScoreRow">${i18n.t('modal.allUserHighScore', { score: '...' })}</div>`;
-
-    const modalClass = reason === 'nomoves' ? ' nomoves' : '';
-    modal.className = 'modal' + modalClass;
-
-    const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
-    let buttonsHTML = `
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
-        <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
-        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
-      </div>`;
-
-    // Show modal immediately (no DB delay)
-    modal.innerHTML = `
-      <h2>${title}</h2>
-      <div class="subtitle">${i18n.t('modal.handsCompleted', { n: state.hands.length })}</div>
-      ${best ? `<div class="best-hand">${i18n.t('modal.best', { hand: best.label })}</div>` : ''}
-      <div class="score">${i18n.t('modal.score', { score })}</div>
-      ${timeBonusHTML}
-      ${penaltyHTML}
-      ${highScoreHTML}
-      <div class="hand-list">${handListHTML}</div>
-      ${buttonsHTML}
-    `;
-    document.getElementById('modalOverlay').classList.add('active');
-
-    // Save to server in background and update modal when done (skip leaderboard if score is 0)
-    const dbPromise = (username && score > 0)
-      ? saveSessionAndGetStatus({
-          username,
-          score,
-          best_hand: best ? best.label : null,
-          hands_collected: state.hands.length,
-          time_remaining: Math.max(0, state.timer),
-        })
-      : fetchTopScore().then(topScore => ({ leaderboardUpdated: false, topScore }));
-
-    dbPromise.then(result => {
-      const topScoreEl = document.getElementById('allUserTopScoreRow');
-      if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScore', { score: result.topScore });
-
-      if (result.leaderboardUpdated) {
-        saveReplayToDB(true).then(id => {
-          if (id) console.log('[DragON] Auto-replay saved:', id);
-          else console.warn('[DragON] Auto-replay save failed');
-        }).catch(err => console.error('[DragON] Auto-replay error:', err));
-        const btnReplay = document.getElementById('btnSaveReplay');
-        if (btnReplay) btnReplay.remove();
-      }
-    }).catch(err => {
-      console.error('Session save failed:', err);
-      const topScoreEl = document.getElementById('allUserTopScoreRow');
-      if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScoreNone');
-    });
-  }
-}
-
-// ─── Game Reset ───
-function resetGame() {
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-  if (currentGold < 1) {
-    showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
-    return;
-  }
-  deductGoldLocal(1, 'restart');
-
-  document.getElementById('modalOverlay').classList.remove('active');
-  document.getElementById('gridContainer').classList.remove('no-moves-dim');
-  document.getElementById('noMovesOverlay').classList.remove('active');
-  clearInterval(state.timerInterval);
-  initState();
-  initGrid();
-  renderGrid();
-  updateHandPanel();
-  updateHandPreview();
-  updateScoreDisplay();
-  renderRemovedCards();
-  startTimer();
-}
-
-// ─── Score Display ───
-function updateScoreDisplay() {
-  document.getElementById('currentScore').textContent = state.currentScore;
-  document.getElementById('highScoreDisplay').textContent = getHighScore();
-  const retryLabel = document.getElementById('retryLabel');
-  if (retryLabel) retryLabel.style.display = isRetryMode ? 'inline' : 'none';
-}
-
-function getHandTier(rank) {
+function getHandTier(rank) { // [REUSE]
   if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
   if (rank >= RANK.ROYAL_FLUSH) return 5;
   if (rank >= RANK.STRAIGHT_FLUSH) return 4;
@@ -958,128 +375,30 @@ function getHandTier(rank) {
   return 1;
 }
 
-function triggerScreenFlash(tier) {
-  const flash = document.createElement('div');
-  flash.className = 'screen-flash';
-  const colors = {
-    4: 'rgba(32, 200, 180, 0.18)',
-    5: 'rgba(201, 168, 76, 0.25)',
-    6: 'rgba(201, 168, 76, 0.4)'
-  };
-  flash.style.background = colors[Math.min(tier, 6)] || colors[4];
-  document.body.appendChild(flash);
-  setTimeout(() => flash.remove(), 500);
+// ─── High Score ───
+function saveHighScore(score) { // [REUSE] (uses ADAPTER: saveLocal/loadLocal)
+  const current = parseInt(loadLocal('poker_highscore') || '0', 10);
+  if (score > current) {
+    saveLocal('poker_highscore', score);
+    return true;
+  }
+  return false;
 }
 
-function spawnParticles(count) {
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    p.className = 'popup-particle';
-    const angle = (360 / count) * i + Math.random() * 20;
-    const dist  = 60 + Math.random() * 40;
-    const rad   = angle * Math.PI / 180;
-    const tx    = Math.cos(rad) * dist;
-    const ty    = Math.sin(rad) * dist;
-    p.style.setProperty('--tx', `${tx}px`);
-    p.style.setProperty('--ty', `${ty}px`);
-    p.style.animationDelay = `${0.32 + Math.random() * 0.1}s`;
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1200);
-  }
+function getHighScore() { // [REUSE] (uses ADAPTER: loadLocal)
+  return parseInt(loadLocal('poker_highscore') || '0', 10);
 }
 
-function showScorePopup(label, pts, rank) {
-  const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
-  const popup = document.createElement('div');
-  popup.className = `score-popup tier-${tier}`;
-  const ptsHTML = (pts !== undefined)
-    ? `<div class="popup-pts">+${pts}</div>` : '';
-  popup.innerHTML = `<div class="popup-rank">${label}</div>${ptsHTML}`;
-  if (tier >= 6) {
-    popup.style.animationDelay = '0.32s';
-    popup.style.opacity = '0';
-  }
-  document.body.appendChild(popup);
-  if (tier >= 4) triggerScreenFlash(tier);
-  if (tier >= 6) spawnParticles(4);
-  setTimeout(() => popup.remove(), 1800);
+function escapeHTML(str) { // [REUSE]
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
-
-// ─── Removed Cards ───
-function renderRemovedCards() {
-  const container = document.getElementById('removedCards');
-  container.innerHTML = state.removedCards.map(card => {
-    const suitClass = 'suit-' + SUIT_NAMES[card.suit];
-    return `<div class="removed-card ${suitClass}">
-      <span class="card-value">${VALUE_NAMES[card.value]}</span>
-      <span class="card-suit">${card.suit}</span>
-    </div>`;
-  }).join('');
-}
-
-// ─── Toast ───
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2000);
-}
-
-// ─── Debug Mode ───
-document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-
-  if (e.key === 'd' || e.key === 'D') {
-    state.debugMode = !state.debugMode;
-    document.body.classList.toggle('debug-mode', state.debugMode);
-    if (state.debugMode) {
-      console.log('Debug mode ON');
-      console.log('Selected path:', state.selectedPath);
-      console.log('Current hand eval:', state.selectedPath.length >= 2 ?
-        evaluateHand(state.selectedPath.map(([r,c]) => state.grid[r][c].card).filter(Boolean)) : 'N/A');
-      const hasValid = scanForValidMoves();
-      console.log('Valid moves remaining:', hasValid ? 'YES' : 'NO');
-    } else {
-      console.log('Debug mode OFF');
-    }
-  }
-
-  if (e.key === 's' || e.key === 'S') {
-    const t0 = performance.now();
-    const result = scanForValidMoves();
-    const elapsed = (performance.now() - t0).toFixed(2);
-    console.log(`[SCAN] Valid moves: ${result ? 'YES' : 'NO'} (${elapsed}ms)`);
-  }
-});
-
-window.validateGrid = function() {
-  const ids = new Set();
-  let count = 0;
-  let duplicates = [];
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      const card = state.grid[r][c].card;
-      if (card) {
-        count++;
-        if (ids.has(card.id)) {
-          duplicates.push(card.id);
-        }
-        ids.add(card.id);
-      }
-    }
-  }
-  if (duplicates.length > 0) {
-    console.error(`DUPLICATES FOUND: ${duplicates.join(', ')}`);
-    return `${count} cards, ${duplicates.length} duplicates: ${duplicates.join(', ')}`;
-  }
-  console.log(`${count} unique cards, no duplicates`);
-  return `${count} unique cards, no duplicates`;
-};
 
 // ─── Supabase / Players / Leaderboard ───
 
 // Get or create player, returns player uuid
-async function getOrCreatePlayer() {
+async function getOrCreatePlayer() { // [REUSE] (uses ADAPTER: loadLocal)
   // Use auth.uid() from initAuth
   if (currentPlayerId) return currentPlayerId;
 
@@ -1090,12 +409,12 @@ async function getOrCreatePlayer() {
     return uid;
   } catch (err) {
     console.error('[DragON] Player error:', err);
-    return localStorage.getItem('poker_player_id') || null;
+    return loadLocal('poker_player_id') || null;
   }
 }
 
 // Returns { leaderboardUpdated: boolean, topScore: number }
-async function saveSessionAndGetStatus(data) {
+async function saveSessionAndGetStatus(data) { // [REUSE]
   console.log('[DragON] Saving session...', data);
   let leaderboardUpdated = false;
   let topScore = 0;
@@ -1169,7 +488,7 @@ async function saveSessionAndGetStatus(data) {
 }
 
 // Fetch only the #1 leaderboard score (no save)
-async function fetchTopScore() {
+async function fetchTopScore() { // [REUSE]
   try {
     const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
     const { data: topRow } = await sb
@@ -1184,13 +503,13 @@ async function fetchTopScore() {
 
 // ─── Replay Save to DB ───
 // Returns replay id on success, null on failure
-async function saveReplayToDB(linkToLeaderboard) {
-  const raw = localStorage.getItem('poker_last_replay');
+async function saveReplayToDB(linkToLeaderboard) { // [REUSE] (uses ADAPTER: loadLocal)
+  const raw = loadLocal('poker_last_replay');
   if (!raw) { console.warn('[DragON] No replay data to save'); return null; }
 
   try {
     const data = JSON.parse(raw);
-    const username = data.username || (localStorage.getItem('poker_username') || '').trim();
+    const username = data.username || (loadLocal('poker_username') || '').trim();
     if (!username) return null;
 
     const playerId = await getOrCreatePlayer(username);
@@ -1235,7 +554,728 @@ async function saveReplayToDB(linkToLeaderboard) {
   }
 }
 
-async function saveReplayFromButton() {
+// =============================================
+// [UI] DOM / 렌더링 — Expo 전환 시 재작성
+// =============================================
+
+// ─── Grid Render ───
+function renderGrid() { // [REWRITE]
+  const gridEl = document.getElementById('grid');
+  gridEl.innerHTML = '';
+
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const cell = state.grid[r][c];
+      const div = document.createElement('div');
+      div.dataset.row = r;
+      div.dataset.col = c;
+
+      if (cell.card) {
+        const card = cell.card;
+        const suitClass = 'suit-' + SUIT_NAMES[card.suit];
+        div.className = `card ${suitClass}`;
+
+        const vn = VALUE_NAMES[card.value];
+        div.innerHTML = `
+          <span class="card-value">${vn}</span>
+          <span class="card-suit">${card.suit}</span>
+          <span class="debug-info">${r},${c}</span>
+        `;
+
+        // Check selected
+        if (state.selectedPath.some(p => p[0] === r && p[1] === c)) {
+          div.classList.add('selected');
+        }
+      } else {
+        div.className = 'card empty';
+        div.innerHTML = `<span class="debug-info">${r},${c}</span>`;
+      }
+
+      gridEl.appendChild(div);
+    }
+  }
+
+  updateDragLine();
+}
+
+// ─── Drag Interaction ───
+function getEventCoords(e) { // [REWRITE]
+  if (e.touches && e.touches.length > 0) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+  if (e.changedTouches && e.changedTouches.length > 0) {
+    return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
+function getCellFromEvent(e) { // [REWRITE]
+  const { x, y } = getEventCoords(e);
+  const gridEl = document.getElementById('grid');
+  const children = gridEl.children;
+  const inset = 0.15; // shrink hit area to center 70% to help diagonal drags
+  for (let i = 0; i < children.length; i++) {
+    const cardEl = children[i];
+    if (cardEl.classList.contains('empty')) continue;
+    const rect = cardEl.getBoundingClientRect();
+    const mx = rect.width * inset;
+    const my = rect.height * inset;
+    if (x >= rect.left + mx && x <= rect.right - mx &&
+        y >= rect.top + my && y <= rect.bottom - my) {
+      const row = parseInt(cardEl.dataset.row);
+      const col = parseInt(cardEl.dataset.col);
+      if (isNaN(row) || isNaN(col)) return null;
+      return [row, col];
+    }
+  }
+  return null;
+}
+
+// Update selection visuals without rebuilding DOM (safe for touch)
+function updateSelectionVisuals() { // [REWRITE]
+  const gridEl = document.getElementById('grid');
+  const children = gridEl.children;
+  for (let i = 0; i < children.length; i++) {
+    const el = children[i];
+    const r = parseInt(el.dataset.row);
+    const c = parseInt(el.dataset.col);
+    const isSelected = state.selectedPath.some(p => p[0] === r && p[1] === c);
+    el.classList.toggle('selected', isSelected);
+  }
+  updateDragLine();
+  updateHandPreview();
+}
+
+function startDrag(row, col) { // [REWRITE]
+  if (state.phase !== 'playing') return;
+  if (!state.grid[row][col].card) return;
+  state.isDragging = true;
+  state.selectedPath = [[row, col]];
+  Sound.cardSelect(0);
+  updateSelectionVisuals();
+}
+
+function extendPath(row, col) { // [REWRITE]
+  if (!state.isDragging) return;
+  if (!state.grid[row][col].card) return;
+
+  // Already in path? Allow backtracking even at 5 cards
+  if (state.selectedPath.some(p => p[0] === row && p[1] === col)) {
+    if (state.selectedPath.length >= 2) {
+      const prev = state.selectedPath[state.selectedPath.length - 2];
+      if (prev[0] === row && prev[1] === col) {
+        state.selectedPath.pop();
+        const pathLenAfterRemove = state.selectedPath.length;
+        if (pathLenAfterRemove >= 1 && pathLenAfterRemove <= 3) {
+          Sound.cardSelect(pathLenAfterRemove - 1);
+        }
+        updateSelectionVisuals();
+      }
+    }
+    return;
+  }
+
+  // Can't add beyond 5
+  if (state.selectedPath.length >= HAND_SIZE) return;
+
+  const last = state.selectedPath[state.selectedPath.length - 1];
+
+  // 8방향 + 빈칸 건너뛰기
+  const dr = row - last[0];
+  const dc = col - last[1];
+  if (dr === 0 && dc === 0) return;
+  if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return;
+  const stepR = Math.sign(dr);
+  const stepC = Math.sign(dc);
+  let cr = last[0] + stepR;
+  let cc = last[1] + stepC;
+  while (cr !== row || cc !== col) {
+    if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) return;
+    if (state.grid[cr][cc].card !== null) return;
+    cr += stepR;
+    cc += stepC;
+  }
+
+  state.selectedPath.push([row, col]);
+  const pathLen = state.selectedPath.length;
+  if (pathLen >= 1 && pathLen <= 4) {
+    Sound.cardSelect(pathLen - 1);
+  }
+  updateSelectionVisuals();
+}
+
+function finalizePath() { // [REWRITE]
+  if (!state.isDragging) return;
+  state.isDragging = false;
+
+  if (state.selectedPath.length < HAND_SIZE) {
+    showToast(i18n.t('toast.selectFiveCards'));
+    clearSelection();
+    return;
+  }
+
+  const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card);
+  const hand = evaluateHand(cards);
+
+  // Royal Flush+ : Royal Flush with perfect drag order (10→J→Q→K→A)
+  if (hand.rank === RANK.ROYAL_FLUSH) {
+    const dragValues = cards.map(c => c.value);
+    if (dragValues[0] === 10 && dragValues[1] === 11 && dragValues[2] === 12 && dragValues[3] === 13 && dragValues[4] === 14) {
+      hand.rank = RANK.ROYAL_FLUSH_PLUS;
+      hand.rankValue = RANK.ROYAL_FLUSH_PLUS;
+      hand.label = 'Royal Flush+';
+    }
+  }
+
+  if (!isValidHand(hand)) {
+    // Invalid: shake + message
+    const gridEl = document.getElementById('grid');
+    state.selectedPath.forEach(([r, c]) => {
+      const idx = r * GRID_SIZE + c;
+      const el = gridEl.children[idx];
+      el.classList.add('invalid-shake');
+      el.style.borderColor = '#ff5252';
+      setTimeout(() => {
+        el.classList.remove('invalid-shake');
+        el.style.borderColor = '';
+      }, 400);
+    });
+    showToast(i18n.t('toast.needHigherPair'));
+    setTimeout(() => clearSelection(), 400);
+    return;
+  }
+
+  // Valid hand!
+  const earnedScore = getRankScore(hand.rank);
+  state.currentScore += earnedScore;
+  state.hands.push({
+    cards: [...cards],
+    rank: hand.rank,
+    rankValue: hand.rankValue,
+    label: hand.label,
+  });
+
+  // Record action for replay
+  if (replayLog) {
+    replayLog.actions.push({
+      t: state.timer,
+      path: state.selectedPath.map(([r, c]) => [r, c]),
+      hand: hand.label,
+      score: earnedScore,
+    });
+  }
+
+  Sound.handComplete(hand.rankValue);
+  updateScoreDisplay();
+  showScorePopup(hand.label, earnedScore, hand.rank);
+  removeCardsAndApplyGravity(hand.rank);
+}
+
+function clearSelection() { // [REWRITE]
+  state.selectedPath = [];
+  updateSelectionVisuals();
+}
+
+function updateDragLine() { // [REWRITE]
+  const line = document.getElementById('dragLine');
+  if (state.selectedPath.length < 2) {
+    line.setAttribute('points', '');
+    return;
+  }
+
+  const gridEl = document.getElementById('grid');
+  const containerEl = document.getElementById('gridContainer');
+  const containerRect = containerEl.getBoundingClientRect();
+
+  const points = state.selectedPath.map(([r, c]) => {
+    const idx = r * GRID_SIZE + c;
+    const cardEl = gridEl.children[idx];
+    if (!cardEl) return '0,0';
+    const rect = cardEl.getBoundingClientRect();
+    const x = rect.left + rect.width / 2 - containerRect.left;
+    const y = rect.top + rect.height / 2 - containerRect.top;
+    return `${x},${y}`;
+  }).join(' ');
+
+  line.setAttribute('points', points);
+}
+
+function updateHandPreview() { // [REWRITE]
+  const previewEl = document.getElementById('handPreview');
+  if (state.selectedPath.length === 0) {
+    previewEl.textContent = '';
+    previewEl.className = 'hand-preview';
+    return;
+  }
+
+  const cards = state.selectedPath.map(([r, c]) => state.grid[r][c].card).filter(Boolean);
+  if (cards.length < 2) {
+    previewEl.textContent = i18n.t('ui.selecting', { count: cards.length });
+    previewEl.className = 'hand-preview';
+    return;
+  }
+
+  const hand = evaluateHand(cards);
+  const valid = cards.length === 5 && isValidHand(hand);
+  const mark = cards.length === 5 ? (valid ? '✓' : '✗') : '';
+
+  previewEl.textContent = `${hand.label} ${mark}`;
+  previewEl.className = 'hand-preview ' + (cards.length === 5 ? (valid ? 'valid' : 'invalid') : '');
+}
+
+// ─── Event Listeners ─── // [REWRITE]
+const gridEl = document.getElementById('grid');
+
+gridEl.addEventListener('mousedown', e => {
+  const cell = getCellFromEvent(e);
+  if (cell) startDrag(cell[0], cell[1]);
+});
+
+gridEl.addEventListener('mousemove', e => {
+  const cell = getCellFromEvent(e);
+  if (cell) extendPath(cell[0], cell[1]);
+});
+
+document.addEventListener('mouseup', () => {
+  if (state.isDragging) finalizePath();
+});
+
+gridEl.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const cell = getCellFromEvent(e);
+  if (cell) startDrag(cell[0], cell[1]);
+}, { passive: false });
+
+document.addEventListener('touchmove', e => {
+  if (!state.isDragging) return;
+  e.preventDefault();
+  const cell = getCellFromEvent(e);
+  if (cell) extendPath(cell[0], cell[1]);
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (state.isDragging) {
+    e.preventDefault();
+    finalizePath();
+  }
+}, { passive: false });
+
+document.addEventListener('touchcancel', () => {
+  if (state.isDragging) {
+    state.isDragging = false;
+    clearSelection();
+  }
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  resetGame();
+});
+
+// ─── Card Removal + Gravity ───
+function removeCardsAndApplyGravity(rank) { // [REWRITE]
+  const gridEl = document.getElementById('grid');
+  const positions = [...state.selectedPath];
+  const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
+
+  const intervals = [0, 0, 0, 50, 40, 30];
+  const interval = intervals[Math.min(tier, 5)] || 0;
+
+  if (interval === 0) {
+    positions.forEach(([r, c]) => {
+      gridEl.children[r * GRID_SIZE + c].classList.add('removing');
+    });
+  } else {
+    positions.forEach(([r, c], i) => {
+      setTimeout(() => {
+        const cell = gridEl.children[r * GRID_SIZE + c];
+        if (cell) cell.classList.add('removing');
+      }, i * interval);
+    });
+  }
+
+  const totalRemovalTime = interval * (positions.length - 1);
+  setTimeout(() => {
+    positions.forEach(([r, c]) => {
+      state.grid[r][c].card = null;
+    });
+    const affectedCols = [...new Set(positions.map(p => p[1]))];
+    affectedCols.forEach(col => {
+      applyGravityToColumn(col);
+    });
+    Sound.cardDrop();
+
+    state.selectedPath = [];
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+
+    if (state.hands.length >= MAX_HANDS) {
+      endGame('complete');
+    } else {
+      setTimeout(() => {
+        if (state.phase === 'playing' && !scanForValidMoves()) {
+          endGame('nomoves');
+        }
+      }, 500);
+    }
+  }, 300 + totalRemovalTime);
+}
+
+// ─── Timer ───
+function startTimer() { // [REWRITE]
+  state.timer = TIMER_SECONDS;
+  updateTimerDisplay();
+
+  state.timerInterval = setInterval(() => {
+    if (state.phase !== 'playing') return;
+    state.timer--;
+    updateTimerDisplay();
+    if (state.timer <= 0) {
+      endGame('gameover');
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() { // [REWRITE]
+  const numEl = document.getElementById('timerNum');
+  const ringEl = document.getElementById('timerRing');
+  const circumference = 2 * Math.PI * 16; // r=16
+
+  numEl.textContent = Math.max(0, state.timer);
+  const offset = circumference * (1 - state.timer / TIMER_SECONDS);
+  ringEl.style.strokeDashoffset = offset;
+
+  numEl.classList.remove('warning', 'urgent');
+  if (state.timer <= 10) {
+    numEl.classList.add('urgent');
+    ringEl.style.stroke = '#ff3333';
+  } else if (state.timer <= 30) {
+    numEl.classList.add('warning');
+    ringEl.style.stroke = 'orange';
+  } else {
+    ringEl.style.stroke = 'var(--gold)';
+  }
+}
+
+// ─── Hand Panel ───
+function updateHandPanel() { // [REWRITE]
+  const slotsEl = document.getElementById('handSlots');
+  const countEl = document.getElementById('handCount');
+  countEl.textContent = state.hands.length;
+
+  // Sort by rank descending
+  const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
+
+  let html = '';
+  for (let i = 0; i < MAX_HANDS; i++) {
+    if (i < sorted.length) {
+      const h = sorted[i];
+      const css = RANK_CSS[h.rank] || '';
+      html += `<div class="hand-badge ${css}">${h.label}</div>`;
+    } else {
+      html += `<div class="hand-badge empty-slot">—</div>`;
+    }
+  }
+  slotsEl.innerHTML = html;
+}
+
+// ─── Game End ───
+function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
+  state.phase = reason === 'complete' ? 'complete' : (reason === 'nomoves' ? 'nomoves' : 'gameover');
+  clearInterval(state.timerInterval);
+
+  const sorted = [...state.hands].sort((a, b) => b.rankValue - a.rankValue);
+  const handScore = state.hands.reduce((sum, h) => sum + getRankScore(h.rank), 0);
+  const best = sorted[0];
+
+  // Time bonus
+  const timeBonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
+
+  // Remaining cards penalty
+  const remainingCards = countRemainingCards();
+  const penaltyPerCard = getPenaltyPerCard();
+  const penalty = ScorePolicy.getPenalty(remainingCards);
+  const score = Math.max(0, handScore + timeBonus - penalty);
+
+  // High score
+  const prevHighScore = getHighScore();
+  const isNewHighScore = saveHighScore(score);
+  const highScore = Math.max(prevHighScore, score);
+
+  // Finalize replay log
+  if (replayLog) {
+    replayLog.result = {
+      reason,
+      finalScore: score,
+      handsCollected: state.hands.length,
+      bestHand: best ? best.label : null,
+      timeRemaining: Math.max(0, state.timer),
+    };
+    saveLocal('poker_last_replay', JSON.stringify(replayLog));
+    console.log('[DragON] Replay saved to localStorage');
+  }
+
+  const modal = document.getElementById('modal');
+  let title;
+  if (reason === 'complete') title = i18n.t('modal.complete');
+  else if (reason === 'nomoves') title = i18n.t('modal.noMoreMoves');
+  else title = i18n.t('modal.timeUp');
+
+  let handListHTML = '';
+  sorted.forEach((h, i) => {
+    const cardsStr = h.cards.map(c => cardDisplay(c)).join(' ');
+    const pts = getRankScore(h.rank);
+    handListHTML += `<div class="hand-list-item">
+      <span class="rank-label">${i === 0 ? '🏆 ' : ''}${h.label}</span>
+      <span class="cards-str">${cardsStr} (+${pts})</span>
+    </div>`;
+  });
+
+  let timeBonusHTML = '';
+  if (timeBonus > 0) {
+    timeBonusHTML = `<div style="color:#4CAF50;font-size:0.85rem;margin-bottom:4px;">${i18n.t('modal.timeBonus', { n: timeBonus })}</div>`;
+  }
+
+  let penaltyHTML = '';
+  if (penalty > 0) {
+    penaltyHTML = `<div style="color:#ff5252;font-size:0.85rem;margin-bottom:8px;">${i18n.t('modal.cardPenalty', { total: remainingCards, over: remainingCards - 4, per: penaltyPerCard, penalty })}</div>`;
+  }
+
+  // NO MORE MOVES: special animated sequence
+  if (reason === 'nomoves') {
+    const gridContainer = document.getElementById('gridContainer');
+    gridContainer.classList.add('no-moves-dim');
+
+    const noMovesOverlay = document.getElementById('noMovesOverlay');
+    setTimeout(() => {
+      noMovesOverlay.classList.add('active');
+    }, 300);
+
+    setTimeout(() => {
+      noMovesOverlay.classList.remove('active');
+      gridContainer.classList.remove('no-moves-dim');
+      buildAndShowEndModal();
+    }, 1200);
+  } else {
+    buildAndShowEndModal();
+  }
+
+  function buildAndShowEndModal() {
+    const username = (loadLocal('poker_username') || '').trim();
+
+    let highScoreHTML = '';
+    if (isNewHighScore && score > 0) {
+      highScoreHTML = `<div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:4px;">${i18n.t('modal.newHighScore')}</div>`;
+    }
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:4px;">${i18n.t('modal.myHighScore', { score: highScore })}</div>`;
+    highScoreHTML += `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;" id="allUserTopScoreRow">${i18n.t('modal.allUserHighScore', { score: '...' })}</div>`;
+
+    const modalClass = reason === 'nomoves' ? ' nomoves' : '';
+    modal.className = 'modal' + modalClass;
+
+    const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
+    let buttonsHTML = `
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
+        <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
+      </div>`;
+
+    // Show modal immediately (no DB delay)
+    modal.innerHTML = `
+      <h2>${title}</h2>
+      <div class="subtitle">${i18n.t('modal.handsCompleted', { n: state.hands.length })}</div>
+      ${best ? `<div class="best-hand">${i18n.t('modal.best', { hand: best.label })}</div>` : ''}
+      <div class="score">${i18n.t('modal.score', { score })}</div>
+      ${timeBonusHTML}
+      ${penaltyHTML}
+      ${highScoreHTML}
+      <div class="hand-list">${handListHTML}</div>
+      ${buttonsHTML}
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+
+    // Save to server in background and update modal when done (skip leaderboard if score is 0)
+    const dbPromise = (username && score > 0)
+      ? saveSessionAndGetStatus({
+          username,
+          score,
+          best_hand: best ? best.label : null,
+          hands_collected: state.hands.length,
+          time_remaining: Math.max(0, state.timer),
+        })
+      : fetchTopScore().then(topScore => ({ leaderboardUpdated: false, topScore }));
+
+    dbPromise.then(result => {
+      const topScoreEl = document.getElementById('allUserTopScoreRow');
+      if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScore', { score: result.topScore });
+
+      if (result.leaderboardUpdated) {
+        saveReplayToDB(true).then(id => {
+          if (id) console.log('[DragON] Auto-replay saved:', id);
+          else console.warn('[DragON] Auto-replay save failed');
+        }).catch(err => console.error('[DragON] Auto-replay error:', err));
+        const btnReplay = document.getElementById('btnSaveReplay');
+        if (btnReplay) btnReplay.remove();
+      }
+    }).catch(err => {
+      console.error('Session save failed:', err);
+      const topScoreEl = document.getElementById('allUserTopScoreRow');
+      if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScoreNone');
+    });
+  }
+}
+
+// ─── Game Reset ───
+function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
+  const currentGold = parseInt(loadLocal('poker_gold') || '0');
+  if (currentGold < 1) {
+    showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
+    return;
+  }
+  deductGoldLocal(1, 'restart');
+
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('gridContainer').classList.remove('no-moves-dim');
+  document.getElementById('noMovesOverlay').classList.remove('active');
+  clearInterval(state.timerInterval);
+  initState();
+  initGrid();
+  renderGrid();
+  updateHandPanel();
+  updateHandPreview();
+  updateScoreDisplay();
+  renderRemovedCards();
+  startTimer();
+}
+
+// ─── Score Display ───
+function updateScoreDisplay() { // [REWRITE]
+  document.getElementById('currentScore').textContent = state.currentScore;
+  document.getElementById('highScoreDisplay').textContent = getHighScore();
+  const retryLabel = document.getElementById('retryLabel');
+  if (retryLabel) retryLabel.style.display = isRetryMode ? 'inline' : 'none';
+}
+
+function triggerScreenFlash(tier) { // [REWRITE]
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash';
+  const colors = {
+    4: 'rgba(32, 200, 180, 0.18)',
+    5: 'rgba(201, 168, 76, 0.25)',
+    6: 'rgba(201, 168, 76, 0.4)'
+  };
+  flash.style.background = colors[Math.min(tier, 6)] || colors[4];
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 500);
+}
+
+function spawnParticles(count) { // [REWRITE]
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'popup-particle';
+    const angle = (360 / count) * i + Math.random() * 20;
+    const dist  = 60 + Math.random() * 40;
+    const rad   = angle * Math.PI / 180;
+    const tx    = Math.cos(rad) * dist;
+    const ty    = Math.sin(rad) * dist;
+    p.style.setProperty('--tx', `${tx}px`);
+    p.style.setProperty('--ty', `${ty}px`);
+    p.style.animationDelay = `${0.32 + Math.random() * 0.1}s`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+function showScorePopup(label, pts, rank) { // [REWRITE]
+  const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
+  const popup = document.createElement('div');
+  popup.className = `score-popup tier-${tier}`;
+  const ptsHTML = (pts !== undefined)
+    ? `<div class="popup-pts">+${pts}</div>` : '';
+  popup.innerHTML = `<div class="popup-rank">${label}</div>${ptsHTML}`;
+  if (tier >= 6) {
+    popup.style.animationDelay = '0.32s';
+    popup.style.opacity = '0';
+  }
+  document.body.appendChild(popup);
+  if (tier >= 4) triggerScreenFlash(tier);
+  if (tier >= 6) spawnParticles(4);
+  setTimeout(() => popup.remove(), 1800);
+}
+
+// ─── Removed Cards ───
+function renderRemovedCards() { // [REWRITE]
+  const container = document.getElementById('removedCards');
+  container.innerHTML = state.removedCards.map(card => {
+    const suitClass = 'suit-' + SUIT_NAMES[card.suit];
+    return `<div class="removed-card ${suitClass}">
+      <span class="card-value">${VALUE_NAMES[card.value]}</span>
+      <span class="card-suit">${card.suit}</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── Toast ───
+function showToast(msg) { // [REWRITE]
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ─── Debug Mode ─── // [REWRITE]
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+  if (e.key === 'd' || e.key === 'D') {
+    state.debugMode = !state.debugMode;
+    document.body.classList.toggle('debug-mode', state.debugMode);
+    if (state.debugMode) {
+      console.log('Debug mode ON');
+      console.log('Selected path:', state.selectedPath);
+      console.log('Current hand eval:', state.selectedPath.length >= 2 ?
+        evaluateHand(state.selectedPath.map(([r,c]) => state.grid[r][c].card).filter(Boolean)) : 'N/A');
+      const hasValid = scanForValidMoves();
+      console.log('Valid moves remaining:', hasValid ? 'YES' : 'NO');
+    } else {
+      console.log('Debug mode OFF');
+    }
+  }
+
+  if (e.key === 's' || e.key === 'S') {
+    const t0 = performance.now();
+    const result = scanForValidMoves();
+    const elapsed = (performance.now() - t0).toFixed(2);
+    console.log(`[SCAN] Valid moves: ${result ? 'YES' : 'NO'} (${elapsed}ms)`);
+  }
+});
+
+window.validateGrid = function() { // [REWRITE]
+  const ids = new Set();
+  let count = 0;
+  let duplicates = [];
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const card = state.grid[r][c].card;
+      if (card) {
+        count++;
+        if (ids.has(card.id)) {
+          duplicates.push(card.id);
+        }
+        ids.add(card.id);
+      }
+    }
+  }
+  if (duplicates.length > 0) {
+    console.error(`DUPLICATES FOUND: ${duplicates.join(', ')}`);
+    return `${count} cards, ${duplicates.length} duplicates: ${duplicates.join(', ')}`;
+  }
+  console.log(`${count} unique cards, no duplicates`);
+  return `${count} unique cards, no duplicates`;
+};
+
+async function saveReplayFromButton() { // [REWRITE]
   const btn = document.getElementById('btnSaveReplay');
   if (!btn) return;
 
@@ -1284,8 +1324,8 @@ async function saveReplayFromButton() {
   }
 }
 
-async function showLeaderboard(currentUser) {
-  if (!currentUser) currentUser = (localStorage.getItem('poker_username') || '').trim();
+async function showLeaderboard(currentUser) { // [REWRITE] (uses ADAPTER: loadLocal)
+  if (!currentUser) currentUser = (loadLocal('poker_username') || '').trim();
   try {
     const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
     const lbTitle = isRetryMode ? i18n.t('modal.leaderboardRetry') : i18n.t('modal.leaderboard');
@@ -1325,21 +1365,15 @@ async function showLeaderboard(currentUser) {
   }
 }
 
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// ─── Display saved username (read-only) ───
+// ─── Display saved username (read-only) ─── // [REWRITE] (uses ADAPTER: loadLocal)
 (function() {
-  const saved = localStorage.getItem('poker_username') || '';
+  const saved = loadLocal('poker_username') || '';
   const el = document.getElementById('usernameDisplay');
   if (el) el.textContent = saved;
 })();
 
 // ─── Start Overlay ───
-function initStartOverlay(onStart) {
+function initStartOverlay(onStart) { // [REWRITE]
   const overlay = document.getElementById('startOverlay');
   const btn = document.getElementById('startBtn');
   const grid = document.getElementById('gridContainer') || document.getElementById('grid');
@@ -1364,7 +1398,7 @@ function initStartOverlay(onStart) {
   overlay.addEventListener('click', handleStart);
 }
 
-// ─── Init ───
+// ─── Init ─── // [REWRITE]
 initState();
 initGrid();
 renderGrid();
@@ -1393,3 +1427,29 @@ initStartOverlay(() => {
     }
   }, 100);
 });
+
+// =============================================
+// EXPO 전환 체크리스트
+// REUSE   : 22개 함수 (변경 불필요)
+//   - getRankScore, getPenaltyPerCard, initState, createDeck, shuffle,
+//     cardDisplay, isRedSuit, cardFromId, initGrid, evaluateHand,
+//     partialEval, isValidHand, applyGravityToColumn, scanForValidMoves,
+//     getReachableCards, dfsScan, countRemainingCards, getHandTier,
+//     saveHighScore, getHighScore, escapeHTML, getOrCreatePlayer,
+//     saveSessionAndGetStatus, fetchTopScore, saveReplayToDB
+// ADAPTER : 4개 함수 (내부 구현 교체 필요)
+//   - saveLocal(key, value)  → AsyncStorage.setItem / SecureStore.setItemAsync
+//   - loadLocal(key)         → AsyncStorage.getItem / SecureStore.getItemAsync
+//   - removeLocal(key)       → AsyncStorage.removeItem / SecureStore.deleteItemAsync
+//   - navigateTo(page)       → navigation.navigate() / expo-router push
+// REWRITE : 24개 함수/블록 (전면 재작성)
+//   - renderGrid, getEventCoords, getCellFromEvent, updateSelectionVisuals,
+//     startDrag, extendPath, finalizePath, clearSelection, updateDragLine,
+//     updateHandPreview, removeCardsAndApplyGravity, startTimer,
+//     updateTimerDisplay, updateHandPanel, endGame, resetGame,
+//     updateScoreDisplay, triggerScreenFlash, spawnParticles,
+//     showScorePopup, renderRemovedCards, showToast, saveReplayFromButton,
+//     showLeaderboard, initStartOverlay,
+//     Event listeners (mouse/touch/keyboard), Debug mode, Init block,
+//     Username display IIFE, validateGrid
+// =============================================

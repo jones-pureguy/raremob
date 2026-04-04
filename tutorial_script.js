@@ -1,5 +1,20 @@
 // ── DragON POKER Tutorial Mode ──
 
+// =============================================
+// [ADAPTER] 플랫폼 어댑터 — Expo 전환 시 교체
+// =============================================
+
+// [ADAPTER] localStorage 래퍼 — Expo 전환 시 AsyncStorage로 교체
+function saveLocal(key, value) { localStorage.setItem(key, value); }
+function loadLocal(key) { return localStorage.getItem(key); }
+
+// [ADAPTER] 페이지 이동 래퍼 — Expo 전환 시 React Navigation으로 교체
+function navigateTo(page) { location.href = page; }
+
+// =============================================
+// [LOGIC] 게임 로직 — Expo 전환 시 재활용
+// =============================================
+
 // ── Constants (from puzzle engine) ──
 const GRID_SIZE = 7;
 const MAX_HANDS = 9;
@@ -34,8 +49,9 @@ let orderedStraightCount = 0;
 
 // ── Game State ──
 let state = {};
-let tutConfig = null; // current step config (acts like puzzleConfig)
+let tutConfig = null;
 
+// [REUSE] 게임 상태 초기화
 function initState() {
   state = {
     grid: [], hands: [], selectedPath: [], isDragging: false,
@@ -44,14 +60,17 @@ function initState() {
 }
 
 // ── Card ──
+// [REUSE] 카드 ID에서 카드 객체 생성
 function cardFromId(id) {
   const suitCode = id[id.length - 1];
   const valueName = id.slice(0, -1);
   return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
 }
+// [REUSE] 카드 표시 문자열
 function cardDisplay(card) { return VALUE_NAMES[card.value] + card.suit; }
 
 // ── Deck Loader ──
+// [REUSE] 튜토리얼 덱 로드
 function loadTutorialDeck(initialDeck) {
   const normalized = initialDeck.map(id =>
     (!id || id.trim() === '') ? null : id.trim()
@@ -72,6 +91,7 @@ function loadTutorialDeck(initialDeck) {
 }
 
 // ── Random Deck (for step 9 restart) ──
+// [REUSE] 랜덤 덱 로드
 function loadRandomDeck() {
   const deck = [];
   for (const s of ['s','h','d','c']) {
@@ -79,7 +99,6 @@ function loadRandomDeck() {
       deck.push(VALUE_NAMES[v] + s);
     }
   }
-  // Shuffle
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -96,7 +115,12 @@ function loadRandomDeck() {
   }
 }
 
+// =============================================
+// [UI] DOM / 렌더링 — Expo 전환 시 재작성
+// =============================================
+
 // ── Grid Render ──
+// [REWRITE] 그리드 렌더링
 function renderGrid() {
   const gridEl = document.getElementById('grid');
   gridEl.innerHTML = '';
@@ -121,12 +145,14 @@ function renderGrid() {
 }
 
 // ── Drag Interaction ──
+// [REWRITE] 이벤트 좌표 추출
 function getEventCoords(e) {
   if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
   return { x: e.clientX, y: e.clientY };
 }
 
+// [REWRITE] 이벤트에서 셀 좌표 추출
 function getCellFromEvent(e) {
   const { x, y } = getEventCoords(e);
   const gridEl = document.getElementById('grid');
@@ -144,6 +170,7 @@ function getCellFromEvent(e) {
   return null;
 }
 
+// [REWRITE] 선택 시각 효과 업데이트
 function updateSelectionVisuals() {
   const gridEl = document.getElementById('grid');
   const children = gridEl.children;
@@ -156,9 +183,10 @@ function updateSelectionVisuals() {
   updateHandPreview();
 }
 
+// [REWRITE] 드래그 시작
 function startDrag(row, col) {
   if (state.phase !== 'playing' || tutorialEnded) return;
-  if (!waitingForMission) return; // Only allow drag during instruction phase
+  if (!waitingForMission) return;
   if (!state.grid[row][col].card) return;
   state.isDragging = true;
   state.selectedPath = [[row, col]];
@@ -166,6 +194,7 @@ function startDrag(row, col) {
   updateSelectionVisuals();
 }
 
+// [REUSE] 튜토리얼 이동 유효성 체크
 function isValidTutorialMove(fromR, fromC, toR, toC) {
   if (!tutConfig) return true;
   const c = tutConfig.constraints;
@@ -178,6 +207,7 @@ function isValidTutorialMove(fromR, fromC, toR, toC) {
   return true;
 }
 
+// [REUSE] 경로 확장 로직
 function extendPath(row, col) {
   if (!state.isDragging) return;
   if (!state.grid[row][col].card) return;
@@ -224,6 +254,7 @@ function extendPath(row, col) {
   updateSelectionVisuals();
 }
 
+// [REUSE] 경로 확정 및 핸드 처리
 function finalizePath() {
   if (!state.isDragging) return;
   state.isDragging = false;
@@ -274,7 +305,6 @@ function finalizePath() {
       const isOrdered = ascending || descending;
       for (const osc of osConditions) {
         if (isOrdered && osc.hand === 'ROYAL_FLUSH_PLUS' && hand.rank >= RANK.ROYAL_FLUSH) {
-          // RF+ requires ascending 10-J-Q-K-A specifically
           const dv = cards.map(c => c.value);
           if (dv[0]===10 && dv[1]===11 && dv[2]===12 && dv[3]===13 && dv[4]===14) {
             orderedStraightCount++;
@@ -299,12 +329,14 @@ function finalizePath() {
   }
 }
 
+// [REWRITE] 선택 초기화
 function clearSelection() {
   state.selectedPath = [];
   updateSelectionVisuals();
 }
 
 // ── Drag Line & Preview ──
+// [REWRITE] 드래그 라인 SVG 업데이트
 function updateDragLine() {
   const line = document.getElementById('dragLine');
   if (!line) return;
@@ -322,6 +354,7 @@ function updateDragLine() {
   line.setAttribute('points', points);
 }
 
+// [REWRITE] 핸드 프리뷰 업데이트
 function updateHandPreview() {
   const previewEl = document.getElementById('handPreview');
   if (!previewEl) return;
@@ -336,6 +369,7 @@ function updateHandPreview() {
 }
 
 // ── Hand Evaluation ──
+// [REUSE] 족보 판정
 function evaluateHand(cards) {
   if (cards.length < 5) return partialEval(cards);
   const values = cards.map(c => c.value).sort((a, b) => a - b);
@@ -368,6 +402,7 @@ function evaluateHand(cards) {
   return { rank, rankValue: rank, label, pairValue };
 }
 
+// [REUSE] 부분 족보 판정 (5장 미만)
 function partialEval(cards) {
   if (cards.length < 2) return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
   const values = cards.map(c => c.value);
@@ -383,6 +418,7 @@ function partialEval(cards) {
   return { rank: RANK.HIGH_CARD, rankValue: 0, label: 'High Card', pairValue: 0 };
 }
 
+// [REUSE] 유효 핸드 판정
 function isValidHand(hand) {
   if (hand.rank >= RANK.TWO_PAIR) return true;
   if (hand.rank === RANK.ONE_PAIR && hand.pairValue >= 10) return true;
@@ -390,6 +426,7 @@ function isValidHand(hand) {
 }
 
 // ── Gravity ──
+// [REWRITE] 카드 제거 애니메이션 + 중력 적용
 function removeCardsAndApplyGravity(rank) {
   const gridEl = document.getElementById('grid');
   const positions = [...state.selectedPath];
@@ -423,17 +460,20 @@ function removeCardsAndApplyGravity(rank) {
   }, 300 + totalRemovalTime);
 }
 
+// [REUSE] 컬럼 중력 적용
 function applyGravityToColumn(col) {
   const cards = [];
   for (let r = GRID_SIZE - 1; r >= 0; r--) { if (state.grid[r][col].card) cards.push(state.grid[r][col].card); }
   for (let r = GRID_SIZE - 1; r >= 0; r--) { const idx = GRID_SIZE - 1 - r; state.grid[r][col].card = idx < cards.length ? cards[idx] : null; }
 }
 
+// [REUSE] 전체 그리드 중력 적용
 function applyGravityToAll() {
   for (let col = 0; col < GRID_SIZE; col++) applyGravityToColumn(col);
 }
 
 // ── Score Popup ──
+// [REUSE] 족보 티어 분류
 function getHandTier(rank) {
   if (rank >= RANK.ROYAL_FLUSH_PLUS) return 6;
   if (rank >= RANK.ROYAL_FLUSH) return 5;
@@ -443,6 +483,7 @@ function getHandTier(rank) {
   return 1;
 }
 
+// [REWRITE] 화면 플래시 효과
 function triggerScreenFlash(tier) {
   const flash = document.createElement('div');
   flash.className = 'screen-flash';
@@ -456,6 +497,7 @@ function triggerScreenFlash(tier) {
   setTimeout(() => flash.remove(), 500);
 }
 
+// [REWRITE] 파티클 효과 생성
 function spawnParticles(count) {
   for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
@@ -473,6 +515,7 @@ function spawnParticles(count) {
   }
 }
 
+// [REWRITE] 점수 팝업 표시
 function showScorePopup(label, rank) {
   const tier = getHandTier(rank != null ? rank : RANK.ONE_PAIR);
   const popup = document.createElement('div');
@@ -489,6 +532,7 @@ function showScorePopup(label, rank) {
 }
 
 // ── Mission Check ──
+// [REUSE] 튜토리얼 미션 조건 체크
 function checkTutorialMission(mission, lastHand) {
   if (mission.type === 'restart_pressed') return false;
   if (mission.type !== 'real_time') return false;
@@ -518,10 +562,11 @@ function checkTutorialMission(mission, lastHand) {
 // ── Tutorial Dialog System ──
 // ══════════════════════════════════════
 
-const isReplay = new URLSearchParams(location.search).get('replay') === '1';
+const isReplay = new URLSearchParams(location.search).get('replay') === '1'; // [ADAPTER] URL 파싱 — Expo 전환 시 React Navigation params
 let typingTimer = null;
 
 // ─── Start Overlay ───
+// [REWRITE] 스타트 오버레이 초기화
 function initStartOverlay(onStart) {
   const overlay = document.getElementById('startOverlay');
   const btn = document.getElementById('startBtn');
@@ -546,6 +591,7 @@ function initStartOverlay(onStart) {
   overlay.addEventListener('click', handleStart);
 }
 
+// [REWRITE] 튜토리얼 메인 초기화
 async function initTutorial() {
   try {
     const res = await fetch('./tutorials.json');
@@ -565,6 +611,7 @@ async function initTutorial() {
   });
 }
 
+// [REWRITE] 드래그 이벤트 설정
 function setupDragEvents() {
   const gridEl = document.getElementById('grid');
   gridEl.addEventListener('mousedown', e => {
@@ -597,10 +644,10 @@ function setupDragEvents() {
   });
 }
 
+// [REWRITE] 다이얼로그 이벤트 설정
 function setupDialogEvents() {
   const overlay = document.getElementById('tutDialogOverlay');
 
-  // Overlay tap/click (covers NEXT button and background)
   let overlayTouched = false;
   overlay.addEventListener('touchend', e => {
     if (waitingForMission) return;
@@ -620,6 +667,7 @@ function setupDialogEvents() {
 }
 
 // ── Step Loading ──
+// [REWRITE] 스텝 로드
 function loadStep(idx) {
   if (idx >= tutorials.length) {
     completeTutorial();
@@ -633,24 +681,21 @@ function loadStep(idx) {
   waitingForMission = false;
   orderedStraightCount = 0;
 
-  // Progress display
   document.getElementById('tutProgress').textContent = `${idx + 1} / ${tutorials.length}`;
 
-  // Restart button
   const restartBtn = document.getElementById('tutRestartBtn');
   restartBtn.disabled = false;
 
-  // Init grid
   initState();
   loadTutorialDeck(step.initialDeck);
   applyGravityToAll();
   renderGrid();
 
-  // Show first dialog
   showCurrentDialog();
 }
 
 // ── Dialog Display ──
+// [REWRITE] 현재 다이얼로그 표시
 function showCurrentDialog() {
   const step = tutorials[currentStep];
   if (!step || !step.dialogs[currentPhaseIdx]) return;
@@ -665,14 +710,11 @@ function showCurrentDialog() {
   const nextBtn = document.getElementById('tutNextBtn');
   const overlay = document.getElementById('tutDialogOverlay');
 
-  // Typing effect
   typeText(textEl, text);
 
-  // Action prompt
   const prompt = document.getElementById('tutActionPrompt');
   const promptText = document.getElementById('tutActionText');
 
-  // Instruction phase = waiting for mission
   if (phase.phase === 'instruction') {
     overlay.classList.add('hidden');
     nextBtn.classList.add('hidden');
@@ -687,13 +729,13 @@ function showCurrentDialog() {
     if (prompt) prompt.classList.remove('active');
   }
 
-  // Auto trigger
   if (phase.trigger === 'auto') {
     nextBtn.classList.remove('hidden');
     setTimeout(() => advanceDialog(), 3000);
   }
 }
 
+// [REWRITE] 타이핑 효과
 function typeText(el, text) {
   if (typingTimer) clearInterval(typingTimer);
   el.textContent = '';
@@ -705,6 +747,7 @@ function typeText(el, text) {
   }, 18);
 }
 
+// [REUSE] 타이핑 완료 여부
 function isTypingComplete() {
   const step = tutorials[currentStep];
   if (!step) return true;
@@ -718,6 +761,7 @@ function isTypingComplete() {
   return textEl.textContent.length >= text.length;
 }
 
+// [REWRITE] 타이핑 즉시 완료
 function forceCompleteTyping() {
   if (typingTimer) clearInterval(typingTimer);
   const step = tutorials[currentStep];
@@ -729,12 +773,12 @@ function forceCompleteTyping() {
 }
 
 // ── Dialog Click ──
+// [REUSE] 다이얼로그 클릭 처리
 function onDialogClick() {
   if (!tutorialStarted) return;
   if (waitingForMission) return;
   if (tutorialEnded) return;
 
-  // If still typing, complete it immediately
   if (!isTypingComplete()) {
     forceCompleteTyping();
     return;
@@ -744,18 +788,17 @@ function onDialogClick() {
 }
 
 // ── Dialog Advance ──
+// [REUSE] 다이얼로그 진행
 function advanceDialog() {
   const step = tutorials[currentStep];
   const phase = step.dialogs[currentPhaseIdx];
 
-  // More lines in current phase?
   if (currentLineIdx < phase.lines.length - 1) {
     currentLineIdx++;
     showCurrentDialog();
     return;
   }
 
-  // More phases?
   if (currentPhaseIdx < step.dialogs.length - 1) {
     currentPhaseIdx++;
     currentLineIdx = 0;
@@ -763,18 +806,17 @@ function advanceDialog() {
     return;
   }
 
-  // All dialogs done → next step
   currentStep++;
   loadStep(currentStep);
 }
 
 // ── Mission Complete Handler ──
+// [REWRITE] 미션 완료 처리
 function onTutorialHandComplete(handData) {
   if (!waitingForMission) return;
   const step = tutorials[currentStep];
   if (!checkTutorialMission(step.mission, handData)) return;
 
-  // Mission complete → advance to next phase (result)
   waitingForMission = false;
   currentPhaseIdx++;
   currentLineIdx = 0;
@@ -784,10 +826,10 @@ function onTutorialHandComplete(handData) {
 }
 
 // ── Restart Button ──
+// [REWRITE] 튜토리얼 리스타트
 function tutorialRestart() {
   const step = tutorials[currentStep];
 
-  // Step with restartMissionComplete: pressing restart IS the mission
   if (step.restartMissionComplete && waitingForMission) {
     initState();
     loadRandomDeck();
@@ -803,14 +845,12 @@ function tutorialRestart() {
     return;
   }
 
-  // Normal restart: reload current step's initialDeck (no gold cost)
   initState();
   loadTutorialDeck(step.initialDeck);
   applyGravityToAll();
   orderedStraightCount = 0;
   renderGrid();
 
-  // Reset dialog to instruction phase
   const instrIdx = step.dialogs.findIndex(d => d.phase === 'instruction');
   if (instrIdx !== -1) {
     currentPhaseIdx = instrIdx;
@@ -823,6 +863,7 @@ function tutorialRestart() {
 }
 
 // ── Skip ──
+// [REWRITE] 튜토리얼 스킵
 function skipTutorial() {
   const msg = i18n.t('tutorial.skipConfirm') || 'Skip tutorial?';
   if (confirm(msg)) {
@@ -831,11 +872,35 @@ function skipTutorial() {
 }
 
 // ── Complete ──
+// [ADAPTER] 튜토리얼 완료 — localStorage + 페이지 이동
 function completeTutorial() {
   tutorialEnded = true;
-  localStorage.setItem('poker_tutorial_done', '1');
-  location.href = isReplay ? 'index.html' : 'id.html';
+  saveLocal('poker_tutorial_done', '1');
+  navigateTo(isReplay ? 'index.html' : 'id.html');
 }
 
 // ── Boot ──
 initTutorial();
+
+// =============================================
+// EXPO 전환 체크리스트
+// REUSE   : 16개 함수 (변경 불필요)
+//   - initState, cardFromId, cardDisplay, loadTutorialDeck, loadRandomDeck
+//   - isValidTutorialMove, extendPath, finalizePath
+//   - evaluateHand, partialEval, isValidHand
+//   - applyGravityToColumn, applyGravityToAll, getHandTier
+//   - checkTutorialMission, isTypingComplete, onDialogClick, advanceDialog
+// ADAPTER : 3개 함수 (내부 구현 교체 필요)
+//   - saveLocal → AsyncStorage
+//   - loadLocal → AsyncStorage
+//   - navigateTo → React Navigation
+//   - completeTutorial (uses saveLocal + navigateTo)
+// REWRITE : 18개 함수 (전면 재작성)
+//   - renderGrid, getEventCoords, getCellFromEvent, updateSelectionVisuals
+//   - startDrag, clearSelection, updateDragLine, updateHandPreview
+//   - removeCardsAndApplyGravity, triggerScreenFlash, spawnParticles
+//   - showScorePopup, initStartOverlay, initTutorial
+//   - setupDragEvents, setupDialogEvents, loadStep, showCurrentDialog
+//   - typeText, forceCompleteTyping, onTutorialHandComplete
+//   - tutorialRestart, skipTutorial
+// =============================================
