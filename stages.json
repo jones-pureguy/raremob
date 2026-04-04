@@ -4908,7 +4908,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 300,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -5196,7 +5196,7 @@
       "ko": "전문가 최종 보스"
     },
     "description": {
-      "ko": "150초 안에 550점 이상으로 종료하세요."
+      "ko": "200초 안에 550점 이상으로 종료하세요."
     },
     "theme": {
       "bgColor": "#0a0000",
@@ -5204,7 +5204,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 150,
+      "gameTime": 200,
       "stageTime": null
     },
     "constraints": {
@@ -5231,13 +5231,7 @@
     },
     "rewards": {
       "gold": 25,
-      "bonus": [
-        {
-          "condition": "finalScore >= 550",
-          "gold": 10,
-          "description": "550점 이상 보너스"
-        }
-      ]
+      "bonus": []
     },
     "unlockCondition": {
       "type": "stage_clear",
