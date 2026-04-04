@@ -34,9 +34,10 @@ function pingServer() {
   })
 }
 
-// [ADAPTER] 골드 싱크 — localStorage → Render → Supabase
-// 기존 syncGoldToDB() 대체
+// [ADAPTER] 골드 싱크 — Render 서버 경유
+// Expo 전환 시: fetch URL만 변경, 로직 동일
 async function syncGoldToServer(userId, gold) {
+  if (!userId || gold === undefined) return
   try {
     const res = await fetch(`${RENDER_SERVER}/api/gold-sync`, {
       method: 'POST',
@@ -45,6 +46,6 @@ async function syncGoldToServer(userId, gold) {
     })
     return await res.json()
   } catch (e) {
-    console.warn('[Dragon Poker] 골드 싱크 실패:', e)
+    console.warn('[Dragon Poker] 골드 싱크 실패, 로컬 유지:', e)
   }
 }

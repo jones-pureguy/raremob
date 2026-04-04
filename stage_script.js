@@ -1541,11 +1541,11 @@ async function saveStageResult(stageId, result, goldEarned) {
         meta: { stageId, finalScore: result.finalScore, firstClear: true },
       });
 
-      // Update player gold
-      const { data: player } = await sb.from('players').select('gold').eq('id', playerId).single();
-      const currentGold = player ? player.gold : 0;
-      await sb.from('players').update({ gold: currentGold + goldEarned }).eq('id', playerId);
-      saveLocal('poker_gold', currentGold + goldEarned);
+      // Update player gold — Render 서버 경유
+      const localGold = parseInt(loadLocal('poker_gold') || '0');
+      const newGold = localGold + goldEarned;
+      saveLocal('poker_gold', newGold);
+      await syncGoldToServer(playerId, newGold);
     }
 
     // Update local cache

@@ -517,13 +517,12 @@ function deductGoldLocal(amount, reason) {
   return true;
 }
 
+// [ADAPTER] 골드 DB 싱크 — Render 서버 경유로 변경
 async function syncGoldToDB(reason) {
   const playerId = localStorage.getItem('poker_player_id');
   if (!playerId) return;
   const gold = parseInt(localStorage.getItem('poker_gold') || '0');
-  try {
-    await sb.from('players').update({ gold }).eq('id', playerId);
-  } catch(e) { console.error('Gold sync error:', e); }
+  await syncGoldToServer(playerId, gold);
 }
 
 // ─── Confirm Modal ───
@@ -625,5 +624,7 @@ function gameRetry() {
   }
 })();
 </script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
 </body>
 </html>
