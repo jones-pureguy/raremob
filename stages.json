@@ -4743,7 +4743,7 @@
       "ko": "전문가 복합 II"
     },
     "description": {
-      "ko": "대각선만, 원페어/투페어 금지, 6개 이상 패를 완성하세요."
+      "ko": "대각선만, 원페어/투페어 금지, 5개 이상 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#1a0a2e",
@@ -4751,13 +4751,13 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 300,
       "stageTime": null
     },
     "constraints": {
       "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": true,
       "forbiddenHands": [
@@ -4774,8 +4774,8 @@
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 6,
-          "description": "6개 이상 패 완성"
+          "count_gte": 5,
+          "description": "5개 이상 패 완성"
         }
       ]
     },
@@ -4900,7 +4900,7 @@
       "ko": "대각선 매니아"
     },
     "description": {
-      "ko": "대각선만으로, 스트레이트 이상 패를 4개 포함하여 250점 이상으로 종료하세요."
+      "ko": "대각선만으로, 스트레이트 이상 패를 4개 포함하여 200점 이상으로 종료하세요."
     },
     "theme": {
       "bgColor": "#1a0000",
@@ -4914,7 +4914,7 @@
     "constraints": {
       "resetLimit": null,
       "moveMode": "freehand",
-      "jumpAllowed": false,
+      "jumpAllowed": true,
       "diagonalAllowed": true,
       "diagonalOnly": true,
       "forbiddenHands": [],
@@ -4935,8 +4935,8 @@
         {
           "id": "c2",
           "type": "score_gte",
-          "value": 250,
-          "description": "250점 이상"
+          "value": 200,
+          "description": "200점 이상"
         }
       ]
     },
