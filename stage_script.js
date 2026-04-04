@@ -1406,6 +1406,8 @@ function resetGame() {
 
   // 골드 차감
   deductGoldLocal(1, 'restart');
+  // [ADAPTER] 리스타트 즉시 골드 싱크 — 중간 이탈 시 유실 방지
+  syncGoldToDB('restart').catch(e => console.warn('골드 싱크 실패:', e));
 
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
