@@ -49,7 +49,9 @@ app.get('/health', (req, res) => {
 // =============================================
 app.post('/api/gold-sync', async (req, res) => {
   const { userId, gold } = req.body
+  console.log(`[gold-sync] 요청: userId=${userId}, gold=${gold}`)
   if (!userId || gold === undefined) {
+    console.log('[gold-sync] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
   const { error } = await supabase
@@ -57,7 +59,11 @@ app.post('/api/gold-sync', async (req, res) => {
     .update({ gold })
     .eq('id', userId)
 
-  if (error) return res.status(500).json({ error })
+  if (error) {
+    console.log(`[gold-sync] 실패: ${error.message}`)
+    return res.status(500).json({ error })
+  }
+  console.log(`[gold-sync] 성공: userId=${userId}, gold=${gold}`)
   res.json({ success: true })
 })
 
