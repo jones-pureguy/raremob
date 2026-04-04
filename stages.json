@@ -4743,7 +4743,7 @@
       "ko": "전문가 복합 II"
     },
     "description": {
-      "ko": "대각선만, 원페어/투페어 금지, 5개 이상 패를 완성하세요."
+      "ko": "대각선만, 원페어/투페어 금지, 6개 이상 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#1a0a2e",
@@ -4767,15 +4767,15 @@
       "forbiddenValues": []
     },
     "mission": {
-      "type": "end_of_game",
+      "type": "real_time",
       "failTrigger": "forbidden_hand_made",
       "completionMode": "all",
       "conditions": [
         {
           "id": "c1",
           "type": "hands_complete",
-          "count_gte": 5,
-          "description": "5개 이상 패 완성"
+          "count_gte": 6,
+          "description": "6개 이상 패 완성"
         }
       ]
     },
@@ -4795,7 +4795,7 @@
       "ko": "순서 있는 ST III"
     },
     "description": {
-      "ko": "순서 있는 스트레이트를 4개 만드세요."
+      "ko": "순서 대로 드래그한 스트레이트를 4개 만드세요."
     },
     "theme": {
       "bgColor": "#001a1a",
@@ -4825,7 +4825,7 @@
           "type": "ordered_straight",
           "hand": "STRAIGHT",
           "count_gte": 4,
-          "description": "순서 있는 스트레이트 4개"
+          "description": "순서 대로의 스트레이트 4개"
         }
       ]
     },
