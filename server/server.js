@@ -60,7 +60,7 @@ app.post('/api/gold-sync', async (req, res) => {
     .eq('id', userId)
 
   if (error) {
-    console.log(`[gold-sync] 실패: ${error.message}`)
+    console.log(`[gold-sync] DB 오류:`, error)
     return res.status(500).json({ error })
   }
   console.log(`[gold-sync] 성공: userId=${userId}, gold=${gold}`)
