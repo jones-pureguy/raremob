@@ -13,16 +13,25 @@ const server = http.createServer(app)
 // =============================================
 // CORS — 클라이언트 origin 허용
 // =============================================
+const allowedOrigins = [
+  process.env.CLIENT_ORIGIN,
+  'https://jones-pureguy.github.io',
+  'http://localhost:3000',
+  'http://127.0.0.1:5500',  // VS Code Live Server
+].filter(Boolean)
+
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN,
-  methods: ['GET', 'POST']
+  origin: allowedOrigins,
+  methods: ['GET', 'POST'],
+  credentials: true
 }))
 app.use(express.json())
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_ORIGIN,
-    methods: ['GET', 'POST']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 })
 
