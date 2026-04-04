@@ -146,6 +146,7 @@
     "puzzleFail": "퍼즐 실패",
     "scoreDigit": "끝자리 조건 미달",
     "scoreTarget": "점수 조건 미달",
+    "conditionsNotMet": "조건을 달성하지 못했습니다",
     "noMoreMovesCondition": "더 이상 만들 수 있는 패가 없습니다"
   },
   "constraint": {

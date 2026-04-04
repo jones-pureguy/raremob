@@ -73,6 +73,7 @@ const FAIL_MESSAGES = {
   'nomoves':           () => i18n.t('failReasons.noMoves'),
   'gameover':          () => i18n.t('failReasons.gameover'),
   'nth_hand_violated': () => i18n.t('failReasons.nthHand'),
+  'conditions_not_met': () => i18n.t('failReasons.conditionsNotMet'),
 };
 
 // ─── Game State ───
@@ -1011,17 +1012,14 @@ function endGame(reason) {
       triggerStageComplete();
       return;
     } else {
-      // Determine fail reason
-      let failReason = reason === 'nomoves' ? 'nomoves' : 'gameover';
-      triggerStageFail(failReason);
+      triggerStageFail('conditions_not_met');
       return;
     }
   }
 
   // For real_time missions that haven't cleared yet
   if (stageConfig && stageConfig.mission.type === 'real_time') {
-    let failReason = reason === 'nomoves' ? 'nomoves' : 'gameover';
-    triggerStageFail(failReason);
+    triggerStageFail('conditions_not_met');
     return;
   }
 }

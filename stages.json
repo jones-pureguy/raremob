@@ -4803,7 +4803,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 250,
       "stageTime": null
     },
     "constraints": {
@@ -4842,10 +4842,10 @@
   {
     "id": 93,
     "title": {
-      "ko": "All different"
+      "ko": "different 8"
     },
     "description": {
-      "ko": "모두 다른 패로 9개를 완성하세요."
+      "ko": "8개 이상의 다른 종류의 패를 완성하세요."
     },
     "theme": {
       "bgColor": "#0a0000",
@@ -4853,7 +4853,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 300,
       "stageTime": null
     },
     "constraints": {
@@ -4873,8 +4873,8 @@
         {
           "id": "c1",
           "type": "unique_hands_gte",
-          "count": 9,
-          "description": "9개 패 모두 다른 패"
+          "count": 8,
+          "description": "8개 이상의 다른 종류의 패"
         }
       ]
     },
@@ -4908,7 +4908,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 300,
       "stageTime": null
     },
     "constraints": {
@@ -4964,7 +4964,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 250,
       "stageTime": null
     },
     "constraints": {
@@ -5047,7 +5047,7 @@
       "cardBack": "default"
     },
     "timers": {
-      "gameTime": 200,
+      "gameTime": 300,
       "stageTime": null
     },
     "constraints": {
