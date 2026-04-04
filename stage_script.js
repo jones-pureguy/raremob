@@ -1534,6 +1534,12 @@ async function saveStageResult(stageId, result, goldEarned) {
     }, { onConflict: 'player_id,stage_id' });
 
     if (goldEarned > 0) {
+      // [LOGIC] localStorage가 source of truth (rules.md 준수)
+      // DB에서 gold 읽어서 덮어쓰기 금지
+      const currentGold = parseInt(loadLocal('poker_gold') || '0');
+      const newGold = currentGold + goldEarned;
+      saveLocal('poker_gold', newGold);
+
       await sb.from('gold_transactions').insert({
         player_id: playerId,
         amount: goldEarned,
@@ -1541,11 +1547,8 @@ async function saveStageResult(stageId, result, goldEarned) {
         meta: { stageId, finalScore: result.finalScore, firstClear: true },
       });
 
-      // Update player gold — Render 서버 경유
-      const localGold = parseInt(loadLocal('poker_gold') || '0');
-      const newGold = localGold + goldEarned;
-      saveLocal('poker_gold', newGold);
-      await syncGoldToServer(playerId, newGold);
+      // DB 싱크 — localStorage 값 기준
+      await syncGoldToDB('stage_clear');
     }
 
     // Update local cache
