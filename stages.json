@@ -5192,55 +5192,6 @@
   },
   {
     "id": 99,
-    "title": {
-      "ko": "전문가 최종 보스"
-    },
-    "description": {
-      "ko": "200초 안에 500점 이상으로 종료하세요."
-    },
-    "theme": {
-      "bgColor": "#0a0000",
-      "accentColor": "#ff3d00",
-      "cardBack": "default"
-    },
-    "timers": {
-      "gameTime": 200,
-      "stageTime": null
-    },
-    "constraints": {
-      "resetLimit": null,
-      "moveMode": "freehand",
-      "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": false,
-      "forbiddenHands": [],
-      "forbiddenValues": []
-    },
-    "mission": {
-      "type": "end_of_game",
-      "failTrigger": null,
-      "completionMode": "all",
-      "conditions": [
-        {
-          "id": "c1",
-          "type": "score_gte",
-          "value": 500,
-          "description": "500점 이상"
-        }
-      ]
-    },
-    "rewards": {
-      "gold": 25,
-      "bonus": []
-    },
-    "unlockCondition": {
-      "type": "stage_clear",
-      "stageId": 98
-    },
-    "pvpConfig": null
-  },
-  {
-    "id": 100,
         "title": {
       "ko": "점프 그랜드 마스터"
     },
@@ -5293,6 +5244,55 @@
           "description": "400점 이상 보너스"
         }
       ]
+    },
+    "unlockCondition": {
+      "type": "stage_clear",
+      "stageId": 98
+    },
+    "pvpConfig": null
+  },
+  {
+    "id": 100,
+    "title": {
+      "ko": "파이널 보스"
+    },
+    "description": {
+      "ko": "200초 안에 500점 이상으로 종료하세요."
+    },
+    "theme": {
+      "bgColor": "#0a0000",
+      "accentColor": "#ff3d00",
+      "cardBack": "default"
+    },
+    "timers": {
+      "gameTime": 200,
+      "stageTime": null
+    },
+    "constraints": {
+      "resetLimit": null,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "score_gte",
+          "value": 500,
+          "description": "500점 이상"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 25,
+      "bonus": []
     },
     "unlockCondition": {
       "type": "stage_clear",
