@@ -348,6 +348,8 @@ function deductGoldLocal(amount, reason) {
   if (current < amount) return false;
   saveLocal('poker_gold', current - amount);
   renderCurrencyBar();
+  // [ADAPTER] 골드 차감 즉시 싱크 — 중간 이탈 시 유실 방지
+  syncGoldToDB(reason).catch(e => console.warn('[Infinite] 골드 싱크 실패:', e));
   return true;
 }
 
