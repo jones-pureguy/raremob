@@ -194,10 +194,7 @@
 <div class="lobby-container">
   <div class="lobby-title" id="lobbyTitle">PvP 로비</div>
 
-  <div class="match-buttons">
-    <button class="match-btn" id="btnArcade" onclick="toggleMatch('arcade')">ARCADE BATTLE 매칭</button>
-    <button class="match-btn" id="btnGamble" onclick="toggleMatch('gamble')">GAMBLE DUEL 매칭</button>
-  </div>
+  <div class="match-buttons" id="matchButtons"></div>
 
   <div id="lobbyList"></div>
 </div>
@@ -252,8 +249,7 @@
 
     // UI 텍스트 설정
     document.getElementById('lobbyTitle').textContent = i18n.t('pvp.lobby.title');
-    document.getElementById('btnArcade').textContent = i18n.t('pvp.lobby.arcadeMatch');
-    document.getElementById('btnGamble').textContent = i18n.t('pvp.lobby.gambleMatch');
+    renderMatchButtons('idle', null);
 
     // 소켓 연결 완료 후 로비 진입
     if (socket.connected) {
@@ -329,6 +325,8 @@
 
   // room:created — 매칭 완료
   socket.on('room:created', ({ roomId, mode, opponent }) => {
+    matchingMode = null;
+    renderMatchButtons('idle', null);
     sessionStorage.setItem('pvpRoom', JSON.stringify({ roomId, mode, opponent }));
     if (mode === 'arcade') {
       location.href = `pvp_arcade.html?room=${roomId}`;
@@ -388,25 +386,34 @@
       </div>`;
   }
 
+  // ─── 매칭 버튼 렌더링 ───
+  function renderMatchButtons(status, mode) {
+    const container = document.getElementById('matchButtons');
+    if (status === 'matching') {
+      const modeName = mode === 'arcade' ? i18n.t('pvp.lobby.arcadeBattle') : i18n.t('pvp.lobby.gambleDuel');
+      container.innerHTML = `
+        <button class="match-btn active" onclick="toggleMatch(null)" style="flex:1;">${i18n.t('pvp.lobby.cancelMatch')}</button>
+      `;
+    } else {
+      container.innerHTML = `
+        <button class="match-btn" onclick="toggleMatch('arcade')">${i18n.t('pvp.lobby.arcadeMatch')}</button>
+        <button class="match-btn" onclick="toggleMatch('gamble')">${i18n.t('pvp.lobby.gambleMatch')}</button>
+      `;
+    }
+  }
+
   // ─── 자동매칭 ───
   function toggleMatch(mode) {
     if (matchingMode) {
       // 취소
       socket.emit('match:cancel');
       matchingMode = null;
-      document.getElementById('btnArcade').textContent = i18n.t('pvp.lobby.arcadeMatch');
-      document.getElementById('btnGamble').textContent = i18n.t('pvp.lobby.gambleMatch');
-      document.getElementById('btnArcade').classList.remove('active');
-      document.getElementById('btnGamble').classList.remove('active');
+      renderMatchButtons('idle', null);
     } else {
       // 시작
       matchingMode = mode;
       socket.emit('match:start', { mode });
-      const activeBtn = mode === 'arcade' ? 'btnArcade' : 'btnGamble';
-      const otherBtn = mode === 'arcade' ? 'btnGamble' : 'btnArcade';
-      document.getElementById(activeBtn).textContent = i18n.t('pvp.lobby.cancelMatch');
-      document.getElementById(activeBtn).classList.add('active');
-      document.getElementById(otherBtn).style.display = 'none';
+      renderMatchButtons('matching', mode);
     }
     renderLobby();
   }
