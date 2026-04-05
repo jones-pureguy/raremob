@@ -32,9 +32,6 @@ const pvpArcade = {
   document.getElementById('pvpStartSubtitle').textContent =
     i18n.t('pvp.arcade.vs').replace('{name}', pvpArcade.opponent.username);
 
-  // 점수 표시 영역을 PvP용으로
-  document.getElementById('currentScore').textContent = i18n.t('pvp.arcade.title');
-
   // 점수판 초기 렌더링
   renderScoreboard();
 
@@ -115,17 +112,22 @@ const pvpArcade = {
 socket.on('game:started', ({ roomId, startedAt }) => {
   if (roomId !== pvpArcade.roomId) return;
   pvpArcade.gameStarted = true;
+  state.phase = 'playing';
 
   // 서버 startedAt 기준으로 타이머 동기화
   const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-  state.timer = Math.max(0, TIMER_SECONDS - elapsed);
+  const remaining = Math.max(0, TIMER_SECONDS - elapsed);
   startTimer();
+  state.timer = remaining; // startTimer()가 200으로 덮어쓴 것을 재설정
+  updateTimerDisplay();
 });
 
 // opponent:handComplete — 상대 패 완성
 socket.on('opponent:handComplete', ({ hands }) => {
+  console.log('[pvp] 상대 패 수신:', hands.length, hands);
   pvpArcade.opponentHands = hands;
-  document.getElementById('oppHandCount').textContent = `${hands.length}/9`;
+  const el = document.getElementById('oppHandCount');
+  if (el) el.textContent = `${hands.length}/9`;
   renderScoreboard();
 });
 
@@ -199,6 +201,7 @@ socket.on('rematch:declined', () => {
 
 // ─── 점수판 렌더링 ───
 function renderScoreboard() {
+  console.log('[pvp] renderScoreboard:', 'my:', pvpArcade.myHands.length, 'opp:', pvpArcade.opponentHands.length);
   const container = document.getElementById('scoreboard');
   const myName = localStorage.getItem('poker_username') || 'ME';
   const oppName = pvpArcade.opponent ? pvpArcade.opponent.username : 'OPP';
