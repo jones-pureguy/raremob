@@ -453,11 +453,14 @@ function setupGameUI() {
 
   // endGame 오버라이드
   window.endGame = function(reason) {
-    if (pvpArcade.gameStarted && reason !== '_pvp_result') {
-      state.phase = 'gameover';
-      clearInterval(state.timerInterval);
-      socket.emit('game:end', { roomId: pvpArcade.roomId });
-    }
+    if (!pvpArcade.gameStarted) return;
+    if (state.phase === 'result') return;
+    // 9패 완성(complete)은 무시 — 서버 타이머가 종료를 결정
+    // nomoves/gameover(타이머)만 서버에 알림
+    if (reason === 'complete') return;
+    state.phase = 'gameover';
+    clearInterval(state.timerInterval);
+    socket.emit('game:end', { roomId: pvpArcade.roomId });
   };
 
   // finalizePath 래핑
@@ -618,9 +621,10 @@ function showResult(data) {
   const modal = document.getElementById('modal');
   const overlay = document.getElementById('modalOverlay');
   const myId = socket.id;
-  const isDraw = data.winner === 'draw';
   const myDelta = data.chipDelta[myId] || 0;
   const myNewChip = data.newChip[myId] || 0;
+
+  // 결과표 — 'A'=내 승리 (서버가 각자 기준으로 전송)
   let tableHTML = '<div style="margin:12px 0;">';
   const mySorted = [...pvpArcade.myHands].sort((a, b) => b.rank - a.rank);
   const oppSorted = [...pvpArcade.opponentHands].sort((a, b) => b.rank - a.rank);
@@ -634,14 +638,16 @@ function showResult(data) {
     tableHTML += `<div style="display:flex;font-size:0.72rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="flex:1;text-align:left;${myCls}">${cr}${myLabel}</span><span style="flex:1;text-align:right;${oppCls}">${oppLabel}${crR}</span></div>`;
   }
   tableHTML += '</div>';
+
   let chipHTML = '';
-  if (isDraw) {
+  if (data.isDraw) {
     chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">${i18n.t('pvp.arcade.draw')}</div>`;
   } else {
     const sign = myDelta >= 0 ? '+' : '';
     const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
     chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">${i18n.t('pvp.arcade.chipDelta')}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};margin:4px 0;">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${myNewChip.toLocaleString()}</div>`;
   }
+
   let buttonsHTML = '';
   if (data.reason === 'disconnect') {
     buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${i18n.t('pvp.arcade.oppLeft')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
@@ -650,7 +656,8 @@ function showResult(data) {
   } else {
     buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${i18n.t('pvp.arcade.noChip')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
   }
-  modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2>${tableHTML}<div style="display:flex;justify-content:center;gap:24px;font-size:0.85rem;margin:8px 0;"><span style="color:var(--gold);">${i18n.t('pvp.arcade.myWins').replace('{n}', data.winsA)}</span><span style="color:rgba(255,255,255,0.5);">${i18n.t('pvp.arcade.oppWins').replace('{n}', data.winsB)}</span></div>${chipHTML}${buttonsHTML}`;
+
+  modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2>${tableHTML}<div style="display:flex;justify-content:center;gap:24px;font-size:0.85rem;margin:8px 0;"><span style="color:var(--gold);">${i18n.t('pvp.arcade.myWins').replace('{n}', data.myWins)}</span><span style="color:rgba(255,255,255,0.5);">${i18n.t('pvp.arcade.oppWins').replace('{n}', data.oppWins)}</span></div>${chipHTML}${buttonsHTML}`;
   overlay.classList.add('active');
 }
 

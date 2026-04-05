@@ -512,6 +512,17 @@ io.on('connection', (socket) => {
       }
     }
 
+    // 양쪽 모두 9패 완성 → 즉시 종료
+    const bothDone = room.players.every(
+      id => room.arcade.hands[id] && room.arcade.hands[id].length >= 9
+    )
+    if (bothDone) {
+      clearTimeout(room.arcade.timer)
+      console.log(`[arcade] 양쪽 9패 완성 → 즉시 종료: roomId=${roomId}`)
+      endArcadeGame(room, 'timeout')
+      return
+    }
+
     // 9패 완성 + 타임어택 체크
     if (hands.length >= 9 && !room.arcade.timeAttack.triggered) {
       const elapsed = Date.now() - room.arcade.startedAt
@@ -806,18 +817,41 @@ async function endArcadeGame(room, reason, disconnectedId) {
 
   const canRematch = chipResult.newChip[socketIdA] >= 100 && chipResult.newChip[socketIdB] >= 100
 
-  // 양쪽에게 결과 전송
-  io.to(room.roomId).emit('game:result', {
+  // 양쪽에게 각자 기준으로 결과 전송
+  const baseResult = {
     roomId: room.roomId,
     reason,
-    winner: comparison.winner,
-    results: comparison.results,
-    winsA: comparison.winsA,
-    winsB: comparison.winsB,
     chipDelta: chipResult.delta,
     newChip: chipResult.newChip,
     canRematch
-  })
+  }
+
+  // A에게: results 그대로, 'A'=내 승리
+  const sockA = io.sockets.sockets.get(socketIdA)
+  if (sockA) {
+    sockA.emit('game:result', {
+      ...baseResult,
+      results: comparison.results,
+      myWins: comparison.winsA,
+      oppWins: comparison.winsB,
+      iWin: comparison.winner === socketIdA,
+      isDraw: comparison.winner === 'draw'
+    })
+  }
+
+  // B에게: results 뒤집어서 'A'→'me', 'B'→'me' 반전
+  const flippedResults = comparison.results.map(r => r === 'A' ? 'B' : r === 'B' ? 'A' : r)
+  const sockB = io.sockets.sockets.get(socketIdB)
+  if (sockB) {
+    sockB.emit('game:result', {
+      ...baseResult,
+      results: flippedResults,
+      myWins: comparison.winsB,
+      oppWins: comparison.winsA,
+      iWin: comparison.winner === socketIdB,
+      isDraw: comparison.winner === 'draw'
+    })
+  }
 
   console.log(`[arcade] 결과: winner=${comparison.winner}, winsA=${comparison.winsA}, winsB=${comparison.winsB}, delta=${JSON.stringify(chipResult.delta)}`)
 
