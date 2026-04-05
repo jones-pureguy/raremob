@@ -310,6 +310,15 @@
       "Three ${VALUE_NAMES[countKeys[0][0]]}s"
     ]
   },
+  "pvp_utils.js": {
+    "buttons": [],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": [],
+    "placeholders": [],
+    "dynamic_text": []
+  },
   "header.js": {
     "buttons": [],
     "toasts": [],

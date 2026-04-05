@@ -255,7 +255,39 @@ function evaluateHand(cards) { // [REUSE]
     label = 'High Card';
   }
 
-  return { rank, rankValue: rank, label, pairValue: countValues[0] === 2 ? parseInt(countKeys[0][0]) : 0 };
+  // ─── PvP 확장 필드 ───
+  const sortedValues = values.slice().sort((a, b) => b - a);
+  const sortedCountKeys = countKeys.map(([v, c]) => [parseInt(v), c]);
+
+  let primaryVal = 0, secondaryVal = 0, kickers = [];
+
+  if (rank === RANK.FOUR_KIND) {
+    primaryVal = sortedCountKeys[0][0];
+    kickers = sortedValues.filter(v => v !== primaryVal);
+  } else if (rank === RANK.FULL_HOUSE) {
+    primaryVal = sortedCountKeys[0][0];
+    secondaryVal = sortedCountKeys[1][0];
+  } else if (rank === RANK.THREE_KIND) {
+    primaryVal = sortedCountKeys[0][0];
+    kickers = sortedValues.filter(v => v !== primaryVal).sort((a, b) => b - a);
+  } else if (rank === RANK.TWO_PAIR) {
+    const pairVals = sortedCountKeys.filter(([, c]) => c === 2).map(([v]) => v).sort((a, b) => b - a);
+    primaryVal = pairVals[0];
+    secondaryVal = pairVals[1];
+    kickers = sortedValues.filter(v => v !== primaryVal && v !== secondaryVal);
+  } else if (rank === RANK.ONE_PAIR) {
+    primaryVal = sortedCountKeys[0][0];
+    kickers = sortedValues.filter(v => v !== primaryVal).sort((a, b) => b - a);
+  } else {
+    kickers = sortedValues;
+  }
+
+  return {
+    rank, rankValue: rank, label,
+    pairValue: countValues[0] === 2 ? parseInt(countKeys[0][0]) : 0,
+    cards, values: sortedValues, suits, counts,
+    countKeys: sortedCountKeys, primaryVal, secondaryVal, kickers
+  };
 }
 
 function partialEval(cards) { // [REUSE]
