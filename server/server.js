@@ -367,54 +367,44 @@ io.on('connection', (socket) => {
 
   // ─── lobby:join ───
   socket.on('lobby:join', ({ playerId, username, chip }) => {
-    // 1. 현재 socket.id 기존 항목 제거
-    if (lobby.has(socket.id)) {
-      lobby.delete(socket.id)
-    }
-
-    // 2. 동일 playerId로 등록된 기존 항목 전부 제거
+    // 1. 동일 playerId 기존 항목 전부 제거
     const toRemove = []
-    for (const [sid, e] of lobby) {
-      if (e.playerId === playerId && sid !== socket.id) {
+    for (const [sid, entry] of lobby) {
+      if (entry.playerId === playerId && sid !== socket.id) {
         toRemove.push(sid)
       }
     }
     toRemove.forEach(sid => {
       lobby.delete(sid)
       io.emit('lobby:userLeft', sid)
-      console.log(`[pvp] 중복 로비 항목 제거: playerId=${playerId}, sid=${sid}`)
+      console.log(`[pvp] 중복 제거: playerId=${playerId}, 제거sid=${sid}`)
     })
 
-    // 3. 신규 등록
-    console.log(`[pvp] 로비 진입: ${username} (${socket.id}), chip=${chip}`)
-
+    // 2. 신규 등록
     const entry = {
-      playerId,
-      username,
-      chip,
-      status: 'waiting',
-      mode: null,
+      playerId, username, chip,
+      status: 'waiting', mode: null,
       socketId: socket.id
     }
     lobby.set(socket.id, entry)
 
-    // 본인에게 현재 로비 전체 목록 전송
+    // 3. 본인에게 현재 로비 전체 목록 전송
     const list = []
-    for (const [, e] of lobby) {
-      list.push(toLobbyUser(e))
-    }
+    for (const [, e] of lobby) list.push(toLobbyUser(e))
     socket.emit('lobby:list', list)
 
-    // 전체에게 새 유저 알림
+    // 4. 전체에게 새 유저 알림 (본인 제외)
     socket.broadcast.emit('lobby:userJoined', toLobbyUser(entry))
 
-    // pending 알림 체크
+    // 5. pending 알림 체크
     const pending = pendingNotifications.get(playerId)
     if (pending) {
       pendingNotifications.delete(playerId)
       socket.emit('pvp:pendingNotification', pending)
       console.log(`[pvp] pending 알림 전송: ${playerId}`)
     }
+
+    console.log(`[pvp] 로비 진입: ${username} (${socket.id}), chip=${chip}`)
   })
 
   // ─── lobby:leave ───
@@ -592,27 +582,25 @@ io.on('connection', (socket) => {
       return
     }
 
-    // 한쪽만 완료 → 50초 이상이면 50초로 조정
-    const doneUsername = entry ? entry.username : 'opponent'
+    // 한쪽만 완료 → 남은시간 50초 초과면 50초로 재설정
     const elapsed = Date.now() - room.arcade.startedAt
     const remaining = Math.max(0, 200000 - elapsed)
-    let newRemaining = Math.floor(remaining / 1000)
-    let timerAdjusted = false
+    const timerAdjusted = remaining > 50000
 
-    if (remaining > 50000) {
+    if (timerAdjusted) {
       clearTimeout(room.arcade.timer)
       room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 50000)
-      newRemaining = 50
-      timerAdjusted = true
-      console.log(`[arcade] 타이머 50초로 재설정: roomId=${roomId}`)
     }
+
+    const doneUsername = lobby.get(socket.id)?.username || '상대방'
+    console.log(`[arcade] 플레이어 완료 알림: ${doneUsername}, timerAdjusted=${timerAdjusted}`)
 
     io.to(roomId).emit('game:playerDone', {
       socketId: socket.id,
       username: doneUsername,
       reason,
-      newRemaining,
-      timerAdjusted
+      timerAdjusted,
+      newRemaining: timerAdjusted ? 50 : Math.floor(remaining / 1000)
     })
   })
 

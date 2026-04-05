@@ -648,10 +648,10 @@ socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
   setTimeout(() => banner.classList.remove('active'), 3000);
 });
 
-socket.on('game:playerDone', ({ socketId, username, reason, newRemaining, timerAdjusted }) => {
-  if (timerAdjusted && state.timer > newRemaining) {
+socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRemaining }) => {
+  if (timerAdjusted) {
     clearInterval(state.timerInterval);
-    state.timer = newRemaining;
+    state.timer = 50;
     updateTimerDisplay();
     state.timerInterval = setInterval(() => {
       if (state.phase !== 'playing' && state.phase !== 'done') return;
@@ -660,14 +660,16 @@ socket.on('game:playerDone', ({ socketId, username, reason, newRemaining, timerA
       if (state.timer <= 0) socket.emit('game:end', { roomId: pvpArcade.roomId });
     }, 1000);
   }
-  document.getElementById('timerNum').style.color = '#ff5252';
-  const ring = document.getElementById('timerRing');
-  if (ring) ring.style.stroke = '#ff5252';
+
+  const timerNum = document.getElementById('timerNum');
+  const timerRing = document.getElementById('timerRing');
+  if (timerNum) timerNum.style.color = '#ff5252';
+  if (timerRing) timerRing.style.stroke = '#ff5252';
 
   const isMine = socketId === socket.id;
   const msg = isMine
-    ? `${newRemaining}초 후 전체 게임 종료`
-    : `${username}님의 게임 종료! ${newRemaining}초 후 전체 게임 종료`;
+    ? '내 게임 종료, 남은시간 제한 발동'
+    : '상대방 게임 종료, 남은시간 제한 발동';
   showScrollMessage(msg);
 });
 
