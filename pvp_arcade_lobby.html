@@ -226,7 +226,8 @@ const pvpArcade = {
   opponentHands: [],
   gameStarted: false,
   rematchRequested: false,
-  rematchTimer: null
+  rematchTimer: null,
+  disconnectTimeout: null
 };
 
 // =============================================
@@ -649,6 +650,50 @@ socket.on('rematch:declined', () => {
   const b = document.getElementById('btnRematch'); if (b) b.style.display = 'none';
 });
 
+// ─── 소켓 disconnect/reconnect ───
+socket.on('disconnect', (reason) => {
+  console.log('[pvp] 소켓 disconnect:', reason);
+  if (pvpArcade.gameStarted && state.phase !== 'result' && state.phase !== 'idle') {
+    state.phase = 'result';
+    clearInterval(state.timerInterval);
+    clearInterval(pvpArcade.syncInterval);
+    showDisconnectWarning();
+  }
+});
+
+socket.io.on('reconnect', () => {
+  console.log('[pvp] 소켓 재연결 성공');
+  clearTimeout(pvpArcade.disconnectTimeout);
+  document.getElementById('modalOverlay').classList.remove('active');
+  if (pvpArcade.gameStarted) {
+    showToast('서버와 재연결되었습니다.');
+    setTimeout(() => goToLobby(), 1500);
+  }
+});
+
+socket.io.on('reconnect_failed', () => {
+  console.log('[pvp] 소켓 재연결 실패');
+  clearTimeout(pvpArcade.disconnectTimeout);
+  goToLobby();
+});
+
+function showDisconnectWarning() {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+  modal.innerHTML = `
+    <div style="text-align:center;padding:16px 0;">
+      <div style="font-size:1.1rem;color:var(--gold);margin-bottom:12px;">서버 연결이 끊겼습니다.</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:16px;">재연결 시도 중...</div>
+      <div style="font-size:1.5rem;">⏳</div>
+    </div>`;
+  overlay.classList.add('active');
+  pvpArcade.disconnectTimeout = setTimeout(() => {
+    showToast('연결이 끊어졌습니다. 로비로 이동합니다.');
+    goToLobby();
+  }, 10000);
+}
+
 // ─── 점수판 ───
 function renderScoreboard() {
   const container = document.getElementById('scoreboard');
@@ -778,6 +823,7 @@ function requestRematch() {
 
 function goToLobby() {
   clearTimeout(pvpArcade.rematchTimer);
+  clearTimeout(pvpArcade.disconnectTimeout);
   clearInterval(pvpArcade.syncInterval);
   pvpArcade.roomId = null;
   pvpArcade.opponent = null;
