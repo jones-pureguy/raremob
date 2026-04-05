@@ -14,6 +14,12 @@
     "nextReset": "{time} 후 충전 가능",
     "granted": "칩 100개가 지급되었습니다 🎰"
   },
+  "shop": {
+    "title": "SHOP",
+    "testChip": "+100 칩 충전 (테스트)",
+    "success": "칩이 충전되었습니다 🎰",
+    "fail": "충전 실패. 다시 시도해주세요."
+  },
   "pvp": {
     "arcade": {
       "title": "ARCADE BATTLE",

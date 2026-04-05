@@ -256,10 +256,13 @@
       </button>
     </div>
 
-    <!-- Row 4: SETTINGS -->
+    <!-- Row 4: SETTINGS + SHOP -->
     <div class="menu-row">
-      <button class="m-btn btn-wide btn-settings" onclick="openSettings()">
+      <button class="m-btn btn-wide btn-settings" onclick="openSettings()" style="flex:1;">
         SETTINGS
+      </button>
+      <button class="m-btn btn-wide btn-settings" onclick="openShop()" style="width:56px;flex:none;font-size:1.2rem;">
+        🛒
       </button>
     </div>
   </div>
@@ -324,6 +327,23 @@
   </div>
 </div>
 
+<!-- Shop Modal -->
+<div class="settings-overlay" id="shopOverlay">
+  <div class="settings-box">
+    <div class="settings-title" id="shopTitle">🛒 SHOP</div>
+    <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:12px;">[TEST]</div>
+    <div class="settings-list">
+      <button class="settings-item" onclick="addTestChip(100)">
+        <span class="settings-icon">🎰</span>
+        <span class="settings-label" id="shopChipLabel">+100 칩 충전</span>
+      </button>
+    </div>
+    <button class="settings-close" onclick="closeShop()" id="shopCloseBtn">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#4CAF50;padding:8px 20px;border-radius:8px;font-size:0.85rem;z-index:50;opacity:0;transition:opacity 0.3s;pointer-events:none;"></div>
+
 <script src="i18n.js"></script>
 <script src="header.js"></script>
 <script src="sound.js"></script>
@@ -342,6 +362,54 @@
   const savedUsername = localStorage.getItem('poker_username');
   if (savedUsername) {
     document.getElementById('menuPlayer').textContent = savedUsername;
+  }
+
+  // ─── Shop ───
+  const RENDER_SERVER = 'https://dragon-poker-server.onrender.com';
+
+  function openShop() {
+    document.getElementById('shopOverlay').style.display = 'flex';
+  }
+
+  function closeShop() {
+    document.getElementById('shopOverlay').style.display = 'none';
+  }
+
+  document.getElementById('shopOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeShop();
+  });
+
+  function showToastMsg(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.color = color || '#4CAF50';
+    t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; }, 2500);
+  }
+
+  // [TEST] 테스트용 칩 충전 — Expo 전환 시 실제 샵으로 교체
+  async function addTestChip(amount) {
+    const playerId = localStorage.getItem('poker_player_id');
+    if (!playerId) return;
+    try {
+      const res = await fetch(`${RENDER_SERVER}/chip/grant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, amount, reason: 'test_charge' })
+      });
+      if (res.ok) {
+        const { balance } = await res.json();
+        localStorage.setItem('userChip', String(balance));
+        window.dispatchEvent(new Event('chipUpdated'));
+        showToastMsg(i18n.t('shop.success'));
+        closeShop();
+      } else {
+        showToastMsg(i18n.t('shop.fail'), '#ff5252');
+      }
+    } catch (e) {
+      console.error('Chip charge failed:', e);
+      showToastMsg(i18n.t('shop.fail'), '#ff5252');
+    }
   }
 
   // ─── PvP 입장 ───
