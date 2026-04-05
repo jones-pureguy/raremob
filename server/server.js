@@ -763,6 +763,16 @@ function calculateArcadeChips(winsA, winsB, chipA, chipB, socketIdA, socketIdB) 
   }
 }
 
+// [REUSE] PvP 전적 업데이트 — arcade/duel 공통
+async function updatePvpStat(playerId, column) {
+  if (!playerId) return
+  const { error } = await supabase.rpc('increment_pvp_stat', {
+    p_player_id: playerId,
+    p_column: column
+  })
+  if (error) console.log(`[pvp] 전적 업데이트 오류 (${column}):`, error)
+}
+
 // [REUSE] ARCADE BATTLE 게임 종료 처리
 async function endArcadeGame(room, reason, disconnectedId) {
   if (room.status === 'result') return
@@ -837,6 +847,40 @@ async function endArcadeGame(room, reason, disconnectedId) {
         .insert({ player_id: loserPlayerId, amount: loseDelta, reason: 'pvp_lose', balance_after: chipResult.newChip[loserId] })
       if (txErr) console.log(`[arcade] 패자 트랜잭션 로그 오류:`, txErr)
     }
+  }
+
+  // ─── PvP 전적 업데이트 ───
+  try {
+    if (reason === 'disconnect' && disconnectedId) {
+      const disconnectedEntry = lobby.get(disconnectedId) || { playerId: null }
+      const winnerId = room.players.find(id => id !== disconnectedId)
+      const winnerEntry = lobby.get(winnerId) || { playerId: null }
+      await Promise.all([
+        updatePvpStat(winnerEntry.playerId, 'arcade_match'),
+        updatePvpStat(winnerEntry.playerId, 'arcade_win'),
+        updatePvpStat(disconnectedEntry.playerId, 'arcade_match'),
+        updatePvpStat(disconnectedEntry.playerId, 'arcade_disconnect')
+      ])
+    } else if (comparison.winner === 'draw') {
+      await Promise.all([
+        updatePvpStat(playerIdA, 'arcade_match'),
+        updatePvpStat(playerIdA, 'arcade_draw'),
+        updatePvpStat(playerIdB, 'arcade_match'),
+        updatePvpStat(playerIdB, 'arcade_draw')
+      ])
+    } else {
+      const winnerPlayerId = comparison.winner === socketIdA ? playerIdA : playerIdB
+      const loserPlayerId = comparison.winner === socketIdA ? playerIdB : playerIdA
+      await Promise.all([
+        updatePvpStat(winnerPlayerId, 'arcade_match'),
+        updatePvpStat(winnerPlayerId, 'arcade_win'),
+        updatePvpStat(loserPlayerId, 'arcade_match'),
+        updatePvpStat(loserPlayerId, 'arcade_lose')
+      ])
+    }
+    console.log(`[arcade] 전적 업데이트 완료: roomId=${room.roomId}`)
+  } catch (e) {
+    console.log(`[arcade] 전적 업데이트 실패:`, e)
   }
 
   // lobby 칩 업데이트
