@@ -422,6 +422,83 @@
     }
   }
 
+  // ─── Chip sync on start ───
+  async function syncChipOnStart() {
+    const playerId = localStorage.getItem('poker_player_id');
+    if (!playerId) return;
+
+    // 1. 서버에서 현재 칩 잔액 조회
+    try {
+      const res = await fetch(`${RENDER_SERVER}/chip/balance?playerId=${encodeURIComponent(playerId)}`);
+      if (res.ok) {
+        const { chip } = await res.json();
+        localStorage.setItem('userChip', String(chip));
+        window.dispatchEvent(new Event('chipUpdated'));
+      }
+    } catch (e) {
+      console.error('Chip balance fetch failed:', e);
+    }
+
+    // 2. daily reset 체크
+    const today = new Date().toISOString().slice(0, 10);
+    const lastReset = localStorage.getItem('chipLastReset');
+
+    if (lastReset === today) return; // 오늘 이미 체크함
+
+    const currentChip = parseInt(localStorage.getItem('userChip') || '0');
+
+    if (currentChip < 100) {
+      // 복구 요청
+      try {
+        const res = await fetch(`${RENDER_SERVER}/chip/daily-reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId })
+        });
+        if (res.ok) {
+          localStorage.setItem('userChip', '100');
+          localStorage.setItem('chipLastReset', today);
+          window.dispatchEvent(new Event('chipUpdated'));
+          showChipResetPopup();
+        }
+      } catch (e) {
+        console.error('Chip daily reset failed:', e);
+      }
+    } else {
+      // 칩 충분 — 날짜만 갱신
+      localStorage.setItem('chipLastReset', today);
+    }
+  }
+
+  // ─── 다음 충전 시간 계산 ───
+  function getNextResetTimeString() {
+    const now = new Date();
+    const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+    const diff = tomorrow - now;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}시간 ${minutes}분`;
+    return `${minutes}분`;
+  }
+
+  // ─── 칩 복구 팝업 ───
+  function showChipResetPopup() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;justify-content:center;align-items:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:linear-gradient(145deg,#1a3a22,#0d2818);border:2px solid var(--gold);border-radius:16px;padding:28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 0 40px rgba(201,168,76,0.2);';
+    const timeStr = i18n.t('chip.nextReset').replace('{time}', getNextResetTimeString());
+    box.innerHTML = `
+      <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.3rem;margin-bottom:8px;">${i18n.t('chip.dailyReset')}</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:0.82rem;margin-bottom:8px;">${i18n.t('chip.dailyResetSub')}</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:16px;">${timeStr}</div>
+      <button style="width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:0.9rem;cursor:pointer;" onclick="this.closest('div[style]').parentElement.remove()">${i18n.t('ui.confirm')}</button>
+    `;
+    overlay.appendChild(box);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+
   // 백그라운드 auth + DB 싱크
   (async function checkUserReady() {
     await i18n.init();
@@ -453,6 +530,7 @@
     document.getElementById('menuPlayer').textContent = data.username;
 
     await syncGoldOnStart();
+    await syncChipOnStart();
 
     renderCurrencyBar();
   })();

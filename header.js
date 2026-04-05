@@ -34,7 +34,7 @@ function _updateHeaderValues(showChip) {
   if (goldEl) goldEl.textContent = gold.toLocaleString();
 
   if (showChip) {
-    const chip = parseInt(localStorage.getItem('poker_chip') || '0');
+    const chip = parseInt(localStorage.getItem('userChip') || '0');
     const chipEl = document.getElementById('chipDisplay');
     if (chipEl) chipEl.textContent = chip.toLocaleString();
   }

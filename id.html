@@ -47,6 +47,8 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
 <script>
   const saved = localStorage.getItem('poker_username');
 
@@ -125,6 +127,23 @@
           meta: { note: '신규 계정 초기 지급' }
         });
         if (txErr) console.error('Transaction log failed:', txErr);
+
+        // 신규 계정 칩 지급 — Render 서버 경유
+        try {
+          const chipRes = await fetch(`${RENDER_SERVER}/chip/grant`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: uid, amount: 100, reason: 'initial_grant' })
+          });
+          if (chipRes.ok) {
+            localStorage.setItem('userChip', '100');
+            const today = new Date().toISOString().slice(0, 10);
+            localStorage.setItem('chipLastReset', today);
+            window.dispatchEvent(new Event('chipUpdated'));
+          }
+        } catch (e) {
+          console.error('Chip initial grant failed:', e);
+        }
       }
       msgEl.textContent = i18n.t('toast.registerComplete');
       msgEl.style.color = '#4CAF50';
