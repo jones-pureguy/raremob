@@ -220,7 +220,17 @@ function showView(name) {
   if (name === 'lobby') {
     document.getElementById('backLink').onclick = null;
   } else {
-    document.getElementById('backLink').onclick = function(e) { e.preventDefault(); goToLobby(); };
+    document.getElementById('backLink').onclick = function(e) {
+      e.preventDefault();
+      // 게임 진행 중이면 뒤로가기 차단
+      if (pvpArcade.gameStarted &&
+          state.phase !== 'result' &&
+          state.phase !== 'idle') {
+        showToast('게임 중에는 로비로 이동할 수 없습니다.');
+        return;
+      }
+      goToLobby();
+    };
   }
   const header = document.getElementById('global-header');
   if (header && header.parentElement) header.parentElement.style.display = name === 'game' ? 'none' : '';
@@ -942,7 +952,13 @@ function goToLobby() {
 }
 
 // ─── 페이지 이탈 ───
-window.addEventListener('beforeunload', () => {
+window.addEventListener('beforeunload', (e) => {
+  if (pvpArcade.gameStarted &&
+      state.phase !== 'result' &&
+      state.phase !== 'idle') {
+    e.preventDefault();
+    e.returnValue = '';  // 브라우저 기본 경고창 표시
+  }
   socket.emit('lobby:leave');
   clearInterval(heartbeatInterval);
 });
