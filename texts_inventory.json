@@ -310,6 +310,24 @@
       "Three ${VALUE_NAMES[countKeys[0][0]]}s"
     ]
   },
+  "pvp_arcade.html": {
+    "buttons": ["▶ START"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["ARCADE BATTLE", "COLLECTED", "REMOVED"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
+  "pvp_arcade_script.js": {
+    "buttons": ["재대결", "로비로"],
+    "toasts": ["상대방이 재대결을 거절했습니다."],
+    "modals": ["ARCADE BATTLE 결과", "나: {n}승", "상대: {n}승", "무승부! 칩 변동 없음", "상대방이 접속을 종료했습니다.", "칩이 부족하여 재대결이 불가합니다.", "상대방 확인 중..."],
+    "alerts": [],
+    "labels": ["VS {name}", "⚡ TIME ATTACK!", "칩 정산"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
   "pvp_lobby.html": {
     "buttons": ["ARCADE BATTLE 매칭", "GAMBLE DUEL 매칭", "매칭 취소", "신청", "수락", "거절", "취소", "ARCADE BATTLE", "GAMBLE DUEL"],
     "toasts": ["상대방이 신청을 거절했습니다.", "현재 신청할 수 없는 상태입니다.", "칩이 100개 이상 필요합니다."],

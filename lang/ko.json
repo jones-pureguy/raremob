@@ -15,6 +15,22 @@
     "granted": "칩 100개가 지급되었습니다 🎰"
   },
   "pvp": {
+    "arcade": {
+      "title": "ARCADE BATTLE",
+      "vs": "VS {name}",
+      "timeAttack": "⚡ TIME ATTACK!",
+      "result": "ARCADE BATTLE 결과",
+      "myWins": "나: {n}승",
+      "oppWins": "상대: {n}승",
+      "chipDelta": "칩 정산",
+      "draw": "무승부! 칩 변동 없음",
+      "noChip": "칩이 부족하여 재대결이 불가합니다.",
+      "rematch": "재대결",
+      "toLobby": "로비로",
+      "waiting": "상대방 확인 중...",
+      "oppLeft": "상대방이 접속을 종료했습니다.",
+      "rematchDeclined": "상대방이 재대결을 거절했습니다."
+    },
     "lobby": {
       "title": "PvP 로비",
       "arcadeMatch": "ARCADE BATTLE 매칭",

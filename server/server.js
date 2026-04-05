@@ -71,6 +71,10 @@ const gameRooms = new Map()
 //   }
 // }
 
+const rematchRequests = new Map()
+// key: roomId (원래 방)
+// value: { requests: Set<socketId>, mode, players, timeout }
+
 // [REUSE] 수트 우선순위 (서버 판정용)
 const SUIT_RANK = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 }
 
@@ -523,6 +527,65 @@ io.on('connection', (socket) => {
     const room = gameRooms.get(roomId)
     if (!room || room.mode !== 'arcade' || room.status !== 'playing') return
     endArcadeGame(room, 'timeout')
+  })
+
+  // ─── rematch:request ───
+  socket.on('rematch:request', ({ roomId }) => {
+    // roomId는 이미 삭제되었을 수 있으므로 별도 Map 사용
+    if (!rematchRequests.has(roomId)) {
+      rematchRequests.set(roomId, { requests: new Set(), mode: null, players: [], timeout: null })
+    }
+    const rm = rematchRequests.get(roomId)
+
+    // 최초 요청 시 모드/플레이어 기록
+    if (rm.requests.size === 0) {
+      // pvpRoom sessionStorage에서 mode는 클라이언트가 알고 있으므로
+      // lobby에서 유저 정보 기반으로 매칭
+      const entry = lobby.get(socket.id)
+      if (!entry) return
+      rm.mode = 'arcade' // 현재 arcade 전용
+    }
+
+    rm.requests.add(socket.id)
+    console.log(`[pvp] 재대결 요청: ${socket.id}, roomId=${roomId}, count=${rm.requests.size}`)
+
+    // 상대에게 알림
+    const otherIds = [...rm.requests].filter(id => id !== socket.id)
+    // 아직 1명만 요청했으면 상대에게 알림
+    if (rm.requests.size === 1) {
+      // 상대 socketId 찾기 — lobby에서 같은 방이었던 유저
+      for (const [sid, entry] of lobby) {
+        if (sid !== socket.id && entry.status === 'waiting') {
+          const s = io.sockets.sockets.get(sid)
+          if (s) s.emit('rematch:requested')
+          if (!rm.players.includes(sid)) rm.players.push(sid)
+          break
+        }
+      }
+      if (!rm.players.includes(socket.id)) rm.players.push(socket.id)
+
+      // 30초 타임아웃
+      rm.timeout = setTimeout(() => {
+        const rr = rematchRequests.get(roomId)
+        if (rr && rr.requests.size < 2) {
+          for (const sid of rr.requests) {
+            const s = io.sockets.sockets.get(sid)
+            if (s) s.emit('rematch:declined')
+          }
+          rematchRequests.delete(roomId)
+          console.log(`[pvp] 재대결 타임아웃: roomId=${roomId}`)
+        }
+      }, 30000)
+    }
+
+    // 양쪽 모두 요청 → 새 방 생성
+    if (rm.requests.size >= 2) {
+      clearTimeout(rm.timeout)
+      const playerIds = [...rm.requests]
+      rematchRequests.delete(roomId)
+      console.log(`[pvp] 재대결 성사: ${playerIds[0]} vs ${playerIds[1]}`)
+      createRoom(playerIds[0], playerIds[1], rm.mode)
+    }
   })
 
   // ─── disconnect ───
