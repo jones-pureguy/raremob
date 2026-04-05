@@ -310,6 +310,15 @@
       "Three ${VALUE_NAMES[countKeys[0][0]]}s"
     ]
   },
+  "pvp_lobby.html": {
+    "buttons": ["ARCADE BATTLE 매칭", "GAMBLE DUEL 매칭", "매칭 취소", "신청", "수락", "거절", "취소", "ARCADE BATTLE", "GAMBLE DUEL"],
+    "toasts": ["상대방이 신청을 거절했습니다.", "현재 신청할 수 없는 상태입니다.", "칩이 100개 이상 필요합니다."],
+    "modals": ["{name}님에게 도전", "{name}({chip})님이 {mode}을 신청했습니다."],
+    "alerts": [],
+    "labels": ["PvP 로비", "대기 중", "매칭 중", "대전 중"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
   "pvp_utils.js": {
     "buttons": [],
     "toasts": [],

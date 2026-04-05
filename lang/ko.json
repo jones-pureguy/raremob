@@ -14,6 +14,28 @@
     "nextReset": "{time} 후 충전 가능",
     "granted": "칩 100개가 지급되었습니다 🎰"
   },
+  "pvp": {
+    "lobby": {
+      "title": "PvP 로비",
+      "arcadeMatch": "ARCADE BATTLE 매칭",
+      "gambleMatch": "GAMBLE DUEL 매칭",
+      "cancelMatch": "매칭 취소",
+      "waiting": "대기 중",
+      "matching": "매칭 중",
+      "playing": "대전 중",
+      "challenge": "신청",
+      "challengeTo": "{name}님에게 도전",
+      "challengeFrom": "{name}({chip})님이 {mode}을 신청했습니다.",
+      "accept": "수락",
+      "reject": "거절",
+      "rejected": "상대방이 신청을 거절했습니다.",
+      "unavailable": "현재 신청할 수 없는 상태입니다.",
+      "cancel": "취소",
+      "chipInsufficient": "칩이 100개 이상 필요합니다.",
+      "arcadeBattle": "ARCADE BATTLE",
+      "gambleDuel": "GAMBLE DUEL"
+    }
+  },
   "splash": {
     "touchToStart": "TOUCH TO START"
   },
