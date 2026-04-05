@@ -59,7 +59,20 @@
   @keyframes bannerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
   .timer-num.time-attack { color:#ff3333 !important; }
   .timer-ring-fg.time-attack { stroke:#ff3333 !important; }
-  @keyframes scrollMsg { 0%{transform:translateX(100%);} 100%{transform:translateX(-100%);} }
+  /* ── pvp-info-bar ── */
+  .pvp-info-bar { display:flex; align-items:center; justify-content:space-around; padding:8px 16px; max-width:500px; width:100%; margin:4px auto 0; border-top:1px solid rgba(255,255,255,0.06); }
+  .pvp-info-me, .pvp-info-opp { display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; }
+  .pvp-info-label { color:rgba(255,255,255,0.4); font-size:0.65rem; font-weight:700; letter-spacing:0.1em; }
+  .pvp-info-chip { display:flex; align-items:center; gap:3px; color:var(--gold); }
+  .pvp-info-chip img { width:14px; height:14px; }
+  .pvp-info-count { color:rgba(255,255,255,0.4); font-size:0.7rem; }
+  .pvp-info-divider { color:rgba(255,255,255,0.1); font-size:1.2rem; }
+  /* ── 상태메시지 ── */
+  @keyframes pvpBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .pvp-status-blink { animation:pvpBlink 1s ease-in-out infinite; }
+  .pvp-status-completed { color:#4CAF50 !important; }
+  .pvp-status-oppdone { color:#FFC107 !important; }
+  .pvp-status-timelimit { color:#ff5252 !important; }
 </style>
 </head>
 <body class="game-page">
@@ -92,14 +105,6 @@
 
 <!-- ==================== VIEW: GAME ==================== -->
 <div id="view-game" style="display:none">
-  <div class="pvp-opponent-bar">
-    <div>VS <span class="pvp-opp-name" id="oppName"></span></div>
-    <div class="pvp-opp-chip"><img src="./images/chip.png" alt="chip"><span id="oppChip">0</span></div>
-    <div class="pvp-opp-hands" id="oppHandCount">0/9</div>
-  </div>
-
-  <div class="pvp-scoreboard" id="scoreboard"></div>
-
   <div class="status-bar">
     <div class="timer-wrap">
       <svg class="timer-ring" viewBox="0 0 40 40">
@@ -110,10 +115,8 @@
       </svg>
       <div class="timer-num" id="timerNum">200</div>
     </div>
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--gold);font-weight:700;letter-spacing:0.08em;">ARCADE BATTLE</div>
-    <div style="display:flex;align-items:center;gap:6px;">
-      <button class="qr-btn">?</button>
-    </div>
+    <div id="pvpStatusMsg" style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:rgba(201,168,76,0.3);">ARCADE BATTLE</div>
+    <div></div>
   </div>
 
   <div class="grid-container" id="gridContainer">
@@ -122,19 +125,35 @@
     <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
   </div>
 
-  <div class="hand-preview" id="handPreview"></div>
-
-  <div class="hand-panel">
-    <div class="hand-panel-title">COLLECTED <span>[ <span id="handCount">0</span> / 9 ]</span></div>
-    <div class="hand-slots" id="handSlots"></div>
+  <div class="pvp-info-bar">
+    <div class="pvp-info-me">
+      <div class="pvp-info-label">ME</div>
+      <div class="pvp-info-chip"><img src="./images/chip.png" alt="chip"><span id="myChipDisplay">0</span></div>
+      <div class="pvp-info-count" id="myHandCount">0/9</div>
+    </div>
+    <div class="pvp-info-divider">│</div>
+    <div class="pvp-info-opp">
+      <div class="pvp-info-label" id="oppName">OPP</div>
+      <div class="pvp-info-chip"><img src="./images/chip.png" alt="chip"><span id="oppChip">0</span></div>
+      <div class="pvp-info-count" id="oppHandCount">0/9</div>
+    </div>
   </div>
+
+  <div class="pvp-scoreboard" id="scoreboard"></div>
 
   <div class="removed-panel">
     <div class="removed-panel-title">REMOVED</div>
     <div class="removed-cards" id="removedCards"></div>
   </div>
 
-  <div class="time-attack-banner" id="timeAttackBanner"></div>
+  <!-- script.js 호환 (숨김) -->
+  <div style="display:none">
+    <div class="hand-preview" id="handPreview"></div>
+    <div class="hand-panel">
+      <div class="hand-panel-title">COLLECTED <span>[ <span id="handCount">0</span> / 9 ]</span></div>
+      <div class="hand-slots" id="handSlots"></div>
+    </div>
+  </div>
 
   <!-- START 오버레이 -->
   <div class="start-overlay" id="startOverlay" style="display:none">
@@ -206,6 +225,8 @@ function showView(name) {
   } else {
     document.getElementById('backLink').onclick = function(e) { e.preventDefault(); goToLobby(); };
   }
+  const header = document.getElementById('global-header');
+  if (header && header.parentElement) header.parentElement.style.display = name === 'game' ? 'none' : '';
 }
 
 // =============================================
@@ -448,6 +469,33 @@ function compareHandStrength(a, b) {
   return sa - sb;
 }
 
+function setPvpStatus(type) {
+  const el = document.getElementById('pvpStatusMsg');
+  if (!el) return;
+  el.className = '';
+  switch (type) {
+    case 'idle':
+      el.textContent = 'ARCADE BATTLE';
+      el.style.color = 'rgba(201,168,76,0.3)';
+      break;
+    case 'completed':
+      el.textContent = '✓ COMPLETED';
+      el.classList.add('pvp-status-blink', 'pvp-status-completed');
+      el.style.color = '';
+      break;
+    case 'oppdone':
+      el.textContent = '⚠ OPP DONE';
+      el.classList.add('pvp-status-blink', 'pvp-status-oppdone');
+      el.style.color = '';
+      break;
+    case 'timelimit':
+      el.textContent = '⚡ TIME LIMIT';
+      el.classList.add('pvp-status-blink', 'pvp-status-timelimit');
+      el.style.color = '';
+      break;
+  }
+}
+
 function pvpHandSort(a, b) {
   if (b.rank !== a.rank) return b.rank - a.rank;
   return compareHandStrength(b, a);
@@ -457,10 +505,20 @@ function pvpHandSort(a, b) {
 // =============================================
 
 function setupGameUI() {
+  // 상태 초기화
+  setPvpStatus('idle');
+
   // 상대 정보
   document.getElementById('oppName').textContent = pvpArcade.opponent.username;
   document.getElementById('oppChip').textContent = pvpArcade.opponent.chip.toLocaleString();
   document.getElementById('oppHandCount').textContent = '0/9';
+
+  // 내 칩 표시
+  const myChip = parseInt(localStorage.getItem('userChip') || '0');
+  const myChipEl = document.getElementById('myChipDisplay');
+  if (myChipEl) myChipEl.textContent = myChip.toLocaleString();
+  const myCountEl = document.getElementById('myHandCount');
+  if (myCountEl) myCountEl.textContent = '0/9';
 
   // START 오버레이
   document.getElementById('pvpStartTitle').textContent = i18n.t('pvp.arcade.title');
@@ -502,6 +560,7 @@ function setupGameUI() {
     if (state.phase === 'result' || state.phase === 'done') return;
     if (reason === 'complete' || reason === 'nomoves') {
       state.phase = 'done';
+      setPvpStatus('completed');
       socket.emit('game:playerDone', { roomId: pvpArcade.roomId, reason });
     } else {
       state.phase = 'gameover';
@@ -531,6 +590,8 @@ function setupGameUI() {
       }).sort(pvpHandSort);
 
       renderScoreboard();
+      const myCountEl = document.getElementById('myHandCount');
+      if (myCountEl) myCountEl.textContent = `${pvpArcade.myHands.length}/9`;
       socket.emit('game:handComplete', {
         roomId: pvpArcade.roomId,
         hand: {
@@ -642,10 +703,7 @@ socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
     updateTimerDisplay();
     if (state.timer <= 0) socket.emit('game:end', { roomId: pvpArcade.roomId });
   }, 1000);
-  const banner = document.getElementById('timeAttackBanner');
-  banner.textContent = `${i18n.t('pvp.arcade.timeAttack')} ${remaining}s`;
-  banner.classList.add('active');
-  setTimeout(() => banner.classList.remove('active'), 3000);
+  setPvpStatus('timelimit');
 });
 
 socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRemaining }) => {
@@ -667,22 +725,21 @@ socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRe
   if (timerRing) timerRing.style.stroke = '#ff5252';
 
   const isMine = socketId === socket.id;
-  const msg = isMine
-    ? '내 게임 종료, 남은시간 제한 발동'
-    : '상대방 게임 종료, 남은시간 제한 발동';
-  showScrollMessage(msg);
+  setPvpStatus(isMine ? 'completed' : 'oppdone');
+  if (timerAdjusted) setTimeout(() => setPvpStatus('timelimit'), 500);
 });
 
 socket.on('game:result', (data) => {
   if (data.roomId !== pvpArcade.roomId) return;
   state.phase = 'result';
   clearInterval(state.timerInterval);
-  const scrollBanner = document.getElementById('scrollBanner');
-  if (scrollBanner) scrollBanner.remove();
+  setPvpStatus('idle');
   const myChip = data.newChip[socket.id];
   if (myChip !== undefined) {
     localStorage.setItem('userChip', String(myChip));
     window.dispatchEvent(new Event('chipUpdated'));
+    const el = document.getElementById('myChipDisplay');
+    if (el) el.textContent = myChip.toLocaleString();
   }
   showResult(data);
 });
@@ -838,17 +895,6 @@ function showDisconnectResult() {
   const overlay = document.getElementById('modalOverlay');
   modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:16px 0;">${i18n.t('pvp.arcade.oppLeft')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
   overlay.classList.add('active');
-}
-
-function showScrollMessage(msg) {
-  let banner = document.getElementById('scrollBanner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'scrollBanner';
-    banner.style.cssText = 'position:fixed;bottom:180px;left:0;width:100%;background:rgba(255,82,82,0.15);border-top:1px solid rgba(255,82,82,0.3);border-bottom:1px solid rgba(255,82,82,0.3);color:#ff5252;font-family:IBM Plex Mono,monospace;font-size:0.8rem;padding:8px 0;overflow:hidden;z-index:50;';
-    document.body.appendChild(banner);
-  }
-  banner.innerHTML = `<div style="white-space:nowrap;animation:scrollMsg 8s linear infinite;">${msg}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${msg}</div>`;
 }
 
 function pvpCardDisplay(cards) {
