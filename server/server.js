@@ -61,9 +61,18 @@ const gameRooms = new Map()
 //   roomId,
 //   mode,          'arcade' | 'gamble'
 //   players: [socketIdA, socketIdB],
-//   status,        'betting_pre' | 'playing' | 'betting_post' | 'result'
-//   createdAt
+//   status,        'waiting_start' | 'playing' | 'result'
+//   createdAt,
+//   arcade: {      // ARCADE BATTLE 전용
+//     hands: { [socketId]: [] },
+//     timer: null,
+//     startedAt: null,
+//     timeAttack: { triggered: false, triggeredBy: null, deadline: null }
+//   }
 // }
+
+// [REUSE] 수트 우선순위 (서버 판정용)
+const SUIT_RANK = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 }
 
 // =============================================
 // [LOGIC] 헬스체크 — Render 슬립 방지용
@@ -269,13 +278,25 @@ function createRoom(socketIdA, socketIdB, mode) {
   entryB.mode = mode
 
   // 방 등록
-  gameRooms.set(roomId, {
+  const roomData = {
     roomId,
     mode,
     players: [socketIdA, socketIdB],
-    status: 'betting_pre',
+    status: mode === 'arcade' ? 'waiting_start' : 'betting_pre',
     createdAt: Date.now()
-  })
+  }
+
+  // ARCADE BATTLE 초기 데이터
+  if (mode === 'arcade') {
+    roomData.arcade = {
+      hands: { [socketIdA]: [], [socketIdB]: [] },
+      timer: null,
+      startedAt: null,
+      timeAttack: { triggered: false, triggeredBy: null, deadline: null }
+    }
+  }
+
+  gameRooms.set(roomId, roomData)
 
   // 소켓 room join
   const sockA = io.sockets.sockets.get(socketIdA)
@@ -301,6 +322,11 @@ function createRoom(socketIdA, socketIdB, mode) {
       mode,
       opponent: { socketId: socketIdA, username: entryA.username, chip: entryA.chip }
     })
+  }
+
+  // arcade 모드: 바로 game:ready 전송
+  if (mode === 'arcade') {
+    io.to(roomId).emit('game:ready', { roomId, mode })
   }
 }
 
@@ -434,6 +460,71 @@ io.on('connection', (socket) => {
     }
   })
 
+  // ─── game:start (ARCADE BATTLE 게임 시작) ───
+  socket.on('game:start', ({ roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'arcade') return
+    if (room.status === 'playing') return
+
+    console.log(`[arcade] 게임 시작: roomId=${roomId}`)
+    room.status = 'playing'
+    room.arcade.startedAt = Date.now()
+
+    io.to(roomId).emit('game:started', { roomId, startedAt: room.arcade.startedAt })
+
+    // 200초 타이머
+    room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 200000)
+  })
+
+  // ─── game:handComplete (패 완성 알림) ───
+  socket.on('game:handComplete', ({ roomId, hand }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'arcade' || room.status !== 'playing') return
+
+    const hands = room.arcade.hands[socket.id]
+    if (!hands) return
+
+    hands.push(hand)
+    hands.sort((a, b) => b.rank - a.rank)
+
+    console.log(`[arcade] 패 완성: roomId=${roomId}, player=${socket.id}, count=${hands.length}, rank=${hand.rank}`)
+
+    // 상대에게 패 목록 전송
+    const opponentId = room.players.find(id => id !== socket.id)
+    if (opponentId) {
+      const opponentSock = io.sockets.sockets.get(opponentId)
+      if (opponentSock) {
+        opponentSock.emit('opponent:handComplete', { hands })
+      }
+    }
+
+    // 9패 완성 + 타임어택 체크
+    if (hands.length >= 9 && !room.arcade.timeAttack.triggered) {
+      const elapsed = Date.now() - room.arcade.startedAt
+      if (elapsed > 100000) {
+        room.arcade.timeAttack.triggered = true
+        room.arcade.timeAttack.triggeredBy = socket.id
+        room.arcade.timeAttack.deadline = Date.now() + 30000
+
+        clearTimeout(room.arcade.timer)
+        room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 30000)
+
+        console.log(`[arcade] 타임어택 발동: roomId=${roomId}, triggeredBy=${socket.id}`)
+        io.to(roomId).emit('game:timeAttack', {
+          triggeredBy: socket.id,
+          deadline: room.arcade.timeAttack.deadline
+        })
+      }
+    }
+  })
+
+  // ─── game:end (클라이언트 타이머 종료 알림) ───
+  socket.on('game:end', ({ roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'arcade' || room.status !== 'playing') return
+    endArcadeGame(room, 'timeout')
+  })
+
   // ─── disconnect ───
   socket.on('disconnect', () => {
     console.log('클라이언트 해제:', socket.id)
@@ -441,15 +532,20 @@ io.on('connection', (socket) => {
     // gameRoom 처리
     const room = findRoomBySocket(socket.id)
     if (room) {
-      const opponentId = room.players.find(id => id !== socket.id)
-      if (opponentId) {
-        const opponentSock = io.sockets.sockets.get(opponentId)
-        if (opponentSock) {
-          opponentSock.emit('room:opponentDisconnected')
+      // arcade 진행 중이면 disconnect 처리
+      if (room.mode === 'arcade' && room.status === 'playing') {
+        endArcadeGame(room, 'disconnect', socket.id)
+      } else {
+        const opponentId = room.players.find(id => id !== socket.id)
+        if (opponentId) {
+          const opponentSock = io.sockets.sockets.get(opponentId)
+          if (opponentSock) {
+            opponentSock.emit('room:opponentDisconnected')
+          }
         }
+        gameRooms.delete(room.roomId)
+        console.log(`[pvp] 방 삭제 (disconnect): roomId=${room.roomId}`)
       }
-      gameRooms.delete(room.roomId)
-      console.log(`[pvp] 방 삭제 (disconnect): roomId=${room.roomId}`)
     }
 
     // 로비 퇴장 처리
@@ -466,6 +562,197 @@ function handleLobbyLeave(socket) {
   removeFromQueue(socket.id)
   lobby.delete(socket.id)
   io.emit('lobby:userLeft', socket.id)
+}
+
+// =============================================
+// [REUSE] ARCADE BATTLE 승패 판정
+// =============================================
+
+// [REUSE] 두 플레이어의 패 목록 비교 (서버용 간단 비교)
+function compareArcadeHands(handsA, handsB, socketIdA, socketIdB) {
+  const sortedA = handsA.slice().sort((a, b) => b.rank - a.rank)
+  const sortedB = handsB.slice().sort((a, b) => b.rank - a.rank)
+
+  const maxLen = Math.max(sortedA.length, sortedB.length, 9)
+  const results = []
+  let winsA = 0, winsB = 0
+
+  for (let i = 0; i < maxLen; i++) {
+    const a = sortedA[i]
+    const b = sortedB[i]
+
+    if (a && !b) {
+      results.push('A')
+      winsA++
+    } else if (!a && b) {
+      results.push('B')
+      winsB++
+    } else if (a && b) {
+      if (a.rank !== b.rank) {
+        if (a.rank > b.rank) { results.push('A'); winsA++ }
+        else { results.push('B'); winsB++ }
+      } else {
+        // rank 같으면 suit 우선순위 비교
+        const suitA = SUIT_RANK[a.suit] || 0
+        const suitB = SUIT_RANK[b.suit] || 0
+        if (suitA > suitB) { results.push('A'); winsA++ }
+        else if (suitB > suitA) { results.push('B'); winsB++ }
+        else { results.push('draw') }
+      }
+    } else {
+      results.push('draw')
+    }
+  }
+
+  let winner = 'draw'
+  if (winsA > winsB) winner = socketIdA
+  else if (winsB > winsA) winner = socketIdB
+
+  return { results, winsA, winsB, winner }
+}
+
+// [REUSE] ARCADE BATTLE 칩 정산
+function calculateArcadeChips(winsA, winsB, chipA, chipB, socketIdA, socketIdB) {
+  if (winsA === winsB) {
+    return {
+      delta: { [socketIdA]: 0, [socketIdB]: 0 },
+      newChip: { [socketIdA]: chipA, [socketIdB]: chipB }
+    }
+  }
+
+  const diff = Math.abs(winsA - winsB)
+  const grossWin = diff * 10
+  const tableFee = 1
+  const netWin = grossWin - tableFee
+
+  let winnerId, loserId, winnerChip, loserChip
+  if (winsA > winsB) {
+    winnerId = socketIdA; loserId = socketIdB
+    winnerChip = chipA; loserChip = chipB
+  } else {
+    winnerId = socketIdB; loserId = socketIdA
+    winnerChip = chipB; loserChip = chipA
+  }
+
+  // 패자 보유칩 초과 불가
+  const actualLoss = Math.min(grossWin, loserChip)
+  const actualGain = Math.min(netWin, actualLoss - tableFee > 0 ? actualLoss - tableFee : 0)
+
+  return {
+    delta: {
+      [winnerId]: actualGain > 0 ? actualGain : 0,
+      [loserId]: -actualLoss
+    },
+    newChip: {
+      [winnerId]: winnerChip + (actualGain > 0 ? actualGain : 0),
+      [loserId]: loserChip - actualLoss
+    }
+  }
+}
+
+// [REUSE] ARCADE BATTLE 게임 종료 처리
+async function endArcadeGame(room, reason, disconnectedId) {
+  if (room.status === 'result') return
+  room.status = 'result'
+  clearTimeout(room.arcade.timer)
+
+  const [socketIdA, socketIdB] = room.players
+  const entryA = lobby.get(socketIdA)
+  const entryB = lobby.get(socketIdB)
+
+  console.log(`[arcade] 게임 종료: roomId=${room.roomId}, reason=${reason}`)
+
+  let comparison, chipResult
+
+  if (reason === 'disconnect' && disconnectedId) {
+    // 접속 종료한 쪽 자동 패배
+    const winnerId = room.players.find(id => id !== disconnectedId)
+    comparison = {
+      results: Array(9).fill(winnerId === socketIdA ? 'A' : 'B'),
+      winsA: winnerId === socketIdA ? 9 : 0,
+      winsB: winnerId === socketIdB ? 9 : 0,
+      winner: winnerId
+    }
+  } else {
+    comparison = compareArcadeHands(
+      room.arcade.hands[socketIdA],
+      room.arcade.hands[socketIdB],
+      socketIdA, socketIdB
+    )
+  }
+
+  const chipA = entryA ? entryA.chip : 0
+  const chipB = entryB ? entryB.chip : 0
+  chipResult = calculateArcadeChips(
+    comparison.winsA, comparison.winsB,
+    chipA, chipB, socketIdA, socketIdB
+  )
+
+  // DB 업데이트
+  const playerIdA = entryA ? entryA.playerId : null
+  const playerIdB = entryB ? entryB.playerId : null
+
+  if (comparison.winner !== 'draw') {
+    const winnerId = comparison.winner
+    const loserId = winnerId === socketIdA ? socketIdB : socketIdA
+    const winnerPlayerId = winnerId === socketIdA ? playerIdA : playerIdB
+    const loserPlayerId = loserId === socketIdA ? playerIdA : playerIdB
+
+    const winDelta = chipResult.delta[winnerId]
+    const loseDelta = chipResult.delta[loserId]
+
+    // 승자 칩 업데이트
+    if (winnerPlayerId && winDelta !== 0) {
+      const { error } = await supabase.from('players')
+        .update({ chip: chipResult.newChip[winnerId] })
+        .eq('id', winnerPlayerId)
+      if (error) console.log(`[arcade] 승자 칩 DB 오류:`, error)
+
+      const { error: txErr } = await supabase.from('chip_transactions')
+        .insert({ player_id: winnerPlayerId, amount: winDelta, reason: 'pvp_win', balance_after: chipResult.newChip[winnerId] })
+      if (txErr) console.log(`[arcade] 승자 트랜잭션 로그 오류:`, txErr)
+    }
+
+    // 패자 칩 업데이트
+    if (loserPlayerId && loseDelta !== 0) {
+      const { error } = await supabase.from('players')
+        .update({ chip: chipResult.newChip[loserId] })
+        .eq('id', loserPlayerId)
+      if (error) console.log(`[arcade] 패자 칩 DB 오류:`, error)
+
+      const { error: txErr } = await supabase.from('chip_transactions')
+        .insert({ player_id: loserPlayerId, amount: loseDelta, reason: 'pvp_lose', balance_after: chipResult.newChip[loserId] })
+      if (txErr) console.log(`[arcade] 패자 트랜잭션 로그 오류:`, txErr)
+    }
+  }
+
+  // lobby 칩 업데이트
+  if (entryA) entryA.chip = chipResult.newChip[socketIdA]
+  if (entryB) entryB.chip = chipResult.newChip[socketIdB]
+
+  const canRematch = chipResult.newChip[socketIdA] >= 100 && chipResult.newChip[socketIdB] >= 100
+
+  // 양쪽에게 결과 전송
+  io.to(room.roomId).emit('game:result', {
+    roomId: room.roomId,
+    reason,
+    winner: comparison.winner,
+    results: comparison.results,
+    winsA: comparison.winsA,
+    winsB: comparison.winsB,
+    chipDelta: chipResult.delta,
+    newChip: chipResult.newChip,
+    canRematch
+  })
+
+  console.log(`[arcade] 결과: winner=${comparison.winner}, winsA=${comparison.winsA}, winsB=${comparison.winsB}, delta=${JSON.stringify(chipResult.delta)}`)
+
+  // 로비 상태 복원
+  if (entryA) { entryA.status = 'waiting'; entryA.mode = null }
+  if (entryB) { entryB.status = 'waiting'; entryB.mode = null }
+
+  // 방 삭제
+  gameRooms.delete(room.roomId)
 }
 
 // =============================================
