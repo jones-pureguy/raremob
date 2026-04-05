@@ -715,9 +715,11 @@ io.on('connection', (socket) => {
           console.log(`[pvp] 상대 disconnect 알림 전송: ${opponentId}`)
         }
       }
-      // 게임 중 disconnect → 게임 종료 처리 (lobby 처리 안 함)
+      // endArcadeGame 완료 후 lobby 정리
       if (room.mode === 'arcade') {
-        endArcadeGame(room, 'disconnect', socket.id)
+        endArcadeGame(room, 'disconnect', socket.id).then(() => {
+          handleLobbyLeave(socket)
+        })
       }
     } else if (room) {
       // 게임 대기 중 disconnect
@@ -732,7 +734,6 @@ io.on('connection', (socket) => {
       console.log(`[pvp] 방 삭제 (disconnect): roomId=${room.roomId}`)
       handleLobbyLeave(socket)
     } else {
-      // 게임 중 아님 → 로비 퇴장만
       handleLobbyLeave(socket)
     }
   })

@@ -65,7 +65,6 @@
   .pvp-info-label { color:rgba(255,255,255,0.4); font-size:0.65rem; font-weight:700; letter-spacing:0.1em; }
   .pvp-info-chip { display:flex; align-items:center; gap:3px; color:var(--gold); }
   .pvp-info-chip img { width:14px; height:14px; }
-  .pvp-info-count { color:rgba(255,255,255,0.4); font-size:0.7rem; }
   .pvp-info-divider { color:rgba(255,255,255,0.1); font-size:1.2rem; }
   /* ── 상태메시지 ── */
   @keyframes pvpBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
@@ -105,7 +104,7 @@
 
 <!-- ==================== VIEW: GAME ==================== -->
 <div id="view-game" style="display:none">
-  <div class="status-bar">
+  <div class="status-bar" style="margin-top:8px;">
     <div class="timer-wrap">
       <svg class="timer-ring" viewBox="0 0 40 40">
         <circle class="timer-ring-bg" cx="20" cy="20" r="16" />
@@ -129,13 +128,11 @@
     <div class="pvp-info-me">
       <div class="pvp-info-label">ME</div>
       <div class="pvp-info-chip"><img src="./images/chip.png" alt="chip"><span id="myChipDisplay">0</span></div>
-      <div class="pvp-info-count" id="myHandCount">0/9</div>
     </div>
     <div class="pvp-info-divider">│</div>
     <div class="pvp-info-opp">
-      <div class="pvp-info-label" id="oppName">OPP</div>
+      <div class="pvp-info-label">OPP</div>
       <div class="pvp-info-chip"><img src="./images/chip.png" alt="chip"><span id="oppChip">0</span></div>
-      <div class="pvp-info-count" id="oppHandCount">0/9</div>
     </div>
   </div>
 
@@ -508,17 +505,11 @@ function setupGameUI() {
   // 상태 초기화
   setPvpStatus('idle');
 
-  // 상대 정보
-  document.getElementById('oppName').textContent = pvpArcade.opponent.username;
+  // 칩 표시
   document.getElementById('oppChip').textContent = pvpArcade.opponent.chip.toLocaleString();
-  document.getElementById('oppHandCount').textContent = '0/9';
-
-  // 내 칩 표시
   const myChip = parseInt(localStorage.getItem('userChip') || '0');
   const myChipEl = document.getElementById('myChipDisplay');
   if (myChipEl) myChipEl.textContent = myChip.toLocaleString();
-  const myCountEl = document.getElementById('myHandCount');
-  if (myCountEl) myCountEl.textContent = '0/9';
 
   // START 오버레이
   document.getElementById('pvpStartTitle').textContent = i18n.t('pvp.arcade.title');
@@ -542,10 +533,11 @@ function setupGameUI() {
   updateHandPanel();
   renderRemovedCards();
 
-  // 타이머 리셋
-  document.getElementById('timerNum').classList.remove('time-attack');
-  document.getElementById('timerRing').classList.remove('time-attack');
-  document.getElementById('timerNum').textContent = '200';
+  // 타이머 리셋 (색상 + 값)
+  const timerNumEl = document.getElementById('timerNum');
+  const timerRingEl = document.getElementById('timerRing');
+  if (timerNumEl) { timerNumEl.classList.remove('time-attack'); timerNumEl.style.color = ''; timerNumEl.textContent = '200'; }
+  if (timerRingEl) { timerRingEl.classList.remove('time-attack'); timerRingEl.style.stroke = ''; }
 
   // 모달 닫기
   document.getElementById('modalOverlay').classList.remove('active');
@@ -590,8 +582,6 @@ function setupGameUI() {
       }).sort(pvpHandSort);
 
       renderScoreboard();
-      const myCountEl = document.getElementById('myHandCount');
-      if (myCountEl) myCountEl.textContent = `${pvpArcade.myHands.length}/9`;
       socket.emit('game:handComplete', {
         roomId: pvpArcade.roomId,
         hand: {
@@ -659,8 +649,6 @@ socket.on('game:started', ({ roomId, startedAt }) => {
 socket.on('opponent:handComplete', ({ hands, count }) => {
   console.log('[pvp] 상대 패 수신:', hands.length);
   pvpArcade.opponentHands = hands;
-  const el = document.getElementById('oppHandCount');
-  if (el) el.textContent = `${hands.length}/9`;
   renderScoreboard();
 });
 
@@ -668,8 +656,6 @@ socket.on('game:syncResponse', ({ myHands, oppHands }) => {
   if (oppHands.length !== pvpArcade.opponentHands.length) {
     console.log('[pvp] 핸드 싱크 보정:', oppHands.length);
     pvpArcade.opponentHands = oppHands;
-    const el = document.getElementById('oppHandCount');
-    if (el) el.textContent = `${oppHands.length}/9`;
     renderScoreboard();
   }
 });
@@ -809,7 +795,9 @@ function renderScoreboard() {
   if (!container) return;
   const myName = localStorage.getItem('poker_username') || 'ME';
   const oppName = pvpArcade.opponent ? pvpArcade.opponent.username : 'OPP';
-  let html = `<div class="pvp-sb-header"><span class="pvp-sb-cell left">${myName}</span><span class="pvp-sb-cell vs"></span><span class="pvp-sb-cell right">${oppName}</span></div>`;
+  const myCount = pvpArcade.myHands.length;
+  const oppCount = pvpArcade.opponentHands.length;
+  let html = `<div class="pvp-sb-header"><span class="pvp-sb-cell left">${myName} (${myCount}/9)</span><span class="pvp-sb-cell vs"></span><span class="pvp-sb-cell right">${oppName} (${oppCount}/9)</span></div>`;
   const mySorted = [...pvpArcade.myHands].sort(pvpHandSort);
   const oppSorted = [...pvpArcade.opponentHands].sort(pvpHandSort);
   for (let i = 0; i < 9; i++) {
