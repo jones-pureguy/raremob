@@ -605,10 +605,17 @@ socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
   setTimeout(() => banner.classList.remove('active'), 3000);
 });
 
-socket.on('game:playerDone', ({ socketId, username, reason, newRemaining }) => {
-  if (newRemaining < state.timer) {
+socket.on('game:playerDone', ({ socketId, username, reason, newRemaining, timerAdjusted }) => {
+  if (timerAdjusted && state.timer > newRemaining) {
+    clearInterval(state.timerInterval);
     state.timer = newRemaining;
     updateTimerDisplay();
+    state.timerInterval = setInterval(() => {
+      if (state.phase !== 'playing' && state.phase !== 'done') return;
+      state.timer--;
+      updateTimerDisplay();
+      if (state.timer <= 0) socket.emit('game:end', { roomId: pvpArcade.roomId });
+    }, 1000);
   }
   document.getElementById('timerNum').style.color = '#ff5252';
   const ring = document.getElementById('timerRing');
@@ -822,6 +829,9 @@ function requestRematch() {
 }
 
 function goToLobby() {
+  if (pvpArcade.roomId) {
+    socket.emit('rematch:cancel', { roomId: pvpArcade.roomId });
+  }
   clearTimeout(pvpArcade.rematchTimer);
   clearTimeout(pvpArcade.disconnectTimeout);
   clearInterval(pvpArcade.syncInterval);

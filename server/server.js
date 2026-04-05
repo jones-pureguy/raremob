@@ -592,15 +592,18 @@ io.on('connection', (socket) => {
       return
     }
 
-    // 한쪽만 완료 → 50초로 제한
+    // 한쪽만 완료 → 50초 이상이면 50초로 조정
     const doneUsername = entry ? entry.username : 'opponent'
     const elapsed = Date.now() - room.arcade.startedAt
     const remaining = Math.max(0, 200000 - elapsed)
-    const newRemaining = Math.min(remaining, 50000)
+    let newRemaining = Math.floor(remaining / 1000)
+    let timerAdjusted = false
 
     if (remaining > 50000) {
       clearTimeout(room.arcade.timer)
       room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 50000)
+      newRemaining = 50
+      timerAdjusted = true
       console.log(`[arcade] 타이머 50초로 재설정: roomId=${roomId}`)
     }
 
@@ -608,7 +611,8 @@ io.on('connection', (socket) => {
       socketId: socket.id,
       username: doneUsername,
       reason,
-      newRemaining: Math.floor(newRemaining / 1000)
+      newRemaining,
+      timerAdjusted
     })
   })
 
@@ -688,6 +692,24 @@ io.on('connection', (socket) => {
       console.log(`[pvp] 재대결 성사: ${playerIds[0]} vs ${playerIds[1]}`)
       createRoom(playerIds[0], playerIds[1], rm.mode)
     }
+  })
+
+  // ─── rematch:cancel ───
+  socket.on('rematch:cancel', ({ roomId }) => {
+    if (!roomId) return
+    const rm = rematchRequests.get(roomId)
+    if (!rm) return
+
+    // 재대결 요청한 상대에게 declined 전송
+    for (const sid of rm.requests) {
+      if (sid !== socket.id) {
+        const otherSock = io.sockets.sockets.get(sid)
+        if (otherSock) otherSock.emit('rematch:declined')
+      }
+    }
+    clearTimeout(rm.timeout)
+    rematchRequests.delete(roomId)
+    console.log(`[pvp] 재대결 취소: roomId=${roomId}`)
   })
 
   // ─── disconnect ───
@@ -1079,12 +1101,15 @@ async function endArcadeGame(room, reason, disconnectedId) {
 
   console.log(`[arcade] 결과: winner=${comparison.winner}, winsA=${comparison.winsA}, winsB=${comparison.winsB}, delta=${JSON.stringify(chipResult.delta)}`)
 
-  // 로비 상태 복원
+  // 로비 상태 복원 + 전체 알림
   if (entryA) { entryA.status = 'waiting'; entryA.mode = null }
   if (entryB) { entryB.status = 'waiting'; entryB.mode = null }
+  io.emit('lobby:statusChanged', { socketId: socketIdA, status: 'waiting' })
+  io.emit('lobby:statusChanged', { socketId: socketIdB, status: 'waiting' })
 
   // 방 삭제
   gameRooms.delete(room.roomId)
+  console.log(`[arcade] 방 제거: roomId=${room.roomId}`)
 }
 
 // =============================================
