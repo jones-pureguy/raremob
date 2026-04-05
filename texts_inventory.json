@@ -127,6 +127,15 @@
     ]
   },
   "index.html": {
+    "buttons": [],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["TOUCH TO START"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
+  "mode_select.html": {
     "buttons": ["BASIC GAME", "Ranking", "Replay", "CHALLENGE MODE", "PUZZLE MODE", "vs MODE", "SETTINGS", "닫기", "확인"],
     "toasts": [],
     "modals": ["오늘의 칩 충전 완료 🎰 +100칩", "100칩 미만일 경우 100칩으로 매일 한 번 회복됩니다.", "{time} 후 충전 가능"],

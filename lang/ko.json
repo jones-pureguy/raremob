@@ -14,6 +14,9 @@
     "nextReset": "{time} 후 충전 가능",
     "granted": "칩 100개가 지급되었습니다 🎰"
   },
+  "splash": {
+    "touchToStart": "TOUCH TO START"
+  },
   "ui": {
     "basicGame": "BASIC GAME",
     "challengeMode": "CHALLENGE MODE",

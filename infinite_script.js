@@ -903,7 +903,7 @@ function endGame(reason) {
     <div id="infTopScoreRow" style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;"></div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn-play-again" onclick="restartGame()">${i18n.t('ui.playAgain')}</button>
-      <a href="index.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+      <a href="mode_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');

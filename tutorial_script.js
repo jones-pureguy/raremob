@@ -876,7 +876,7 @@ function skipTutorial() {
 function completeTutorial() {
   tutorialEnded = true;
   saveLocal('poker_tutorial_done', '1');
-  navigateTo(isReplay ? 'index.html' : 'id.html');
+  navigateTo(isReplay ? 'mode_select.html' : 'id.html');
 }
 
 // ── Boot ──

@@ -1077,7 +1077,7 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     let buttonsHTML = `
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
-        <a href="index.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+        <a href="mode_select.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
         <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
       </div>`;
 

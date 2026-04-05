@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>DragON POKER</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .main-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+    margin-top: 12px;
+    box-sizing: border-box;
+  }
+  .menu-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+  .menu-col-small {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 100px;
+  }
+  .m-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    position: relative;
+    color: var(--gold);
+    box-shadow:
+      0 4px 0 rgba(0,0,0,0.45),
+      0 6px 14px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .m-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 0 rgba(0,0,0,0.45),
+      0 10px 20px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+    border-color: rgba(201,168,76,0.55);
+  }
+  .m-btn:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.45),
+      0 2px 6px rgba(0,0,0,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .m-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .m-btn.btn-large  { flex: 1; min-height: 96px; font-size: 1.0rem; }
+  .m-btn.btn-medium { flex: 1; min-height: 80px; font-size: 1.0rem; }
+  .m-btn.btn-third  { flex: 1; min-height: 74px; font-size: 0.78rem; color: var(--gold); letter-spacing: 0.08em; }
+  .m-btn.btn-wide   { width: 100%; min-height: 60px; font-size: 1.0rem; }
+  .m-btn.btn-small  { width: 100%; min-height: 48px; font-size: 0.85rem; letter-spacing: 0.1em; }
+
+  .btn-basic {
+    background: linear-gradient(160deg, #1e5c30 0%, #153f22 100%);
+    border: 1px solid rgba(201,168,76,0.35);
+  }
+  .btn-sub {
+    background: linear-gradient(160deg, #194f28 0%, #11361b 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+  .btn-infinite {
+    background: linear-gradient(160deg, #09332b 0%, #0d322b 100%);
+    border: 1px solid rgba(201,168,76,0.25);
+  }
+  .btn-challenge {
+    background: linear-gradient(160deg, #2a4a1a 0%, #1c3211 100%);
+    border: 1px solid rgba(201,168,76,0.25);
+  }
+  .btn-puzzle {
+    background: linear-gradient(160deg, #185647 0%, #0d322b 100%);
+    border: 1px solid rgba(201,168,76,0.25);
+  }
+  .btn-vs {
+    background: linear-gradient(160deg, #0e2a1a 0%, #091c11 100%);
+    border: 1px solid rgba(201,168,76,0.1);
+    opacity: 0.65;
+  }
+  .btn-settings {
+    background: linear-gradient(160deg, #1a2e20 0%, #111e16 100%);
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .coming-soon {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    background: rgba(201,168,76,0.25);
+    color: var(--gold);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Settings Modal */
+  .settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .settings-box {
+    background: linear-gradient(145deg, #1a3a22, #0d2818);
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 24px 20px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(201,168,76,0.2);
+  }
+  .settings-title {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+  }
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+  .settings-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 12px;
+    background: rgba(255,255,255,0.05);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    width: 100%;
+  }
+  .settings-item:hover:not(.settings-disabled) {
+    background: rgba(255,255,255,0.1);
+  }
+  .settings-disabled { opacity: 0.45; cursor: not-allowed; }
+  .settings-icon  { font-size: 1.1rem; width: 24px; text-align: center; }
+  .settings-label { flex: 1; }
+  .settings-value { font-size: 0.8rem; color: var(--gold); }
+  .settings-arrow { color: var(--gold); font-size: 1.1rem; }
+  .settings-slider-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: default;
+  }
+  .settings-slider-item .settings-label {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+  }
+  .settings-slider {
+    width: 100%;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+  .settings-slider-item.hidden { display: none; }
+  .settings-badge {
+    font-size: 0.65rem;
+    background: rgba(201,168,76,0.2);
+    color: var(--gold);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .settings-close {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .settings-close:hover { background: rgba(201,168,76,0.15); }
+</style>
+</head>
+<body>
+<div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
+
+<div class="menu-container">
+  <div id="global-header" style="display:flex;justify-content:center;margin-bottom:8px;"></div>
+  <img src="./images/dragon.webp" alt="DragON POKER" class="menu-logo">
+
+  <div class="menu-player" id="menuPlayer"></div>
+
+  <div class="main-menu">
+    <!-- Row 1: BASIC GAME + Ranking/Replay -->
+    <div class="menu-row">
+      <button class="m-btn btn-large btn-basic" onclick="location.href='game.html'">
+        BASIC<br>GAME
+      </button>
+      <div class="menu-col-small">
+        <button class="m-btn btn-small btn-sub" onclick="location.href='leaderboard.html'">
+          Ranking
+        </button>
+        <button class="m-btn btn-small btn-sub" onclick="location.href='replay.html?source=local'">
+          Replay
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 2: CHALLENGE / PUZZLE / INFINITE (1/3씩) -->
+    <div class="menu-row">
+      <button class="m-btn btn-third btn-challenge" onclick="location.href='stage_select.html'">
+        CHALLENGE<br>MODE
+      </button>
+      <button class="m-btn btn-third btn-puzzle" onclick="location.href='puzzle_select.html'">
+        PUZZLE<br>MODE
+      </button>
+      <button class="m-btn btn-third btn-infinite" onclick="location.href='infinite.html'">
+        INFINITE<br>MODE
+      </button>
+    </div>
+
+    <!-- Row 3: VS MODE -->
+    <div class="menu-row">
+      <button class="m-btn btn-medium btn-vs" disabled>
+        vs MODE
+        <span class="coming-soon">준비 중</span>
+      </button>
+    </div>
+
+    <!-- Row 4: SETTINGS -->
+    <div class="menu-row">
+      <button class="m-btn btn-wide btn-settings" onclick="openSettings()">
+        SETTINGS
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="settings-overlay" id="settingsModal">
+  <div class="settings-box">
+    <div class="settings-title">SETTINGS</div>
+
+    <div class="settings-list">
+      <button class="settings-item" onclick="location.href='id.html'">
+        <span class="settings-icon">👤</span>
+        <span class="settings-label">닉네임 관리</span>
+        <span class="settings-value" id="settingsUsername"></span>
+        <span class="settings-arrow">›</span>
+      </button>
+
+      <button class="settings-item settings-disabled">
+        <span class="settings-icon">🔗</span>
+        <span class="settings-label">구글 계정 연동</span>
+        <span class="settings-badge">준비 중</span>
+      </button>
+
+      <button class="settings-item" onclick="location.href='tutorial.html?replay=1'">
+        <span class="settings-icon">📖</span>
+        <span class="settings-label">튜토리얼</span>
+      </button>
+
+      <button class="settings-item" id="soundToggleBtn" onclick="toggleSound()">
+        <span class="settings-icon" id="soundIcon">🔊</span>
+        <span class="settings-label" id="soundLabel">사운드 ON</span>
+      </button>
+
+      <button class="settings-item" onclick="toggleMusic()">
+        <span class="settings-icon" id="musicIcon">🎵</span>
+        <span class="settings-label" id="musicLabel">음악 ON</span>
+      </button>
+
+      <div class="settings-item settings-slider-item" id="musicVolumeRow">
+        <span class="settings-label">음악 볼륨</span>
+        <input type="range" class="settings-slider" id="musicVolumeSlider"
+               min="0" max="100" step="5"
+               oninput="onMusicVolumeChange(this.value)">
+      </div>
+
+      <button class="settings-item" onclick="showLanguageSelector()">
+        <span class="settings-icon">🌐</span>
+        <span class="settings-label">언어 설정</span>
+        <span class="settings-value" id="settingsLang"></span>
+        <span class="settings-arrow">›</span>
+      </button>
+
+      <button class="settings-item" onclick="showAppInfo()">
+        <span class="settings-icon">ℹ️</span>
+        <span class="settings-label">앱 정보</span>
+        <span class="settings-arrow">›</span>
+      </button>
+    </div>
+
+    <button class="settings-close" onclick="closeSettings()">닫기</button>
+  </div>
+</div>
+
+<script src="i18n.js"></script>
+<script src="header.js"></script>
+<script src="sound.js"></script>
+<script>
+  // ─── BGM 시작 ───
+  BGM.init('./audio/Title.mp3');
+  BGM.start();
+
+  // ─── i18n + header 초기화 ───
+  (async () => {
+    await i18n.init();
+    initHeader();
+  })();
+
+  // ─── 플레이어 이름 표시 ───
+  const savedUsername = localStorage.getItem('poker_username');
+  if (savedUsername) {
+    document.getElementById('menuPlayer').textContent = savedUsername;
+  }
+
+  // ─── 칩 복구 팝업 (index.html에서 복구된 경우 표시) ───
+  if (localStorage.getItem('poker_chip_restored') === '1') {
+    localStorage.removeItem('poker_chip_restored');
+    // i18n 로드 완료 후 팝업 표시
+    i18n.init().then(() => showChipResetPopup());
+  }
+
+  function getNextResetTimeString() {
+    const now = new Date();
+    const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+    const diff = tomorrow - now;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}시간 ${minutes}분`;
+    return `${minutes}분`;
+  }
+
+  function showChipResetPopup() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;justify-content:center;align-items:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:linear-gradient(145deg,#1a3a22,#0d2818);border:2px solid var(--gold);border-radius:16px;padding:28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 0 40px rgba(201,168,76,0.2);';
+    const timeStr = i18n.t('chip.nextReset').replace('{time}', getNextResetTimeString());
+    box.innerHTML = `
+      <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.3rem;margin-bottom:8px;">${i18n.t('chip.dailyReset')}</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:0.82rem;margin-bottom:8px;">${i18n.t('chip.dailyResetSub')}</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:16px;">${timeStr}</div>
+      <button style="width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:0.9rem;cursor:pointer;" onclick="this.closest('div[style]').parentElement.remove()">${i18n.t('ui.confirm')}</button>
+    `;
+    overlay.appendChild(box);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+
+  // ─── 사운드 토글 ───
+  (function initSoundUI() {
+    const on = Sound.isEnabled();
+    document.getElementById('soundIcon').textContent = on ? '🔊' : '🔇';
+    document.getElementById('soundLabel').textContent = on ? '사운드 ON' : '사운드 OFF';
+  })();
+
+  function toggleSound() {
+    const next = !Sound.isEnabled();
+    Sound.setEnabled(next);
+    document.getElementById('soundIcon').textContent = next ? '🔊' : '🔇';
+    document.getElementById('soundLabel').textContent = next ? '사운드 ON' : '사운드 OFF';
+    if (next) Sound.stageClear();
+  }
+
+  // ─── 음악 토글 ───
+  (function initMusicUI() {
+    BGM.loadSettings();
+    const on = BGM.isEnabled();
+    document.getElementById('musicIcon').textContent = on ? '🎵' : '🔇';
+    document.getElementById('musicLabel').textContent = on ? '음악 ON' : '음악 OFF';
+    document.getElementById('musicVolumeSlider').value = Math.round(BGM.getVolume() * 100);
+    document.getElementById('musicVolumeRow').classList.toggle('hidden', !on);
+  })();
+
+  function toggleMusic() {
+    const next = !BGM.isEnabled();
+    BGM.setEnabled(next);
+    document.getElementById('musicIcon').textContent = next ? '🎵' : '🔇';
+    document.getElementById('musicLabel').textContent = next ? '음악 ON' : '음악 OFF';
+    document.getElementById('musicVolumeRow').classList.toggle('hidden', !next);
+  }
+
+  function onMusicVolumeChange(val) {
+    BGM.setVolume(val / 100);
+  }
+
+  // ─── Settings ───
+  function openSettings() {
+    const username = localStorage.getItem('poker_username') || '';
+    document.getElementById('settingsUsername').textContent = username;
+    const langEl = document.getElementById('settingsLang');
+    if (langEl) langEl.textContent = LANG_NAMES[i18n.getLang()] || i18n.getLang();
+    document.getElementById('settingsModal').style.display = 'flex';
+  }
+
+  function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+  }
+
+  function showAppInfo() {
+    alert(i18n.t('settings.appInfoContent'));
+  }
+
+  const LANG_NAMES = {
+    ko:'한국어', en:'English', ja:'日本語', zh:'中文(简体)', 'zh-TW':'中文(繁體)',
+    es:'Español', pt:'Português', fr:'Français', de:'Deutsch', it:'Italiano',
+    ru:'Русский', ar:'العربية', hi:'हिन्दी', th:'ภาษาไทย', vi:'Tiếng Việt', id:'Bahasa Indonesia'
+  };
+
+  function showLanguageSelector() {
+    const supported = i18n.getSupported();
+    const current = i18n.getLang();
+    const list = document.querySelector('.settings-list');
+    list.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        ${supported.map(lang => `
+          <button class="settings-item" onclick="i18n.setLang('${lang}')"
+            style="justify-content:center;padding:10px 6px;font-size:0.8rem;${lang === current ? 'background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);' : ''}">
+            <span class="settings-label">${LANG_NAMES[lang] || lang}</span>
+            ${lang === current ? '<span style="color:var(--gold);margin-left:4px;">✓</span>' : ''}
+          </button>
+        `).join('')}
+      </div>`;
+    document.querySelector('.settings-close').textContent = i18n.t('ui.back');
+    document.querySelector('.settings-close').onclick = () => { closeSettings(); location.reload(); };
+  }
+
+  document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+  });
+</script>
+</body>
+</html>
