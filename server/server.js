@@ -75,6 +75,20 @@ const rematchRequests = new Map()
 // key: roomId (원래 방)
 // value: { requests: Set<socketId>, mode, players, timeout }
 
+const pendingNotifications = new Map()
+// key: playerId
+// value: { type, chipDelta, newChip, reason, createdAt }
+
+// 24시간 지난 pending 알림 자동 정리 (1시간마다)
+setInterval(() => {
+  const now = Date.now()
+  for (const [pid, notif] of pendingNotifications) {
+    if (now - notif.createdAt > 86400000) {
+      pendingNotifications.delete(pid)
+    }
+  }
+}, 3600000)
+
 // [REUSE] 수트 우선순위 (서버 판정용)
 const SUIT_RANK = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 }
 
@@ -353,20 +367,25 @@ io.on('connection', (socket) => {
 
   // ─── lobby:join ───
   socket.on('lobby:join', ({ playerId, username, chip }) => {
-    // 기존 등록 제거 (재진입 시)
+    // 1. 현재 socket.id 기존 항목 제거
     if (lobby.has(socket.id)) {
       lobby.delete(socket.id)
     }
-    // playerId 기준 중복 제거
+
+    // 2. 동일 playerId로 등록된 기존 항목 전부 제거
+    const toRemove = []
     for (const [sid, e] of lobby) {
       if (e.playerId === playerId && sid !== socket.id) {
-        lobby.delete(sid)
-        io.emit('lobby:userLeft', sid)
-        console.log(`[pvp] 중복 로비 항목 제거: ${sid}`)
-        break
+        toRemove.push(sid)
       }
     }
+    toRemove.forEach(sid => {
+      lobby.delete(sid)
+      io.emit('lobby:userLeft', sid)
+      console.log(`[pvp] 중복 로비 항목 제거: playerId=${playerId}, sid=${sid}`)
+    })
 
+    // 3. 신규 등록
     console.log(`[pvp] 로비 진입: ${username} (${socket.id}), chip=${chip}`)
 
     const entry = {
@@ -388,6 +407,14 @@ io.on('connection', (socket) => {
 
     // 전체에게 새 유저 알림
     socket.broadcast.emit('lobby:userJoined', toLobbyUser(entry))
+
+    // pending 알림 체크
+    const pending = pendingNotifications.get(playerId)
+    if (pending) {
+      pendingNotifications.delete(playerId)
+      socket.emit('pvp:pendingNotification', pending)
+      console.log(`[pvp] pending 알림 전송: ${playerId}`)
+    }
   })
 
   // ─── lobby:leave ───
@@ -522,7 +549,7 @@ io.on('connection', (socket) => {
     if (opponentId) {
       const opponentSock = io.sockets.sockets.get(opponentId)
       if (opponentSock) {
-        opponentSock.emit('opponent:handComplete', { hands })
+        opponentSock.emit('opponent:handComplete', { hands, count: hands.length })
       }
     }
 
@@ -583,6 +610,18 @@ io.on('connection', (socket) => {
       reason,
       newRemaining: Math.floor(newRemaining / 1000)
     })
+  })
+
+  // ─── game:syncRequest (핸드 싱크 요청) ───
+  socket.on('game:syncRequest', ({ roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'arcade') return
+    const opponentId = room.players.find(id => id !== socket.id)
+    socket.emit('game:syncResponse', {
+      myHands: room.arcade.hands[socket.id] || [],
+      oppHands: room.arcade.hands[opponentId] || []
+    })
+    console.log(`[arcade] 싱크 요청 처리: ${socket.id}`)
   })
 
   // ─── game:end (클라이언트 타이머 종료 알림) ───
@@ -657,7 +696,16 @@ io.on('connection', (socket) => {
 
     const room = findRoomBySocket(socket.id)
     if (room && room.status === 'playing') {
-      // 게임 중 disconnect → 게임 종료 처리만 (lobby 처리 안 함)
+      // 상대에게 먼저 알림
+      const opponentId = room.players.find(id => id !== socket.id)
+      if (opponentId) {
+        const opponentSock = io.sockets.sockets.get(opponentId)
+        if (opponentSock) {
+          opponentSock.emit('room:opponentDisconnected')
+          console.log(`[pvp] 상대 disconnect 알림 전송: ${opponentId}`)
+        }
+      }
+      // 게임 중 disconnect → 게임 종료 처리 (lobby 처리 안 함)
       if (room.mode === 'arcade') {
         endArcadeGame(room, 'disconnect', socket.id)
       }
@@ -923,6 +971,21 @@ async function endArcadeGame(room, reason, disconnectedId) {
       const { error: txErr } = await supabase.from('chip_transactions')
         .insert({ player_id: loserPlayerId, amount: loseDelta, reason: 'pvp_lose', balance_after: chipResult.newChip[loserId] })
       if (txErr) console.log(`[arcade] 패자 트랜잭션 로그 오류:`, txErr)
+    }
+  }
+
+  // ─── disconnect 시 pending 알림 저장 ───
+  if (reason === 'disconnect' && disconnectedId) {
+    const disconnectedEntry = lobby.get(disconnectedId)
+    if (disconnectedEntry && disconnectedEntry.playerId) {
+      pendingNotifications.set(disconnectedEntry.playerId, {
+        type: 'pvp_disconnect_lose',
+        chipDelta: chipResult.delta[disconnectedId],
+        newChip: chipResult.newChip[disconnectedId],
+        reason: 'arcade_disconnect',
+        createdAt: Date.now()
+      })
+      console.log(`[pvp] pending 알림 저장: ${disconnectedEntry.playerId}`)
     }
   }
 

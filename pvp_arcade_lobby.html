@@ -499,6 +499,13 @@ function setupGameUI() {
     }
   };
 
+  // 10초마다 핸드 싱크 체크
+  clearInterval(pvpArcade.syncInterval);
+  pvpArcade.syncInterval = setInterval(() => {
+    if (!pvpArcade.gameStarted || (state.phase !== 'playing' && state.phase !== 'done')) return;
+    socket.emit('game:syncRequest', { roomId: pvpArcade.roomId });
+  }, 10000);
+
   // START 버튼 핸들러
   const newBtn = startBtn.cloneNode(true);
   startBtn.parentNode.replaceChild(newBtn, startBtn);
@@ -544,12 +551,38 @@ socket.on('game:started', ({ roomId, startedAt }) => {
   updateTimerDisplay();
 });
 
-socket.on('opponent:handComplete', ({ hands }) => {
+socket.on('opponent:handComplete', ({ hands, count }) => {
   console.log('[pvp] 상대 패 수신:', hands.length);
   pvpArcade.opponentHands = hands;
   const el = document.getElementById('oppHandCount');
   if (el) el.textContent = `${hands.length}/9`;
   renderScoreboard();
+});
+
+socket.on('game:syncResponse', ({ myHands, oppHands }) => {
+  if (oppHands.length !== pvpArcade.opponentHands.length) {
+    console.log('[pvp] 핸드 싱크 보정:', oppHands.length);
+    pvpArcade.opponentHands = oppHands;
+    const el = document.getElementById('oppHandCount');
+    if (el) el.textContent = `${oppHands.length}/9`;
+    renderScoreboard();
+  }
+});
+
+socket.on('pvp:pendingNotification', (data) => {
+  localStorage.setItem('userChip', String(data.newChip));
+  window.dispatchEvent(new Event('chipUpdated'));
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const dc = data.chipDelta < 0 ? '#ff5252' : '#4CAF50';
+  modal.innerHTML = `
+    <h2 style="font-size:1.2rem;">${i18n.t('pvp.arcade.oppLeft').replace('상대방이', '이전 게임에서')}</h2>
+    <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:12px 0;">이전 게임에서 접속이 종료되었습니다.</div>
+    <div style="font-size:1rem;font-weight:700;color:${dc};margin:8px 0;">${data.chipDelta} chip</div>
+    <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-bottom:12px;"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${data.newChip.toLocaleString()}</div>
+    <button class="pvp-popup-btn" onclick="document.getElementById('modalOverlay').classList.remove('active')">${i18n.t('ui.confirm')}</button>
+  `;
+  overlay.classList.add('active');
 });
 
 socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
@@ -745,6 +778,7 @@ function requestRematch() {
 
 function goToLobby() {
   clearTimeout(pvpArcade.rematchTimer);
+  clearInterval(pvpArcade.syncInterval);
   pvpArcade.roomId = null;
   pvpArcade.opponent = null;
   pvpArcade.myHands = [];
