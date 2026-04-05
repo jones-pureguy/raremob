@@ -98,7 +98,38 @@ const pvpArcade = {
   }
 })();
 
+// ─── 서버 rejoin (새 소켓 ID 등록) ───
+(function rejoinRoom() {
+  const playerId = localStorage.getItem('poker_player_id');
+  if (!playerId || !pvpArcade.roomId) return;
+
+  function doRejoin() {
+    socket.emit('pvp:rejoin', {
+      playerId,
+      roomId: pvpArcade.roomId
+    });
+  }
+
+  if (socket.connected) {
+    doRejoin();
+  } else {
+    socket.on('connect', doRejoin);
+  }
+})();
+
 // ─── 소켓 이벤트 수신 ───
+
+// pvp:rejoined — rejoin 성공
+socket.on('pvp:rejoined', ({ roomId, mode }) => {
+  console.log('[pvp] rejoin 성공:', roomId, mode);
+});
+
+// pvp:rejoinFailed — rejoin 실패 (방 없음)
+socket.on('pvp:rejoinFailed', () => {
+  console.log('[pvp] rejoin 실패: 방 없음');
+  sessionStorage.removeItem('pvpRoom');
+  location.href = 'pvp_lobby.html';
+});
 
 // game:waiting — 상대 대기 중
 socket.on('game:waiting', () => {

@@ -598,31 +598,83 @@ io.on('connection', (socket) => {
     }
   })
 
+  // ─── pvp:rejoin (페이지 이동 후 소켓 재연결) ───
+  socket.on('pvp:rejoin', ({ playerId, roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room) {
+      console.log(`[pvp] rejoin 실패: 방 없음 roomId=${roomId}`)
+      socket.emit('pvp:rejoinFailed')
+      return
+    }
+
+    // 기존 socketId 찾기
+    const oldSocketId = room.players.find(sid => {
+      const entry = lobby.get(sid)
+      return entry && entry.playerId === playerId
+    })
+
+    if (!oldSocketId) {
+      console.log(`[pvp] rejoin 실패: playerId=${playerId} not in room`)
+      socket.emit('pvp:rejoinFailed')
+      return
+    }
+
+    const oldEntry = lobby.get(oldSocketId)
+    console.log(`[pvp] rejoin: ${oldEntry.username}, old=${oldSocketId} → new=${socket.id}, roomId=${roomId}`)
+
+    // players 배열 교체
+    const idx = room.players.indexOf(oldSocketId)
+    if (idx !== -1) room.players[idx] = socket.id
+
+    // arcade hands key 교체
+    if (room.arcade && room.arcade.hands[oldSocketId] !== undefined) {
+      room.arcade.hands[socket.id] = room.arcade.hands[oldSocketId]
+      delete room.arcade.hands[oldSocketId]
+    }
+
+    // arcade readySet 교체
+    if (room.arcade && room.arcade.readySet && room.arcade.readySet.has(oldSocketId)) {
+      room.arcade.readySet.delete(oldSocketId)
+      room.arcade.readySet.add(socket.id)
+    }
+
+    // lobby Map 교체
+    lobby.delete(oldSocketId)
+    oldEntry.socketId = socket.id
+    lobby.set(socket.id, oldEntry)
+
+    // 소켓 room join
+    socket.join(roomId)
+
+    socket.emit('pvp:rejoined', { roomId, mode: room.mode })
+  })
+
   // ─── disconnect ───
   socket.on('disconnect', () => {
     console.log('클라이언트 해제:', socket.id)
 
-    // gameRoom 처리
     const room = findRoomBySocket(socket.id)
-    if (room) {
-      // arcade 진행 중이면 disconnect 처리
-      if (room.mode === 'arcade' && room.status === 'playing') {
+    if (room && room.status === 'playing') {
+      // 게임 중 disconnect → 게임 종료 처리만 (lobby 처리 안 함)
+      if (room.mode === 'arcade') {
         endArcadeGame(room, 'disconnect', socket.id)
-      } else {
-        const opponentId = room.players.find(id => id !== socket.id)
-        if (opponentId) {
-          const opponentSock = io.sockets.sockets.get(opponentId)
-          if (opponentSock) {
-            opponentSock.emit('room:opponentDisconnected')
-          }
-        }
-        gameRooms.delete(room.roomId)
-        console.log(`[pvp] 방 삭제 (disconnect): roomId=${room.roomId}`)
       }
+    } else if (room) {
+      // 게임 대기 중 disconnect
+      const opponentId = room.players.find(id => id !== socket.id)
+      if (opponentId) {
+        const opponentSock = io.sockets.sockets.get(opponentId)
+        if (opponentSock) {
+          opponentSock.emit('room:opponentDisconnected')
+        }
+      }
+      gameRooms.delete(room.roomId)
+      console.log(`[pvp] 방 삭제 (disconnect): roomId=${room.roomId}`)
+      handleLobbyLeave(socket)
+    } else {
+      // 게임 중 아님 → 로비 퇴장만
+      handleLobbyLeave(socket)
     }
-
-    // 로비 퇴장 처리
-    handleLobbyLeave(socket)
   })
 })
 

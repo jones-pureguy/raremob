@@ -501,7 +501,10 @@
 
   // ─── 페이지 이탈 처리 ───
   window.addEventListener('beforeunload', () => {
-    socket.emit('lobby:leave');
+    // 게임 매칭 후 이동 중이면 lobby:leave 발송 안 함
+    if (!sessionStorage.getItem('pvpRoom')) {
+      socket.emit('lobby:leave');
+    }
     clearInterval(heartbeatInterval);
   });
 
