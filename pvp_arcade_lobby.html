@@ -681,11 +681,11 @@ function showResult(data) {
   } else {
     const sign = myDelta >= 0 ? '+' : '';
     const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+    const prevChip = myNewChip - myDelta;
     const feeNote = data.tableFee > 0 && myDelta > 0
-      ? ` <span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">(${i18n.t('pvp.arcade.chipDelta')} -${data.tableFee})</span>` : '';
-    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">${i18n.t('pvp.arcade.chipDelta')}</div>
-      <div style="font-size:1.1rem;font-weight:700;color:${dc};margin:4px 0;">${sign}${myDelta} chip${feeNote}</div>
-      <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${myNewChip.toLocaleString()}</div>`;
+      ? ` <span style="font-size:0.68rem;color:rgba(255,255,255,0.3);">(테이블비 ${data.tableFee} 반영)</span>` : '';
+    chipHTML = `<div style="font-size:1.1rem;font-weight:700;color:${dc};margin:8px 0;">${sign}${myDelta} chip${feeNote}</div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip.toLocaleString()} → ${myNewChip.toLocaleString()}</div>`;
   }
 
   let buttonsHTML = '';
