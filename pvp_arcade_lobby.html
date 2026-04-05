@@ -410,6 +410,49 @@ function rejectChallenge() {
 }
 
 // =============================================
+// [REUSE] 같은 rank 패끼리 세부 강도 비교 (양수=a강함)
+function compareHandStrength(a, b) {
+  if (!a.cards || !b.cards) {
+    const SR = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 };
+    return (SR[a.suit] || 0) - (SR[b.suit] || 0);
+  }
+  const getKeys = (hand) => {
+    const cards = hand.cards.slice().sort((x, y) => y.value - x.value);
+    const counts = {};
+    cards.forEach(c => counts[c.value] = (counts[c.value] || 0) + 1);
+    const byCount = Object.entries(counts)
+      .sort((x, y) => y[1] - x[1] || parseInt(y[0]) - parseInt(x[0]))
+      .map(e => parseInt(e[0]));
+    switch (hand.rank) {
+      case 1: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 2: return [byCount[0], byCount[1], ...cards.filter(c => c.value !== byCount[0] && c.value !== byCount[1]).map(c => c.value)];
+      case 3: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 4: case 8: {
+        if (cards[0].value === 14 && cards[1].value === 5) return [5];
+        return [cards[0].value];
+      }
+      case 5: return cards.map(c => c.value);
+      case 6: return [byCount[0], byCount[1]];
+      case 7: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 9: case 10: return [];
+      default: return cards.map(c => c.value);
+    }
+  };
+  const ka = getKeys(a), kb = getKeys(b);
+  for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+    if ((ka[i] || 0) !== (kb[i] || 0)) return (ka[i] || 0) - (kb[i] || 0);
+  }
+  const SR = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 };
+  const sa = SR[a.cards.slice().sort((x,y) => y.value - x.value)[0].suit] || 0;
+  const sb = SR[b.cards.slice().sort((x,y) => y.value - x.value)[0].suit] || 0;
+  return sa - sb;
+}
+
+function pvpHandSort(a, b) {
+  if (b.rank !== a.rank) return b.rank - a.rank;
+  return compareHandStrength(b, a);
+}
+
 // 게임 로직
 // =============================================
 
@@ -485,7 +528,7 @@ function setupGameUI() {
         return { rank: ev.rank, label: ev.label, suit: sc[0].suit,
                  values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal,
                  secondaryVal: ev.secondaryVal, kickers: ev.kickers, cards: h.cards };
-      }).sort((a, b) => b.rank - a.rank);
+      }).sort(pvpHandSort);
 
       renderScoreboard();
       socket.emit('game:handComplete', {
@@ -708,8 +751,8 @@ function renderScoreboard() {
   const myName = localStorage.getItem('poker_username') || 'ME';
   const oppName = pvpArcade.opponent ? pvpArcade.opponent.username : 'OPP';
   let html = `<div class="pvp-sb-header"><span class="pvp-sb-cell left">${myName}</span><span class="pvp-sb-cell vs"></span><span class="pvp-sb-cell right">${oppName}</span></div>`;
-  const mySorted = [...pvpArcade.myHands].sort((a, b) => b.rank - a.rank);
-  const oppSorted = [...pvpArcade.opponentHands].sort((a, b) => b.rank - a.rank);
+  const mySorted = [...pvpArcade.myHands].sort(pvpHandSort);
+  const oppSorted = [...pvpArcade.opponentHands].sort(pvpHandSort);
   for (let i = 0; i < 9; i++) {
     const my = mySorted[i], opp = oppSorted[i];
     let myText = '—', oppText = '—', myClass = '', oppClass = '', vsIcon = '';
@@ -736,8 +779,8 @@ function showResult(data) {
   const myNewChip = data.newChip[myId] || 0;
 
   // 서버에서 보낸 hands 사용 (cards 포함)
-  const myHands = (data.myHands || []).slice().sort((a, b) => b.rank - a.rank);
-  const oppHands = (data.oppHands || []).slice().sort((a, b) => b.rank - a.rank);
+  const myHands = (data.myHands || []).slice().sort(pvpHandSort);
+  const oppHands = (data.oppHands || []).slice().sort(pvpHandSort);
 
   let tableHTML = '<div style="margin:12px 0;">';
   for (let i = 0; i < 9; i++) {

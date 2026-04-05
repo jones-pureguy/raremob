@@ -540,7 +540,7 @@ io.on('connection', (socket) => {
     if (!hands) return
 
     hands.push(hand)
-    hands.sort((a, b) => b.rank - a.rank)
+    hands.sort(handSortComparator)
 
     console.log(`[arcade] 패 완성: roomId=${roomId}, player=${socket.id}, count=${hands.length}, rank=${hand.rank}`)
 
@@ -829,10 +829,16 @@ function compareHandsByCards(handA, handB) {
   return 0
 }
 
+// [REUSE] 핸드 정렬용 comparator (rank 내림차순 → 같은 rank면 세부 비교)
+function handSortComparator(a, b) {
+  if (b.rank !== a.rank) return b.rank - a.rank
+  return -compareHandsByCards(a, b)
+}
+
 // [REUSE] 두 플레이어의 패 목록 비교 (서버용)
 function compareArcadeHands(handsA, handsB, socketIdA, socketIdB) {
-  const sortedA = handsA.slice().sort((a, b) => b.rank - a.rank)
-  const sortedB = handsB.slice().sort((a, b) => b.rank - a.rank)
+  const sortedA = handsA.slice().sort(handSortComparator)
+  const sortedB = handsB.slice().sort(handSortComparator)
 
   const maxLen = Math.max(sortedA.length, sortedB.length, 9)
   const results = []
@@ -1053,8 +1059,8 @@ async function endArcadeGame(room, reason, disconnectedId) {
   const tableFee = comparison.winner !== 'draw' ? 1 : 0
 
   // hands 정렬 (rank 내림차순)
-  const handsA = (room.arcade.hands[socketIdA] || []).slice().sort((a, b) => b.rank - a.rank)
-  const handsB = (room.arcade.hands[socketIdB] || []).slice().sort((a, b) => b.rank - a.rank)
+  const handsA = (room.arcade.hands[socketIdA] || []).slice().sort(handSortComparator)
+  const handsB = (room.arcade.hands[socketIdB] || []).slice().sort(handSortComparator)
 
   // 양쪽에게 각자 기준으로 결과 전송
   const baseResult = {
