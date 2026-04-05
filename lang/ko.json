@@ -4,6 +4,10 @@
     "name": "한국어",
     "dir": "ltr"
   },
+  "header": {
+    "gold": "골드",
+    "chip": "칩"
+  },
   "ui": {
     "basicGame": "BASIC GAME",
     "challengeMode": "CHALLENGE MODE",

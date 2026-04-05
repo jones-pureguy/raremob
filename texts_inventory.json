@@ -301,6 +301,15 @@
       "Three ${VALUE_NAMES[countKeys[0][0]]}s"
     ]
   },
+  "header.js": {
+    "buttons": [],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["골드", "칩"],
+    "placeholders": [],
+    "dynamic_text": []
+  },
   "auth.js": {
     "buttons": [],
     "toasts": [],

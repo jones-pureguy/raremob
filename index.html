@@ -212,16 +212,7 @@
 <div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
 
 <div class="menu-container">
-  <div class="currency-bar" style="justify-content:center;margin-bottom:8px;">
-    <div class="currency-item">
-      <img src="./images/coin.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span>
-      <span class="currency-value" id="goldDisplay">0</span>
-    </div>
-    <div class="currency-item">
-      <img src="./images/chip.png" alt="chip" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">🎰</span>
-      <span class="currency-value" id="chipDisplay">0</span>
-    </div>
-  </div>
+  <div id="global-header" style="display:flex;justify-content:center;margin-bottom:8px;"></div>
   <img src="./images/dragon.webp" alt="DragON POKER" class="menu-logo">
 
   <div class="menu-player" id="menuPlayer"></div>
@@ -339,6 +330,7 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="header.js"></script>
 <script src="sound.js"></script>
 <script>
   // 사운드 토글 초기화
@@ -389,15 +381,10 @@
     document.getElementById('menuPlayer').textContent = savedUsername;
   }
 
-  // Currency bar
+  // Currency bar (delegates to header.js)
   function renderCurrencyBar() {
-    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
-    const goldEl = document.getElementById('goldDisplay');
-    const chipEl = document.getElementById('chipDisplay');
-    if (goldEl) goldEl.textContent = gold.toLocaleString();
-    if (chipEl) chipEl.textContent = '0';
+    _updateHeaderValues(true);
   }
-  renderCurrencyBar();
 
   // ─── Gold sync on start ───
   async function syncGoldOnStart() {
@@ -438,6 +425,7 @@
   // 백그라운드 auth + DB 싱크
   (async function checkUserReady() {
     await i18n.init();
+    initHeader();
     const uid = await initAuth();
     if (!uid) return;
 

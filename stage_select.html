@@ -17,16 +17,6 @@
     font-weight: 700;
     margin-bottom: 4px;
   }
-  .gold-display {
-    color: var(--gold);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.9rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-  }
   .stage-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -169,7 +159,7 @@
 <div class="menu-container">
   <div class="stage-select-header">
     <div class="stage-select-title">CHALLENGE MODE</div>
-    <div class="gold-display" id="goldDisplay"><img src="./images/coin.png" alt="gold" class="currency-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"><span style="display:none; font-size:1rem;">💰</span> <span id="goldValue">0</span></div>
+    <div id="global-header" style="display:flex;justify-content:center;"></div>
   </div>
 
   <div class="pagination" id="pagination"></div>
@@ -191,20 +181,19 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<script src="header.js"></script>
 <script src="sound.js"></script>
 <script>
   let stages = [];
   let progress = { clearedStages: [] };
   let selectedStageId = null;
-  i18n.init();
+  i18n.init().then(() => initHeader());
   const PAGE_SIZE = 25;
   let currentPage = 1;
   let totalPages = 1;
 
   async function init() {
-    // 1. 즉시 로컬 골드 표시
-    const localGold = parseInt(localStorage.getItem('poker_gold') || '0');
-    document.getElementById('goldValue').textContent = localGold.toLocaleString();
+    // 1. 골드 표시는 header.js가 담당
 
     // 2. 즉시 로컬 진도 로드
     progress = JSON.parse(localStorage.getItem('poker_stage_progress') || '{"clearedStages":[]}');
@@ -239,9 +228,8 @@
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
 
-    // 골드 — localStorage 값 그대로 표시 (DB 싱크는 index.html에서만)
-    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
-    document.getElementById('goldValue').textContent = gold.toLocaleString();
+    // 골드 — header.js가 표시 담당
+    _updateHeaderValues(true);
 
     // 진도 싱크 — DB 데이터가 로컬보다 많을 때만 병합
     sb.from('player_stages').select('*').eq('player_id', playerId)
