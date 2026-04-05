@@ -59,6 +59,7 @@
   @keyframes bannerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
   .timer-num.time-attack { color:#ff3333 !important; }
   .timer-ring-fg.time-attack { stroke:#ff3333 !important; }
+  @keyframes scrollMsg { 0%{transform:translateX(100%);} 100%{transform:translateX(-100%);} }
 </style>
 </head>
 <body class="game-page">
@@ -454,13 +455,15 @@ function setupGameUI() {
   // endGame 오버라이드
   window.endGame = function(reason) {
     if (!pvpArcade.gameStarted) return;
-    if (state.phase === 'result') return;
-    // 9패 완성(complete)은 무시 — 서버 타이머가 종료를 결정
-    // nomoves/gameover(타이머)만 서버에 알림
-    if (reason === 'complete') return;
-    state.phase = 'gameover';
-    clearInterval(state.timerInterval);
-    socket.emit('game:end', { roomId: pvpArcade.roomId });
+    if (state.phase === 'result' || state.phase === 'done') return;
+    if (reason === 'complete' || reason === 'nomoves') {
+      state.phase = 'done';
+      socket.emit('game:playerDone', { roomId: pvpArcade.roomId, reason });
+    } else {
+      state.phase = 'gameover';
+      clearInterval(state.timerInterval);
+      socket.emit('game:end', { roomId: pvpArcade.roomId });
+    }
   };
 
   // finalizePath 래핑
@@ -486,7 +489,12 @@ function setupGameUI() {
       renderScoreboard();
       socket.emit('game:handComplete', {
         roomId: pvpArcade.roomId,
-        hand: { rank: evalResult.rank, label: evalResult.label, suit: topSuit }
+        hand: {
+          rank: evalResult.rank,
+          label: evalResult.label,
+          suit: topSuit,
+          cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
+        }
       });
     }
   };
@@ -552,7 +560,7 @@ socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
   document.getElementById('timerNum').classList.add('time-attack');
   document.getElementById('timerRing').classList.add('time-attack');
   state.timerInterval = setInterval(() => {
-    if (state.phase !== 'playing') return;
+    if (state.phase !== 'playing' && state.phase !== 'done') return;
     state.timer--;
     updateTimerDisplay();
     if (state.timer <= 0) socket.emit('game:end', { roomId: pvpArcade.roomId });
@@ -563,10 +571,28 @@ socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
   setTimeout(() => banner.classList.remove('active'), 3000);
 });
 
+socket.on('game:playerDone', ({ socketId, username, reason, newRemaining }) => {
+  if (newRemaining < state.timer) {
+    state.timer = newRemaining;
+    updateTimerDisplay();
+  }
+  document.getElementById('timerNum').style.color = '#ff5252';
+  const ring = document.getElementById('timerRing');
+  if (ring) ring.style.stroke = '#ff5252';
+
+  const isMine = socketId === socket.id;
+  const msg = isMine
+    ? `${newRemaining}초 후 전체 게임 종료`
+    : `${username}님의 게임 종료! ${newRemaining}초 후 전체 게임 종료`;
+  showScrollMessage(msg);
+});
+
 socket.on('game:result', (data) => {
   if (data.roomId !== pvpArcade.roomId) return;
   state.phase = 'result';
   clearInterval(state.timerInterval);
+  const scrollBanner = document.getElementById('scrollBanner');
+  if (scrollBanner) scrollBanner.remove();
   const myChip = data.newChip[socket.id];
   if (myChip !== undefined) {
     localStorage.setItem('userChip', String(myChip));
@@ -624,18 +650,28 @@ function showResult(data) {
   const myDelta = data.chipDelta[myId] || 0;
   const myNewChip = data.newChip[myId] || 0;
 
-  // 결과표 — 'A'=내 승리 (서버가 각자 기준으로 전송)
+  // 서버에서 보낸 hands 사용 (cards 포함)
+  const myHands = (data.myHands || []).slice().sort((a, b) => b.rank - a.rank);
+  const oppHands = (data.oppHands || []).slice().sort((a, b) => b.rank - a.rank);
+
   let tableHTML = '<div style="margin:12px 0;">';
-  const mySorted = [...pvpArcade.myHands].sort((a, b) => b.rank - a.rank);
-  const oppSorted = [...pvpArcade.opponentHands].sort((a, b) => b.rank - a.rank);
   for (let i = 0; i < 9; i++) {
     const r = data.results[i] || 'draw';
-    const myLabel = mySorted[i] ? mySorted[i].label : '—';
-    const oppLabel = oppSorted[i] ? oppSorted[i].label : '—';
-    const myCls = r === 'A' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
-    const oppCls = r === 'B' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
-    const cr = r === 'A' ? '👑 ' : '', crR = r === 'B' ? ' 👑' : '';
-    tableHTML += `<div style="display:flex;font-size:0.72rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="flex:1;text-align:left;${myCls}">${cr}${myLabel}</span><span style="flex:1;text-align:right;${oppCls}">${oppLabel}${crR}</span></div>`;
+    const my = myHands[i];
+    const opp = oppHands[i];
+    const myLabel = my ? my.label : '—';
+    const oppLabel = opp ? opp.label : '—';
+    const myWin = r === 'A', oppWin = r === 'B';
+    tableHTML += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex;font-size:0.75rem;margin-bottom:2px;">
+        <span style="flex:1;color:${myWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${myWin ? '👑 ' : ''}${myLabel}</span>
+        <span style="flex:1;text-align:right;color:${oppWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${oppLabel}${oppWin ? ' 👑' : ''}</span>
+      </div>
+      <div style="display:flex;font-size:0.6rem;">
+        <span style="flex:1;opacity:0.7;">${pvpCardDisplay(my?.cards)}</span>
+        <span style="flex:1;text-align:right;opacity:0.7;">${pvpCardDisplay(opp?.cards)}</span>
+      </div>
+    </div>`;
   }
   tableHTML += '</div>';
 
@@ -645,7 +681,11 @@ function showResult(data) {
   } else {
     const sign = myDelta >= 0 ? '+' : '';
     const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
-    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">${i18n.t('pvp.arcade.chipDelta')}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};margin:4px 0;">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${myNewChip.toLocaleString()}</div>`;
+    const feeNote = data.tableFee > 0 && myDelta > 0
+      ? ` <span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">(${i18n.t('pvp.arcade.chipDelta')} -${data.tableFee})</span>` : '';
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">${i18n.t('pvp.arcade.chipDelta')}</div>
+      <div style="font-size:1.1rem;font-weight:700;color:${dc};margin:4px 0;">${sign}${myDelta} chip${feeNote}</div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${myNewChip.toLocaleString()}</div>`;
   }
 
   let buttonsHTML = '';
@@ -654,7 +694,9 @@ function showResult(data) {
   } else if (data.canRematch) {
     buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" id="btnRematch" onclick="requestRematch()" style="flex:1;">${i18n.t('pvp.arcade.rematch')}</button><button class="pvp-popup-btn reject" onclick="goToLobby()" style="flex:1;">${i18n.t('pvp.arcade.toLobby')}</button></div><div id="rematchWait" style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:6px;"></div>`;
   } else {
-    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${i18n.t('pvp.arcade.noChip')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
+    const noRematchMsg = data.noRematchReason === 'opp_chip'
+      ? i18n.t('pvp.arcade.noChipOpp') : i18n.t('pvp.arcade.noChipMine');
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${noRematchMsg}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
   }
 
   modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2>${tableHTML}<div style="display:flex;justify-content:center;gap:24px;font-size:0.85rem;margin:8px 0;"><span style="color:var(--gold);">${i18n.t('pvp.arcade.myWins').replace('{n}', data.myWins)}</span><span style="color:rgba(255,255,255,0.5);">${i18n.t('pvp.arcade.oppWins').replace('{n}', data.oppWins)}</span></div>${chipHTML}${buttonsHTML}`;
@@ -666,6 +708,26 @@ function showDisconnectResult() {
   const overlay = document.getElementById('modalOverlay');
   modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:16px 0;">${i18n.t('pvp.arcade.oppLeft')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
   overlay.classList.add('active');
+}
+
+function showScrollMessage(msg) {
+  let banner = document.getElementById('scrollBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'scrollBanner';
+    banner.style.cssText = 'position:fixed;bottom:180px;left:0;width:100%;background:rgba(255,82,82,0.15);border-top:1px solid rgba(255,82,82,0.3);border-bottom:1px solid rgba(255,82,82,0.3);color:#ff5252;font-family:IBM Plex Mono,monospace;font-size:0.8rem;padding:8px 0;overflow:hidden;z-index:50;';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = `<div style="white-space:nowrap;animation:scrollMsg 8s linear infinite;">${msg}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${msg}</div>`;
+}
+
+function pvpCardDisplay(cards) {
+  if (!cards || !cards.length) return '';
+  const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+  return cards.slice().sort((a,b) => b.value - a.value).map(c => {
+    const red = c.suit === '♥' || c.suit === '♦';
+    return `<span style="color:${red ? '#ff6b6b' : '#e0e0e0'}">${VN[c.value]}${c.suit}</span>`;
+  }).join(' ');
 }
 
 function requestRematch() {

@@ -512,17 +512,6 @@ io.on('connection', (socket) => {
       }
     }
 
-    // 양쪽 모두 9패 완성 → 즉시 종료
-    const bothDone = room.players.every(
-      id => room.arcade.hands[id] && room.arcade.hands[id].length >= 9
-    )
-    if (bothDone) {
-      clearTimeout(room.arcade.timer)
-      console.log(`[arcade] 양쪽 9패 완성 → 즉시 종료: roomId=${roomId}`)
-      endArcadeGame(room, 'timeout')
-      return
-    }
-
     // 9패 완성 + 타임어택 체크
     if (hands.length >= 9 && !room.arcade.timeAttack.triggered) {
       const elapsed = Date.now() - room.arcade.startedAt
@@ -541,6 +530,45 @@ io.on('connection', (socket) => {
         })
       }
     }
+  })
+
+  // ─── game:playerDone (플레이어 게임 완료 — 9패 또는 nomoves) ───
+  socket.on('game:playerDone', ({ roomId, reason }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'arcade' || room.status !== 'playing') return
+
+    const entry = lobby.get(socket.id)
+    console.log(`[arcade] 플레이어 완료: ${entry ? entry.username : socket.id}, reason=${reason}, roomId=${roomId}`)
+
+    if (!room.arcade.donePlayers) room.arcade.donePlayers = new Set()
+    room.arcade.donePlayers.add(socket.id)
+
+    // 양쪽 모두 완료 → 즉시 종료
+    if (room.arcade.donePlayers.size >= 2) {
+      clearTimeout(room.arcade.timer)
+      console.log(`[arcade] 양쪽 완료 → 즉시 종료: roomId=${roomId}`)
+      endArcadeGame(room, 'timeout')
+      return
+    }
+
+    // 한쪽만 완료 → 50초로 제한
+    const doneUsername = entry ? entry.username : 'opponent'
+    const elapsed = Date.now() - room.arcade.startedAt
+    const remaining = Math.max(0, 200000 - elapsed)
+    const newRemaining = Math.min(remaining, 50000)
+
+    if (remaining > 50000) {
+      clearTimeout(room.arcade.timer)
+      room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 50000)
+      console.log(`[arcade] 타이머 50초로 재설정: roomId=${roomId}`)
+    }
+
+    io.to(roomId).emit('game:playerDone', {
+      socketId: socket.id,
+      username: doneUsername,
+      reason,
+      newRemaining: Math.floor(newRemaining / 1000)
+    })
   })
 
   // ─── game:end (클라이언트 타이머 종료 알림) ───
@@ -816,6 +844,11 @@ async function endArcadeGame(room, reason, disconnectedId) {
   if (entryB) entryB.chip = chipResult.newChip[socketIdB]
 
   const canRematch = chipResult.newChip[socketIdA] >= 100 && chipResult.newChip[socketIdB] >= 100
+  const tableFee = comparison.winner !== 'draw' ? 1 : 0
+
+  // hands 정렬 (rank 내림차순)
+  const handsA = (room.arcade.hands[socketIdA] || []).slice().sort((a, b) => b.rank - a.rank)
+  const handsB = (room.arcade.hands[socketIdB] || []).slice().sort((a, b) => b.rank - a.rank)
 
   // 양쪽에게 각자 기준으로 결과 전송
   const baseResult = {
@@ -823,10 +856,11 @@ async function endArcadeGame(room, reason, disconnectedId) {
     reason,
     chipDelta: chipResult.delta,
     newChip: chipResult.newChip,
-    canRematch
+    canRematch,
+    tableFee
   }
 
-  // A에게: results 그대로, 'A'=내 승리
+  // A에게
   const sockA = io.sockets.sockets.get(socketIdA)
   if (sockA) {
     sockA.emit('game:result', {
@@ -835,11 +869,14 @@ async function endArcadeGame(room, reason, disconnectedId) {
       myWins: comparison.winsA,
       oppWins: comparison.winsB,
       iWin: comparison.winner === socketIdA,
-      isDraw: comparison.winner === 'draw'
+      isDraw: comparison.winner === 'draw',
+      noRematchReason: canRematch ? null : (chipResult.newChip[socketIdA] < 100 ? 'my_chip' : 'opp_chip'),
+      myHands: handsA,
+      oppHands: handsB
     })
   }
 
-  // B에게: results 뒤집어서 'A'→'me', 'B'→'me' 반전
+  // B에게
   const flippedResults = comparison.results.map(r => r === 'A' ? 'B' : r === 'B' ? 'A' : r)
   const sockB = io.sockets.sockets.get(socketIdB)
   if (sockB) {
@@ -849,7 +886,10 @@ async function endArcadeGame(room, reason, disconnectedId) {
       myWins: comparison.winsB,
       oppWins: comparison.winsA,
       iWin: comparison.winner === socketIdB,
-      isDraw: comparison.winner === 'draw'
+      isDraw: comparison.winner === 'draw',
+      noRematchReason: canRematch ? null : (chipResult.newChip[socketIdB] < 100 ? 'my_chip' : 'opp_chip'),
+      myHands: handsB,
+      oppHands: handsA
     })
   }
 
