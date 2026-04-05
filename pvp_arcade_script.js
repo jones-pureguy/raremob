@@ -89,34 +89,50 @@ const pvpArcade = {
     function handlePvpStart(e) {
       e.stopPropagation();
       Sound.warmup();
-      BGM.init('./audio/Main_Theme.mp3');
-      BGM.start();
-      overlay.classList.add('hiding');
-      setTimeout(() => {
-        overlay.remove();
-        const grid = document.getElementById('gridContainer');
-        if (grid) grid.style.pointerEvents = '';
-      }, 300);
-
       socket.emit('game:start', { roomId: pvpArcade.roomId });
+      newBtn.textContent = i18n.t('pvp.arcade.waiting');
+      newBtn.disabled = true;
     }
 
     newBtn.addEventListener('click', handlePvpStart);
-    overlay.addEventListener('click', handlePvpStart);
   }
 })();
 
 // ─── 소켓 이벤트 수신 ───
 
+// game:waiting — 상대 대기 중
+socket.on('game:waiting', () => {
+  const btn = document.getElementById('startBtn');
+  if (btn) {
+    btn.textContent = i18n.t('pvp.arcade.waiting');
+    btn.disabled = true;
+  }
+});
+
 // game:started — 게임 시작 (서버에서 양쪽에 전송)
 socket.on('game:started', ({ roomId, startedAt }) => {
   if (roomId !== pvpArcade.roomId) return;
   pvpArcade.gameStarted = true;
-  state.phase = 'playing';
 
-  // 서버 startedAt 기준으로 타이머 동기화
+  // 오버레이 닫기
+  const overlay = document.getElementById('startOverlay');
+  if (overlay) {
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.remove();
+      const grid = document.getElementById('gridContainer');
+      if (grid) grid.style.pointerEvents = '';
+    }, 300);
+  }
+
+  // BGM 시작
+  BGM.init('./audio/Main_Theme.mp3');
+  BGM.start();
+
+  // 타이머 시작
+  state.phase = 'playing';
   const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-  const remaining = Math.max(0, TIMER_SECONDS - elapsed);
+  const remaining = Math.max(1, TIMER_SECONDS - elapsed);
   startTimer();
   state.timer = remaining; // startTimer()가 200으로 덮어쓴 것을 재설정
   updateTimerDisplay();

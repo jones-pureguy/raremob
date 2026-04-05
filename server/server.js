@@ -296,6 +296,7 @@ function createRoom(socketIdA, socketIdB, mode) {
       hands: { [socketIdA]: [], [socketIdB]: [] },
       timer: null,
       startedAt: null,
+      readySet: new Set(),
       timeAttack: { triggered: false, triggeredBy: null, deadline: null }
     }
   }
@@ -464,20 +465,29 @@ io.on('connection', (socket) => {
     }
   })
 
-  // ─── game:start (ARCADE BATTLE 게임 시작) ───
+  // ─── game:start (ARCADE BATTLE 게임 시작 — 양쪽 ready 시 시작) ───
   socket.on('game:start', ({ roomId }) => {
     const room = gameRooms.get(roomId)
     if (!room || room.mode !== 'arcade') return
     if (room.status === 'playing') return
 
-    console.log(`[arcade] 게임 시작: roomId=${roomId}`)
-    room.status = 'playing'
-    room.arcade.startedAt = Date.now()
+    room.arcade.readySet.add(socket.id)
+    console.log(`[arcade] ready: ${socket.id}, readyCount=${room.arcade.readySet.size}/2, roomId=${roomId}`)
 
-    io.to(roomId).emit('game:started', { roomId, startedAt: room.arcade.startedAt })
+    if (room.arcade.readySet.size >= 2) {
+      // 양쪽 모두 ready → 게임 시작
+      console.log(`[arcade] 게임 시작: roomId=${roomId}`)
+      room.status = 'playing'
+      room.arcade.startedAt = Date.now()
 
-    // 200초 타이머
-    room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 200000)
+      io.to(roomId).emit('game:started', { roomId, startedAt: room.arcade.startedAt })
+
+      // 200초 타이머
+      room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 200000)
+    } else {
+      // 한쪽만 ready → 대기 알림
+      socket.emit('game:waiting', { waiting: true })
+    }
   })
 
   // ─── game:handComplete (패 완성 알림) ───
