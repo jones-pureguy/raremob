@@ -759,10 +759,23 @@ socket.on('disconnect', (reason) => {
 socket.io.on('reconnect', () => {
   console.log('[pvp] 소켓 재연결 성공');
   clearTimeout(pvpArcade.disconnectTimeout);
-  document.getElementById('modalOverlay').classList.remove('active');
+
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) overlay.classList.remove('active');
+
   if (pvpArcade.gameStarted) {
+    // 게임 중이었으면 상태 초기화 후 로비로 (goToLobby 호출 안 함)
+    pvpArcade.gameStarted = false;
+    pvpArcade.roomId = null;
+    pvpArcade.opponent = null;
+    pvpArcade.myHands = [];
+    pvpArcade.opponentHands = [];
+    state.phase = 'idle';
+    clearInterval(state.timerInterval);
+    showView('lobby');
+    joinLobby();  // lobby:join만 발송
+    renderMatchButtons('idle');
     showToast('서버와 재연결되었습니다.');
-    setTimeout(() => goToLobby(), 1500);
   }
 });
 

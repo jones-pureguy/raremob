@@ -295,13 +295,25 @@ function createRoom(socketIdA, socketIdB, mode) {
   entryB.status = 'playing'
   entryB.mode = mode
 
-  // 방 등록
+  // 방 등록 (플레이어 정보를 방에 스냅샷 — lobby entry 삭제 대비)
   const roomData = {
     roomId,
     mode,
     players: [socketIdA, socketIdB],
     status: mode === 'arcade' ? 'waiting_start' : 'betting_pre',
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    playerInfo: {
+      [socketIdA]: {
+        playerId: entryA.playerId,
+        username: entryA.username,
+        chip: entryA.chip
+      },
+      [socketIdB]: {
+        playerId: entryB.playerId,
+        username: entryB.username,
+        chip: entryB.chip
+      }
+    }
   }
 
   // ARCADE BATTLE 초기 데이터
@@ -402,6 +414,15 @@ io.on('connection', (socket) => {
       pendingNotifications.delete(playerId)
       socket.emit('pvp:pendingNotification', pending)
       console.log(`[pvp] pending 알림 전송: ${playerId}`)
+    }
+
+    // 해당 플레이어가 참여 중인 방이 있으면 playerInfo chip 업데이트
+    for (const [, room] of gameRooms) {
+      for (const [sid, info] of Object.entries(room.playerInfo || {})) {
+        if (info.playerId === playerId) {
+          info.chip = chip
+        }
+      }
     }
 
     console.log(`[pvp] 로비 진입: ${username} (${socket.id}), chip=${chip}`)
@@ -922,8 +943,17 @@ async function endArcadeGame(room, reason, disconnectedId) {
   clearTimeout(room.arcade.timer)
 
   const [socketIdA, socketIdB] = room.players
-  const entryA = lobby.get(socketIdA)
-  const entryB = lobby.get(socketIdB)
+
+  // lobby entry 대신 room.playerInfo 우선 사용 (disconnect 시 entry 삭제 대비)
+  const infoA = room.playerInfo?.[socketIdA] ||
+    lobby.get(socketIdA) || { playerId: null, username: '???', chip: 0 }
+  const infoB = room.playerInfo?.[socketIdB] ||
+    lobby.get(socketIdB) || { playerId: null, username: '???', chip: 0 }
+
+  const playerIdA = infoA.playerId
+  const playerIdB = infoB.playerId
+  const chipA = infoA.chip
+  const chipB = infoB.chip
 
   console.log(`[arcade] 게임 종료: roomId=${room.roomId}, reason=${reason}`)
 
@@ -946,16 +976,10 @@ async function endArcadeGame(room, reason, disconnectedId) {
     )
   }
 
-  const chipA = entryA ? entryA.chip : 0
-  const chipB = entryB ? entryB.chip : 0
   chipResult = calculateArcadeChips(
     comparison.winsA, comparison.winsB,
     chipA, chipB, socketIdA, socketIdB
   )
-
-  // DB 업데이트
-  const playerIdA = entryA ? entryA.playerId : null
-  const playerIdB = entryB ? entryB.playerId : null
 
   if (comparison.winner !== 'draw') {
     const winnerId = comparison.winner
@@ -993,30 +1017,29 @@ async function endArcadeGame(room, reason, disconnectedId) {
 
   // ─── disconnect 시 pending 알림 저장 ───
   if (reason === 'disconnect' && disconnectedId) {
-    const disconnectedEntry = lobby.get(disconnectedId)
-    if (disconnectedEntry && disconnectedEntry.playerId) {
-      pendingNotifications.set(disconnectedEntry.playerId, {
+    const disconnectedInfo = disconnectedId === socketIdA ? infoA : infoB
+    if (disconnectedInfo && disconnectedInfo.playerId) {
+      pendingNotifications.set(disconnectedInfo.playerId, {
         type: 'pvp_disconnect_lose',
         chipDelta: chipResult.delta[disconnectedId],
         newChip: chipResult.newChip[disconnectedId],
         reason: 'arcade_disconnect',
         createdAt: Date.now()
       })
-      console.log(`[pvp] pending 알림 저장: ${disconnectedEntry.playerId}`)
+      console.log(`[pvp] pending 알림 저장: ${disconnectedInfo.playerId}`)
     }
   }
 
   // ─── PvP 전적 업데이트 ───
   try {
     if (reason === 'disconnect' && disconnectedId) {
-      const disconnectedEntry = lobby.get(disconnectedId) || { playerId: null }
-      const winnerId = room.players.find(id => id !== disconnectedId)
-      const winnerEntry = lobby.get(winnerId) || { playerId: null }
+      const disconnectedInfo = disconnectedId === socketIdA ? infoA : infoB
+      const winnerInfo = disconnectedId === socketIdA ? infoB : infoA
       await Promise.all([
-        updatePvpStat(winnerEntry.playerId, 'arcade_match'),
-        updatePvpStat(winnerEntry.playerId, 'arcade_win'),
-        updatePvpStat(disconnectedEntry.playerId, 'arcade_match'),
-        updatePvpStat(disconnectedEntry.playerId, 'arcade_disconnect')
+        updatePvpStat(winnerInfo.playerId, 'arcade_match'),
+        updatePvpStat(winnerInfo.playerId, 'arcade_win'),
+        updatePvpStat(disconnectedInfo.playerId, 'arcade_match'),
+        updatePvpStat(disconnectedInfo.playerId, 'arcade_disconnect')
       ])
     } else if (comparison.winner === 'draw') {
       await Promise.all([
@@ -1040,7 +1063,9 @@ async function endArcadeGame(room, reason, disconnectedId) {
     console.log(`[arcade] 전적 업데이트 실패:`, e)
   }
 
-  // lobby 칩 업데이트
+  // lobby 칩 업데이트 (살아있는 경우에만)
+  const entryA = lobby.get(socketIdA)
+  const entryB = lobby.get(socketIdB)
   if (entryA) entryA.chip = chipResult.newChip[socketIdA]
   if (entryB) entryB.chip = chipResult.newChip[socketIdB]
 
