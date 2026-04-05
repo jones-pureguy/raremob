@@ -247,8 +247,12 @@
 
     <!-- Row 3: VS MODE -->
     <div class="menu-row">
-      <button class="m-btn btn-medium btn-vs" onclick="enterPvP()">
-        vs MODE
+      <button class="m-btn btn-third btn-vs" onclick="enterArcadePvP()">
+        ARCADE<br>PvP
+      </button>
+      <button class="m-btn btn-third btn-vs" disabled style="opacity:0.5;">
+        DUEL<br>PvP
+        <span class="coming-soon">준비 중</span>
       </button>
     </div>
 
@@ -341,13 +345,13 @@
   }
 
   // ─── PvP 입장 ───
-  function enterPvP() {
+  function enterArcadePvP() {
     const chip = parseInt(localStorage.getItem('userChip') || '0');
     if (chip < 100) {
       alert(i18n.t('pvp.lobby.chipInsufficient'));
       return;
     }
-    location.href = 'pvp_lobby.html';
+    location.href = 'pvp_arcade_lobby.html';
   }
 
   // ─── 칩 복구 팝업 (index.html에서 복구된 경우 표시) ───

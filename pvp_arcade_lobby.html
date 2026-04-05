@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DragON POKER - ARCADE PvP</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── 로비 ── */
+  .lobby-container { width:100%; max-width:480px; margin:0 auto; padding:12px 16px; position:relative; z-index:1; }
+  .lobby-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gold); font-weight:700; text-align:center; margin-bottom:12px; }
+  .match-buttons { display:flex; gap:8px; margin-bottom:16px; }
+  .match-btn { flex:1; padding:14px 8px; border-radius:10px; border:1.5px solid rgba(201,168,76,0.3); background:rgba(201,168,76,0.1); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:700; letter-spacing:0.05em; cursor:pointer; transition:all 0.15s; text-align:center; }
+  .match-btn:hover { background:rgba(201,168,76,0.2); }
+  .match-btn:active { transform:scale(0.97); }
+  .match-btn.active { background:rgba(255,82,82,0.15); border-color:rgba(255,82,82,0.4); color:#ff5252; animation:matchPulse 1.5s ease-in-out infinite; }
+  @keyframes matchPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+  .lobby-section-title { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(255,255,255,0.35); letter-spacing:0.1em; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); margin-top:8px; }
+  .lobby-user { display:flex; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .lobby-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .lobby-status-dot.waiting { background:#4CAF50; }
+  .lobby-status-dot.matching { background:#FFC107; }
+  .lobby-status-dot.playing { background:#ff5252; }
+  .lobby-username { flex:1; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:#e0e0e0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lobby-chip { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--gold); display:flex; align-items:center; gap:3px; flex-shrink:0; }
+  .lobby-chip img { width:14px; height:14px; object-fit:contain; }
+  .lobby-challenge-btn { padding:4px 10px; border-radius:6px; border:1px solid rgba(201,168,76,0.3); background:rgba(201,168,76,0.12); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:600; cursor:pointer; flex-shrink:0; }
+  .lobby-challenge-btn:hover { background:rgba(201,168,76,0.25); }
+  .lobby-challenge-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .lobby-empty { text-align:center; color:rgba(255,255,255,0.2); font-size:0.8rem; padding:24px 0; }
+  /* ── 팝업 ── */
+  .pvp-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; justify-content:center; align-items:center; }
+  .pvp-overlay.active { display:flex; }
+  .pvp-popup { background:linear-gradient(145deg,#1a3a22,#0d2818); border:2px solid var(--gold); border-radius:16px; padding:24px 20px; max-width:340px; width:90%; text-align:center; box-shadow:0 0 40px rgba(201,168,76,0.2); }
+  .pvp-popup-title { font-family:'Playfair Display',serif; color:var(--gold); font-size:1.1rem; margin-bottom:14px; }
+  .pvp-popup-btn { width:100%; padding:12px; margin-top:6px; border-radius:8px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.08); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .pvp-popup-btn:hover { background:rgba(201,168,76,0.15); }
+  .pvp-popup-btn.reject { color:rgba(255,255,255,0.5); border-color:rgba(255,255,255,0.15); }
+  .pvp-popup-countdown { color:rgba(255,255,255,0.4); font-size:0.75rem; margin-top:8px; }
+  /* ── 게임 ── */
+  .pvp-opponent-bar { display:flex; align-items:center; justify-content:space-between; padding:4px 16px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:rgba(255,255,255,0.6); max-width:500px; width:100%; margin:0 auto; }
+  .pvp-opp-name { color:var(--gold); font-weight:700; }
+  .pvp-opp-chip { display:flex; align-items:center; gap:3px; }
+  .pvp-opp-chip img { width:14px; height:14px; }
+  .pvp-opp-hands { font-size:0.7rem; color:rgba(255,255,255,0.4); }
+  .pvp-scoreboard { max-width:500px; width:100%; margin:4px auto; padding:0 16px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; }
+  .pvp-sb-header { display:flex; justify-content:space-between; color:rgba(255,255,255,0.35); padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:0.65rem; letter-spacing:0.05em; }
+  .pvp-sb-row { display:flex; align-items:center; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.03); min-height:18px; }
+  .pvp-sb-cell { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pvp-sb-cell.left { text-align:left; color:rgba(255,255,255,0.6); }
+  .pvp-sb-cell.right { text-align:right; color:rgba(255,255,255,0.6); }
+  .pvp-sb-cell.vs { flex:0; width:20px; text-align:center; color:rgba(255,255,255,0.2); font-size:0.6rem; }
+  .pvp-sb-cell .win { color:var(--gold); }
+  .time-attack-banner { display:none; position:fixed; top:0; left:0; right:0; background:rgba(255,50,50,0.9); color:white; text-align:center; padding:8px; font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:700; z-index:50; animation:bannerPulse 0.5s ease-in-out 3; }
+  .time-attack-banner.active { display:block; }
+  @keyframes bannerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+  .timer-num.time-attack { color:#ff3333 !important; }
+  .timer-ring-fg.time-attack { stroke:#ff3333 !important; }
+</style>
+</head>
+<body class="game-page">
+<div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
+
+<div class="back-fixed"><a href="mode_select.html" id="backLink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
+
+<div class="header">
+  <div id="global-header"></div>
+</div>
+
+<!-- ==================== VIEW: LOBBY ==================== -->
+<div id="view-lobby">
+  <div class="lobby-container">
+    <div class="lobby-title" id="lobbyTitle">ARCADE PvP</div>
+    <div class="match-buttons" id="matchButtons"></div>
+    <div id="lobbyList"></div>
+  </div>
+
+  <!-- 신청 수신 팝업 -->
+  <div class="pvp-overlay" id="receivedOverlay">
+    <div class="pvp-popup">
+      <div class="pvp-popup-title" id="receivedTitle"></div>
+      <button class="pvp-popup-btn" id="receivedAcceptBtn" onclick="acceptChallenge()"></button>
+      <button class="pvp-popup-btn reject" id="receivedRejectBtn" onclick="rejectChallenge()"></button>
+      <div class="pvp-popup-countdown" id="receivedCountdown"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VIEW: GAME ==================== -->
+<div id="view-game" style="display:none">
+  <div class="pvp-opponent-bar">
+    <div>VS <span class="pvp-opp-name" id="oppName"></span></div>
+    <div class="pvp-opp-chip"><img src="./images/chip.png" alt="chip"><span id="oppChip">0</span></div>
+    <div class="pvp-opp-hands" id="oppHandCount">0/9</div>
+  </div>
+
+  <div class="pvp-scoreboard" id="scoreboard"></div>
+
+  <div class="status-bar">
+    <div class="timer-wrap">
+      <svg class="timer-ring" viewBox="0 0 40 40">
+        <circle class="timer-ring-bg" cx="20" cy="20" r="16" />
+        <circle class="timer-ring-fg" id="timerRing" cx="20" cy="20" r="16"
+          stroke-dasharray="100.53" stroke-dashoffset="0"
+          transform="rotate(-90 20 20)" />
+      </svg>
+      <div class="timer-num" id="timerNum">200</div>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--gold);font-weight:700;letter-spacing:0.08em;">ARCADE BATTLE</div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button class="qr-btn">?</button>
+    </div>
+  </div>
+
+  <div class="grid-container" id="gridContainer">
+    <div class="grid" id="grid"></div>
+    <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+    <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+  </div>
+
+  <div class="hand-preview" id="handPreview"></div>
+
+  <div class="hand-panel">
+    <div class="hand-panel-title">COLLECTED <span>[ <span id="handCount">0</span> / 9 ]</span></div>
+    <div class="hand-slots" id="handSlots"></div>
+  </div>
+
+  <div class="removed-panel">
+    <div class="removed-panel-title">REMOVED</div>
+    <div class="removed-cards" id="removedCards"></div>
+  </div>
+
+  <div class="time-attack-banner" id="timeAttackBanner"></div>
+
+  <!-- START 오버레이 -->
+  <div class="start-overlay" id="startOverlay" style="display:none">
+    <div class="start-box">
+      <div class="start-title" id="pvpStartTitle">ARCADE BATTLE</div>
+      <div class="start-subtitle" id="pvpStartSubtitle"></div>
+      <button class="start-btn" id="startBtn">▶ START</button>
+    </div>
+  </div>
+</div>
+
+<!-- 공통 모달 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="qr-overlay" id="qrOverlay" style="display:none">
+  <div class="qr-modal" onclick="event.stopPropagation()">
+    <div class="qr-scroll"><div id="qrHandList"></div></div>
+  </div>
+</div>
+
+<!-- script.js 호환용 더미 -->
+<div style="display:none">
+  <button id="restartBtn"></button>
+  <div id="currentScore"></div>
+  <div id="highScoreDisplay"></div>
+  <div id="retryLabel"></div>
+  <div id="leaderboardOverlay"><div id="leaderboardModal"></div></div>
+  <button id="btnSaveReplay"></button>
+  <div id="allUserTopScoreRow"></div>
+  <div id="usernameDisplay"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script src="header.js"></script>
+<script src="sound.js"></script>
+<script src="scorepolicy.js"></script>
+<script src="quickref.js"></script>
+<script>
+  window._pvpMode = true;
+  function renderCurrencyBar() { _updateHeaderValues(true); }
+  function deductGoldLocal() { return true; }
+  function updateRestartButtonState() {}
+  async function syncGoldToDB() {}
+</script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
+<script src="pvp_utils.js"></script>
+<script>
+// =============================================
+// 뷰 전환
+// =============================================
+function showView(name) {
+  document.getElementById('view-lobby').style.display = name === 'lobby' ? '' : 'none';
+  document.getElementById('view-game').style.display = name === 'game' ? '' : 'none';
+  document.getElementById('backLink').href = name === 'lobby' ? 'mode_select.html' : '#';
+  if (name === 'lobby') {
+    document.getElementById('backLink').onclick = null;
+  } else {
+    document.getElementById('backLink').onclick = function(e) { e.preventDefault(); goToLobby(); };
+  }
+}
+
+// =============================================
+// 공통 상태
+// =============================================
+let lobbyUsers = [];
+let matchingMode = null;
+let challengeTarget = null;
+let pendingChallenge = null;
+let challengeTimer = null;
+let heartbeatInterval = null;
+let receivedCountdownInterval = null;
+
+const pvpArcade = {
+  roomId: null,
+  opponent: null,
+  myHands: [],
+  opponentHands: [],
+  gameStarted: false,
+  rematchRequested: false,
+  rematchTimer: null
+};
+
+// =============================================
+// 초기화
+// =============================================
+let scriptLoaded = false;
+
+(async () => {
+  await i18n.init();
+  initHeader();
+  await ScorePolicy.load();
+
+  document.getElementById('lobbyTitle').textContent = i18n.t('pvp.lobby.title');
+  renderMatchButtons('idle', null);
+
+  // script.js 로드 (게임 엔진)
+  await new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'script.js';
+    s.onload = () => { scriptLoaded = true; resolve(); };
+    document.body.appendChild(s);
+  });
+
+  // 로비 진입
+  if (socket.connected) joinLobby();
+  else socket.on('connect', joinLobby);
+})();
+
+// =============================================
+// 로비 로직
+// =============================================
+function joinLobby() {
+  const playerId = localStorage.getItem('poker_player_id');
+  const username = localStorage.getItem('poker_username');
+  const chip = parseInt(localStorage.getItem('userChip') || '0');
+  socket.emit('lobby:join', { playerId, username, chip });
+  clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => socket.emit('heartbeat'), 3000);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── 로비 소켓 이벤트 ───
+socket.on('lobby:list', (list) => { lobbyUsers = list; renderLobby(); });
+socket.on('lobby:userJoined', (user) => { lobbyUsers.push(user); renderLobby(); });
+socket.on('lobby:userLeft', (socketId) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== socketId); renderLobby(); });
+socket.on('lobby:statusChanged', ({ socketId, status }) => {
+  const user = lobbyUsers.find(u => u.socketId === socketId);
+  if (user) user.status = status;
+  renderLobby();
+});
+
+socket.on('challenge:received', ({ fromSocketId, fromUsername, fromChip, mode }) => {
+  if (mode !== 'arcade') return;
+  pendingChallenge = { fromSocketId, fromUsername, fromChip, mode };
+  showReceivedPopup();
+});
+socket.on('challenge:rejected', () => { showToast(i18n.t('pvp.lobby.rejected')); });
+socket.on('challenge:failed', () => { showToast(i18n.t('pvp.lobby.unavailable')); });
+
+// ─── room:created → 게임 뷰 전환 ───
+socket.on('room:created', ({ roomId, mode, opponent }) => {
+  if (mode !== 'arcade') return;
+  matchingMode = null;
+  renderMatchButtons('idle', null);
+  pvpArcade.roomId = roomId;
+  pvpArcade.opponent = opponent;
+  pvpArcade.myHands = [];
+  pvpArcade.opponentHands = [];
+  pvpArcade.gameStarted = false;
+  pvpArcade.rematchRequested = false;
+  clearTimeout(pvpArcade.rematchTimer);
+  showView('game');
+  setupGameUI();
+});
+
+function renderLobby() {
+  const container = document.getElementById('lobbyList');
+  const myId = socket.id;
+  const others = lobbyUsers.filter(u => u.socketId !== myId);
+  const waiting = others.filter(u => u.status === 'waiting');
+  const matching = others.filter(u => u.status === 'matching');
+  const playing = others.filter(u => u.status === 'playing');
+
+  let html = `<div class="lobby-section-title">── ${i18n.t('pvp.lobby.waiting')} (${waiting.length}) ──</div>`;
+  if (waiting.length === 0 && matching.length === 0 && playing.length === 0) {
+    html += `<div class="lobby-empty">...</div>`;
+  }
+  waiting.forEach(u => {
+    const canChallenge = !matchingMode && u.chip >= 100;
+    html += renderUserRow(u, 'waiting', canChallenge);
+  });
+  if (matching.length > 0) {
+    html += `<div class="lobby-section-title">── ${i18n.t('pvp.lobby.matching')} (${matching.length}) ──</div>`;
+    matching.forEach(u => html += renderUserRow(u, 'matching', false));
+  }
+  if (playing.length > 0) {
+    html += `<div class="lobby-section-title">── ${i18n.t('pvp.lobby.playing')} (${playing.length}) ──</div>`;
+    playing.forEach(u => html += renderUserRow(u, 'playing', false));
+  }
+  container.innerHTML = html;
+}
+
+function renderUserRow(user, status, showBtn) {
+  const chipHtml = `<div class="lobby-chip"><img src="./images/chip.png" alt="chip" onerror="this.style.display='none'">${user.chip.toLocaleString()}</div>`;
+  const btnHtml = showBtn
+    ? `<button class="lobby-challenge-btn" onclick="sendDirectChallenge('${user.socketId}')">${i18n.t('pvp.lobby.challenge')}</button>`
+    : '';
+  return `<div class="lobby-user"><div class="lobby-status-dot ${status}"></div><div class="lobby-username">${user.username}</div>${chipHtml}${btnHtml}</div>`;
+}
+
+function renderMatchButtons(status) {
+  const container = document.getElementById('matchButtons');
+  if (status === 'matching') {
+    container.innerHTML = `<button class="match-btn active" onclick="toggleMatch()">${i18n.t('pvp.lobby.cancelMatch')}</button>`;
+  } else {
+    container.innerHTML = `<button class="match-btn" onclick="toggleMatch()">${i18n.t('pvp.lobby.arcadeMatch')}</button>`;
+  }
+}
+
+function toggleMatch() {
+  if (matchingMode) {
+    socket.emit('match:cancel');
+    matchingMode = null;
+    renderMatchButtons('idle');
+  } else {
+    matchingMode = 'arcade';
+    socket.emit('match:start', { mode: 'arcade' });
+    renderMatchButtons('matching');
+  }
+  renderLobby();
+}
+
+// 직접 신청 (모드 선택 없이 바로 arcade)
+function sendDirectChallenge(targetId) {
+  if (matchingMode) return;
+  socket.emit('challenge:send', { targetSocketId: targetId, mode: 'arcade' });
+  clearTimeout(challengeTimer);
+  challengeTimer = setTimeout(() => showToast(i18n.t('pvp.lobby.rejected')), 7000);
+}
+
+function showReceivedPopup() {
+  if (!pendingChallenge) return;
+  const { fromUsername, fromChip } = pendingChallenge;
+  const modeName = i18n.t('pvp.lobby.arcadeBattle');
+  document.getElementById('receivedTitle').textContent =
+    i18n.t('pvp.lobby.challengeFrom').replace('{name}', fromUsername).replace('{chip}', fromChip.toLocaleString()).replace('{mode}', modeName);
+  document.getElementById('receivedAcceptBtn').textContent = i18n.t('pvp.lobby.accept');
+  document.getElementById('receivedRejectBtn').textContent = i18n.t('pvp.lobby.reject');
+  let remaining = 7;
+  document.getElementById('receivedCountdown').textContent = `${remaining}s`;
+  document.getElementById('receivedOverlay').classList.add('active');
+  clearInterval(receivedCountdownInterval);
+  receivedCountdownInterval = setInterval(() => {
+    remaining--;
+    document.getElementById('receivedCountdown').textContent = `${remaining}s`;
+    if (remaining <= 0) { clearInterval(receivedCountdownInterval); rejectChallenge(); }
+  }, 1000);
+}
+
+function acceptChallenge() {
+  if (!pendingChallenge) return;
+  clearInterval(receivedCountdownInterval);
+  socket.emit('challenge:accept', { fromSocketId: pendingChallenge.fromSocketId, mode: 'arcade' });
+  document.getElementById('receivedOverlay').classList.remove('active');
+  pendingChallenge = null;
+}
+
+function rejectChallenge() {
+  if (!pendingChallenge) return;
+  clearInterval(receivedCountdownInterval);
+  socket.emit('challenge:reject', { fromSocketId: pendingChallenge.fromSocketId });
+  document.getElementById('receivedOverlay').classList.remove('active');
+  pendingChallenge = null;
+}
+
+// =============================================
+// 게임 로직
+// =============================================
+
+function setupGameUI() {
+  // 상대 정보
+  document.getElementById('oppName').textContent = pvpArcade.opponent.username;
+  document.getElementById('oppChip').textContent = pvpArcade.opponent.chip.toLocaleString();
+  document.getElementById('oppHandCount').textContent = '0/9';
+
+  // START 오버레이
+  document.getElementById('pvpStartTitle').textContent = i18n.t('pvp.arcade.title');
+  document.getElementById('pvpStartSubtitle').textContent =
+    i18n.t('pvp.arcade.vs').replace('{name}', pvpArcade.opponent.username);
+  const overlay = document.getElementById('startOverlay');
+  overlay.style.display = '';
+  overlay.classList.remove('hiding');
+  const startBtn = document.getElementById('startBtn');
+  startBtn.textContent = '▶ START';
+  startBtn.disabled = false;
+
+  // 점수판
+  renderScoreboard();
+
+  // 그리드 초기화
+  clearInterval(state.timerInterval);
+  initState();
+  initGrid();
+  renderGrid();
+  updateHandPanel();
+  renderRemovedCards();
+
+  // 타이머 리셋
+  document.getElementById('timerNum').classList.remove('time-attack');
+  document.getElementById('timerRing').classList.remove('time-attack');
+  document.getElementById('timerNum').textContent = '200';
+
+  // 모달 닫기
+  document.getElementById('modalOverlay').classList.remove('active');
+
+  // 그리드 터치 비활성화 (START 전)
+  const grid = document.getElementById('gridContainer');
+  if (grid) grid.style.pointerEvents = 'none';
+
+  // endGame 오버라이드
+  window.endGame = function(reason) {
+    if (pvpArcade.gameStarted && reason !== '_pvp_result') {
+      state.phase = 'gameover';
+      clearInterval(state.timerInterval);
+      socket.emit('game:end', { roomId: pvpArcade.roomId });
+    }
+  };
+
+  // finalizePath 래핑
+  if (!window._origFinalizePath) window._origFinalizePath = window.finalizePath;
+  window.finalizePath = function() {
+    const prevCount = state.hands.length;
+    window._origFinalizePath.call(this);
+    const newCount = state.hands.length;
+    if (newCount > prevCount) {
+      const newHand = state.hands[state.hands.length - 1];
+      const evalResult = evaluateHand(newHand.cards);
+      const sortedCards = [...newHand.cards].sort((a, b) => b.value - a.value);
+      const topSuit = sortedCards[0].suit;
+
+      pvpArcade.myHands = state.hands.map(h => {
+        const ev = evaluateHand(h.cards);
+        const sc = [...h.cards].sort((a, b) => b.value - a.value);
+        return { rank: ev.rank, label: ev.label, suit: sc[0].suit,
+                 values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal,
+                 secondaryVal: ev.secondaryVal, kickers: ev.kickers, cards: h.cards };
+      }).sort((a, b) => b.rank - a.rank);
+
+      renderScoreboard();
+      socket.emit('game:handComplete', {
+        roomId: pvpArcade.roomId,
+        hand: { rank: evalResult.rank, label: evalResult.label, suit: topSuit }
+      });
+    }
+  };
+
+  // START 버튼 핸들러
+  const newBtn = startBtn.cloneNode(true);
+  startBtn.parentNode.replaceChild(newBtn, startBtn);
+  newBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    Sound.warmup();
+    socket.emit('game:start', { roomId: pvpArcade.roomId });
+    newBtn.textContent = i18n.t('pvp.arcade.waiting');
+    newBtn.disabled = true;
+  });
+}
+
+// ─── 게임 소켓 이벤트 ───
+
+socket.on('game:waiting', () => {
+  const btn = document.getElementById('startBtn');
+  if (btn) { btn.textContent = i18n.t('pvp.arcade.waiting'); btn.disabled = true; }
+});
+
+socket.on('game:started', ({ roomId, startedAt }) => {
+  if (roomId !== pvpArcade.roomId) return;
+  pvpArcade.gameStarted = true;
+
+  const overlay = document.getElementById('startOverlay');
+  if (overlay) {
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.classList.remove('hiding');
+      const grid = document.getElementById('gridContainer');
+      if (grid) grid.style.pointerEvents = '';
+    }, 300);
+  }
+
+  BGM.init('./audio/Main_Theme.mp3');
+  BGM.start();
+
+  state.phase = 'playing';
+  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  const remaining = Math.max(1, TIMER_SECONDS - elapsed);
+  startTimer();
+  state.timer = remaining;
+  updateTimerDisplay();
+});
+
+socket.on('opponent:handComplete', ({ hands }) => {
+  console.log('[pvp] 상대 패 수신:', hands.length);
+  pvpArcade.opponentHands = hands;
+  const el = document.getElementById('oppHandCount');
+  if (el) el.textContent = `${hands.length}/9`;
+  renderScoreboard();
+});
+
+socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
+  const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+  clearInterval(state.timerInterval);
+  state.timer = remaining;
+  updateTimerDisplay();
+  document.getElementById('timerNum').classList.add('time-attack');
+  document.getElementById('timerRing').classList.add('time-attack');
+  state.timerInterval = setInterval(() => {
+    if (state.phase !== 'playing') return;
+    state.timer--;
+    updateTimerDisplay();
+    if (state.timer <= 0) socket.emit('game:end', { roomId: pvpArcade.roomId });
+  }, 1000);
+  const banner = document.getElementById('timeAttackBanner');
+  banner.textContent = `${i18n.t('pvp.arcade.timeAttack')} ${remaining}s`;
+  banner.classList.add('active');
+  setTimeout(() => banner.classList.remove('active'), 3000);
+});
+
+socket.on('game:result', (data) => {
+  if (data.roomId !== pvpArcade.roomId) return;
+  state.phase = 'result';
+  clearInterval(state.timerInterval);
+  const myChip = data.newChip[socket.id];
+  if (myChip !== undefined) {
+    localStorage.setItem('userChip', String(myChip));
+    window.dispatchEvent(new Event('chipUpdated'));
+  }
+  showResult(data);
+});
+
+socket.on('room:opponentDisconnected', () => {
+  if (document.getElementById('view-game').style.display === 'none') return;
+  state.phase = 'result';
+  clearInterval(state.timerInterval);
+  showDisconnectResult();
+});
+
+socket.on('rematch:requested', () => { /* 서버가 양쪽 요청 시 자동 처리 */ });
+socket.on('rematch:declined', () => {
+  showToast(i18n.t('pvp.arcade.rematchDeclined'));
+  clearTimeout(pvpArcade.rematchTimer);
+  const w = document.getElementById('rematchWait'); if (w) w.textContent = '';
+  const b = document.getElementById('btnRematch'); if (b) b.style.display = 'none';
+});
+
+// ─── 점수판 ───
+function renderScoreboard() {
+  const container = document.getElementById('scoreboard');
+  if (!container) return;
+  const myName = localStorage.getItem('poker_username') || 'ME';
+  const oppName = pvpArcade.opponent ? pvpArcade.opponent.username : 'OPP';
+  let html = `<div class="pvp-sb-header"><span class="pvp-sb-cell left">${myName}</span><span class="pvp-sb-cell vs"></span><span class="pvp-sb-cell right">${oppName}</span></div>`;
+  const mySorted = [...pvpArcade.myHands].sort((a, b) => b.rank - a.rank);
+  const oppSorted = [...pvpArcade.opponentHands].sort((a, b) => b.rank - a.rank);
+  for (let i = 0; i < 9; i++) {
+    const my = mySorted[i], opp = oppSorted[i];
+    let myText = '—', oppText = '—', myClass = '', oppClass = '', vsIcon = '';
+    if (my) myText = my.label;
+    if (opp) oppText = opp.label;
+    if (my && opp) {
+      if (my.rank > opp.rank) { myClass = 'win'; vsIcon = '👑'; }
+      else if (opp.rank > my.rank) { oppClass = 'win'; vsIcon = '👑'; }
+      else { vsIcon = '?'; }
+    } else if (my && !opp) { myClass = 'win'; }
+    else if (!my && opp) { oppClass = 'win'; }
+    const lc = myClass === 'win' ? '👑 ' : '', rc = oppClass === 'win' ? ' 👑' : '';
+    html += `<div class="pvp-sb-row"><span class="pvp-sb-cell left"><span class="${myClass}">${lc}${myText}</span></span><span class="pvp-sb-cell vs">${vsIcon}</span><span class="pvp-sb-cell right"><span class="${oppClass}">${oppText}${rc}</span></span></div>`;
+  }
+  container.innerHTML = html;
+}
+
+// ─── 결과 / 재대결 ───
+function showResult(data) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const myId = socket.id;
+  const isDraw = data.winner === 'draw';
+  const myDelta = data.chipDelta[myId] || 0;
+  const myNewChip = data.newChip[myId] || 0;
+  let tableHTML = '<div style="margin:12px 0;">';
+  const mySorted = [...pvpArcade.myHands].sort((a, b) => b.rank - a.rank);
+  const oppSorted = [...pvpArcade.opponentHands].sort((a, b) => b.rank - a.rank);
+  for (let i = 0; i < 9; i++) {
+    const r = data.results[i] || 'draw';
+    const myLabel = mySorted[i] ? mySorted[i].label : '—';
+    const oppLabel = oppSorted[i] ? oppSorted[i].label : '—';
+    const myCls = r === 'A' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
+    const oppCls = r === 'B' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
+    const cr = r === 'A' ? '👑 ' : '', crR = r === 'B' ? ' 👑' : '';
+    tableHTML += `<div style="display:flex;font-size:0.72rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="flex:1;text-align:left;${myCls}">${cr}${myLabel}</span><span style="flex:1;text-align:right;${oppCls}">${oppLabel}${crR}</span></div>`;
+  }
+  tableHTML += '</div>';
+  let chipHTML = '';
+  if (isDraw) {
+    chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">${i18n.t('pvp.arcade.draw')}</div>`;
+  } else {
+    const sign = myDelta >= 0 ? '+' : '';
+    const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">${i18n.t('pvp.arcade.chipDelta')}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};margin:4px 0;">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${myNewChip.toLocaleString()}</div>`;
+  }
+  let buttonsHTML = '';
+  if (data.reason === 'disconnect') {
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${i18n.t('pvp.arcade.oppLeft')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
+  } else if (data.canRematch) {
+    buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" id="btnRematch" onclick="requestRematch()" style="flex:1;">${i18n.t('pvp.arcade.rematch')}</button><button class="pvp-popup-btn reject" onclick="goToLobby()" style="flex:1;">${i18n.t('pvp.arcade.toLobby')}</button></div><div id="rematchWait" style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:6px;"></div>`;
+  } else {
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${i18n.t('pvp.arcade.noChip')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
+  }
+  modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2>${tableHTML}<div style="display:flex;justify-content:center;gap:24px;font-size:0.85rem;margin:8px 0;"><span style="color:var(--gold);">${i18n.t('pvp.arcade.myWins').replace('{n}', data.winsA)}</span><span style="color:rgba(255,255,255,0.5);">${i18n.t('pvp.arcade.oppWins').replace('{n}', data.winsB)}</span></div>${chipHTML}${buttonsHTML}`;
+  overlay.classList.add('active');
+}
+
+function showDisconnectResult() {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  modal.innerHTML = `<h2 style="font-size:1.3rem;">${i18n.t('pvp.arcade.result')}</h2><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:16px 0;">${i18n.t('pvp.arcade.oppLeft')}</div><button class="pvp-popup-btn" onclick="goToLobby()">${i18n.t('pvp.arcade.toLobby')}</button>`;
+  overlay.classList.add('active');
+}
+
+function requestRematch() {
+  if (pvpArcade.rematchRequested) return;
+  pvpArcade.rematchRequested = true;
+  socket.emit('rematch:request', { roomId: pvpArcade.roomId });
+  const w = document.getElementById('rematchWait'); if (w) w.textContent = i18n.t('pvp.arcade.waiting');
+  const b = document.getElementById('btnRematch'); if (b) b.disabled = true;
+  pvpArcade.rematchTimer = setTimeout(() => {
+    showToast(i18n.t('pvp.arcade.rematchDeclined'));
+    if (w) w.textContent = '';
+    if (b) b.style.display = 'none';
+  }, 30000);
+}
+
+function goToLobby() {
+  clearTimeout(pvpArcade.rematchTimer);
+  pvpArcade.roomId = null;
+  pvpArcade.opponent = null;
+  pvpArcade.myHands = [];
+  pvpArcade.opponentHands = [];
+  pvpArcade.gameStarted = false;
+  pvpArcade.rematchRequested = false;
+  clearInterval(state.timerInterval);
+  state.phase = 'idle';
+  document.getElementById('modalOverlay').classList.remove('active');
+  showView('lobby');
+  joinLobby();
+  renderMatchButtons('idle');
+}
+
+// ─── 페이지 이탈 ───
+window.addEventListener('beforeunload', () => {
+  socket.emit('lobby:leave');
+  clearInterval(heartbeatInterval);
+});
+</script>
+</body>
+</html>
