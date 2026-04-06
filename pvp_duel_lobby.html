@@ -86,11 +86,11 @@
   .pvp-status-timelimit { color:#ff5252 !important; }
 
   /* ── 그리드 행 (내 그리드 + 미니그리드 나란히) ── */
-  .duel-grid-row { display:flex; align-items:flex-start; width:100%; max-width:500px; margin:0 auto; padding:4px 8px; gap:6px; box-sizing:border-box; }
-  .duel-my-grid-wrap { flex:2 1 0; min-width:0; overflow:hidden; }
-  .duel-my-grid-wrap .grid-container { width:100% !important; max-width:100% !important; }
-  .duel-my-grid-wrap .grid { width:100% !important; }
-  .duel-mini-wrap { flex:1 1 0; min-width:80px; max-width:120px; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .duel-grid-row { display:flex; align-items:flex-start; width:100%; margin:0 auto; padding:4px 6px; gap:4px; box-sizing:border-box; }
+  .duel-my-grid-wrap { flex:0 0 65%; min-width:0; }
+  .duel-my-grid-wrap .grid-container { width:100% !important; max-width:100% !important; padding:0 !important; }
+  .duel-my-grid-wrap .grid { width:100% !important; grid-template-columns:repeat(5,1fr) !important; }
+  .duel-mini-wrap { flex:0 0 35%; display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:4px; }
   .duel-mini-label { font-family:'IBM Plex Mono',monospace; font-size:0.52rem; color:rgba(255,255,255,0.25); letter-spacing:0.06em; }
   .duel-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:100%; aspect-ratio:1; }
   .duel-mini-cell { border-radius:2px; aspect-ratio:1; transition:background 0.3s ease; }
