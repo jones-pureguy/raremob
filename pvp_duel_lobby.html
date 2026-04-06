@@ -120,6 +120,8 @@
   .duel-raise-slot.pending { color:rgba(255,255,255,0.15); }
   .duel-raise-slot.active { color:#FFC107; background:rgba(255,193,7,0.15); animation:raisePulse 0.8s ease-in-out infinite; }
   @keyframes raisePulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  @keyframes betBtnPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.7;transform:scale(0.97);} }
+  .my-turn-blink { animation:betBtnPulse 0.8s ease-in-out infinite; }
 
   /* ── 베팅 패널 (fixed 하단) ── */
   .duel-betting-panel { position:fixed; bottom:0; left:0; right:0; background:linear-gradient(to top, rgba(5,15,10,0.99) 70%, rgba(5,15,10,0.9)); border-top:1px solid rgba(201,168,76,0.4); padding:10px 16px; padding-bottom:max(10px, env(safe-area-inset-bottom)); z-index:50; }
@@ -431,7 +433,8 @@ const pvpDuel = {
   bettingActive: false,
   raiseHistory: [],
   currentTurn: null,
-  bettingPhase: null
+  bettingPhase: null,
+  bettingCountdown: null
 };
 
 // =============================================
@@ -970,15 +973,24 @@ function showBettingPanel(data) {
   panel.style.display = 'block';
 
   const isMyTurn = currentTurn === socket.id;
-  const phaseLabel = phase === 'pre' ? '시작 전 베팅' : '게임 중 베팅';
-  const timeout = phase === 'pre' ? 7 : 10;
 
-  info.innerHTML = `<div style="display:flex;justify-content:center;gap:12px;margin-bottom:4px;"><span>POT ${pot}</span><span style="color:rgba(255,255,255,0.3)">·</span><span style="color:var(--gold)">${phaseLabel}</span></div><div style="color:${isMyTurn ? '#FFC107' : 'rgba(255,255,255,0.3)'}">${isMyTurn ? `내 차례 · ${timeout}초` : '상대방 베팅 중...'}</div>`;
+  // 기존 타이머 클리어
+  clearInterval(pvpDuel.bettingCountdown);
 
   if (isMyTurn) {
+    let timeLeft = 20;
+    info.innerHTML = `<div style="display:flex;justify-content:center;gap:12px;margin-bottom:4px;"><span>POT ${pot}</span><span style="color:rgba(255,255,255,0.3)">·</span><span style="color:var(--gold)">베팅</span></div><div style="color:#FFC107">내 차례 · <span id="bettingTimer">${timeLeft}초</span></div>`;
+
+    pvpDuel.bettingCountdown = setInterval(() => {
+      timeLeft--;
+      const timerEl = document.getElementById('bettingTimer');
+      if (timerEl) timerEl.textContent = timeLeft + '초';
+      if (timeLeft <= 0) clearInterval(pvpDuel.bettingCountdown);
+    }, 1000);
+
     const oppRaisedThisTurn = lastAction === 'raise';
     const myRaises = phase_raises?.[phase]?.[socket.id] || 0;
-    const maxRaises = phase === 'pre' ? 2 : 1;
+    const maxRaises = 3;
     const canRaise = myRaises < maxRaises && pvpDuel.raiseHistory.length < 6;
 
     const leftBtn = oppRaisedThisTurn
@@ -989,7 +1001,11 @@ function showBettingPanel(data) {
     const raiseBtn = `<button class="duel-bet-btn raise" onclick="sendBet('raise')" ${!canRaise ? 'disabled' : ''}>RAISE<br><span style="font-size:0.6rem">+${nextRaiseAmount} → ${afterRaisePot}</span></button>`;
 
     buttons.innerHTML = `${leftBtn}${raiseBtn}<button class="duel-bet-btn fold" onclick="sendBet('fold')">FOLD</button>`;
+
+    // 버튼 점멸 (내 턴)
+    document.querySelectorAll('.duel-bet-btn:not(:disabled)').forEach(btn => btn.classList.add('my-turn-blink'));
   } else {
+    info.innerHTML = `<div style="display:flex;justify-content:center;gap:12px;margin-bottom:4px;"><span>POT ${pot}</span><span style="color:rgba(255,255,255,0.3)">·</span><span style="color:var(--gold)">베팅</span></div><div style="color:rgba(255,255,255,0.3)">상대방 베팅 중...</div>`;
     buttons.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.75rem;padding:12px;">상대방 베팅 중...</div>`;
   }
 }
@@ -998,6 +1014,8 @@ function hideBettingPanel() {
   const panel = document.getElementById('bettingPanel');
   if (panel) panel.style.display = 'none';
   pvpDuel.bettingActive = false;
+  clearInterval(pvpDuel.bettingCountdown);
+  document.querySelectorAll('.my-turn-blink').forEach(btn => btn.classList.remove('my-turn-blink'));
 }
 
 function sendBet(action) {
@@ -1054,11 +1072,16 @@ socket.on('duel:bettingStart', (data) => {
   updatePotDisplay(data.pot);
   renderRaiseTrack(pvpDuel.raiseHistory, data.currentTurn === pvpDuel.firstPlayer, data.phase);
   showBettingPanel(data);
-  setPvpStatus(data.phase === 'pre' ? 'betting' : 'betting_mid');
+  setPvpStatus('betting');
 });
 
 // ─── duel:bettingUpdate ───
 socket.on('duel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, raiseCount, nextRaiseAmount, phase_raises, lastAction, callAmount }) => {
+  // 상대방 행동 시각화
+  if (bySocketId !== socket.id) {
+    showBettingAction(action, amount);
+  }
+
   if (action === 'raise') {
     pvpDuel.raiseHistory.push({ by: bySocketId, amount });
     pvpDuel.currentPot = pot;
@@ -1075,42 +1098,69 @@ socket.on('duel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn,
   }
 });
 
+function showBettingAction(action, amount) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
+  const box = document.createElement('div');
+  box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
+
+  let msg = '', color = 'var(--gold)';
+  if (action === 'raise') { msg = `상대방 RAISE\n+${amount}`; color = '#FFC107'; }
+  else if (action === 'call') { msg = '상대방 CALL'; color = '#4CAF50'; }
+  else if (action === 'fold') { msg = '상대방 FOLD'; color = '#ff5252'; }
+
+  box.innerHTML = `<div style="font-size:1.3rem;font-weight:700;color:${color};white-space:pre-line;">${msg}</div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.3s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+  }, 1500);
+}
+
 // ─── duel:gameStart ───
-socket.on('duel:gameStart', ({ roomId, startedAt }) => {
+socket.on('duel:gameStart', ({ roomId, startedAt, pot }) => {
   if (roomId !== pvpDuel.roomId) return;
-  pvpDuel.gameStarted = true;
   hideBettingPanel();
 
-  const overlay = document.getElementById('startOverlay');
-  if (overlay) {
-    overlay.classList.add('hiding');
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      overlay.classList.remove('hiding');
-      const grid = document.getElementById('gridContainer');
-      if (grid) grid.style.pointerEvents = '';
-    }, 300);
+  if (pot !== undefined) {
+    pvpDuel.currentPot = pot;
+    updatePotDisplay(pot);
   }
 
-  BGM.init('./audio/Main_Theme.mp3');
-  BGM.start();
-
-  state.phase = 'playing';
-  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-  const remaining = Math.max(1, 200 - elapsed);
-  startTimer();
-  state.timer = remaining;
-  updateTimerDisplay();
+  // 판돈 강조 화면 (2초) → 게임 시작
+  showPotAnnouncement(pot || pvpDuel.currentPot, () => {
+    pvpDuel.gameStarted = true;
+    const overlay = document.getElementById('startOverlay');
+    if (overlay) overlay.style.display = 'none';
+    BGM.init('./audio/Main_Theme.mp3');
+    BGM.start();
+    state.phase = 'playing';
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = Math.max(1, 200 - elapsed);
+    startTimer();
+    state.timer = remaining;
+    setPvpStatus('idle');
+  });
 });
 
-// ─── duel:bettingEnd ───
-socket.on('duel:bettingEnd', ({ pot }) => {
-  pvpDuel.currentPot = pot;
-  updatePotDisplay(pot);
-  hideBettingPanel();
-  if (state.phase !== 'result') state.phase = 'playing';
-  setPvpStatus('idle');
-});
+function showPotAnnouncement(pot, callback) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:150;font-family:'IBM Plex Mono',monospace;";
+  overlay.innerHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:8px;">최종 판돈</div><div style="font-size:2.5rem;font-weight:700;color:var(--gold);margin-bottom:16px;">${pot}</div><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;animation:pulse 0.6s ease-in-out infinite;">GAME START</div>`;
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.4s';
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.remove();
+      if (callback) callback();
+    }, 400);
+  }, 2000);
+}
 
 // ─── duel:opponentHandComplete ───
 socket.on('duel:opponentHandComplete', ({ hands, removedPositions }) => {
@@ -1378,6 +1428,7 @@ function goToLobby() {
   }
   clearTimeout(pvpDuel.rematchTimer);
   clearTimeout(pvpDuel.disconnectTimeout);
+  clearInterval(pvpDuel.bettingCountdown);
   clearInterval(pvpDuel.syncInterval);
   clearInterval(state.timerInterval);
 

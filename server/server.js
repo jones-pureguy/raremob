@@ -837,7 +837,7 @@ io.on('connection', (socket) => {
   socket.on('duel:bet', ({ roomId, action }) => {
     const room = gameRooms.get(roomId)
     if (!room || room.mode !== 'gamble') return
-    if (!['betting_pre', 'betting_in_game'].includes(room.status)) return
+    if (!['betting_pre'].includes(room.status)) return
 
     const bet = room.duel.betting
     if (bet.currentTurn !== socket.id) return
@@ -854,7 +854,7 @@ io.on('connection', (socket) => {
     }
 
     if (action === 'raise') {
-      const maxRaises = phase === 'pre' ? 2 : 1
+      const maxRaises = 3
       if (bet.phase_raises[phase][socket.id] >= maxRaises) return
       if (bet.raiseCount >= 6) return
 
@@ -1460,7 +1460,7 @@ async function endArcadeGame(room, reason, disconnectedId) {
 function startBettingTurn(room) {
   const bet = room.duel.betting
   const phase = bet.phase
-  const timeout = phase === 'pre' ? 7000 : 10000
+  const timeout = 20000
 
   clearTimeout(bet.turnTimer)
   bet.turnTimer = setTimeout(() => {
@@ -1490,40 +1490,10 @@ function handleBettingPhaseComplete(room) {
 
     io.to(room.roomId).emit('duel:gameStart', {
       roomId: room.roomId,
-      startedAt: room.duel.startedAt
-    })
-    console.log(`[duel] 게임 시작: roomId=${room.roomId}`)
-
-    setTimeout(() => {
-      if (room.status !== 'playing') return
-      room.status = 'betting_in_game'
-      room.duel.betting.phase = 'in_game'
-      room.duel.betting.currentTurn = room.duel.firstPlayer
-
-      const [a, b] = room.players
-      room.duel.betting.phase_raises.in_game = { [a]: 0, [b]: 0 }
-
-      startBettingTurn(room)
-      io.to(room.roomId).emit('duel:bettingStart', {
-        roomId: room.roomId,
-        phase: 'in_game',
-        pot: room.duel.betting.pot,
-        currentTurn: room.duel.betting.currentTurn,
-        nextRaiseAmount: getRaiseAmount(room.duel.betting.raiseCount + 1),
-        phase_raises: room.duel.betting.phase_raises,
-        lastAction: null,
-        callAmount: 0
-      })
-      console.log(`[duel] 게임 중 베팅 시작: roomId=${room.roomId}`)
-    }, 30000)
-
-  } else if (phase === 'in_game') {
-    room.status = 'playing'
-    room.duel.betting.phase = null
-    io.to(room.roomId).emit('duel:bettingEnd', {
-      roomId: room.roomId,
+      startedAt: room.duel.startedAt,
       pot: room.duel.betting.pot
     })
+    console.log(`[duel] 게임 시작: roomId=${room.roomId}`)
   }
 }
 
