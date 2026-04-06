@@ -746,6 +746,9 @@ function cardDisplay(cards) {
 // 게임 UI 설정
 // =============================================
 function setupDuelGameUI() {
+  // 이전 게임의 잔여 오버레이 제거
+  document.querySelectorAll('.duel-action-overlay').forEach(el => el.remove());
+
   GRID_SIZE = window._duelGridSize || 5;
   // initGrid 오버라이드: 서버에서 받은 25장으로 5×5 채움
   const origInitGrid = window.initGrid;
@@ -978,7 +981,8 @@ function showBettingPanel(data) {
   clearInterval(pvpDuel.bettingCountdown);
 
   if (isMyTurn) {
-    let timeLeft = 20;
+    const isFirstTurn = pvpDuel.raiseHistory.length === 0 && currentTurn === pvpDuel.firstPlayer;
+    let timeLeft = isFirstTurn ? 30 : 20;
     info.innerHTML = `<div style="display:flex;justify-content:center;gap:12px;margin-bottom:4px;"><span>POT ${pot}</span><span style="color:rgba(255,255,255,0.3)">·</span><span style="color:var(--gold)">베팅</span></div><div style="color:#FFC107">내 차례 · <span id="bettingTimer">${timeLeft}초</span></div>`;
 
     pvpDuel.bettingCountdown = setInterval(() => {
@@ -1092,14 +1096,24 @@ socket.on('duel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn,
       pot, currentTurn, nextRaiseAmount, phase_raises,
       lastAction: 'raise', callAmount
     });
+  } else if (action === 'call' && currentTurn !== null) {
+    // SKIP → 턴 넘김, 베팅 패널 갱신
+    pvpDuel.currentPot = pot;
+    updatePotDisplay(pot);
+    showBettingPanel({
+      phase: pvpDuel.bettingPhase,
+      pot, currentTurn, nextRaiseAmount, phase_raises,
+      lastAction: null, callAmount: 0
+    });
   }
-  if (action === 'call' || currentTurn === null) {
+  if (currentTurn === null) {
     hideBettingPanel();
   }
 });
 
 function showBettingAction(action, amount) {
   const overlay = document.createElement('div');
+  overlay.className = 'duel-action-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
   const box = document.createElement('div');
   box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
@@ -1148,8 +1162,9 @@ socket.on('duel:gameStart', ({ roomId, startedAt, pot }) => {
 
 function showPotAnnouncement(pot, callback) {
   const overlay = document.createElement('div');
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:150;font-family:'IBM Plex Mono',monospace;";
-  overlay.innerHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:8px;">최종 판돈</div><div style="font-size:2.5rem;font-weight:700;color:var(--gold);margin-bottom:16px;">${pot}</div><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;animation:pulse 0.6s ease-in-out infinite;">GAME START</div>`;
+  overlay.className = 'duel-action-overlay';
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:150;pointer-events:none;font-family:'IBM Plex Mono',monospace;";
+  overlay.innerHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:8px;pointer-events:none;">최종 판돈</div><div style="font-size:2.5rem;font-weight:700;color:var(--gold);margin-bottom:16px;pointer-events:none;">${pot}</div><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;animation:pulse 0.6s ease-in-out infinite;pointer-events:none;">GAME START</div>`;
   document.body.appendChild(overlay);
 
   setTimeout(() => {
@@ -1157,6 +1172,8 @@ function showPotAnnouncement(pot, callback) {
     overlay.style.opacity = '0';
     setTimeout(() => {
       overlay.remove();
+      const grid = document.getElementById('gridContainer');
+      if (grid) grid.style.pointerEvents = '';
       if (callback) callback();
     }, 400);
   }, 2000);

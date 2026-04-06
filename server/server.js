@@ -399,9 +399,9 @@ function createRoom(socketIdA, socketIdB, mode) {
         raiseCount: 0,
         raiseCounts: { [socketIdA]: 0, [socketIdB]: 0 },
         turnTimer: null,
+        bothActed: false,
         phase_raises: {
-          pre: { [socketIdA]: 0, [socketIdB]: 0 },
-          in_game: { [socketIdA]: 0, [socketIdB]: 0 }
+          pre: { [socketIdA]: 0, [socketIdB]: 0 }
         }
       }
     }
@@ -867,6 +867,7 @@ io.on('connection', (socket) => {
       bet.phase_raises[phase][socket.id]++
       bet.raiseCounts[socket.id]++
       bet.currentTurn = opponentId
+      bet.bothActed = false
 
       console.log(`[duel] 레이즈: ${socket.id}, amount=${actualRaise}, pot=${bet.pot}`)
 
@@ -888,13 +889,33 @@ io.on('connection', (socket) => {
     }
 
     if (action === 'call') {
-      io.to(roomId).emit('duel:bettingUpdate', {
-        action: 'call',
-        bySocketId: socket.id,
-        pot: bet.pot,
-        currentTurn: null
-      })
-      handleBettingPhaseComplete(room)
+      const bothActed = bet.bothActed || false
+
+      if (bothActed || (bet.raiseCount > 0)) {
+        // 레이즈 후 call 또는 양쪽 모두 액션 완료 → 베팅 종료
+        io.to(roomId).emit('duel:bettingUpdate', {
+          action: 'call',
+          bySocketId: socket.id,
+          pot: bet.pot,
+          currentTurn: null
+        })
+        handleBettingPhaseComplete(room)
+      } else {
+        // 첫 턴 skip → 상대에게 턴 넘기기
+        bet.currentTurn = opponentId
+        bet.bothActed = true
+        io.to(roomId).emit('duel:bettingUpdate', {
+          action: 'call',
+          bySocketId: socket.id,
+          pot: bet.pot,
+          currentTurn: opponentId,
+          nextRaiseAmount: getRaiseAmount(bet.raiseCount + 1),
+          phase_raises: bet.phase_raises,
+          lastAction: null,
+          callAmount: 0
+        })
+        startBettingTurn(room)
+      }
       return
     }
   })
@@ -1459,20 +1480,42 @@ async function endArcadeGame(room, reason, disconnectedId) {
 // [REUSE] 베팅 턴 타임아웃 시작
 function startBettingTurn(room) {
   const bet = room.duel.betting
-  const phase = bet.phase
-  const timeout = 20000
+  // 첫 번째 턴(선공, 아무도 액션 안 함)만 30초, 이후 20초
+  const isFirstTurn = bet.raiseCount === 0 && !bet.bothActed && bet.currentTurn === room.duel.firstPlayer
+  const timeout = isFirstTurn ? 30000 : 20000
 
   clearTimeout(bet.turnTimer)
   bet.turnTimer = setTimeout(() => {
-    console.log(`[duel] 베팅 타임아웃 → 자동 CALL: ${bet.currentTurn}`)
-    io.to(room.roomId).emit('duel:bettingUpdate', {
-      action: 'call',
-      bySocketId: bet.currentTurn,
-      pot: bet.pot,
-      currentTurn: null,
-      timeout: true
-    })
-    handleBettingPhaseComplete(room)
+    const timedOutPlayer = bet.currentTurn
+    const opponentId = room.players.find(id => id !== timedOutPlayer)
+    console.log(`[duel] 베팅 타임아웃 → 자동 CALL: ${timedOutPlayer}`)
+
+    const bothActed = bet.bothActed || false
+    if (bothActed || (bet.raiseCount > 0)) {
+      io.to(room.roomId).emit('duel:bettingUpdate', {
+        action: 'call',
+        bySocketId: timedOutPlayer,
+        pot: bet.pot,
+        currentTurn: null,
+        timeout: true
+      })
+      handleBettingPhaseComplete(room)
+    } else {
+      bet.currentTurn = opponentId
+      bet.bothActed = true
+      io.to(room.roomId).emit('duel:bettingUpdate', {
+        action: 'call',
+        bySocketId: timedOutPlayer,
+        pot: bet.pot,
+        currentTurn: opponentId,
+        nextRaiseAmount: getRaiseAmount(bet.raiseCount + 1),
+        phase_raises: bet.phase_raises,
+        lastAction: null,
+        callAmount: 0,
+        timeout: true
+      })
+      startBettingTurn(room)
+    }
   }, timeout)
 }
 
