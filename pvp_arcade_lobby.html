@@ -1012,7 +1012,7 @@ function pvpCardDisplay(cards) {
 function requestRematch() {
   if (pvpArcade.rematchRequested) return;
   pvpArcade.rematchRequested = true;
-  socket.emit('rematch:request', { roomId: pvpArcade.roomId });
+  socket.emit('rematch:request', { roomId: pvpArcade.roomId, mode: 'arcade' });
   const w = document.getElementById('rematchWait'); if (w) w.textContent = i18n.t('pvp.arcade.waiting');
   const b = document.getElementById('btnRematch'); if (b) b.disabled = true;
   pvpArcade.rematchTimer = setTimeout(() => {

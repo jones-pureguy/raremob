@@ -1354,7 +1354,7 @@ function showDisconnectWarning() {
 function requestDuelRematch() {
   if (pvpDuel.rematchRequested) return;
   pvpDuel.rematchRequested = true;
-  socket.emit('rematch:request', { roomId: pvpDuel.roomId });
+  socket.emit('rematch:request', { roomId: pvpDuel.roomId, mode: 'gamble' });
   const w = document.getElementById('rematchWait');
   const b = document.getElementById('btnRematch');
   if (w) w.textContent = '상대방 확인 중...';

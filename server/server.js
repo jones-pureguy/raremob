@@ -729,7 +729,7 @@ io.on('connection', (socket) => {
   })
 
   // ─── rematch:request ───
-  socket.on('rematch:request', ({ roomId }) => {
+  socket.on('rematch:request', ({ roomId, mode }) => {
     // roomId는 이미 삭제되었을 수 있으므로 별도 Map 사용
     if (!rematchRequests.has(roomId)) {
       rematchRequests.set(roomId, { requests: new Set(), mode: null, players: [], timeout: null })
@@ -742,7 +742,7 @@ io.on('connection', (socket) => {
       // lobby에서 유저 정보 기반으로 매칭
       const entry = lobby.get(socket.id)
       if (!entry) return
-      rm.mode = 'arcade' // 현재 arcade 전용
+      rm.mode = mode || 'arcade'
     }
 
     rm.requests.add(socket.id)
