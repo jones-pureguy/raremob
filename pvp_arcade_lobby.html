@@ -280,8 +280,11 @@ let scriptLoaded = false;
   });
 
   // 로비 진입
-  if (socket.connected) joinLobby();
-  else socket.on('connect', joinLobby);
+  if (socket.connected) {
+    joinLobby();
+  } else {
+    socket.once('connect', joinLobby);  // once로 변경 (1회만 실행)
+  }
 })();
 
 // =============================================
@@ -758,7 +761,6 @@ socket.io.on('reconnect', () => {
   if (overlay) overlay.classList.remove('active');
 
   if (pvpArcade.gameStarted) {
-    // 게임 중이었으면 상태 초기화 후 로비로 (goToLobby 호출 안 함)
     pvpArcade.gameStarted = false;
     pvpArcade.roomId = null;
     pvpArcade.opponent = null;
@@ -767,10 +769,13 @@ socket.io.on('reconnect', () => {
     state.phase = 'idle';
     clearInterval(state.timerInterval);
     showView('lobby');
-    joinLobby();  // lobby:join만 발송
+    joinLobby();
     renderMatchButtons('idle');
     showToast('서버와 재연결되었습니다.');
   }
+  // pvpArcade.gameStarted가 false면 (로비 상태)
+  // 'connect' 이벤트가 이미 joinLobby를 처리하므로
+  // 여기서 추가 호출 안 함
 });
 
 socket.io.on('reconnect_failed', () => {
