@@ -761,6 +761,8 @@ function setupDuelGameUI() {
   initState();
   initGrid();
   renderGrid();
+  // 5×5 CSS 강제 적용
+  document.getElementById('grid').style.gridTemplateColumns = 'repeat(5, 1fr)';
 
   // 원본 복원
   window.initGrid = origInitGrid;
