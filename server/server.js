@@ -67,7 +67,6 @@ const gameRooms = new Map()
 //     hands: { [socketId]: [] },
 //     timer: null,
 //     startedAt: null,
-//     timeAttack: { triggered: false, triggeredBy: null, deadline: null }
 //   }
 // }
 
@@ -323,7 +322,6 @@ function createRoom(socketIdA, socketIdB, mode) {
       timer: null,
       startedAt: null,
       readySet: new Set(),
-      timeAttack: { triggered: false, triggeredBy: null, deadline: null }
     }
   }
 
@@ -564,24 +562,6 @@ io.on('connection', (socket) => {
       }
     }
 
-    // 9패 완성 + 타임어택 체크
-    if (hands.length >= 9 && !room.arcade.timeAttack.triggered) {
-      const elapsed = Date.now() - room.arcade.startedAt
-      if (elapsed > 100000) {
-        room.arcade.timeAttack.triggered = true
-        room.arcade.timeAttack.triggeredBy = socket.id
-        room.arcade.timeAttack.deadline = Date.now() + 30000
-
-        clearTimeout(room.arcade.timer)
-        room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 30000)
-
-        console.log(`[arcade] 타임어택 발동: roomId=${roomId}, triggeredBy=${socket.id}`)
-        io.to(roomId).emit('game:timeAttack', {
-          triggeredBy: socket.id,
-          deadline: room.arcade.timeAttack.deadline
-        })
-      }
-    }
   })
 
   // ─── game:playerDone (플레이어 게임 완료 — 9패 또는 nomoves) ───

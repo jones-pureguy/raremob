@@ -686,22 +686,6 @@ socket.on('pvp:pendingNotification', (data) => {
   overlay.classList.add('active');
 });
 
-socket.on('game:timeAttack', ({ triggeredBy, deadline }) => {
-  const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
-  clearInterval(state.timerInterval);
-  state.timer = remaining;
-  updateTimerDisplay();
-  document.getElementById('timerNum').classList.add('time-attack');
-  document.getElementById('timerRing').classList.add('time-attack');
-  state.timerInterval = setInterval(() => {
-    if (state.phase !== 'playing' && state.phase !== 'done') return;
-    state.timer--;
-    updateTimerDisplay();
-    if (state.timer <= 0) socket.emit('game:end', { roomId: pvpArcade.roomId });
-  }, 1000);
-  setPvpStatus('timelimit');
-});
-
 socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRemaining }) => {
   if (timerAdjusted) {
     clearInterval(state.timerInterval);
