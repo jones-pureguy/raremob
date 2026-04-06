@@ -1201,19 +1201,29 @@ socket.io.on('reconnect', () => {
   clearTimeout(pvpDuel.disconnectTimeout);
   const overlay = document.getElementById('modalOverlay');
   if (overlay) overlay.classList.remove('active');
-  if (pvpDuel.gameStarted) {
-    pvpDuel.gameStarted = false;
-    pvpDuel.roomId = null;
-    pvpDuel.opponent = null;
-    pvpDuel.myHands = [];
-    pvpDuel.opponentHands = [];
-    state.phase = 'idle';
-    clearInterval(state.timerInterval);
-    hideBettingPanel();
-    showView('lobby');
-    joinLobby();
-    renderMatchButtons('idle');
-    showToast('서버와 재연결되었습니다.');
+  // 게임방에 있는 상태 (베팅 중 포함)
+  if (pvpDuel.roomId) {
+    if (pvpDuel.gameStarted) {
+      // 게임 중 재연결 → 로비로
+      pvpDuel.gameStarted = false;
+      pvpDuel.roomId = null;
+      pvpDuel.opponent = null;
+      pvpDuel.myHands = [];
+      pvpDuel.opponentHands = [];
+      state.phase = 'idle';
+      clearInterval(state.timerInterval);
+      hideBettingPanel();
+      showView('lobby');
+      joinLobby();
+      renderMatchButtons('idle');
+      showToast('서버와 재연결되었습니다.');
+    } else {
+      // 베팅 중 재연결 → 게임방 rejoin 시도
+      socket.emit('duel:rejoin', {
+        roomId: pvpDuel.roomId,
+        playerId: localStorage.getItem('poker_player_id')
+      });
+    }
   }
 });
 
@@ -1221,6 +1231,48 @@ socket.io.on('reconnect_failed', () => {
   console.log('[duel] 소켓 재연결 실패');
   clearTimeout(pvpDuel.disconnectTimeout);
   goToLobby();
+});
+
+// ─── duel:rejoin 결과 ───
+socket.on('duel:rejoinSuccess', (data) => {
+  console.log('[duel] rejoin 성공:', data);
+  showToast('재연결되었습니다.');
+
+  if (data.status === 'betting_pre' || data.status === 'betting_in_game') {
+    // 베팅 UI 복원
+    showBettingPanel({
+      phase: data.phase,
+      pot: data.pot,
+      currentTurn: data.currentTurn,
+      nextRaiseAmount: data.nextRaiseAmount,
+      phase_raises: data.phase_raises,
+      lastAction: null,
+      callAmount: 0
+    });
+    updatePotDisplay(data.pot);
+    setPvpStatus('betting');
+  } else if (data.status === 'playing') {
+    // 게임 중이었으면 게임 시작 처리
+    pvpDuel.gameStarted = true;
+    hideBettingPanel();
+    const overlay = document.getElementById('startOverlay');
+    if (overlay) overlay.style.display = 'none';
+    state.phase = 'playing';
+    const elapsed = Math.floor((Date.now() - data.startedAt) / 1000);
+    const remaining = Math.max(1, 200 - elapsed);
+    startTimer();
+    state.timer = remaining;
+    setPvpStatus('idle');
+  }
+});
+
+socket.on('duel:rejoinFailed', () => {
+  console.log('[duel] rejoin 실패');
+  pvpDuel.roomId = null;
+  showView('lobby');
+  joinLobby();
+  renderMatchButtons('idle');
+  showToast('게임방을 찾을 수 없습니다.');
 });
 
 // =============================================

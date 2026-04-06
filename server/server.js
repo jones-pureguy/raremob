@@ -965,6 +965,79 @@ io.on('connection', (socket) => {
     endDuelGame(room, 'timeout')
   })
 
+  // ─── duel:rejoin ───
+  socket.on('duel:rejoin', ({ roomId, playerId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'gamble') {
+      socket.emit('duel:rejoinFailed')
+      return
+    }
+
+    // playerInfo에서 기존 소켓 ID 찾기
+    const oldId = room.players.find(id => {
+      return room.playerInfo[id]?.playerId === playerId
+    })
+
+    if (!oldId) {
+      socket.emit('duel:rejoinFailed')
+      return
+    }
+
+    // 소켓 교체
+    const idx = room.players.indexOf(oldId)
+    room.players[idx] = socket.id
+
+    // playerInfo 키 교체
+    room.playerInfo[socket.id] = room.playerInfo[oldId]
+    delete room.playerInfo[oldId]
+
+    // completedHands 키 교체
+    if (room.duel.completedHands[oldId]) {
+      room.duel.completedHands[socket.id] = room.duel.completedHands[oldId]
+      delete room.duel.completedHands[oldId]
+    }
+
+    // betting 관련 키 교체
+    const bet = room.duel.betting
+    if (bet.currentTurn === oldId) bet.currentTurn = socket.id
+    if (bet.raiseCounts[oldId] !== undefined) {
+      bet.raiseCounts[socket.id] = bet.raiseCounts[oldId]
+      delete bet.raiseCounts[oldId]
+    }
+    if (bet.phase_raises.pre[oldId] !== undefined) {
+      bet.phase_raises.pre[socket.id] = bet.phase_raises.pre[oldId]
+      delete bet.phase_raises.pre[oldId]
+    }
+    if (bet.phase_raises.in_game[oldId] !== undefined) {
+      bet.phase_raises.in_game[socket.id] = bet.phase_raises.in_game[oldId]
+      delete bet.phase_raises.in_game[oldId]
+    }
+    if (room.duel.firstPlayer === oldId) {
+      room.duel.firstPlayer = socket.id
+    }
+    if (room.duel.donePlayers?.has(oldId)) {
+      room.duel.donePlayers.delete(oldId)
+      room.duel.donePlayers.add(socket.id)
+    }
+
+    socket.join(roomId)
+    console.log(`[duel] rejoin 성공: ${oldId} → ${socket.id}`)
+
+    // 현재 게임 상태 전송
+    if (room.status === 'betting_pre' || room.status === 'playing') {
+      socket.emit('duel:rejoinSuccess', {
+        roomId,
+        status: room.status,
+        pot: bet.pot,
+        phase: bet.phase,
+        currentTurn: bet.currentTurn,
+        nextRaiseAmount: getRaiseAmount(bet.raiseCount + 1),
+        phase_raises: bet.phase_raises,
+        startedAt: room.duel.startedAt
+      })
+    }
+  })
+
   // ─── disconnect ───
   socket.on('disconnect', () => {
     console.log('클라이언트 해제:', socket.id)
