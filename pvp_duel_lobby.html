@@ -529,6 +529,9 @@ socket.on('room:created', ({ roomId, mode, opponent, myCards, myOutCard, oppOutC
   clearTimeout(pvpDuel.rematchTimer);
   matchingMode = null;
   renderMatchButtons('idle');
+  // 재대결 시 결과 모달 닫기
+  document.getElementById('modalOverlay')?.classList.remove('active');
+  clearTimeout(pvpDuel.rematchTimer);
   showView('game');
   setupDuelGameUI();
 });
