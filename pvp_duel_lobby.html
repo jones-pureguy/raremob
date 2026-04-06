@@ -87,9 +87,10 @@
 
   /* ── 그리드 행 (내 그리드 + 미니그리드 나란히) ── */
   .duel-grid-row { display:flex; align-items:flex-start; width:100%; max-width:500px; margin:0 auto; padding:4px 8px; gap:6px; box-sizing:border-box; }
-  .duel-my-grid-wrap { flex:2 1 0; min-width:0; }
-  .duel-my-grid-wrap .grid-container { width:100%; }
-  .duel-mini-wrap { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .duel-my-grid-wrap { flex:2 1 0; min-width:0; overflow:hidden; }
+  .duel-my-grid-wrap .grid-container { width:100% !important; max-width:100% !important; }
+  .duel-my-grid-wrap .grid { width:100% !important; }
+  .duel-mini-wrap { flex:1 1 0; min-width:80px; max-width:120px; display:flex; flex-direction:column; align-items:center; gap:4px; }
   .duel-mini-label { font-family:'IBM Plex Mono',monospace; font-size:0.52rem; color:rgba(255,255,255,0.25); letter-spacing:0.06em; }
   .duel-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:100%; aspect-ratio:1; }
   .duel-mini-cell { border-radius:2px; aspect-ratio:1; transition:background 0.3s ease; }
@@ -111,7 +112,9 @@
   .duel-pot { font-size:0.72rem; color:var(--gold); font-weight:700; }
 
   /* ── 레이즈 트래커 ── */
-  .duel-raise-track { display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:2px; font-size:0.65rem; text-align:center; }
+  .duel-raise-track { display:flex; flex-direction:column; gap:2px; font-size:0.65rem; text-align:center; }
+  .duel-raise-row { display:flex; align-items:center; gap:2px; }
+  .duel-raise-label { font-family:'IBM Plex Mono',monospace; font-size:0.55rem; color:rgba(255,255,255,0.35); width:1.2em; text-align:right; flex-shrink:0; }
   .duel-raise-slot { padding:1px 3px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; transition:all 0.2s; }
   .duel-raise-slot.done { color:var(--gold); background:rgba(201,168,76,0.15); }
   .duel-raise-slot.pending { color:rgba(255,255,255,0.15); }
@@ -920,19 +923,32 @@ function renderRaiseTrack(raiseHistory, currentTurnIsFirst, phase) {
   const track = document.getElementById('raiseTrack');
   if (!track) return;
   const RAISE_AMOUNTS = [1, 10, 30, 50, 70, 100];
-  let html = '';
-  for (let i = 0; i < 6; i++) {
-    const isFirstSlot = i % 2 === 0;
-    const amount = RAISE_AMOUNTS[i];
-    const done = i < raiseHistory.length;
-    const isCurrentSlot = i === raiseHistory.length &&
-      ((isFirstSlot && currentTurnIsFirst) || (!isFirstSlot && !currentTurnIsFirst));
-    const slotClass = done ? 'done' : isCurrentSlot ? 'active' : 'pending';
-    const label = isFirstSlot ? '선' : '후';
-    const amtText = done ? `+${raiseHistory[i]?.amount || amount}` : `+${amount}`;
-    html += `<div class="duel-raise-slot ${slotClass}">${done || isCurrentSlot ? `<span style="font-size:0.55rem;opacity:0.6">${label}</span> <span>${amtText}</span>` : `<span style="font-size:0.55rem;opacity:0.3">${label}</span>`}</div>`;
+  // 선: slots 0,2,4 (indices 0,1,2)  후: slots 1,3,5 (indices 0,1,2)
+  const firstSlots = [0, 2, 4]; // 선 ① ③ ⑤
+  const secondSlots = [1, 3, 5]; // 후 ② ④ ⑥
+
+  function renderRow(label, slots) {
+    let html = `<span class="duel-raise-label">${label}</span>`;
+    for (const i of slots) {
+      const done = i < raiseHistory.length;
+      const isCurrentSlot = i === raiseHistory.length;
+      const slotClass = done ? 'done' : isCurrentSlot ? 'active' : 'pending';
+      let text;
+      if (done) {
+        text = `+${raiseHistory[i]?.amount || RAISE_AMOUNTS[i]}`;
+      } else if (isCurrentSlot) {
+        text = '▶';
+      } else {
+        text = '·';
+      }
+      html += `<div class="duel-raise-slot ${slotClass}"><span>${text}</span></div>`;
+    }
+    return html;
   }
-  track.innerHTML = html;
+
+  track.innerHTML =
+    `<div class="duel-raise-row">${renderRow('선', firstSlots)}</div>` +
+    `<div class="duel-raise-row">${renderRow('후', secondSlots)}</div>`;
 }
 
 // =============================================
@@ -1027,6 +1043,10 @@ function renderDuelScoreboard() {
 
 // ─── duel:bettingStart ───
 socket.on('duel:bettingStart', (data) => {
+  // START 오버레이 닫기
+  const overlay = document.getElementById('startOverlay');
+  if (overlay) overlay.style.display = 'none';
+
   pvpDuel.currentPot = data.pot;
   updatePotDisplay(data.pot);
   renderRaiseTrack(pvpDuel.raiseHistory, data.currentTurn === pvpDuel.firstPlayer, data.phase);
