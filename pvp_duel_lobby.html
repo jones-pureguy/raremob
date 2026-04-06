@@ -737,6 +737,7 @@ function cardDisplay(cards) {
 // 게임 UI 설정
 // =============================================
 function setupDuelGameUI() {
+  GRID_SIZE = 5;
   // initGrid 오버라이드: 서버에서 받은 25장으로 5×5 채움
   const origInitGrid = window.initGrid;
   window.initGrid = function() {
