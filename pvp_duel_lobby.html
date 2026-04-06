@@ -445,7 +445,7 @@ let scriptLoaded = false;
   renderMatchButtons('idle', null);
 
   // script.js 로드 전에 그리드 크기 설정 (5×5)
-  GRID_SIZE = 5;
+  window._duelGridSize = 5;
 
   // script.js 로드 (게임 엔진)
   await new Promise((resolve) => {
@@ -737,7 +737,7 @@ function cardDisplay(cards) {
 // 게임 UI 설정
 // =============================================
 function setupDuelGameUI() {
-  GRID_SIZE = 5;
+  GRID_SIZE = window._duelGridSize || 5;
   // initGrid 오버라이드: 서버에서 받은 25장으로 5×5 채움
   const origInitGrid = window.initGrid;
   window.initGrid = function() {
