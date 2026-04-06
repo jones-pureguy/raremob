@@ -308,7 +308,15 @@ function showToast(msg) {
 
 // ─── 로비 소켓 이벤트 ───
 socket.on('lobby:list', (list) => { lobbyUsers = list; renderLobby(); });
-socket.on('lobby:userJoined', (user) => { lobbyUsers.push(user); renderLobby(); });
+socket.on('lobby:userJoined', (user) => {
+  const idx = lobbyUsers.findIndex(u => u.socketId === user.socketId);
+  if (idx !== -1) {
+    lobbyUsers[idx] = user;
+  } else {
+    lobbyUsers.push(user);
+  }
+  renderLobby();
+});
 socket.on('lobby:userLeft', (socketId) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== socketId); renderLobby(); });
 socket.on('lobby:statusChanged', ({ socketId, status }) => {
   const user = lobbyUsers.find(u => u.socketId === socketId);
@@ -935,6 +943,9 @@ function goToLobby() {
   clearInterval(state.timerInterval);
   state.phase = 'idle';
   document.getElementById('modalOverlay').classList.remove('active');
+  lobbyUsers = [];
+  matchingMode = null;
+  challengeTarget = null;
   showView('lobby');
   joinLobby();
   renderMatchButtons('idle');
