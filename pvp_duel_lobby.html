@@ -737,11 +737,32 @@ function cardDisplay(cards) {
 // 게임 UI 설정
 // =============================================
 function setupDuelGameUI() {
-  // GRID_SIZE는 script.js 로드 전에 이미 5로 설정됨
-  // 게임 시작 시 그리드 재초기화
+  // initGrid 오버라이드: 서버에서 받은 25장으로 5×5 채움
+  const origInitGrid = window.initGrid;
+  window.initGrid = function() {
+    const cards = pvpDuel.myCards.map(c => ({
+      suit: c.suit,
+      value: c.value,
+      id: String(c.value) + c.suit
+    }));
+    state.removedCards = [];
+    state.grid = [];
+    let idx = 0;
+    for (let r = 0; r < GRID_SIZE; r++) {
+      const row = [];
+      for (let c = 0; c < GRID_SIZE; c++) {
+        row.push({ card: idx < cards.length ? cards[idx++] : null, row: r, col: c });
+      }
+      state.grid.push(row);
+    }
+  };
+
   initState();
   initGrid();
   renderGrid();
+
+  // 원본 복원
+  window.initGrid = origInitGrid;
 
   displayOutCards();
   initOppMiniGrid();
