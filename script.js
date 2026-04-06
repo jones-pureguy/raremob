@@ -28,7 +28,7 @@ function navigateTo(page) {
 
 // ─── Constants ─── // [REUSE]
 const TIMER_SECONDS = 200;
-const GRID_SIZE = 7;
+let GRID_SIZE = 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;
 

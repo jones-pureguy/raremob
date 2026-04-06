@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DragON POKER - DUEL PvP</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── 로비 ── */
+  .lobby-container { width:100%; max-width:480px; margin:0 auto; padding:12px 16px; position:relative; z-index:1; padding-bottom:80px; }
+  .match-buttons { display:flex; gap:8px; margin-bottom:16px; }
+  .match-btn { flex:1; padding:14px 8px; border-radius:10px; border:1.5px solid rgba(201,168,76,0.3); background:rgba(201,168,76,0.1); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:700; letter-spacing:0.05em; cursor:pointer; transition:all 0.15s; text-align:center; }
+  .match-btn:hover { background:rgba(201,168,76,0.2); }
+  .match-btn:active { transform:scale(0.97); }
+  .match-btn.active { background:rgba(255,82,82,0.15); border-color:rgba(255,82,82,0.4); color:#ff5252; animation:matchPulse 1.5s ease-in-out infinite; }
+  @keyframes matchPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+  .lobby-section-title { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(255,255,255,0.35); letter-spacing:0.1em; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); margin-top:8px; }
+  .lobby-user { display:flex; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .lobby-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .lobby-status-dot.waiting { background:#4CAF50; }
+  .lobby-status-dot.matching { background:#FFC107; }
+  .lobby-status-dot.playing { background:#ff5252; }
+  .lobby-username { flex:1; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:#e0e0e0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lobby-chip { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--gold); display:flex; align-items:center; gap:3px; flex-shrink:0; }
+  .lobby-chip img { width:14px; height:14px; object-fit:contain; }
+  .lobby-challenge-btn { padding:4px 10px; border-radius:6px; border:1px solid rgba(201,168,76,0.3); background:rgba(201,168,76,0.12); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:600; cursor:pointer; flex-shrink:0; }
+  .lobby-challenge-btn:hover { background:rgba(201,168,76,0.25); }
+  .lobby-challenge-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .lobby-empty { text-align:center; color:rgba(255,255,255,0.2); font-size:0.8rem; padding:24px 0; }
+  /* ── 타이틀 바 ── */
+  .pvp-title-bar { display:flex; align-items:center; justify-content:center; position:relative; padding:12px 16px 8px; }
+  .pvp-lobby-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gold); font-weight:700; text-align:center; }
+  .pvp-rule-btn { position:absolute; right:16px; width:32px; height:32px; border-radius:50%; border:1.5px solid rgba(201,168,76,0.4); background:rgba(201,168,76,0.1); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:700; cursor:pointer; }
+  .pvp-rule-btn:hover { background:rgba(201,168,76,0.2); }
+  /* ── 접속자 리스트 박스 ── */
+  .pvp-user-list-box { margin:8px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; }
+  .pvp-user-list-box::-webkit-scrollbar { width:3px; }
+  .pvp-user-list-box::-webkit-scrollbar-thumb { background:rgba(201,168,76,0.3); border-radius:3px; }
+  /* ── 전적 박스 ── */
+  .pvp-stat-box { margin:8px 16px; border:1px solid rgba(201,168,76,0.15); border-radius:12px; background:rgba(201,168,76,0.05); padding:12px 16px; }
+  .pvp-stat-title { font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(201,168,76,0.5); letter-spacing:0.1em; margin-bottom:8px; }
+  .pvp-stat-content { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:rgba(255,255,255,0.7); }
+  .pvp-stat-row { display:flex; align-items:center; gap:8px; }
+  .pvp-stat-mode { color:var(--gold); font-weight:700; font-size:0.72rem; min-width:60px; }
+  .pvp-stat-num { color:rgba(255,255,255,0.5); font-size:0.7rem; }
+  .pvp-stat-win { color:#4CAF50; font-weight:700; }
+  .pvp-stat-lose { color:#ff5252; font-weight:700; }
+  .pvp-stat-draw { color:rgba(255,255,255,0.4); }
+  /* ── 하단 매칭 버튼 ── */
+  .pvp-match-footer { position:fixed; bottom:0; left:0; right:0; padding-bottom:max(12px, env(safe-area-inset-bottom)); z-index:10; }
+  .pvp-match-footer #matchButtons { display:flex; justify-content:center; }
+  .pvp-match-footer .match-btn { width:70%; max-width:336px; padding:18px 16px; font-size:0.85rem; margin-bottom:48px; border-radius:12px; }
+  /* ── 룰 팝업 ── */
+  .pvp-rule-popup { background:linear-gradient(145deg,#1a3a22,#0d2818); border:2px solid var(--gold); border-radius:16px; padding:20px; max-width:360px; width:92%; max-height:80vh; overflow-y:auto; text-align:left; }
+  .pvp-rule-section { margin-bottom:14px; }
+  .pvp-rule-section-title { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--gold); font-weight:700; letter-spacing:0.08em; margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid rgba(201,168,76,0.2); }
+  .pvp-rule-section ul { margin:0; padding-left:14px; list-style:none; }
+  .pvp-rule-section ul li { font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:rgba(255,255,255,0.65); line-height:1.6; margin-bottom:4px; padding-left:8px; position:relative; }
+  .pvp-rule-section ul li::before { content:'•'; position:absolute; left:-6px; color:rgba(201,168,76,0.5); }
+  /* ── 팝업 ── */
+  .pvp-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; justify-content:center; align-items:center; }
+  .pvp-overlay.active { display:flex; }
+  .pvp-popup { background:linear-gradient(145deg,#1a3a22,#0d2818); border:2px solid var(--gold); border-radius:16px; padding:24px 20px; max-width:340px; width:90%; text-align:center; box-shadow:0 0 40px rgba(201,168,76,0.2); }
+  .pvp-popup-title { font-family:'Playfair Display',serif; color:var(--gold); font-size:1.1rem; margin-bottom:14px; }
+  .pvp-popup-btn { width:100%; padding:12px; margin-top:6px; border-radius:8px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.08); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .pvp-popup-btn:hover { background:rgba(201,168,76,0.15); }
+  .pvp-popup-btn.reject { color:rgba(255,255,255,0.5); border-color:rgba(255,255,255,0.15); }
+  .pvp-popup-countdown { color:rgba(255,255,255,0.4); font-size:0.75rem; margin-top:8px; }
+  /* ── 게임 ── */
+  .pvp-scoreboard { max-width:500px; width:100%; margin:4px auto; padding:0 16px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; }
+  .pvp-sb-header { display:flex; justify-content:space-between; color:rgba(255,255,255,0.35); padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:0.65rem; letter-spacing:0.05em; }
+  .pvp-sb-row { display:flex; align-items:center; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.03); min-height:18px; }
+  .pvp-sb-cell { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pvp-sb-cell.left { text-align:left; color:rgba(255,255,255,0.6); }
+  .pvp-sb-cell.right { text-align:right; color:rgba(255,255,255,0.6); }
+  .pvp-sb-cell.vs { flex:0; width:30px; text-align:center; color:rgba(255,255,255,0.2); font-size:0.6rem; }
+  .pvp-sb-cell .win { color:var(--gold); }
+  /* ── 상태메시지 ── */
+  @keyframes pvpBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .pvp-status-blink { animation:pvpBlink 1s ease-in-out infinite; }
+  .pvp-status-completed { color:#4CAF50 !important; }
+  .pvp-status-oppdone { color:#FFC107 !important; }
+  .pvp-status-timelimit { color:#ff5252 !important; }
+
+  /* ── 그리드 행 (내 그리드 + 미니그리드 나란히) ── */
+  .duel-grid-row { display:flex; align-items:flex-start; width:100%; max-width:500px; margin:0 auto; padding:4px 8px; gap:6px; box-sizing:border-box; }
+  .duel-my-grid-wrap { flex:2 1 0; min-width:0; }
+  .duel-my-grid-wrap .grid-container { width:100%; }
+  .duel-mini-wrap { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .duel-mini-label { font-family:'IBM Plex Mono',monospace; font-size:0.52rem; color:rgba(255,255,255,0.25); letter-spacing:0.06em; }
+  .duel-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:100%; aspect-ratio:1; }
+  .duel-mini-cell { border-radius:2px; aspect-ratio:1; transition:background 0.3s ease; }
+  .duel-mini-cell.has-card { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.12); }
+  .duel-mini-cell.empty { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.03); }
+  .duel-out-cards { display:flex; flex-direction:column; gap:2px; width:100%; margin-top:4px; }
+  .duel-out-item { display:flex; align-items:center; gap:4px; font-family:'IBM Plex Mono',monospace; }
+  .duel-out-lbl { font-size:0.52rem; color:rgba(255,255,255,0.3); min-width:24px; }
+  .duel-out-val { font-size:0.75rem; font-weight:700; color:var(--gold); }
+  .duel-out-val.first { color:#FFD740; }
+
+  /* ── 베팅 상태 바 ── */
+  .duel-bet-status-bar { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; background:rgba(0,0,0,0.25); border-top:1px solid rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.06); max-width:500px; width:100%; margin:0 auto; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; }
+  .duel-bs-left, .duel-bs-right { display:flex; align-items:center; gap:3px; color:rgba(255,255,255,0.6); }
+  .duel-bs-myout, .duel-bs-oppout { font-size:0.78rem; font-weight:700; color:var(--gold); }
+  .duel-bs-myout.first, .duel-bs-oppout.first { color:#FFD740; }
+  .duel-bs-name { color:rgba(255,255,255,0.35); font-size:0.6rem; }
+  .duel-bs-center { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .duel-pot { font-size:0.72rem; color:var(--gold); font-weight:700; }
+
+  /* ── 레이즈 트래커 ── */
+  .duel-raise-track { display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:2px; font-size:0.65rem; text-align:center; }
+  .duel-raise-slot { padding:1px 3px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; transition:all 0.2s; }
+  .duel-raise-slot.done { color:var(--gold); background:rgba(201,168,76,0.15); }
+  .duel-raise-slot.pending { color:rgba(255,255,255,0.15); }
+  .duel-raise-slot.active { color:#FFC107; background:rgba(255,193,7,0.15); animation:raisePulse 0.8s ease-in-out infinite; }
+  @keyframes raisePulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* ── 베팅 패널 (fixed 하단) ── */
+  .duel-betting-panel { position:fixed; bottom:0; left:0; right:0; background:linear-gradient(to top, rgba(5,15,10,0.99) 70%, rgba(5,15,10,0.9)); border-top:1px solid rgba(201,168,76,0.4); padding:10px 16px; padding-bottom:max(10px, env(safe-area-inset-bottom)); z-index:50; }
+  .duel-betting-info { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(255,255,255,0.5); text-align:center; margin-bottom:8px; }
+  .duel-betting-buttons { display:flex; gap:8px; }
+  .duel-bet-btn { flex:1; padding:11px 4px; border-radius:8px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.06); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:700; cursor:pointer; text-align:center; line-height:1.3; }
+  .duel-bet-btn:active { transform:scale(0.97); }
+  .duel-bet-btn.skip { border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.5); }
+  .duel-bet-btn.call { border-color:rgba(76,175,80,0.5); color:#4CAF50; }
+  .duel-bet-btn.raise { border-color:rgba(255,193,7,0.5); color:#FFC107; }
+  .duel-bet-btn.fold { border-color:rgba(255,82,82,0.5); color:#ff5252; flex:0.7; }
+  .duel-bet-btn:disabled { opacity:0.25; cursor:not-allowed; }
+
+  /* ── START 오버레이 DUEL ── */
+  .duel-out-preview { font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:rgba(255,255,255,0.6); margin:8px 0 16px; text-align:center; line-height:1.8; }
+
+  /* 베팅 패널 떠있을 때 스크롤 여백 */
+  .duel-betting-active { padding-bottom:100px; }
+</style>
+</head>
+<body class="game-page">
+<div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
+
+<div class="back-fixed"><a href="mode_select.html" id="backLink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
+
+<div class="header">
+  <div id="global-header"></div>
+</div>
+
+<!-- ==================== VIEW: LOBBY ==================== -->
+<div id="view-lobby">
+  <div class="lobby-container">
+    <div class="pvp-title-bar">
+      <div class="pvp-lobby-title" id="lobbyTitle">GAMBLE DUEL 로비</div>
+      <button class="pvp-rule-btn" onclick="openRulePopup()">?</button>
+    </div>
+    <div class="pvp-user-list-box">
+      <div id="lobbyList"></div>
+    </div>
+    <div class="pvp-stat-box" id="pvpStatBox">
+      <div class="pvp-stat-title">MY RECORD</div>
+      <div class="pvp-stat-content" id="pvpStatContent">
+        로딩 중...
+      </div>
+    </div>
+  </div>
+  <div class="pvp-match-footer">
+    <div id="matchButtons"></div>
+  </div>
+
+  <!-- 룰 팝업 -->
+  <div class="pvp-overlay" id="ruleOverlay">
+    <div class="pvp-rule-popup">
+      <div class="pvp-popup-title" style="text-align:center;margin-bottom:16px;">
+        GAMBLE DUEL
+      </div>
+
+      <div class="pvp-rule-section">
+        <div class="pvp-rule-section-title">게임 규칙</div>
+        <ul>
+          <li>52장 카드를 25장씩 나눠 갖고 2장은 아웃됩니다.</li>
+          <li>각자의 5x5 그리드에서 한붓그리기로 패를 완성합니다.</li>
+          <li>OUT 카드 숫자가 높은 사람이 선이 됩니다.</li>
+          <li>게임 종료 시 최상위 패부터 순서대로 비교합니다. (1위패 vs 1위패 → 비기면 2위패 비교 순)</li>
+        </ul>
+      </div>
+
+      <div class="pvp-rule-section">
+        <div class="pvp-rule-section-title">칩 정산 규칙</div>
+        <ul>
+          <li>베팅을 통해 판돈이 결정됩니다.</li>
+          <li>승자는 판돈에서 테이블피(판돈의 5%, 최대 20칩)를 제외한 금액을 획득합니다.</li>
+          <li>무승부 시 각자 베팅금이 반환됩니다.</li>
+        </ul>
+      </div>
+
+      <div class="pvp-rule-section">
+        <div class="pvp-rule-section-title">베팅 규칙</div>
+        <ul>
+          <li>기본 1칩씩 자동 베팅 (총 2칩 포트)</li>
+          <li>시작 전: 7초씩 턴제 (인당 최대 2번 레이즈)</li>
+          <li>시작 후 30초: 10초씩 추가 베팅 (인당 최대 1번)</li>
+          <li>레이즈 금액: 1→10→30→50→70→100→200칩 순</li>
+          <li>타임아웃 시 자동 CALL/SKIP</li>
+        </ul>
+      </div>
+
+      <div class="pvp-rule-section">
+        <div class="pvp-rule-section-title">패의 승패 규칙</div>
+        <ul>
+          <li>포커 기본 룰을 따릅니다.</li>
+          <li>동일 족보는 숫자 높은 순</li>
+          <li>수트: 스페이드 > 다이아 > 하트 > 클로버</li>
+        </ul>
+      </div>
+
+      <div class="pvp-rule-section">
+        <div class="pvp-rule-section-title">기타 규칙</div>
+        <ul>
+          <li>게임 종료 50초 전 이전에 한 쪽이 끝내면 남은 시간 50초로 제한</li>
+          <li>100칩 미만 시 재대결 불가</li>
+          <li>게임 중 이탈 시 판돈 전액 상대에게</li>
+        </ul>
+      </div>
+
+      <button class="pvp-popup-btn"
+        onclick="document.getElementById('ruleOverlay').classList.remove('active')"
+        style="margin-top:8px;">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- 신청 수신 팝업 -->
+  <div class="pvp-overlay" id="receivedOverlay">
+    <div class="pvp-popup">
+      <div class="pvp-popup-title" id="receivedTitle"></div>
+      <button class="pvp-popup-btn" id="receivedAcceptBtn" onclick="acceptChallenge()"></button>
+      <button class="pvp-popup-btn reject" id="receivedRejectBtn" onclick="rejectChallenge()"></button>
+      <div class="pvp-popup-countdown" id="receivedCountdown"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VIEW: GAME ==================== -->
+<div id="view-game" style="display:none">
+  <div class="status-bar" style="margin-top:8px;">
+    <div class="timer-wrap">
+      <svg class="timer-ring" viewBox="0 0 40 40">
+        <circle class="timer-ring-bg" cx="20" cy="20" r="16"/>
+        <circle class="timer-ring-fg" id="timerRing" cx="20" cy="20" r="16"
+          stroke-dasharray="100.53" stroke-dashoffset="0"
+          transform="rotate(-90 20 20)"/>
+      </svg>
+      <div class="timer-num" id="timerNum">200</div>
+    </div>
+    <div id="pvpStatusMsg" style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:rgba(201,168,76,0.3);">GAMBLE DUEL</div>
+    <div style="width:32px"></div>
+  </div>
+
+  <!-- 그리드 영역 -->
+  <div class="duel-grid-row">
+    <div class="duel-my-grid-wrap">
+      <div class="grid-container" id="gridContainer">
+        <div class="grid" id="grid"></div>
+        <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points=""/></svg>
+        <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+      </div>
+      <div class="hand-preview" id="handPreview"></div>
+    </div>
+    <div class="duel-mini-wrap">
+      <div class="duel-mini-label">OPPONENT</div>
+      <div class="duel-mini-grid" id="oppMiniGrid"></div>
+      <div class="duel-out-cards">
+        <div class="duel-out-item">
+          <span class="duel-out-lbl">MY</span>
+          <span class="duel-out-val" id="myOutCard">—</span>
+        </div>
+        <div class="duel-out-item">
+          <span class="duel-out-lbl">OPP</span>
+          <span class="duel-out-val" id="oppOutCard">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 베팅 상태 바 -->
+  <div class="duel-bet-status-bar">
+    <div class="duel-bs-left">
+      <span class="duel-bs-myout" id="bsMyOut">—</span>
+      <span class="duel-bs-name">ME</span>
+      <img src="./images/chip.png" style="width:12px;height:12px;">
+      <span id="myChipDisplay">0</span>
+    </div>
+    <div class="duel-bs-center">
+      <div class="duel-raise-track" id="raiseTrack"></div>
+      <div class="duel-pot" id="duelPot">POT 2</div>
+    </div>
+    <div class="duel-bs-right">
+      <img src="./images/chip.png" style="width:12px;height:12px;">
+      <span id="oppChip">0</span>
+      <span class="duel-bs-name">OPP</span>
+      <span class="duel-bs-oppout" id="bsOppOut">—</span>
+    </div>
+  </div>
+
+  <!-- 점수판 (3줄) -->
+  <div class="pvp-scoreboard" id="scoreboard"></div>
+
+  <!-- 베팅 패널 -->
+  <div class="duel-betting-panel" id="bettingPanel" style="display:none">
+    <div class="duel-betting-info" id="bettingInfo"></div>
+    <div class="duel-betting-buttons" id="bettingButtons"></div>
+  </div>
+
+  <!-- 더미 엘리먼트 (script.js 참조용) -->
+  <div style="display:none">
+    <button id="restartBtn"></button>
+    <div id="currentScore"></div>
+    <div id="highScoreDisplay"></div>
+    <div id="retryLabel"></div>
+    <div id="leaderboardOverlay"><div id="leaderboardModal"></div></div>
+    <button id="btnSaveReplay"></button>
+    <div id="allUserTopScoreRow"></div>
+    <div id="usernameDisplay"></div>
+    <div class="removed-cards" id="removedCards"></div>
+    <div class="hand-slots" id="handSlots"></div>
+    <div id="handCount"></div>
+  </div>
+
+  <!-- START 오버레이 -->
+  <div class="start-overlay" id="startOverlay" style="display:none">
+    <div class="start-box">
+      <div class="start-title">GAMBLE DUEL</div>
+      <div class="start-subtitle" id="pvpStartSubtitle"></div>
+      <div class="duel-out-preview" id="duelOutPreview"></div>
+      <button class="start-btn" id="startBtn">▶ START</button>
+    </div>
+  </div>
+</div>
+
+<!-- 공통 모달 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="qr-overlay" id="qrOverlay" style="display:none">
+  <div class="qr-modal" onclick="event.stopPropagation()">
+    <div class="qr-scroll"><div id="qrHandList"></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script src="header.js"></script>
+<script src="sound.js"></script>
+<script src="scorepolicy.js"></script>
+<script src="quickref.js"></script>
+<script>
+  window._pvpMode = true;
+  function renderCurrencyBar() { _updateHeaderValues(true); }
+  function deductGoldLocal() { return true; }
+  function updateRestartButtonState() {}
+  async function syncGoldToDB() {}
+</script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
+<script src="pvp_utils.js"></script>
+<script>
+// =============================================
+// 뷰 전환
+// =============================================
+function showView(name) {
+  document.getElementById('view-lobby').style.display = name === 'lobby' ? '' : 'none';
+  document.getElementById('view-game').style.display = name === 'game' ? '' : 'none';
+  document.getElementById('backLink').href = name === 'lobby' ? 'mode_select.html' : '#';
+  if (name === 'lobby') {
+    document.getElementById('backLink').onclick = null;
+  } else {
+    document.getElementById('backLink').onclick = function(e) {
+      e.preventDefault();
+      if (pvpDuel.gameStarted && state.phase !== 'result' && state.phase !== 'idle') {
+        showToast('게임 중에는 로비로 이동할 수 없습니다.');
+        return;
+      }
+      goToLobby();
+    };
+  }
+  const header = document.getElementById('global-header');
+  if (header && header.parentElement) header.parentElement.style.display = name === 'game' ? 'none' : '';
+}
+
+// =============================================
+// 공통 상태
+// =============================================
+let lobbyUsers = [];
+let matchingMode = null;
+let challengeTarget = null;
+let pendingChallenge = null;
+let challengeTimer = null;
+let heartbeatInterval = null;
+let receivedCountdownInterval = null;
+
+const pvpDuel = {
+  roomId: null,
+  opponent: null,
+  myCards: [],
+  myOutCard: null,
+  oppOutCard: null,
+  firstPlayer: null,
+  myHands: [],
+  opponentHands: [],
+  gameStarted: false,
+  rematchRequested: false,
+  disconnectTimeout: null,
+  syncInterval: null,
+  rematchTimer: null,
+  currentPot: 2,
+  myBet: 1,
+  oppBet: 1,
+  bettingActive: false,
+  raiseHistory: [],
+  currentTurn: null,
+  bettingPhase: null
+};
+
+// =============================================
+// 초기화
+// =============================================
+let scriptLoaded = false;
+
+(async () => {
+  await i18n.init();
+  initHeader();
+  await ScorePolicy.load();
+
+  document.getElementById('lobbyTitle').textContent = 'GAMBLE DUEL 로비';
+  renderMatchButtons('idle', null);
+
+  // script.js 로드 (게임 엔진)
+  await new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'script.js';
+    s.onload = () => { scriptLoaded = true; resolve(); };
+    document.body.appendChild(s);
+  });
+
+  // 로비 진입
+  if (socket.connected) {
+    joinLobby();
+  } else {
+    socket.once('connect', joinLobby);
+  }
+})();
+
+// =============================================
+// 로비 로직
+// =============================================
+function joinLobby() {
+  const playerId = localStorage.getItem('poker_player_id');
+  const username = localStorage.getItem('poker_username');
+  const chip = parseInt(localStorage.getItem('userChip') || '0');
+  socket.emit('lobby:join', { playerId, username, chip });
+  clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => socket.emit('heartbeat'), 3000);
+  loadMyPvpStat();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── 로비 소켓 이벤트 ───
+socket.on('lobby:list', (list) => { lobbyUsers = list; renderLobby(); });
+socket.on('lobby:userJoined', (user) => {
+  const idx = lobbyUsers.findIndex(u => u.socketId === user.socketId);
+  if (idx !== -1) { lobbyUsers[idx] = user; }
+  else { lobbyUsers.push(user); }
+  renderLobby();
+});
+socket.on('lobby:userLeft', (socketId) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== socketId); renderLobby(); });
+socket.on('lobby:statusChanged', ({ socketId, status }) => {
+  const user = lobbyUsers.find(u => u.socketId === socketId);
+  if (user) user.status = status;
+  renderLobby();
+});
+
+socket.on('challenge:received', ({ fromSocketId, fromUsername, fromChip, mode }) => {
+  if (mode !== 'gamble') return;
+  pendingChallenge = { fromSocketId, fromUsername, fromChip, mode };
+  showReceivedPopup();
+});
+socket.on('challenge:rejected', () => { showToast(i18n.t('pvp.lobby.rejected')); });
+socket.on('challenge:failed', () => { showToast(i18n.t('pvp.lobby.unavailable')); });
+
+// ─── room:created → 게임 뷰 전환 ───
+socket.on('room:created', ({ roomId, mode, opponent, myCards, myOutCard, oppOutCard, firstPlayer }) => {
+  if (mode !== 'gamble') return;
+  pvpDuel.roomId = roomId;
+  pvpDuel.opponent = opponent;
+  pvpDuel.myCards = myCards || [];
+  pvpDuel.myOutCard = myOutCard;
+  pvpDuel.oppOutCard = oppOutCard;
+  pvpDuel.firstPlayer = firstPlayer;
+  pvpDuel.currentPot = 2;
+  pvpDuel.myBet = 1;
+  pvpDuel.oppBet = 1;
+  pvpDuel.raiseHistory = [];
+  pvpDuel.myHands = [];
+  pvpDuel.opponentHands = [];
+  pvpDuel.gameStarted = false;
+  pvpDuel.rematchRequested = false;
+  clearTimeout(pvpDuel.rematchTimer);
+  matchingMode = null;
+  renderMatchButtons('idle');
+  showView('game');
+  setupDuelGameUI();
+});
+
+function renderLobby() {
+  const container = document.getElementById('lobbyList');
+  const myId = socket.id;
+  const others = lobbyUsers.filter(u => u.socketId !== myId);
+  const waiting = others.filter(u => u.status === 'waiting');
+  const matching = others.filter(u => u.status === 'matching');
+  const playing = others.filter(u => u.status === 'playing');
+
+  let html = `<div class="lobby-section-title">── ${i18n.t('pvp.lobby.waiting')} (${waiting.length}) ──</div>`;
+  if (waiting.length === 0 && matching.length === 0 && playing.length === 0) {
+    html += `<div class="lobby-empty">...</div>`;
+  }
+  waiting.forEach(u => {
+    const canChallenge = !matchingMode && u.chip >= 100;
+    html += renderUserRow(u, 'waiting', canChallenge);
+  });
+  if (matching.length > 0) {
+    html += `<div class="lobby-section-title">── ${i18n.t('pvp.lobby.matching')} (${matching.length}) ──</div>`;
+    matching.forEach(u => html += renderUserRow(u, 'matching', false));
+  }
+  if (playing.length > 0) {
+    html += `<div class="lobby-section-title">── ${i18n.t('pvp.lobby.playing')} (${playing.length}) ──</div>`;
+    playing.forEach(u => html += renderUserRow(u, 'playing', false));
+  }
+  container.innerHTML = html;
+}
+
+function renderUserRow(user, status, showBtn) {
+  const chipHtml = `<div class="lobby-chip"><img src="./images/chip.png" alt="chip" onerror="this.style.display='none'">${user.chip.toLocaleString()}</div>`;
+  const btnHtml = showBtn
+    ? `<button class="lobby-challenge-btn" onclick="sendDirectChallenge('${user.socketId}')">${i18n.t('pvp.lobby.challenge')}</button>`
+    : '';
+  return `<div class="lobby-user"><div class="lobby-status-dot ${status}"></div><div class="lobby-username">${user.username}</div>${chipHtml}${btnHtml}</div>`;
+}
+
+function renderMatchButtons(status) {
+  const container = document.getElementById('matchButtons');
+  if (status === 'matching') {
+    container.innerHTML = `<button class="match-btn active" onclick="toggleMatch()">${i18n.t('pvp.lobby.cancelMatch')}</button>`;
+  } else {
+    container.innerHTML = `<button class="match-btn" onclick="toggleMatch()">${i18n.t('pvp.lobby.gambleMatch')}</button>`;
+  }
+}
+
+function toggleMatch() {
+  if (matchingMode) {
+    socket.emit('match:cancel');
+    matchingMode = null;
+    renderMatchButtons('idle');
+  } else {
+    matchingMode = 'gamble';
+    socket.emit('match:start', { mode: 'gamble' });
+    renderMatchButtons('matching');
+  }
+  renderLobby();
+}
+
+function sendDirectChallenge(targetId) {
+  if (matchingMode) return;
+  socket.emit('challenge:send', { targetSocketId: targetId, mode: 'gamble' });
+  clearTimeout(challengeTimer);
+  challengeTimer = setTimeout(() => showToast(i18n.t('pvp.lobby.rejected')), 7000);
+}
+
+function showReceivedPopup() {
+  if (!pendingChallenge) return;
+  const { fromUsername, fromChip } = pendingChallenge;
+  const modeName = i18n.t('pvp.lobby.gambleDuel');
+  document.getElementById('receivedTitle').textContent =
+    i18n.t('pvp.lobby.challengeFrom').replace('{name}', fromUsername).replace('{chip}', fromChip.toLocaleString()).replace('{mode}', modeName);
+  document.getElementById('receivedAcceptBtn').textContent = i18n.t('pvp.lobby.accept');
+  document.getElementById('receivedRejectBtn').textContent = i18n.t('pvp.lobby.reject');
+  let remaining = 7;
+  document.getElementById('receivedCountdown').textContent = `${remaining}s`;
+  document.getElementById('receivedOverlay').classList.add('active');
+  clearInterval(receivedCountdownInterval);
+  receivedCountdownInterval = setInterval(() => {
+    remaining--;
+    document.getElementById('receivedCountdown').textContent = `${remaining}s`;
+    if (remaining <= 0) { clearInterval(receivedCountdownInterval); rejectChallenge(); }
+  }, 1000);
+}
+
+function acceptChallenge() {
+  if (!pendingChallenge) return;
+  clearInterval(receivedCountdownInterval);
+  socket.emit('challenge:accept', { fromSocketId: pendingChallenge.fromSocketId, mode: 'gamble' });
+  document.getElementById('receivedOverlay').classList.remove('active');
+  pendingChallenge = null;
+}
+
+function rejectChallenge() {
+  if (!pendingChallenge) return;
+  clearInterval(receivedCountdownInterval);
+  socket.emit('challenge:reject', { fromSocketId: pendingChallenge.fromSocketId });
+  document.getElementById('receivedOverlay').classList.remove('active');
+  pendingChallenge = null;
+}
+
+// =============================================
+// [REUSE] 같은 rank 패끼리 세부 강도 비교 (양수=a강함)
+function compareHandStrength(a, b) {
+  if (!a.cards || !b.cards) {
+    const SR = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 };
+    return (SR[a.suit] || 0) - (SR[b.suit] || 0);
+  }
+  const getKeys = (hand) => {
+    const cards = hand.cards.slice().sort((x, y) => y.value - x.value);
+    const counts = {};
+    cards.forEach(c => counts[c.value] = (counts[c.value] || 0) + 1);
+    const byCount = Object.entries(counts)
+      .sort((x, y) => y[1] - x[1] || parseInt(y[0]) - parseInt(x[0]))
+      .map(e => parseInt(e[0]));
+    switch (hand.rank) {
+      case 1: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 2: return [byCount[0], byCount[1], ...cards.filter(c => c.value !== byCount[0] && c.value !== byCount[1]).map(c => c.value)];
+      case 3: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 4: case 8: {
+        if (cards[0].value === 14 && cards[1].value === 5) return [5];
+        return [cards[0].value];
+      }
+      case 5: return cards.map(c => c.value);
+      case 6: return [byCount[0], byCount[1]];
+      case 7: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 9: case 10: return [];
+      default: return cards.map(c => c.value);
+    }
+  };
+  const ka = getKeys(a), kb = getKeys(b);
+  for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+    if ((ka[i] || 0) !== (kb[i] || 0)) return (ka[i] || 0) - (kb[i] || 0);
+  }
+  const SR = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 };
+  const sa = SR[a.cards.slice().sort((x,y) => y.value - x.value)[0].suit] || 0;
+  const _sb = SR[b.cards.slice().sort((x,y) => y.value - x.value)[0].suit] || 0;
+  return sa - _sb;
+}
+
+function pvpHandSort(a, b) {
+  if (b.rank !== a.rank) return b.rank - a.rank;
+  return compareHandStrength(b, a);
+}
+
+// =============================================
+// 상태 메시지
+// =============================================
+function setPvpStatus(type) {
+  const el = document.getElementById('pvpStatusMsg');
+  if (!el) return;
+  el.className = '';
+  switch (type) {
+    case 'idle':
+      el.textContent = 'GAMBLE DUEL';
+      el.style.color = 'rgba(201,168,76,0.3)';
+      break;
+    case 'betting':
+      el.textContent = 'BETTING';
+      el.style.color = '#FFC107';
+      el.classList.add('pvp-status-blink');
+      break;
+    case 'betting_mid':
+      el.textContent = 'MID BET';
+      el.style.color = '#FFC107';
+      el.classList.add('pvp-status-blink');
+      break;
+    case 'completed':
+      el.textContent = 'COMPLETED';
+      el.classList.add('pvp-status-blink', 'pvp-status-completed');
+      el.style.color = '';
+      break;
+    case 'oppdone':
+      el.textContent = 'OPP DONE';
+      el.classList.add('pvp-status-blink', 'pvp-status-oppdone');
+      el.style.color = '';
+      break;
+    case 'timelimit':
+      el.textContent = 'TIME LIMIT';
+      el.classList.add('pvp-status-blink', 'pvp-status-timelimit');
+      el.style.color = '';
+      break;
+  }
+}
+
+// =============================================
+// 카드 포맷 함수
+// =============================================
+function formatCard(card) {
+  if (!card) return '—';
+  const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+  const isRed = card.suit === '♥' || card.suit === '♦';
+  const color = isRed ? '#ff6b6b' : '#e0e0e0';
+  return `<span style="color:${color}">${VN[card.value]}${card.suit}</span>`;
+}
+
+function cardDisplay(cards) {
+  if (!cards || !cards.length) return '';
+  const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+  return cards.slice().sort((a,b) => b.value - a.value).map(c => {
+    const isRed = c.suit === '♥' || c.suit === '♦';
+    return `<span style="color:${isRed ? '#ff6b6b' : '#e0e0e0'}">${VN[c.value]}${c.suit}</span>`;
+  }).join(' ');
+}
+
+// =============================================
+// 게임 UI 설정
+// =============================================
+function setupDuelGameUI() {
+  // 5x5 그리드 오버라이드
+  GRID_SIZE = 5;
+  initState();
+  initGrid();
+
+  displayOutCards();
+  initOppMiniGrid();
+  renderRaiseTrack([], true, 'pre');
+  updatePotDisplay(2);
+
+  // START 오버레이
+  const overlay = document.getElementById('startOverlay');
+  const startBtn = document.getElementById('startBtn');
+  overlay.style.display = 'flex';
+
+  document.getElementById('pvpStartSubtitle').textContent = `VS ${pvpDuel.opponent.username}`;
+
+  const isFirst = pvpDuel.firstPlayer === socket.id;
+  const preview = document.getElementById('duelOutPreview');
+  if (preview) {
+    preview.innerHTML = `MY OUT: ${formatCard(pvpDuel.myOutCard)}&nbsp;&nbsp;OPP OUT: ${formatCard(pvpDuel.oppOutCard)}<br><span style="color:${isFirst ? '#4CAF50' : '#ff5252'};font-size:0.75rem;margin-top:4px;display:block">${isFirst ? '★ 내가 선입니다' : '상대방이 선입니다'}</span>`;
+  }
+
+  // START 버튼 핸들러
+  const newBtn = startBtn.cloneNode(true);
+  startBtn.parentNode.replaceChild(newBtn, startBtn);
+  newBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    Sound.warmup();
+    socket.emit('duel:ready', { roomId: pvpDuel.roomId });
+    newBtn.textContent = '대기 중...';
+    newBtn.disabled = true;
+  });
+
+  // 칩 표시
+  const myChip = parseInt(localStorage.getItem('userChip') || '0');
+  document.getElementById('myChipDisplay').textContent = myChip.toLocaleString();
+  document.getElementById('oppChip').textContent = pvpDuel.opponent.chip.toLocaleString();
+
+  updateBetStatusBar();
+  renderDuelScoreboard();
+
+  setPvpStatus('idle');
+  const timerNum = document.getElementById('timerNum');
+  const timerRing = document.getElementById('timerRing');
+  if (timerNum) { timerNum.style.color = ''; timerNum.classList.remove('time-attack'); timerNum.textContent = '200'; }
+  if (timerRing) { timerRing.style.stroke = ''; timerRing.classList.remove('time-attack'); }
+
+  document.getElementById('modalOverlay').classList.remove('active');
+
+  // 그리드 터치 비활성화 (START 전)
+  const grid = document.getElementById('gridContainer');
+  if (grid) grid.style.pointerEvents = 'none';
+
+  // endGame 오버라이드
+  window.endGame = function(reason) {
+    if (!pvpDuel.gameStarted) return;
+    if (state.phase === 'result') return;
+    if (reason === 'complete' || reason === 'nomoves') {
+      state.phase = 'done';
+      socket.emit('duel:playerDone', { roomId: pvpDuel.roomId, reason });
+    } else if (reason === 'timeout') {
+      socket.emit('duel:end', { roomId: pvpDuel.roomId });
+    }
+  };
+
+  // finalizePath 래핑
+  if (!window._origFinalizePathDuel) {
+    window._origFinalizePathDuel = window.finalizePath;
+  }
+  window.finalizePath = function() {
+    const removedPositions = state.selectedPath ? [...state.selectedPath] : [];
+    const prevCount = state.hands.length;
+    window._origFinalizePathDuel.call(this);
+    const newCount = state.hands.length;
+    if (newCount > prevCount) {
+      const newHand = state.hands[state.hands.length - 1];
+      const evalResult = evaluateHand(newHand.cards);
+      const sortedCards = [...newHand.cards].sort((a, b) => b.value - a.value);
+      const topSuit = sortedCards[0].suit;
+
+      pvpDuel.myHands = state.hands.map(h => {
+        const ev = evaluateHand(h.cards);
+        const sc = [...h.cards].sort((a, b) => b.value - a.value);
+        return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: h.cards };
+      }).sort(pvpHandSort);
+
+      renderDuelScoreboard();
+
+      socket.emit('duel:handComplete', {
+        roomId: pvpDuel.roomId,
+        hand: {
+          rank: evalResult.rank,
+          label: evalResult.label,
+          suit: topSuit,
+          cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
+        },
+        removedPositions
+      });
+    }
+  };
+}
+
+// =============================================
+// 미니그리드 / OUT 카드 / POT
+// =============================================
+function displayOutCards() {
+  const myEl = document.getElementById('myOutCard');
+  const oppEl = document.getElementById('oppOutCard');
+  const isFirst = pvpDuel.firstPlayer === socket.id;
+  if (myEl) { myEl.innerHTML = formatCard(pvpDuel.myOutCard); if (isFirst) myEl.classList.add('first'); }
+  if (oppEl) { oppEl.innerHTML = formatCard(pvpDuel.oppOutCard); if (!isFirst) oppEl.classList.add('first'); }
+}
+
+function initOppMiniGrid() {
+  const grid = document.getElementById('oppMiniGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'duel-mini-cell has-card';
+    cell.id = `mini-cell-${i}`;
+    grid.appendChild(cell);
+  }
+}
+
+function updateOppMiniGrid(removedPositions) {
+  if (!removedPositions) return;
+  removedPositions.forEach(pos => {
+    const r = Array.isArray(pos) ? pos[0] : pos.row;
+    const c = Array.isArray(pos) ? pos[1] : pos.col;
+    const idx = r * 5 + c;
+    const cell = document.getElementById(`mini-cell-${idx}`);
+    if (cell) cell.className = 'duel-mini-cell empty';
+  });
+}
+
+function updatePotDisplay(pot) {
+  pvpDuel.currentPot = pot;
+  const el = document.getElementById('duelPot');
+  if (el) el.textContent = `POT ${pot}`;
+}
+
+function updateBetStatusBar() {
+  const isFirst = pvpDuel.firstPlayer === socket.id;
+  const myOut = document.getElementById('bsMyOut');
+  const oppOut = document.getElementById('bsOppOut');
+  if (myOut) { myOut.innerHTML = formatCard(pvpDuel.myOutCard); if (isFirst) myOut.classList.add('first'); }
+  if (oppOut) { oppOut.innerHTML = formatCard(pvpDuel.oppOutCard); if (!isFirst) oppOut.classList.add('first'); }
+}
+
+// =============================================
+// 레이즈 트래커
+// =============================================
+function renderRaiseTrack(raiseHistory, currentTurnIsFirst, phase) {
+  const track = document.getElementById('raiseTrack');
+  if (!track) return;
+  const RAISE_AMOUNTS = [1, 10, 30, 50, 70, 100];
+  let html = '';
+  for (let i = 0; i < 6; i++) {
+    const isFirstSlot = i % 2 === 0;
+    const amount = RAISE_AMOUNTS[i];
+    const done = i < raiseHistory.length;
+    const isCurrentSlot = i === raiseHistory.length &&
+      ((isFirstSlot && currentTurnIsFirst) || (!isFirstSlot && !currentTurnIsFirst));
+    const slotClass = done ? 'done' : isCurrentSlot ? 'active' : 'pending';
+    const label = isFirstSlot ? '선' : '후';
+    const amtText = done ? `+${raiseHistory[i]?.amount || amount}` : `+${amount}`;
+    html += `<div class="duel-raise-slot ${slotClass}">${done || isCurrentSlot ? `<span style="font-size:0.55rem;opacity:0.6">${label}</span> <span>${amtText}</span>` : `<span style="font-size:0.55rem;opacity:0.3">${label}</span>`}</div>`;
+  }
+  track.innerHTML = html;
+}
+
+// =============================================
+// 베팅 패널
+// =============================================
+function showBettingPanel(data) {
+  const { phase, pot, currentTurn, nextRaiseAmount, phase_raises, lastAction, callAmount } = data;
+  const panel = document.getElementById('bettingPanel');
+  const info = document.getElementById('bettingInfo');
+  const buttons = document.getElementById('bettingButtons');
+  if (!panel) return;
+
+  pvpDuel.bettingActive = true;
+  pvpDuel.bettingPhase = phase;
+  pvpDuel.currentTurn = currentTurn;
+  panel.style.display = 'block';
+
+  const isMyTurn = currentTurn === socket.id;
+  const phaseLabel = phase === 'pre' ? '시작 전 베팅' : '게임 중 베팅';
+  const timeout = phase === 'pre' ? 7 : 10;
+
+  info.innerHTML = `<div style="display:flex;justify-content:center;gap:12px;margin-bottom:4px;"><span>POT ${pot}</span><span style="color:rgba(255,255,255,0.3)">·</span><span style="color:var(--gold)">${phaseLabel}</span></div><div style="color:${isMyTurn ? '#FFC107' : 'rgba(255,255,255,0.3)'}">${isMyTurn ? `내 차례 · ${timeout}초` : '상대방 베팅 중...'}</div>`;
+
+  if (isMyTurn) {
+    const oppRaisedThisTurn = lastAction === 'raise';
+    const myRaises = phase_raises?.[phase]?.[socket.id] || 0;
+    const maxRaises = phase === 'pre' ? 2 : 1;
+    const canRaise = myRaises < maxRaises && pvpDuel.raiseHistory.length < 6;
+
+    const leftBtn = oppRaisedThisTurn
+      ? `<button class="duel-bet-btn call" onclick="sendBet('call')">CALL<br><span style="font-size:0.6rem">+${callAmount || 0}</span></button>`
+      : `<button class="duel-bet-btn skip" onclick="sendBet('call')">SKIP</button>`;
+
+    const afterRaisePot = pot + (nextRaiseAmount || 0);
+    const raiseBtn = `<button class="duel-bet-btn raise" onclick="sendBet('raise')" ${!canRaise ? 'disabled' : ''}>RAISE<br><span style="font-size:0.6rem">+${nextRaiseAmount} → ${afterRaisePot}</span></button>`;
+
+    buttons.innerHTML = `${leftBtn}${raiseBtn}<button class="duel-bet-btn fold" onclick="sendBet('fold')">FOLD</button>`;
+  } else {
+    buttons.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.75rem;padding:12px;">상대방 베팅 중...</div>`;
+  }
+}
+
+function hideBettingPanel() {
+  const panel = document.getElementById('bettingPanel');
+  if (panel) panel.style.display = 'none';
+  pvpDuel.bettingActive = false;
+}
+
+function sendBet(action) {
+  if (!pvpDuel.bettingActive) return;
+  socket.emit('duel:bet', { roomId: pvpDuel.roomId, action });
+  document.querySelectorAll('.duel-bet-btn').forEach(b => b.disabled = true);
+}
+
+// =============================================
+// 점수판 (3줄)
+// =============================================
+function renderDuelScoreboard() {
+  const container = document.getElementById('scoreboard');
+  if (!container) return;
+  const myName = localStorage.getItem('poker_username') || 'ME';
+  const oppName = pvpDuel.opponent?.username || 'OPP';
+  const myCount = pvpDuel.myHands.length;
+  const oppCount = pvpDuel.opponentHands.length;
+
+  const mySorted = [...pvpDuel.myHands].sort(pvpHandSort);
+  const oppSorted = [...pvpDuel.opponentHands].sort((a,b) => b.rank - a.rank);
+  const rankLabels = ['1st', '2nd', '3rd'];
+
+  let html = `<div class="pvp-sb-header"><span class="pvp-sb-cell left">${myName} (${myCount}/5)</span><span class="pvp-sb-cell vs"></span><span class="pvp-sb-cell right">${oppName} (${oppCount}/5)</span></div>`;
+
+  for (let i = 0; i < 3; i++) {
+    const my = mySorted[i], opp = oppSorted[i];
+    let myText = '—', oppText = '—', myClass = '', oppClass = '', vsIcon = '';
+    if (my) myText = my.label;
+    if (opp) oppText = opp.label;
+    if (my && opp) {
+      if (my.rank > opp.rank) { myClass = 'win'; vsIcon = '👑'; }
+      else if (opp.rank > my.rank) { oppClass = 'win'; vsIcon = '👑'; }
+      else { vsIcon = '?'; }
+    } else if (my && !opp) { myClass = 'win'; }
+    else if (!my && opp) { oppClass = 'win'; }
+    const lc = myClass === 'win' ? '👑 ' : '', rc = oppClass === 'win' ? ' 👑' : '';
+    html += `<div class="pvp-sb-row"><span class="pvp-sb-cell left"><span class="${myClass}">${lc}${myText}</span></span><span class="pvp-sb-cell vs" style="font-size:0.58rem;color:rgba(255,255,255,0.2);">${rankLabels[i]}<br>${vsIcon}</span><span class="pvp-sb-cell right"><span class="${oppClass}">${oppText}${rc}</span></span></div>`;
+  }
+  container.innerHTML = html;
+}
+
+// =============================================
+// 소켓 이벤트 수신 (게임)
+// =============================================
+
+// ─── duel:bettingStart ───
+socket.on('duel:bettingStart', (data) => {
+  pvpDuel.currentPot = data.pot;
+  updatePotDisplay(data.pot);
+  renderRaiseTrack(pvpDuel.raiseHistory, data.currentTurn === pvpDuel.firstPlayer, data.phase);
+  showBettingPanel(data);
+  setPvpStatus(data.phase === 'pre' ? 'betting' : 'betting_mid');
+});
+
+// ─── duel:bettingUpdate ───
+socket.on('duel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, raiseCount, nextRaiseAmount, phase_raises, lastAction, callAmount }) => {
+  if (action === 'raise') {
+    pvpDuel.raiseHistory.push({ by: bySocketId, amount });
+    pvpDuel.currentPot = pot;
+    updatePotDisplay(pot);
+    renderRaiseTrack(pvpDuel.raiseHistory, currentTurn === pvpDuel.firstPlayer, pvpDuel.bettingPhase);
+    showBettingPanel({
+      phase: pvpDuel.bettingPhase,
+      pot, currentTurn, nextRaiseAmount, phase_raises,
+      lastAction: 'raise', callAmount
+    });
+  }
+  if (action === 'call' || currentTurn === null) {
+    hideBettingPanel();
+  }
+});
+
+// ─── duel:gameStart ───
+socket.on('duel:gameStart', ({ roomId, startedAt }) => {
+  if (roomId !== pvpDuel.roomId) return;
+  pvpDuel.gameStarted = true;
+  hideBettingPanel();
+
+  const overlay = document.getElementById('startOverlay');
+  if (overlay) {
+    overlay.classList.add('hiding');
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.classList.remove('hiding');
+      const grid = document.getElementById('gridContainer');
+      if (grid) grid.style.pointerEvents = '';
+    }, 300);
+  }
+
+  BGM.init('./audio/Main_Theme.mp3');
+  BGM.start();
+
+  state.phase = 'playing';
+  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  const remaining = Math.max(1, 200 - elapsed);
+  startTimer();
+  state.timer = remaining;
+  updateTimerDisplay();
+});
+
+// ─── duel:bettingEnd ───
+socket.on('duel:bettingEnd', ({ pot }) => {
+  pvpDuel.currentPot = pot;
+  updatePotDisplay(pot);
+  hideBettingPanel();
+  if (state.phase !== 'result') state.phase = 'playing';
+  setPvpStatus('idle');
+});
+
+// ─── duel:opponentHandComplete ───
+socket.on('duel:opponentHandComplete', ({ hands, removedPositions }) => {
+  pvpDuel.opponentHands = hands;
+  updateOppMiniGrid(removedPositions);
+  renderDuelScoreboard();
+});
+
+// ─── duel:playerDone ───
+socket.on('duel:playerDone', ({ socketId, username, reason, timerAdjusted, newRemaining }) => {
+  if (timerAdjusted) {
+    clearInterval(state.timerInterval);
+    state.timer = 50;
+    updateTimerDisplay();
+    state.timerInterval = setInterval(() => {
+      if (state.phase !== 'playing' && state.phase !== 'done') return;
+      state.timer--;
+      updateTimerDisplay();
+      if (state.timer <= 0) socket.emit('duel:end', { roomId: pvpDuel.roomId });
+    }, 1000);
+  }
+  const timerNum = document.getElementById('timerNum');
+  const timerRing = document.getElementById('timerRing');
+  if (timerNum) timerNum.style.color = '#ff5252';
+  if (timerRing) timerRing.style.stroke = '#ff5252';
+  const isMine = socketId === socket.id;
+  setPvpStatus(isMine ? 'completed' : 'oppdone');
+  if (timerAdjusted) setTimeout(() => setPvpStatus('timelimit'), 500);
+});
+
+// ─── duel:result ───
+socket.on('duel:result', (data) => {
+  if (data.roomId !== pvpDuel.roomId) return;
+  state.phase = 'result';
+  clearInterval(state.timerInterval);
+  hideBettingPanel();
+  setPvpStatus('idle');
+
+  const myChip = data.newChip[socket.id];
+  if (myChip !== undefined) {
+    localStorage.setItem('userChip', String(myChip));
+    window.dispatchEvent(new Event('chipUpdated'));
+    const el = document.getElementById('myChipDisplay');
+    if (el) el.textContent = myChip.toLocaleString();
+  }
+  showDuelResult(data);
+});
+
+// ─── room:opponentDisconnected ───
+socket.on('room:opponentDisconnected', () => {
+  if (document.getElementById('view-game').style.display === 'none') return;
+  state.phase = 'result';
+  clearInterval(state.timerInterval);
+  hideBettingPanel();
+  showDuelDisconnectResult();
+});
+
+// ─── pvp:pendingNotification ───
+socket.on('pvp:pendingNotification', (data) => {
+  localStorage.setItem('userChip', String(data.newChip));
+  window.dispatchEvent(new Event('chipUpdated'));
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const dc = data.chipDelta < 0 ? '#ff5252' : '#4CAF50';
+  modal.innerHTML = `<h2 style="font-size:1.2rem;">이전 게임 결과</h2><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:12px 0;">이전 게임에서 접속이 종료되었습니다.</div><div style="font-size:1rem;font-weight:700;color:${dc};margin:8px 0;">${data.chipDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-bottom:12px;"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${data.newChip.toLocaleString()}</div><button class="pvp-popup-btn" onclick="document.getElementById('modalOverlay').classList.remove('active')">확인</button>`;
+  overlay.classList.add('active');
+});
+
+// ─── rematch ───
+socket.on('rematch:requested', () => {});
+socket.on('rematch:declined', () => {
+  showToast('상대방이 재대결을 거절했습니다.');
+  clearTimeout(pvpDuel.rematchTimer);
+  const w = document.getElementById('rematchWait'); if (w) w.textContent = '';
+  const b = document.getElementById('btnRematch'); if (b) b.style.display = 'none';
+});
+
+// ─── disconnect/reconnect ───
+socket.on('disconnect', (reason) => {
+  console.log('[duel] 소켓 disconnect:', reason);
+  if (pvpDuel.gameStarted && state.phase !== 'result' && state.phase !== 'idle') {
+    state.phase = 'result';
+    clearInterval(state.timerInterval);
+    hideBettingPanel();
+    showDisconnectWarning();
+  }
+});
+
+socket.io.on('reconnect', () => {
+  console.log('[duel] 소켓 재연결 성공');
+  clearTimeout(pvpDuel.disconnectTimeout);
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) overlay.classList.remove('active');
+  if (pvpDuel.gameStarted) {
+    pvpDuel.gameStarted = false;
+    pvpDuel.roomId = null;
+    pvpDuel.opponent = null;
+    pvpDuel.myHands = [];
+    pvpDuel.opponentHands = [];
+    state.phase = 'idle';
+    clearInterval(state.timerInterval);
+    hideBettingPanel();
+    showView('lobby');
+    joinLobby();
+    renderMatchButtons('idle');
+    showToast('서버와 재연결되었습니다.');
+  }
+});
+
+socket.io.on('reconnect_failed', () => {
+  console.log('[duel] 소켓 재연결 실패');
+  clearTimeout(pvpDuel.disconnectTimeout);
+  goToLobby();
+});
+
+// =============================================
+// 결과 / 재대결
+// =============================================
+function showDuelResult(data) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const myDelta = data.chipDelta?.[socket.id] || 0;
+  const myNewChip = data.newChip?.[socket.id] || 0;
+  const prevChip = myNewChip - myDelta;
+
+  let tableHTML = '<div style="margin:12px 0;">';
+  const mySorted = (data.myHands || []).sort(pvpHandSort);
+  const oppSorted = (data.oppHands || []).sort((a,b) => b.rank - a.rank);
+  const rankLabels = ['1st', '2nd', '3rd'];
+
+  for (let i = 0; i < 3; i++) {
+    const r = data.results?.[i] || 'draw';
+    const my = mySorted[i];
+    const opp = oppSorted[i];
+    const myLabel = my ? my.label : '—';
+    const oppLabel = opp ? opp.label : '—';
+    const myCls = r === 'A' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
+    const oppCls = r === 'B' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
+
+    tableHTML += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><div style="font-size:0.6rem;color:rgba(255,255,255,0.25);margin-bottom:2px;">${rankLabels[i]}</div><div style="display:flex;font-size:0.75rem;margin-bottom:2px;"><span style="flex:1;${myCls}">${r === 'A' ? '👑 ' : ''}${myLabel}</span><span style="flex:1;text-align:right;${oppCls}">${oppLabel}${r === 'B' ? ' 👑' : ''}</span></div><div style="display:flex;font-size:0.65rem;"><span style="flex:1;opacity:0.6;">${cardDisplay(my?.cards)}</span><span style="flex:1;text-align:right;opacity:0.6;">${cardDisplay(opp?.cards)}</span></div></div>`;
+  }
+  tableHTML += '</div>';
+
+  let chipHTML = '';
+  if (data.isDraw) {
+    chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">무승부! 베팅금 반환</div>`;
+  } else if (data.reason === 'fold') {
+    const sign = myDelta >= 0 ? '+' : '';
+    const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">FOLD 처리</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
+  } else {
+    const sign = myDelta >= 0 ? '+' : '';
+    const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">POT ${data.pot}${data.tableFee > 0 ? ` <span style="font-size:0.65rem;color:rgba(255,255,255,0.3);">(테이블피 ${data.tableFee})</span>` : ''}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
+  }
+
+  let buttonsHTML = '';
+  if (data.reason === 'disconnect') {
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">상대방이 접속을 종료했습니다.</div><button class="pvp-popup-btn" onclick="goToLobby()">로비로</button>`;
+  } else if (data.canRematch) {
+    buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" id="btnRematch" onclick="requestDuelRematch()" style="flex:1;">재대결</button><button class="pvp-popup-btn reject" onclick="goToLobby()" style="flex:1;">로비로</button></div><div id="rematchWait" style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:6px;"></div>`;
+  } else {
+    const noRematchMsg = data.noRematchReason === 'opp_chip'
+      ? '상대방 칩 부족으로 재대결이 불가합니다.'
+      : '칩이 부족하여 재대결이 불가합니다.';
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${noRematchMsg}</div><button class="pvp-popup-btn" onclick="goToLobby()">로비로</button>`;
+  }
+
+  modal.innerHTML = `<h2 style="font-size:1.3rem;">GAMBLE DUEL 결과</h2>${tableHTML}${chipHTML}${buttonsHTML}`;
+  overlay.classList.add('active');
+}
+
+function showDuelDisconnectResult() {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  modal.innerHTML = `<h2 style="font-size:1.3rem;">GAMBLE DUEL 결과</h2><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:16px 0;">상대방이 접속을 종료했습니다.</div><button class="pvp-popup-btn" onclick="goToLobby()">로비로</button>`;
+  overlay.classList.add('active');
+}
+
+function showDisconnectWarning() {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+  modal.innerHTML = `<div style="text-align:center;padding:16px 0;"><div style="font-size:1.1rem;color:var(--gold);margin-bottom:12px;">서버 연결이 끊겼습니다.</div><div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:16px;">재연결 시도 중...</div></div>`;
+  overlay.classList.add('active');
+  pvpDuel.disconnectTimeout = setTimeout(() => {
+    showToast('연결이 끊어졌습니다. 로비로 이동합니다.');
+    goToLobby();
+  }, 10000);
+}
+
+function requestDuelRematch() {
+  if (pvpDuel.rematchRequested) return;
+  pvpDuel.rematchRequested = true;
+  socket.emit('rematch:request', { roomId: pvpDuel.roomId });
+  const w = document.getElementById('rematchWait');
+  const b = document.getElementById('btnRematch');
+  if (w) w.textContent = '상대방 확인 중...';
+  if (b) b.disabled = true;
+  pvpDuel.rematchTimer = setTimeout(() => {
+    showToast('상대방이 재대결을 거절했습니다.');
+    if (w) w.textContent = '';
+    if (b) b.style.display = 'none';
+  }, 30000);
+}
+
+// =============================================
+// 로비 이동
+// =============================================
+function goToLobby() {
+  if (pvpDuel.roomId) {
+    socket.emit('rematch:cancel', { roomId: pvpDuel.roomId });
+  }
+  clearTimeout(pvpDuel.rematchTimer);
+  clearTimeout(pvpDuel.disconnectTimeout);
+  clearInterval(pvpDuel.syncInterval);
+  clearInterval(state.timerInterval);
+
+  pvpDuel.roomId = null;
+  pvpDuel.opponent = null;
+  pvpDuel.myCards = [];
+  pvpDuel.myHands = [];
+  pvpDuel.opponentHands = [];
+  pvpDuel.gameStarted = false;
+  pvpDuel.rematchRequested = false;
+  pvpDuel.bettingActive = false;
+  pvpDuel.raiseHistory = [];
+  pvpDuel.currentPot = 2;
+
+  lobbyUsers = [];
+  matchingMode = null;
+  state.phase = 'idle';
+
+  hideBettingPanel();
+  document.getElementById('modalOverlay')?.classList.remove('active');
+
+  showView('lobby');
+  joinLobby();
+  renderMatchButtons('idle');
+}
+
+// =============================================
+// 룰 팝업 / 전적
+// =============================================
+function openRulePopup() {
+  document.getElementById('ruleOverlay').classList.add('active');
+}
+document.getElementById('ruleOverlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
+
+async function loadMyPvpStat() {
+  const playerId = localStorage.getItem('poker_player_id');
+  if (!playerId) return;
+  try {
+    const { data, error } = await sb
+      .from('player_pvp')
+      .select('duel_match, duel_win, duel_lose, duel_draw, duel_disconnect')
+      .eq('player_id', playerId)
+      .single();
+
+    const el = document.getElementById('pvpStatContent');
+    if (!el) return;
+
+    if (error || !data) {
+      el.innerHTML = `<div class="pvp-stat-row"><span class="pvp-stat-mode">DUEL</span><span class="pvp-stat-num">전적 없음</span></div>`;
+      return;
+    }
+
+    const { duel_match, duel_win, duel_lose, duel_draw, duel_disconnect } = data;
+    el.innerHTML = `<div class="pvp-stat-row"><span class="pvp-stat-mode">DUEL</span><span class="pvp-stat-num">${duel_match}전</span><span class="pvp-stat-win">${duel_win}승</span><span class="pvp-stat-lose">${duel_lose}패</span><span class="pvp-stat-draw">${duel_draw}무</span>${duel_disconnect > 0 ? `<span style="color:rgba(255,100,100,0.5);font-size:0.65rem;">(이탈 ${duel_disconnect})</span>` : ''}</div>`;
+  } catch (e) {
+    console.log('[duel] 전적 로드 실패:', e);
+  }
+}
+
+// ─── 페이지 이탈 ───
+window.addEventListener('beforeunload', (e) => {
+  if (pvpDuel.gameStarted && state.phase !== 'result' && state.phase !== 'idle') {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+  socket.emit('lobby:leave');
+  clearInterval(heartbeatInterval);
+});
+</script>
+</body>
+</html>

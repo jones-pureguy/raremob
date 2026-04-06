@@ -319,6 +319,15 @@
     "placeholders": [],
     "dynamic_text": ["{n}전", "{n}승", "{n}패", "{n}무", "(이탈 {n})"]
   },
+  "pvp_duel_lobby.html": {
+    "buttons": ["▶ START", "GAMBLE DUEL 매칭", "매칭 취소", "신청", "수락", "거절", "재대결", "로비로", "?", "확인", "CALL", "RAISE", "FOLD", "SKIP"],
+    "toasts": ["상대방이 신청을 거절했습니다.", "현재 신청할 수 없는 상태입니다.", "상대방이 재대결을 거절했습니다.", "서버와 재연결되었습니다."],
+    "modals": ["GAMBLE DUEL 결과", "무승부! 베팅금 반환", "FOLD 처리", "상대방이 접속을 종료했습니다.", "칩이 부족하여 재대결이 불가합니다.", "상대방 칩 부족으로 재대결이 불가합니다.", "상대방 확인 중...", "이전 게임 결과", "GAMBLE DUEL (룰 팝업)"],
+    "alerts": [],
+    "labels": ["GAMBLE DUEL 로비", "GAMBLE DUEL", "OPPONENT", "MY RECORD", "전적 없음", "MY", "OPP", "POT", "BETTING", "MID BET", "COMPLETED", "OPP DONE", "TIME LIMIT", "1st", "2nd", "3rd"],
+    "placeholders": [],
+    "dynamic_text": ["{n}전", "{n}승", "{n}패", "{n}무", "(이탈 {n})", "시작 전 베팅", "게임 중 베팅", "내 차례", "상대방 베팅 중..."]
+  },
   "pvp_utils.js": {
     "buttons": [],
     "toasts": [],

@@ -61,6 +61,19 @@
       "myRecord": "MY RECORD",
       "noRecord": "전적 없음"
     },
+    "duel": {
+      "title": "GAMBLE DUEL",
+      "vs": "VS {name}",
+      "result": "GAMBLE DUEL 결과",
+      "draw": "무승부! 베팅금 반환",
+      "noChipMine": "칩이 부족하여 재대결이 불가합니다.",
+      "noChipOpp": "상대방 칩 부족으로 재대결이 불가합니다.",
+      "rematch": "재대결",
+      "toLobby": "로비로",
+      "waiting": "상대방 확인 중...",
+      "oppLeft": "상대방이 접속을 종료했습니다.",
+      "rematchDeclined": "상대방이 재대결을 거절했습니다."
+    },
     "rule": {
       "title": "ARCADE BATTLE"
     }

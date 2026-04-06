@@ -824,7 +824,10 @@ io.on('connection', (socket) => {
         currentTurn: bet.currentTurn,
         firstPlayer: room.duel.firstPlayer,
         outCards: room.duel.outCards,
-        nextRaiseAmount: getRaiseAmount(bet.raiseCount + 1)
+        nextRaiseAmount: getRaiseAmount(bet.raiseCount + 1),
+        phase_raises: bet.phase_raises,
+        lastAction: null,
+        callAmount: 0
       })
       console.log(`[duel] 베팅 시작 (pre): roomId=${roomId}`)
     }
@@ -875,7 +878,9 @@ io.on('connection', (socket) => {
         currentTurn: bet.currentTurn,
         raiseCount: bet.raiseCount,
         nextRaiseAmount: getRaiseAmount(bet.raiseCount + 1),
-        phase_raises: bet.phase_raises
+        phase_raises: bet.phase_raises,
+        lastAction: 'raise',
+        callAmount: actualRaise
       })
 
       startBettingTurn(room)
@@ -895,7 +900,7 @@ io.on('connection', (socket) => {
   })
 
   // ─── duel:handComplete (GAMBLE DUEL 패 완성) ───
-  socket.on('duel:handComplete', ({ roomId, hand }) => {
+  socket.on('duel:handComplete', ({ roomId, hand, removedPositions }) => {
     const room = gameRooms.get(roomId)
     if (!room || room.mode !== 'gamble') return
     if (room.status !== 'playing' && room.status !== 'betting_in_game') return
@@ -910,7 +915,8 @@ io.on('connection', (socket) => {
     const oppSock = io.sockets.sockets.get(opponentId)
     if (oppSock) {
       oppSock.emit('duel:opponentHandComplete', {
-        hands: completed.map(h => ({ rank: h.rank, label: h.label }))
+        hands: completed.map(h => ({ rank: h.rank, label: h.label })),
+        removedPositions
       })
     }
 
@@ -1430,7 +1436,10 @@ function handleBettingPhaseComplete(room) {
         phase: 'in_game',
         pot: room.duel.betting.pot,
         currentTurn: room.duel.betting.currentTurn,
-        nextRaiseAmount: getRaiseAmount(room.duel.betting.raiseCount + 1)
+        nextRaiseAmount: getRaiseAmount(room.duel.betting.raiseCount + 1),
+        phase_raises: room.duel.betting.phase_raises,
+        lastAction: null,
+        callAmount: 0
       })
       console.log(`[duel] 게임 중 베팅 시작: roomId=${room.roomId}`)
     }, 30000)
