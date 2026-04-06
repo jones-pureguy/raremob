@@ -28,7 +28,7 @@ function navigateTo(page) {
 
 // ─── Constants ─── // [REUSE]
 const TIMER_SECONDS = 200;
-let GRID_SIZE = 7;
+let GRID_SIZE = window._duelGridSize || 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;
 
@@ -1440,27 +1440,29 @@ updateHandPanel();
 updateScoreDisplay();
 renderRemovedCards();
 
-BGM.init('./audio/Main_Theme.mp3');
-initStartOverlay(() => {
-  startTimer();
+if (!window._pvpMode) {
+  BGM.init('./audio/Main_Theme.mp3');
+  initStartOverlay(() => {
+    startTimer();
 
-  // Sanity check on start (reshuffle without gold cost)
-  setTimeout(() => {
-    if (!scanForValidMoves()) {
-      console.warn('[DragON] No valid moves at game start — reshuffling');
-      document.getElementById('modalOverlay').classList.remove('active');
-      clearInterval(state.timerInterval);
-      initState();
-      initGrid();
-      renderGrid();
-      updateHandPanel();
-      updateHandPreview();
-      updateScoreDisplay();
-      renderRemovedCards();
-      startTimer();
-    }
-  }, 100);
-});
+    // Sanity check on start (reshuffle without gold cost)
+    setTimeout(() => {
+      if (!scanForValidMoves()) {
+        console.warn('[DragON] No valid moves at game start — reshuffling');
+        document.getElementById('modalOverlay').classList.remove('active');
+        clearInterval(state.timerInterval);
+        initState();
+        initGrid();
+        renderGrid();
+        updateHandPanel();
+        updateHandPreview();
+        updateScoreDisplay();
+        renderRemovedCards();
+        startTimer();
+      }
+    }, 100);
+  });
+}
 
 // =============================================
 // EXPO 전환 체크리스트
