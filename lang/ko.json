@@ -57,7 +57,12 @@
       "cancel": "취소",
       "chipInsufficient": "칩이 100개 이상 필요합니다.",
       "arcadeBattle": "ARCADE BATTLE",
-      "gambleDuel": "GAMBLE DUEL"
+      "gambleDuel": "GAMBLE DUEL",
+      "myRecord": "MY RECORD",
+      "noRecord": "전적 없음"
+    },
+    "rule": {
+      "title": "ARCADE BATTLE"
     }
   },
   "splash": {
