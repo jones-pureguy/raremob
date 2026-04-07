@@ -921,7 +921,7 @@ io.on('connection', (socket) => {
   })
 
   // ─── duel:handComplete (GAMBLE DUEL 패 완성) ───
-  socket.on('duel:handComplete', ({ roomId, hand, removedPositions }) => {
+  socket.on('duel:handComplete', ({ roomId, hand, gridState }) => {
     const room = gameRooms.get(roomId)
     if (!room || room.mode !== 'gamble') return
     if (room.status !== 'playing') return
@@ -937,7 +937,7 @@ io.on('connection', (socket) => {
     if (oppSock) {
       oppSock.emit('duel:opponentHandComplete', {
         hands: completed.map(h => ({ rank: h.rank, label: h.label })),
-        removedPositions
+        gridState
       })
     }
 

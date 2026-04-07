@@ -853,7 +853,6 @@ function setupDuelGameUI() {
     window._origFinalizePathDuel = window.finalizePath;
   }
   window.finalizePath = function() {
-    const removedPositions = state.selectedPath ? [...state.selectedPath] : [];
     const prevCount = state.hands.length;
     window._origFinalizePathDuel.call(this);
     const newCount = state.hands.length;
@@ -871,6 +870,17 @@ function setupDuelGameUI() {
 
       renderDuelScoreboard();
 
+      // 패 완성 후 중력 적용된 현재 그리드 상태
+      const gridState = [];
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          const cell = state.grid[r][c];
+          gridState.push(cell.card
+            ? { v: cell.card.value, s: cell.card.suit }
+            : null);
+        }
+      }
+
       socket.emit('duel:handComplete', {
         roomId: pvpDuel.roomId,
         hand: {
@@ -879,7 +889,7 @@ function setupDuelGameUI() {
           suit: topSuit,
           cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
         },
-        removedPositions
+        gridState
       });
     }
   };
@@ -908,14 +918,14 @@ function initOppMiniGrid() {
   }
 }
 
-function updateOppMiniGrid(removedPositions) {
-  if (!removedPositions) return;
-  removedPositions.forEach(pos => {
-    const r = Array.isArray(pos) ? pos[0] : pos.row;
-    const c = Array.isArray(pos) ? pos[1] : pos.col;
-    const idx = r * 5 + c;
+function updateOppMiniGrid(gridState) {
+  if (!gridState || !gridState.length) return;
+  gridState.forEach((card, idx) => {
     const cell = document.getElementById(`mini-cell-${idx}`);
-    if (cell) cell.className = 'duel-mini-cell empty';
+    if (!cell) return;
+    cell.className = card
+      ? 'duel-mini-cell has-card'
+      : 'duel-mini-cell empty';
   });
 }
 
@@ -1188,9 +1198,9 @@ function showPotAnnouncement(pot, callback) {
 }
 
 // ─── duel:opponentHandComplete ───
-socket.on('duel:opponentHandComplete', ({ hands, removedPositions }) => {
+socket.on('duel:opponentHandComplete', ({ hands, gridState }) => {
   pvpDuel.opponentHands = hands;
-  updateOppMiniGrid(removedPositions);
+  updateOppMiniGrid(gridState);
   renderDuelScoreboard();
 });
 
