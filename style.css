@@ -592,7 +592,7 @@ body::before {
   position: absolute;
   bottom: 2px;
   right: 3px;
-  font-size: clamp(13px, 4.2vw, 17px);
+  font-size: clamp(14px, 4.5vw, 16px);
   line-height: 1;
 }
 
@@ -937,13 +937,13 @@ body.debug-mode .card .debug-info { display: block; }
 @media (max-width: 400px) {
   .card { width: 38px; height: 38px; }
   .card .card-value { font-size: clamp(11px, 3.5vw, 14px); }
-  .card .card-suit { font-size: clamp(11px, 3.5vw, 14px); }
+  .card .card-suit { font-size: clamp(13px, 4vw, 15px); }
   .grid { gap: 3px; }
 }
 @media (min-width: 500px) {
   .card { width: 52px; height: 52px; }
   .card .card-value { font-size: clamp(13px, 2.6vw, 17px); }
-  .card .card-suit { font-size: clamp(13px, 2.6vw, 17px); }
+  .card .card-suit { font-size: clamp(14px, 2.8vw, 16px); }
 }
 
 /* Leaderboard */
