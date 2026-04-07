@@ -52,6 +52,29 @@
 <script>
   const saved = localStorage.getItem('poker_username');
 
+  // 미등록 유저 뒤로가기 방지
+  if (!saved) {
+    history.pushState(null, '', 'id.html');
+    document.querySelector('.back-fixed').style.display = 'none';
+  }
+  window.addEventListener('popstate', () => {
+    if (!localStorage.getItem('poker_username')) {
+      history.pushState(null, '', 'id.html');
+    }
+  });
+
+  // from=guard 토스트 표시
+  if (new URLSearchParams(location.search).get('from') === 'guard') {
+    setTimeout(() => {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = '닉네임을 먼저 등록해주세요';
+      t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:var(--gold);padding:10px 20px;border-radius:8px;font-size:0.8rem;z-index:999;';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }, 300);
+  }
+
   // i18n init
   i18n.init();
 

@@ -55,6 +55,16 @@ async function sbRetry(fn, retries = 2) {
   return { data: null, error: 'max retries' };
 }
 
+// [ADAPTER] 유저 등록 상태 체크 — 미등록 시 id.html로 리다이렉트
+function requireRegistration() {
+  const username = localStorage.getItem('poker_username');
+  if (!username) {
+    window.location.href = 'id.html?from=guard';
+    return false;
+  }
+  return true;
+}
+
 // [ADAPTER] 인증 상태 변경 리스너 — Expo 전환 시 Supabase React Native onAuthStateChange
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {

@@ -188,6 +188,7 @@
   let puzzles = [];
   let progress = { clearedPuzzles: [], hintUsed: {} };
   let selectedPuzzleId = null;
+  if (!requireRegistration()) throw new Error('redirect');
   i18n.init().then(() => initHeader());
   const PAGE_SIZE = 25;
   let currentPage = 1;

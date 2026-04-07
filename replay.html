@@ -560,6 +560,7 @@ function gameRetry() {
 
 // ─── Init: load from URL param or localStorage ───
 (async () => {
+  if (!requireRegistration()) return;
   await i18n.init();
 
   const params = new URLSearchParams(window.location.search);

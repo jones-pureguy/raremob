@@ -66,6 +66,7 @@
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
 <script>
+  if (!requireRegistration()) throw new Error('redirect');
   const currentUser = localStorage.getItem('poker_username') || '';
   let currentTab = 'normal';
   i18n.init();

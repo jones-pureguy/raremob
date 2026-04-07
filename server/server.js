@@ -143,6 +143,38 @@ function calcTableFee(pot) {
 }
 
 // =============================================
+// [REUSE] players 행 보장 — 없으면 자동 생성
+// =============================================
+async function ensurePlayer(userId) {
+  const { data, error } = await supabase
+    .from('players')
+    .select('id, username, gold, chip')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[ensurePlayer] 조회 오류:', error)
+    return null
+  }
+
+  if (data) return data
+
+  const { data: newPlayer, error: insertErr } = await supabase
+    .from('players')
+    .insert({ id: userId, username: null, gold: 0, chip: 100 })
+    .select('id, username, gold, chip')
+    .single()
+
+  if (insertErr) {
+    console.error('[ensurePlayer] 생성 오류:', insertErr)
+    return null
+  }
+
+  console.log('[ensurePlayer] 신규 플레이어 생성:', userId)
+  return newPlayer
+}
+
+// =============================================
 // [LOGIC] 헬스체크 — Render 슬립 방지용
 // =============================================
 app.get('/health', (req, res) => {
@@ -161,6 +193,9 @@ app.post('/api/gold-sync', async (req, res) => {
     console.log('[gold-sync] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
+
+  await ensurePlayer(userId)
+
   const { error } = await supabase
     .from('players')
     .update({ gold })
@@ -184,22 +219,15 @@ app.get('/chip/balance', async (req, res) => {
     console.log('[chip/balance] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
-  const { data, error } = await supabase
-    .from('players')
-    .select('chip')
-    .eq('id', playerId)
-    .single()
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      console.log(`[chip/balance] 신규 유저, 기본값 반환: playerId=${playerId}`)
-      return res.json({ chip: 100 })
-    }
-    console.log(`[chip/balance] DB 오류:`, error)
-    return res.status(500).json({ error })
+  const player = await ensurePlayer(playerId)
+  if (!player) {
+    console.log(`[chip/balance] DB 오류: ensurePlayer 실패`)
+    return res.status(500).json({ error: 'ensurePlayer failed' })
   }
-  console.log(`[chip/balance] 성공: playerId=${playerId}, chip=${data.chip}`)
-  res.json({ chip: data.chip || 0 })
+
+  console.log(`[chip/balance] 성공: playerId=${playerId}, chip=${player.chip}`)
+  res.json({ chip: player.chip || 0 })
 })
 
 // =============================================
@@ -213,20 +241,10 @@ app.post('/chip/grant', async (req, res) => {
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  // 현재 칩 조회
-  const { data: player, error: fetchErr } = await supabase
-    .from('players')
-    .select('chip')
-    .eq('id', playerId)
-    .single()
-
-  if (fetchErr) {
-    if (fetchErr.code === 'PGRST116') {
-      console.log(`[chip/grant] 신규 유저, 스킵: playerId=${playerId}`)
-      return res.json({ success: true, balance: 100 })
-    }
-    console.log(`[chip/grant] DB 조회 오류:`, fetchErr)
-    return res.status(500).json({ error: fetchErr })
+  const player = await ensurePlayer(playerId)
+  if (!player) {
+    console.log(`[chip/grant] DB 조회 오류: ensurePlayer 실패`)
+    return res.status(500).json({ error: 'ensurePlayer failed' })
   }
 
   const currentChip = player.chip || 0
@@ -265,20 +283,10 @@ app.post('/chip/daily-reset', async (req, res) => {
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  // 현재 칩 조회
-  const { data: player, error: fetchErr } = await supabase
-    .from('players')
-    .select('chip')
-    .eq('id', playerId)
-    .single()
-
-  if (fetchErr) {
-    if (fetchErr.code === 'PGRST116') {
-      console.log(`[chip/daily-reset] 신규 유저, 스킵: playerId=${playerId}`)
-      return res.json({ chip: 100, restored: 0 })
-    }
-    console.log(`[chip/daily-reset] DB 조회 오류:`, fetchErr)
-    return res.status(500).json({ error: fetchErr })
+  const player = await ensurePlayer(playerId)
+  if (!player) {
+    console.log(`[chip/daily-reset] DB 조회 오류: ensurePlayer 실패`)
+    return res.status(500).json({ error: 'ensurePlayer failed' })
   }
 
   const currentChip = player.chip || 0
