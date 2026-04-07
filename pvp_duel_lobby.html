@@ -93,7 +93,7 @@
   .duel-mini-wrap { flex:0 0 35%; display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:4px; }
   .duel-mini-label { font-family:'IBM Plex Mono',monospace; font-size:0.52rem; color:rgba(255,255,255,0.25); letter-spacing:0.06em; }
   .duel-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:100%; aspect-ratio:1; }
-  .duel-mini-cell { border-radius:2px; aspect-ratio:1; transition:background 0.3s ease; }
+  .duel-mini-cell { border-radius:2px; aspect-ratio:1; transition:background 0.15s ease, opacity 0.15s ease; }
   .duel-mini-cell.has-card { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.12); }
   .duel-mini-cell.empty { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.03); }
   .duel-out-cards { display:flex; flex-direction:column; gap:2px; width:100%; margin-top:4px; }
@@ -434,7 +434,8 @@ const pvpDuel = {
   raiseHistory: [],
   currentTurn: null,
   bettingPhase: null,
-  bettingCountdown: null
+  bettingCountdown: null,
+  oppMiniGridState: Array(25).fill(true)
 };
 
 // =============================================
@@ -853,6 +854,7 @@ function setupDuelGameUI() {
     window._origFinalizePathDuel = window.finalizePath;
   }
   window.finalizePath = function() {
+    const removedPositions = [...state.selectedPath];
     const prevCount = state.hands.length;
     window._origFinalizePathDuel.call(this);
     const newCount = state.hands.length;
@@ -870,17 +872,6 @@ function setupDuelGameUI() {
 
       renderDuelScoreboard();
 
-      // 패 완성 후 중력 적용된 현재 그리드 상태
-      const gridState = [];
-      for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-          const cell = state.grid[r][c];
-          gridState.push(cell.card
-            ? { v: cell.card.value, s: cell.card.suit }
-            : null);
-        }
-      }
-
       socket.emit('duel:handComplete', {
         roomId: pvpDuel.roomId,
         hand: {
@@ -889,7 +880,7 @@ function setupDuelGameUI() {
           suit: topSuit,
           cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
         },
-        gridState
+        removedPositions
       });
     }
   };
@@ -907,6 +898,7 @@ function displayOutCards() {
 }
 
 function initOppMiniGrid() {
+  pvpDuel.oppMiniGridState = Array(25).fill(true);
   const grid = document.getElementById('oppMiniGrid');
   if (!grid) return;
   grid.innerHTML = '';
@@ -918,12 +910,34 @@ function initOppMiniGrid() {
   }
 }
 
-function updateOppMiniGrid(gridState) {
-  if (!gridState || !gridState.length) return;
-  gridState.forEach((card, idx) => {
+function updateOppMiniGrid(removedPositions) {
+  if (!removedPositions || !removedPositions.length) return;
+
+  // 1. 제거된 위치를 빈칸으로
+  removedPositions.forEach(([r, c]) => {
+    const idx = r * 5 + c;
+    pvpDuel.oppMiniGridState[idx] = false;
+  });
+
+  // 2. 열별 중력 적용 (아래로 떨어짐)
+  for (let c = 0; c < 5; c++) {
+    const colCards = [];
+    for (let r = 4; r >= 0; r--) {
+      if (pvpDuel.oppMiniGridState[r * 5 + c]) {
+        colCards.push(true);
+      }
+    }
+    for (let r = 4; r >= 0; r--) {
+      pvpDuel.oppMiniGridState[r * 5 + c] =
+        colCards.length > 0 ? colCards.shift() : false;
+    }
+  }
+
+  // 3. 미니그리드 DOM 업데이트
+  pvpDuel.oppMiniGridState.forEach((hasCard, idx) => {
     const cell = document.getElementById(`mini-cell-${idx}`);
     if (!cell) return;
-    cell.className = card
+    cell.className = hasCard
       ? 'duel-mini-cell has-card'
       : 'duel-mini-cell empty';
   });
@@ -1198,9 +1212,9 @@ function showPotAnnouncement(pot, callback) {
 }
 
 // ─── duel:opponentHandComplete ───
-socket.on('duel:opponentHandComplete', ({ hands, gridState }) => {
+socket.on('duel:opponentHandComplete', ({ hands, removedPositions }) => {
   pvpDuel.opponentHands = hands;
-  updateOppMiniGrid(gridState);
+  updateOppMiniGrid(removedPositions);
   renderDuelScoreboard();
 });
 
@@ -1478,6 +1492,7 @@ function goToLobby() {
   pvpDuel.bettingActive = false;
   pvpDuel.raiseHistory = [];
   pvpDuel.currentPot = 2;
+  pvpDuel.oppMiniGridState = Array(25).fill(true);
 
   lobbyUsers = [];
   matchingMode = null;
