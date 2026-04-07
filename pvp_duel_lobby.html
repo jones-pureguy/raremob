@@ -793,6 +793,17 @@ function setupDuelGameUI() {
     }
   };
 
+  // DUEL 전용: 원페어 숫자 제한 없음 (하이카드만 제외)
+  window._origIsValidHand = window.isValidHand;
+  window.isValidHand = function(hand) {
+    if (!hand) return false;
+    if (hand.rank === RANK.HIGH_CARD || hand.rank === 0) return false;
+    if (hand.rank === RANK.ONE_PAIR || hand.rank === 1) return true;
+    return window._origIsValidHand
+      ? window._origIsValidHand(hand)
+      : hand.rank > 1;
+  };
+
   initState();
   initGrid();
   renderGrid();
@@ -1119,24 +1130,22 @@ function renderDuelScoreboard() {
 
   const mySorted = [...pvpDuel.myHands].sort(pvpHandSort);
   const oppSorted = [...pvpDuel.opponentHands].sort(pvpHandSort);
-  const rankLabels = ['1st', '2nd', '3rd'];
 
   let html = `<div class="pvp-sb-header"><span class="pvp-sb-cell left">${myName} (${myCount}/5)</span><span class="pvp-sb-cell vs"></span><span class="pvp-sb-cell right">${oppName} (${oppCount}/5)</span></div>`;
 
-  for (let i = 0; i < 3; i++) {
-    const my = mySorted[i], opp = oppSorted[i];
-    let myText = '—', oppText = '—', myClass = '', oppClass = '', vsIcon = '';
-    if (my) myText = my.label;
-    if (opp) oppText = opp.label;
-    if (my && opp) {
-      if (my.rank > opp.rank) { myClass = 'win'; vsIcon = '👑'; }
-      else if (opp.rank > my.rank) { oppClass = 'win'; vsIcon = '👑'; }
-      else { vsIcon = '?'; }
-    } else if (my && !opp) { myClass = 'win'; }
-    else if (!my && opp) { oppClass = 'win'; }
-    const lc = myClass === 'win' ? '👑 ' : '', rc = oppClass === 'win' ? ' 👑' : '';
-    html += `<div class="pvp-sb-row"><span class="pvp-sb-cell left"><span class="${myClass}">${lc}${myText}</span></span><span class="pvp-sb-cell vs" style="font-size:0.58rem;color:rgba(255,255,255,0.2);">${rankLabels[i]}<br>${vsIcon}</span><span class="pvp-sb-cell right"><span class="${oppClass}">${oppText}${rc}</span></span></div>`;
-  }
+  const my = mySorted[0];
+  const opp = oppSorted[0];
+  let myText = '—', oppText = '—', myClass = '', oppClass = '', vsIcon = '';
+  if (my) myText = my.label;
+  if (opp) oppText = opp.label;
+  if (my && opp) {
+    if (my.rank > opp.rank) { myClass = 'win'; vsIcon = '👑'; }
+    else if (opp.rank > my.rank) { oppClass = 'win'; vsIcon = '👑'; }
+    else { vsIcon = '?'; }
+  } else if (my && !opp) { myClass = 'win'; }
+  else if (!my && opp) { oppClass = 'win'; }
+  html += `<div class="pvp-sb-row"><span class="pvp-sb-cell left"><span class="${myClass}">${myClass === 'win' ? '👑 ' : ''}${myText}</span></span><span class="pvp-sb-cell vs" style="font-size:0.6rem;color:rgba(255,255,255,0.2);">BEST<br>${vsIcon}</span><span class="pvp-sb-cell right"><span class="${oppClass}">${oppText}${oppClass === 'win' ? ' 👑' : ''}</span></span></div>`;
+
   container.innerHTML = html;
 }
 
@@ -1446,19 +1455,16 @@ function showDuelResult(data) {
   let tableHTML = '<div style="margin:12px 0;">';
   const mySorted = (data.myHands || []).sort(pvpHandSort);
   const oppSorted = (data.oppHands || []).sort(pvpHandSort);
-  const rankLabels = ['1st', '2nd', '3rd'];
 
-  for (let i = 0; i < 3; i++) {
-    const r = data.results?.[i] || 'draw';
-    const my = mySorted[i];
-    const opp = oppSorted[i];
-    const myLabel = my ? my.label : '—';
-    const oppLabel = opp ? opp.label : '—';
-    const myCls = r === 'A' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
-    const oppCls = r === 'B' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
+  const a = mySorted[0];
+  const b = oppSorted[0];
+  const r = data.results?.[0] || 'draw';
+  const myLabel = a ? a.label : '—';
+  const oppLabel = b ? b.label : '—';
+  const myCls = r === 'A' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
+  const oppCls = r === 'B' ? 'color:var(--gold)' : 'color:rgba(255,255,255,0.4)';
 
-    tableHTML += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><div style="font-size:0.6rem;color:rgba(255,255,255,0.25);margin-bottom:2px;">${rankLabels[i]}</div><div style="display:flex;font-size:0.75rem;margin-bottom:2px;"><span style="flex:1;${myCls}">${r === 'A' ? '👑 ' : ''}${myLabel}</span><span style="flex:1;text-align:right;${oppCls}">${oppLabel}${r === 'B' ? ' 👑' : ''}</span></div><div style="display:flex;font-size:0.65rem;"><span style="flex:1;opacity:0.6;">${duelCardDisplay(my?.cards)}</span><span style="flex:1;text-align:right;opacity:0.6;">${duelCardDisplay(opp?.cards)}</span></div></div>`;
-  }
+  tableHTML += `<div style="padding:8px 0;"><div style="display:flex;font-size:0.85rem;margin-bottom:4px;font-weight:700;"><span style="flex:1;${myCls}">${r === 'A' ? '👑 ' : ''}${myLabel}</span><span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">VS</span><span style="flex:1;text-align:right;${oppCls}">${oppLabel}${r === 'B' ? ' 👑' : ''}</span></div><div style="display:flex;font-size:0.7rem;"><span style="flex:1;opacity:0.6;">${duelCardDisplay(a?.cards)}</span><span style="flex:1;text-align:right;opacity:0.6;">${duelCardDisplay(b?.cards)}</span></div></div>`;
   tableHTML += '</div>';
 
   let chipHTML = '';
@@ -1536,6 +1542,12 @@ function goToLobby() {
   clearInterval(pvpDuel.bettingCountdown);
   clearInterval(pvpDuel.syncInterval);
   clearInterval(state.timerInterval);
+
+  // isValidHand 원본 복원
+  if (window._origIsValidHand) {
+    window.isValidHand = window._origIsValidHand;
+    window._origIsValidHand = null;
+  }
 
   pvpDuel.roomId = null;
   pvpDuel.opponent = null;

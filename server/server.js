@@ -191,6 +191,10 @@ app.get('/chip/balance', async (req, res) => {
     .single()
 
   if (error) {
+    if (error.code === 'PGRST116') {
+      console.log(`[chip/balance] 신규 유저, 기본값 반환: playerId=${playerId}`)
+      return res.json({ chip: 100 })
+    }
     console.log(`[chip/balance] DB 오류:`, error)
     return res.status(500).json({ error })
   }
@@ -217,6 +221,10 @@ app.post('/chip/grant', async (req, res) => {
     .single()
 
   if (fetchErr) {
+    if (fetchErr.code === 'PGRST116') {
+      console.log(`[chip/grant] 신규 유저, 스킵: playerId=${playerId}`)
+      return res.json({ success: true, balance: 100 })
+    }
     console.log(`[chip/grant] DB 조회 오류:`, fetchErr)
     return res.status(500).json({ error: fetchErr })
   }
@@ -265,6 +273,10 @@ app.post('/chip/daily-reset', async (req, res) => {
     .single()
 
   if (fetchErr) {
+    if (fetchErr.code === 'PGRST116') {
+      console.log(`[chip/daily-reset] 신규 유저, 스킵: playerId=${playerId}`)
+      return res.json({ chip: 100, restored: 0 })
+    }
     console.log(`[chip/daily-reset] DB 조회 오류:`, fetchErr)
     return res.status(500).json({ error: fetchErr })
   }
@@ -1548,32 +1560,33 @@ function handleBettingPhaseComplete(room) {
 function compareDuelHands(handsA, handsB, socketIdA, socketIdB) {
   const sortedA = (handsA || []).slice().sort(handSortComparator)
   const sortedB = (handsB || []).slice().sort(handSortComparator)
-  const maxLen = Math.min(3, Math.max(sortedA.length, sortedB.length))
 
-  const results = []
-  let winsA = 0, winsB = 0
-
-  for (let i = 0; i < maxLen; i++) {
-    const a = sortedA[i]
-    const b = sortedB[i]
-    if (a && !b) { results.push('A'); winsA++ }
-    else if (!a && b) { results.push('B'); winsB++ }
-    else if (a && b) {
-      let cmp = 0
-      if (a.rank !== b.rank) {
-        cmp = a.rank > b.rank ? 1 : -1
-      } else {
-        cmp = compareHandsByCards(a, b)
-      }
-      if (cmp > 0) { results.push('A'); winsA++ }
-      else if (cmp < 0) { results.push('B'); winsB++ }
-      else { results.push('draw') }
-    } else { results.push('draw') }
-  }
+  const a = sortedA[0]
+  const b = sortedB[0]
 
   let winner = 'draw'
-  if (winsA > winsB) winner = socketIdA
-  else if (winsB > winsA) winner = socketIdB
+  let results = ['draw']
+  let winsA = 0, winsB = 0
+
+  if (a && !b) {
+    winner = socketIdA; winsA = 1; results = ['A']
+  } else if (!a && b) {
+    winner = socketIdB; winsB = 1; results = ['B']
+  } else if (a && b) {
+    let cmp = 0
+    if (a.rank !== b.rank) {
+      cmp = a.rank > b.rank ? 1 : -1
+    } else {
+      cmp = compareHandsByCards(a, b)
+    }
+    if (cmp > 0) {
+      winner = socketIdA; winsA = 1; results = ['A']
+    } else if (cmp < 0) {
+      winner = socketIdB; winsB = 1; results = ['B']
+    } else {
+      results = ['draw']
+    }
+  }
 
   return { results, winsA, winsB, winner }
 }
