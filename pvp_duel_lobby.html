@@ -1229,6 +1229,7 @@ socket.on('duel:result', (data) => {
     const el = document.getElementById('myChipDisplay');
     if (el) el.textContent = myChip.toLocaleString();
   }
+  console.log('[duel result] myHands[0]:', JSON.stringify(data.myHands?.[0]))
   showDuelResult(data);
 });
 
