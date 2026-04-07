@@ -730,7 +730,7 @@ function formatCard(card) {
   const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
   const isRed = card.suit === '♥' || card.suit === '♦';
   const color = isRed ? '#ff6b6b' : '#e0e0e0';
-  return `<span style="color:${color}">${VN[card.value]}${card.suit}</span>`;
+  return `<span style="color:${color}">${VN[parseInt(card.value)]}${card.suit}</span>`;
 }
 
 function cardDisplay(cards) {
@@ -738,7 +738,9 @@ function cardDisplay(cards) {
   const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
   return cards.slice().sort((a,b) => b.value - a.value).map(c => {
     const isRed = c.suit === '♥' || c.suit === '♦';
-    return `<span style="color:${isRed ? '#ff6b6b' : '#e0e0e0'}">${VN[c.value]}${c.suit}</span>`;
+    const val = parseInt(c.value);
+    const color = (c.suit === '♥' || c.suit === '♦') ? '#ff6b6b' : '#e0e0e0';
+    return `<span style="color:${color}">${VN[val]}${c.suit}</span>`;
   }).join(' ');
 }
 
@@ -798,7 +800,10 @@ function setupDuelGameUI() {
   }
 
   // START 버튼 핸들러
-  const newBtn = startBtn.cloneNode(true);
+  const newBtn = startBtn.cloneNode(false);
+  newBtn.textContent = '▶ START';
+  newBtn.disabled = false;
+  newBtn.className = startBtn.className;
   startBtn.parentNode.replaceChild(newBtn, startBtn);
   newBtn.addEventListener('click', function(e) {
     e.stopPropagation();
