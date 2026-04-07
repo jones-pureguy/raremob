@@ -574,7 +574,7 @@ body::before {
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   border: 2px solid transparent;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .card .card-value {
