@@ -514,6 +514,7 @@ socket.on('challenge:failed', () => { showToast(i18n.t('pvp.lobby.unavailable'))
 
 // ─── room:created → 게임 뷰 전환 ───
 socket.on('room:created', ({ roomId, mode, opponent, myCards, myOutCard, oppOutCard, firstPlayer }) => {
+  clearTimeout(challengeTimer)
   if (mode !== 'gamble') return;
   pvpDuel.roomId = roomId;
   pvpDuel.opponent = opponent;

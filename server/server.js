@@ -924,7 +924,7 @@ io.on('connection', (socket) => {
   socket.on('duel:handComplete', ({ roomId, hand, removedPositions }) => {
     const room = gameRooms.get(roomId)
     if (!room || room.mode !== 'gamble') return
-    if (room.status !== 'playing' && room.status !== 'betting_in_game') return
+    if (room.status !== 'playing') return
 
     const completed = room.duel.completedHands[socket.id]
     if (!completed) return
@@ -1749,6 +1749,8 @@ async function endDuelGame(room, reason, foldedId) {
     .slice().sort(handSortComparator)
   const handsB = (room.duel.completedHands[socketIdB] || [])
     .slice().sort(handSortComparator)
+
+  console.log('[duel] handsA cards check:', handsA[0]?.cards?.length)
 
   const sockA = io.sockets.sockets.get(socketIdA)
   const sockB = io.sockets.sockets.get(socketIdB)
