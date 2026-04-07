@@ -794,7 +794,9 @@ function setupDuelGameUI() {
   };
 
   // DUEL 전용: 원페어 숫자 제한 없음 (하이카드만 제외)
-  window._origIsValidHand = window.isValidHand;
+  if (!window._origIsValidHand) {
+    window._origIsValidHand = window.isValidHand;
+  }
   window.isValidHand = function(hand) {
     if (!hand) return false;
     if (hand.rank === RANK.HIGH_CARD || hand.rank === 0) return false;
