@@ -1751,6 +1751,7 @@ async function endDuelGame(room, reason, foldedId) {
     .slice().sort(handSortComparator)
 
   console.log('[duel] handsA cards check:', handsA[0]?.cards?.length)
+  console.log('[duel] handsB cards check:', handsB[0]?.cards?.length)
 
   const sockA = io.sockets.sockets.get(socketIdA)
   const sockB = io.sockets.sockets.get(socketIdB)
