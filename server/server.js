@@ -1559,7 +1559,12 @@ function compareDuelHands(handsA, handsB, socketIdA, socketIdB) {
     if (a && !b) { results.push('A'); winsA++ }
     else if (!a && b) { results.push('B'); winsB++ }
     else if (a && b) {
-      const cmp = compareHandsByCards(a, b)
+      let cmp = 0
+      if (a.rank !== b.rank) {
+        cmp = a.rank > b.rank ? 1 : -1
+      } else {
+        cmp = compareHandsByCards(a, b)
+      }
       if (cmp > 0) { results.push('A'); winsA++ }
       else if (cmp < 0) { results.push('B'); winsB++ }
       else { results.push('draw') }
