@@ -101,6 +101,11 @@
   .pvp-status-completed { color:#4CAF50 !important; }
   .pvp-status-oppdone { color:#FFC107 !important; }
   .pvp-status-timelimit { color:#ff5252 !important; }
+  /* ── 그리드 상태 오버레이 ── */
+  .arcade-grid-wrap { position:relative; }
+  .arcade-grid-overlay { position:absolute; left:0; right:0; top:0; bottom:-20px; background:rgba(0,0,0,0.35); border-radius:4px; pointer-events:none; display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; z-index:5; }
+  .arcade-grid-overlay-text { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; color:rgba(255,255,255,0.8); background:rgba(0,0,0,0.4); padding:3px 10px; border-radius:4px; }
+  .arcade-grid-overlay.done { border:1.5px solid rgba(76,175,80,0.4); background:rgba(0,0,0,0.25); }
 </style>
 </head>
 <body class="game-page">
@@ -212,10 +217,15 @@
     <div></div>
   </div>
 
-  <div class="grid-container" id="gridContainer">
-    <div class="grid" id="grid"></div>
-    <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
-    <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+  <div class="arcade-grid-wrap">
+    <div class="grid-container" id="gridContainer">
+      <div class="grid" id="grid"></div>
+      <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+      <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+    </div>
+    <div class="arcade-grid-overlay" id="arcadeGridOverlay" style="display:none">
+      <span class="arcade-grid-overlay-text" id="arcadeGridOverlayText"></span>
+    </div>
   </div>
 
   <div class="pvp-info-bar">
@@ -582,6 +592,24 @@ function compareHandStrength(a, b) {
   return sa - sb;
 }
 
+function setGridOverlay(type) {
+  const overlay = document.getElementById('arcadeGridOverlay');
+  const text = document.getElementById('arcadeGridOverlayText');
+  if (!overlay || !text) return;
+  overlay.className = 'arcade-grid-overlay';
+  switch(type) {
+    case 'done':
+      overlay.style.display = 'flex';
+      overlay.classList.add('done');
+      text.textContent = '\u2713 완료';
+      break;
+    case 'none':
+    default:
+      overlay.style.display = 'none';
+      break;
+  }
+}
+
 function setPvpStatus(type) {
   const el = document.getElementById('pvpStatusMsg');
   if (!el) return;
@@ -618,6 +646,7 @@ function pvpHandSort(a, b) {
 // =============================================
 
 function setupGameUI() {
+  setGridOverlay('none');
   // 상태 초기화
   setPvpStatus('idle');
 
@@ -668,6 +697,7 @@ function setupGameUI() {
     if (state.phase === 'result' || state.phase === 'done') return;
     if (reason === 'complete' || reason === 'nomoves') {
       state.phase = 'done';
+      setGridOverlay('done');
       setPvpStatus('completed');
       socket.emit('game:playerDone', { roomId: pvpArcade.roomId, reason });
     } else {
@@ -817,6 +847,7 @@ socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRe
 
 socket.on('game:result', (data) => {
   if (data.roomId !== pvpArcade.roomId) return;
+  setGridOverlay('none');
   state.phase = 'result';
   clearInterval(state.timerInterval);
   setPvpStatus('idle');

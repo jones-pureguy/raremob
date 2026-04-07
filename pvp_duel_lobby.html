@@ -86,11 +86,17 @@
   .pvp-status-timelimit { color:#ff5252 !important; }
 
   /* ── 그리드 행 (내 그리드 + 미니그리드 나란히) ── */
-  .duel-grid-row { display:flex; align-items:flex-start; width:100%; margin:0 auto; padding:4px 6px; gap:4px; box-sizing:border-box; }
-  .duel-my-grid-wrap { flex:0 0 65%; min-width:0; }
+  .duel-grid-row { display:flex; align-items:flex-start; width:100%; max-width:480px; margin:0 auto; padding:4px 8px; gap:8px; box-sizing:border-box; }
+  .duel-my-grid-wrap { flex:0 0 62%; min-width:0; position:relative; }
   .duel-my-grid-wrap .grid-container { width:100% !important; max-width:100% !important; padding:0 !important; }
   .duel-my-grid-wrap .grid { width:100% !important; grid-template-columns:repeat(5,1fr) !important; }
-  .duel-mini-wrap { flex:0 0 35%; display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:4px; }
+  .duel-mini-wrap { flex:0 0 30%; display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:2px; }
+  /* ── 그리드 상태 오버레이 ── */
+  .duel-grid-overlay { position:absolute; left:0; right:0; top:0; bottom:-20px; background:rgba(0,0,0,0.35); border-radius:4px; pointer-events:none; display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; z-index:5; }
+  .duel-grid-overlay-text { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; color:rgba(255,255,255,0.8); background:rgba(0,0,0,0.4); padding:3px 10px; border-radius:4px; }
+  .duel-grid-overlay.betting { border:1.5px solid rgba(201,168,76,0.4); background:rgba(0,0,0,0.25); }
+  .duel-grid-overlay.done { border:1.5px solid rgba(76,175,80,0.4); background:rgba(0,0,0,0.25); }
+  .duel-grid-overlay.opp-betting { border:1.5px solid rgba(255,193,7,0.3); background:rgba(0,0,0,0.2); }
   .duel-mini-label { font-family:'IBM Plex Mono',monospace; font-size:0.52rem; color:rgba(255,255,255,0.25); letter-spacing:0.06em; }
   .duel-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:100%; aspect-ratio:1; }
   .duel-mini-cell { border-radius:2px; aspect-ratio:1; transition:background 0.15s ease, opacity 0.15s ease; }
@@ -271,6 +277,9 @@
         <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
       </div>
       <div class="hand-preview" id="handPreview"></div>
+      <div class="duel-grid-overlay" id="duelGridOverlay" style="display:none">
+        <span class="duel-grid-overlay-text" id="duelGridOverlayText"></span>
+      </div>
     </div>
     <div class="duel-mini-wrap">
       <div class="duel-mini-label">OPPONENT</div>
@@ -752,6 +761,7 @@ function duelCardDisplay(cards) {
 // 게임 UI 설정
 // =============================================
 function setupDuelGameUI() {
+  setGridOverlay('none');
   // 이전 게임의 잔여 오버레이 제거
   document.querySelectorAll('.duel-action-overlay').forEach(el => el.remove());
 
@@ -843,6 +853,7 @@ function setupDuelGameUI() {
     if (state.phase === 'result') return;
     if (reason === 'complete' || reason === 'nomoves') {
       state.phase = 'done';
+      setGridOverlay('done');
       socket.emit('duel:playerDone', { roomId: pvpDuel.roomId, reason });
     } else if (reason === 'timeout') {
       socket.emit('duel:end', { roomId: pvpDuel.roomId });
@@ -941,6 +952,34 @@ function updateOppMiniGrid(removedPositions) {
       ? 'duel-mini-cell has-card'
       : 'duel-mini-cell empty';
   });
+}
+
+function setGridOverlay(type) {
+  const overlay = document.getElementById('duelGridOverlay');
+  const text = document.getElementById('duelGridOverlayText');
+  if (!overlay || !text) return;
+  overlay.className = 'duel-grid-overlay';
+  switch(type) {
+    case 'my-betting':
+      overlay.style.display = 'flex';
+      overlay.classList.add('betting');
+      text.textContent = '\uD83D\uDCB0 내 차례 베팅';
+      break;
+    case 'opp-betting':
+      overlay.style.display = 'flex';
+      overlay.classList.add('opp-betting');
+      text.textContent = '\uD83D\uDCB0 상대방 베팅 중';
+      break;
+    case 'done':
+      overlay.style.display = 'flex';
+      overlay.classList.add('done');
+      text.textContent = '\u2713 게임 완료';
+      break;
+    case 'none':
+    default:
+      overlay.style.display = 'none';
+      break;
+  }
 }
 
 function updatePotDisplay(pot) {
@@ -1042,7 +1081,7 @@ function showBettingPanel(data) {
     document.querySelectorAll('.duel-bet-btn:not(:disabled)').forEach(btn => btn.classList.add('my-turn-blink'));
   } else {
     info.innerHTML = `<div style="display:flex;justify-content:center;gap:12px;margin-bottom:4px;"><span>POT ${pot}</span><span style="color:rgba(255,255,255,0.3)">·</span><span style="color:var(--gold)">베팅</span></div><div style="color:rgba(255,255,255,0.3)">상대방 베팅 중...</div>`;
-    buttons.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.75rem;padding:12px;">상대방 베팅 중...</div>`;
+    buttons.innerHTML = '';
   }
 }
 
@@ -1104,6 +1143,8 @@ socket.on('duel:bettingStart', (data) => {
   const overlay = document.getElementById('startOverlay');
   if (overlay) overlay.style.display = 'none';
 
+  const isMyTurn = data.currentTurn === socket.id;
+  setGridOverlay(isMyTurn ? 'my-betting' : 'opp-betting');
   pvpDuel.currentPot = data.pot;
   updatePotDisplay(data.pot);
   renderRaiseTrack(pvpDuel.raiseHistory, data.currentTurn === pvpDuel.firstPlayer, data.phase);
@@ -1123,6 +1164,8 @@ socket.on('duel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn,
     pvpDuel.currentPot = pot;
     updatePotDisplay(pot);
     renderRaiseTrack(pvpDuel.raiseHistory, currentTurn === pvpDuel.firstPlayer, pvpDuel.bettingPhase);
+    const isMyTurn = currentTurn === socket.id;
+    setGridOverlay(isMyTurn ? 'my-betting' : 'opp-betting');
     showBettingPanel({
       phase: pvpDuel.bettingPhase,
       pot, currentTurn, nextRaiseAmount, phase_raises,
@@ -1132,13 +1175,16 @@ socket.on('duel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn,
     // SKIP → 턴 넘김, 베팅 패널 갱신
     pvpDuel.currentPot = pot;
     updatePotDisplay(pot);
+    const isMyTurn = currentTurn === socket.id;
+    setGridOverlay(isMyTurn ? 'my-betting' : 'opp-betting');
     showBettingPanel({
       phase: pvpDuel.bettingPhase,
       pot, currentTurn, nextRaiseAmount, phase_raises,
       lastAction: null, callAmount: 0
     });
   }
-  if (currentTurn === null) {
+  if ((action === 'call' && currentTurn === null) || currentTurn === null) {
+    setGridOverlay('none');
     hideBettingPanel();
   }
 });
@@ -1169,6 +1215,7 @@ function showBettingAction(action, amount) {
 // ─── duel:gameStart ───
 socket.on('duel:gameStart', ({ roomId, startedAt, pot }) => {
   if (roomId !== pvpDuel.roomId) return;
+  setGridOverlay('none');
   hideBettingPanel();
 
   if (pot !== undefined) {
@@ -1243,6 +1290,7 @@ socket.on('duel:playerDone', ({ socketId, username, reason, timerAdjusted, newRe
 // ─── duel:result ───
 socket.on('duel:result', (data) => {
   if (data.roomId !== pvpDuel.roomId) return;
+  setGridOverlay('none');
   state.phase = 'result';
   clearInterval(state.timerInterval);
   hideBettingPanel();
