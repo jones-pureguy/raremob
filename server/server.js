@@ -406,7 +406,7 @@ function createRoom(socketIdA, socketIdB, mode) {
       betting: {
         phase: 1, pot: 2, currentTurn: null, turnTimer: null,
         phaseRaiseCounts: { 1: { A: 0, B: 0 }, 2: { A: 0, B: 0 }, 3: { A: 0, B: 0 } },
-        allIn: false, _firstActed: false, _lastRaiser: null
+        allIn: false, _firstActed: false, _lastRaiser: null, _callAmount: 0
       },
       completedHands: { [socketIdA]: [], [socketIdB]: [] },
       donePlayers: new Set(),
@@ -2187,7 +2187,8 @@ function newDuel_handleBet(room, socketId, action) {
       const raiseAmount = newDuel_getRaiseAmount(phase, myRaises, bet.pot)
       const oppChip = room.playerInfo[oppId]?.chip || 0
       const actualRaise = Math.min(raiseAmount, oppChip)
-      bet.pot += actualRaise * 2
+      bet.pot += actualRaise
+      bet._callAmount = actualRaise
       bet.phaseRaiseCounts[phase][side]++
       bet._lastRaiser = socketId
 
@@ -2205,10 +2206,14 @@ function newDuel_handleBet(room, socketId, action) {
         phase, raiseIndex: myRaises,
         nextRaiseAmount: nextRaise.amount,
         canRaise: nextRaise.canRaise,
-        hasLastRaiser: true
+        hasLastRaiser: true,
+        callAmount: actualRaise
       })
 
       if (bet.allIn) {
+        // 올인 시 상대 콜 금액도 pot에 추가
+        bet.pot += actualRaise
+        bet._callAmount = 0
         newDuel_completeBettingPhase(room, true)
         return
       }
@@ -2221,16 +2226,17 @@ function newDuel_handleBet(room, socketId, action) {
   }
 
   // ─── CALL or SKIP ───
-  // CALL after opponent RAISE → phase ends
-  // SKIP (no prior raise) → pass turn to opponent
   if (bet._lastRaiser && bet._lastRaiser !== socketId) {
-    // 상대가 RAISE한 후 내가 CALL → Phase 종료
+    // 상대가 RAISE한 후 내가 CALL → 콜 금액 매칭 + Phase 종료
+    const callAmt = bet._callAmount
+    bet.pot += callAmt
+    bet._callAmount = 0
     io.to(room.roomId).emit('newduel:bettingUpdate', {
       action: 'call', bySocketId: socketId,
-      amount: 0, pot: bet.pot, currentTurn: null, phase,
-      hasLastRaiser: false
+      amount: callAmt, pot: bet.pot, currentTurn: null, phase,
+      hasLastRaiser: false, callAmount: 0
     })
-    console.log(`[newduel] CALL after raise: ${socketId}, phase=${phase} ends`)
+    console.log(`[newduel] CALL: ${socketId}, matched=${callAmt}, pot=${bet.pot}, phase=${phase} ends`)
     newDuel_completeBettingPhase(room, false)
     return
   }
@@ -2245,7 +2251,7 @@ function newDuel_handleBet(room, socketId, action) {
       pot: bet.pot, currentTurn: oppId, phase,
       nextRaiseAmount: nextRaise.amount,
       canRaise: nextRaise.canRaise,
-      hasLastRaiser: false
+      hasLastRaiser: false, callAmount: 0
     })
     newDuel_startTurnTimer(room)
     console.log(`[newduel] SKIP: ${socketId}, turn→${oppId}`)
@@ -2254,7 +2260,7 @@ function newDuel_handleBet(room, socketId, action) {
     io.to(room.roomId).emit('newduel:bettingUpdate', {
       action: 'skip', bySocketId: socketId,
       amount: 0, pot: bet.pot, currentTurn: null, phase,
-      hasLastRaiser: false
+      hasLastRaiser: false, callAmount: 0
     })
     console.log(`[newduel] both SKIP: phase=${phase} ends`)
     newDuel_completeBettingPhase(room, false)
@@ -2281,6 +2287,7 @@ function newDuel_completeBettingPhase(room, skipRemaining) {
   clearTimeout(nd.betting.turnTimer)
   nd.betting._firstActed = false
   nd.betting._lastRaiser = null
+  nd.betting._callAmount = 0
 
   if (skipRemaining || nd.betting.allIn) {
     // 올인이면 모든 남은 베팅 스킵 → 바로 playing
