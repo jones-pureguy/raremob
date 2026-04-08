@@ -52,7 +52,8 @@ const lobby = new Map()
 
 const matchQueue = {
   arcade: [],    // socket.id 배열
-  gamble: []     // socket.id 배열
+  gamble: [],    // socket.id 배열
+  newduel: []    // socket.id 배열
 }
 
 const gameRooms = new Map()
@@ -336,7 +337,7 @@ function toLobbyUser(entry) {
 
 // [REUSE] matchQueue에서 socketId 제거
 function removeFromQueue(socketId) {
-  for (const mode of ['arcade', 'gamble']) {
+  for (const mode of ['arcade', 'gamble', 'newduel']) {
     const idx = matchQueue[mode].indexOf(socketId)
     if (idx !== -1) matchQueue[mode].splice(idx, 1)
   }
@@ -394,6 +395,25 @@ function createRoom(socketIdA, socketIdB, mode) {
       startedAt: null,
       readySet: new Set(),
     }
+  } else if (mode === 'newduel') {
+    roomData.status = 'matched'
+    roomData.newDuel = {
+      outCards: [], firstPlayer: null,
+      phase1Cards_A: [], phase1Cards_B: [],
+      phase2Cards_A: [], phase2Cards_B: [],
+      phase3Cards_A: [], phase3Cards_B: [],
+      gridCards_A: [], gridCards_B: [],
+      betting: {
+        phase: 1, pot: 2, currentTurn: null, turnTimer: null,
+        phaseRaiseCounts: { 1: { A: 0, B: 0 }, 2: { A: 0, B: 0 }, 3: { A: 0, B: 0 } },
+        allIn: false, _firstActed: false
+      },
+      completedHands: { [socketIdA]: [], [socketIdB]: [] },
+      donePlayers: new Set(),
+      timer: null, startedAt: null,
+      readySet: new Set()
+    }
+    newDuel_dealCards(roomData)
   } else if (mode === 'gamble') {
     const deck = shuffleDeck(createDeck())
     const handA = deck.slice(0, 25)
@@ -440,7 +460,18 @@ function createRoom(socketIdA, socketIdB, mode) {
   io.emit('lobby:statusChanged', { socketId: socketIdB, status: 'playing' })
 
   // 양쪽에게 방 정보 전송
-  if (mode === 'gamble') {
+  if (mode === 'newduel') {
+    if (sockA) sockA.emit('room:created', {
+      roomId, mode,
+      opponent: { socketId: socketIdB, username: entryB.username, chip: entryB.chip }
+    })
+    if (sockB) sockB.emit('room:created', {
+      roomId, mode,
+      opponent: { socketId: socketIdA, username: entryA.username, chip: entryA.chip }
+    })
+    // 매칭 즉시 Phase 진행 시작
+    newDuel_advancePhase(roomData)
+  } else if (mode === 'gamble') {
     const { hands, outCards, firstPlayer } = roomData.duel
     if (sockA) {
       sockA.emit('room:created', {
@@ -1079,6 +1110,114 @@ io.on('connection', (socket) => {
     }
   })
 
+  // =============================================
+  // ─── NEW DUEL 소켓 이벤트 ───
+  // =============================================
+
+  // ─── newduel:ready (Phase 진행 동기화) ───
+  socket.on('newduel:ready', ({ roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'newduel') return
+    const nd = room.newDuel
+    nd.readySet.add(socket.id)
+    console.log(`[newduel] ready: ${socket.id}, count=${nd.readySet.size}`)
+    if (nd.readySet.size >= 2) {
+      newDuel_advancePhase(room)
+    }
+  })
+
+  // ─── newduel:bet (베팅 액션) ───
+  socket.on('newduel:bet', ({ roomId, action }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'newduel') return
+    if (!room.status.startsWith('betting_')) return
+    newDuel_handleBet(room, socket.id, action)
+  })
+
+  // ─── newduel:handComplete (패 완성) ───
+  socket.on('newduel:handComplete', ({ roomId, hand, removedPositions }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'newduel') return
+    if (room.status !== 'playing') return
+
+    const completed = room.newDuel.completedHands[socket.id]
+    if (!completed) return
+
+    completed.push(hand)
+    completed.sort(handSortComparator)
+
+    const opponentId = room.players.find(id => id !== socket.id)
+    const oppSock = io.sockets.sockets.get(opponentId)
+    if (oppSock) {
+      oppSock.emit('newduel:opponentHandComplete', {
+        hands: completed.map(h => ({ rank: h.rank, label: h.label })),
+        removedPositions
+      })
+    }
+    console.log(`[newduel] 패 완성: ${socket.id}, count=${completed.length}`)
+  })
+
+  // ─── newduel:playerDone (게임 완료) ───
+  socket.on('newduel:playerDone', ({ roomId, reason }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'newduel') return
+    if (room.status !== 'playing') return
+
+    room.newDuel.donePlayers.add(socket.id)
+    console.log(`[newduel] 플레이어 완료: ${socket.id}, reason=${reason}`)
+
+    if (room.newDuel.donePlayers.size >= 2) {
+      clearTimeout(room.newDuel.timer)
+      newDuel_endGame(room, 'timeout')
+      return
+    }
+
+    const elapsed = Date.now() - room.newDuel.startedAt
+    const remaining = Math.max(0, 80000 - elapsed)
+    const timerAdjusted = remaining > 30000
+
+    if (timerAdjusted) {
+      clearTimeout(room.newDuel.timer)
+      room.newDuel.timer = setTimeout(
+        () => newDuel_endGame(room, 'timeout'), 30000)
+    }
+
+    const doneUsername = room.playerInfo[socket.id]?.username || '상대방'
+    const opponentId = room.players.find(id => id !== socket.id)
+    const oppSock = io.sockets.sockets.get(opponentId)
+    if (oppSock) {
+      oppSock.emit('newduel:opponentDone', {
+        username: doneUsername, timerAdjusted,
+        newRemaining: timerAdjusted ? 30 : Math.floor(remaining / 1000)
+      })
+    }
+  })
+
+  // ─── newduel:end (타이머 종료) ───
+  socket.on('newduel:end', ({ roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (!room || room.mode !== 'newduel' || room.status === 'result') return
+    newDuel_endGame(room, 'timeout')
+  })
+
+  // ─── newduel:rematch ───
+  socket.on('newduel:rematch', ({ roomId }) => {
+    const room = gameRooms.get(roomId)
+    if (room) return // 방이 아직 있으면 무시
+
+    const existingReq = rematchRequests.get(roomId)
+    if (existingReq && existingReq.from !== socket.id) {
+      // 상대도 재대결 요청함 → 새 방 생성
+      rematchRequests.delete(roomId)
+      createRoom(existingReq.from, socket.id, 'newduel')
+    } else {
+      rematchRequests.set(roomId, { from: socket.id, at: Date.now() })
+      const opponentId = existingReq ? null : null
+      // 상대에게 재대결 요청 알림
+      io.to(roomId).emit('newduel:rematchRequested', { from: socket.id })
+    }
+  })
+
   // ─── disconnect ───
   socket.on('disconnect', () => {
     console.log('클라이언트 해제:', socket.id)
@@ -1100,6 +1239,10 @@ io.on('connection', (socket) => {
         })
       } else if (room.mode === 'gamble') {
         endDuelGame(room, 'disconnect', socket.id).then(() => {
+          handleLobbyLeave(socket)
+        })
+      } else if (room.mode === 'newduel') {
+        newDuel_endGame(room, 'disconnect', socket.id).then(() => {
           handleLobbyLeave(socket)
         })
       }
@@ -1824,6 +1967,445 @@ async function endDuelGame(room, reason, foldedId) {
   io.emit('lobby:statusChanged', { socketId: socketIdB, status: 'waiting' })
   gameRooms.delete(room.roomId)
   console.log(`[duel] 방 제거: roomId=${room.roomId}`)
+}
+
+// =============================================
+// ===== NEW DUEL (GAMBLE DUEL 리디자인) =====
+// =============================================
+
+// ─── 상수 ───
+const NEWDUEL_RAISE_TABLE = {
+  1: [3, 5, 8],
+  2: [12, 20, 30],
+  3: 'pot'
+}
+
+const NEWDUEL_TURN_TIMERS = { 1: 15000, 2: 20000, 3: 20000 }
+
+function newDuel_getRaiseAmount(phase, raiseIndex, currentPot) {
+  if (phase === 3) return currentPot
+  const table = NEWDUEL_RAISE_TABLE[phase]
+  return table[Math.min(raiseIndex, table.length - 1)]
+}
+
+function newDuel_getMaxRaises(phase) {
+  return phase === 3 ? 1 : 3
+}
+
+// ─── 카드 배분 ───
+function newDuel_dealCards(room) {
+  const deck = shuffleDeck(createDeck())
+  const nd = room.newDuel
+  nd.outCards = [deck[0], deck[1]]
+  nd.firstPlayer = determineFirstPlayer(
+    deck[0], deck[1], room.players[0], room.players[1])
+  nd.phase1Cards_A = deck.slice(2, 17)
+  nd.phase1Cards_B = deck.slice(17, 32)
+  nd.phase2Cards_A = deck.slice(32, 37)
+  nd.phase2Cards_B = deck.slice(37, 42)
+  nd.phase3Cards_A = deck.slice(42, 47)
+  nd.phase3Cards_B = deck.slice(47, 52)
+  nd.gridCards_A = [...nd.phase1Cards_A, ...nd.phase2Cards_A, ...nd.phase3Cards_A]
+  nd.gridCards_B = [...nd.phase1Cards_B, ...nd.phase2Cards_B, ...nd.phase3Cards_B]
+}
+
+// ─── Phase 진행 (양쪽 ready 수신 후 다음 단계) ───
+function newDuel_advancePhase(room) {
+  const nd = room.newDuel
+  const [idA, idB] = room.players
+  const sockA = io.sockets.sockets.get(idA)
+  const sockB = io.sockets.sockets.get(idB)
+
+  nd.readySet.clear()
+
+  switch (room.status) {
+    case 'matched':
+      room.status = 'dealing_out'
+      io.to(room.roomId).emit('newduel:dealOut', {
+        outCards: nd.outCards,
+        firstPlayer: nd.firstPlayer
+      })
+      console.log(`[newduel] dealing_out: roomId=${room.roomId}`)
+      break
+
+    case 'dealing_out':
+      room.status = 'dealing_phase1'
+      if (sockA) sockA.emit('newduel:dealPhase1', {
+        myCards: nd.phase1Cards_A, oppCardCount: 15
+      })
+      if (sockB) sockB.emit('newduel:dealPhase1', {
+        myCards: nd.phase1Cards_B, oppCardCount: 15
+      })
+      console.log(`[newduel] dealing_phase1: roomId=${room.roomId}`)
+      break
+
+    case 'dealing_phase1':
+      room.status = 'betting_1'
+      nd.betting.phase = 1
+      nd.betting.currentTurn = nd.firstPlayer
+      io.to(room.roomId).emit('newduel:bettingStart', {
+        phase: 1, pot: nd.betting.pot,
+        currentTurn: nd.firstPlayer
+      })
+      newDuel_startTurnTimer(room)
+      console.log(`[newduel] betting_1: roomId=${room.roomId}`)
+      break
+
+    case 'betting_1_done':
+      room.status = 'dealing_phase2'
+      if (sockA) sockA.emit('newduel:dealPhase2', {
+        myCards: nd.phase2Cards_A,
+        oppCards: [...nd.phase1Cards_B, ...nd.phase2Cards_B]
+      })
+      if (sockB) sockB.emit('newduel:dealPhase2', {
+        myCards: nd.phase2Cards_B,
+        oppCards: [...nd.phase1Cards_A, ...nd.phase2Cards_A]
+      })
+      console.log(`[newduel] dealing_phase2: roomId=${room.roomId}`)
+      break
+
+    case 'dealing_phase2':
+      room.status = 'betting_2'
+      nd.betting.phase = 2
+      nd.betting.currentTurn = nd.firstPlayer
+      io.to(room.roomId).emit('newduel:bettingStart', {
+        phase: 2, pot: nd.betting.pot,
+        currentTurn: nd.firstPlayer
+      })
+      newDuel_startTurnTimer(room)
+      console.log(`[newduel] betting_2: roomId=${room.roomId}`)
+      break
+
+    case 'betting_2_done':
+      room.status = 'revealing_phase3'
+      // 귀속 공개: 10장을 순서대로 A/B 교대 전송
+      const assignments = []
+      for (let i = 0; i < 5; i++) {
+        assignments.push({ card: nd.phase3Cards_A[i], owner: 'A' })
+        assignments.push({ card: nd.phase3Cards_B[i], owner: 'B' })
+      }
+      if (sockA) sockA.emit('newduel:revealPhase3', {
+        assignments: assignments.map(a => ({
+          card: a.card,
+          owner: a.owner === 'A' ? 'mine' : 'opponent'
+        }))
+      })
+      if (sockB) sockB.emit('newduel:revealPhase3', {
+        assignments: assignments.map(a => ({
+          card: a.card,
+          owner: a.owner === 'B' ? 'mine' : 'opponent'
+        }))
+      })
+      console.log(`[newduel] revealing_phase3: roomId=${room.roomId}`)
+      break
+
+    case 'revealing_phase3':
+      room.status = 'betting_3'
+      nd.betting.phase = 3
+      nd.betting.currentTurn = nd.firstPlayer
+      io.to(room.roomId).emit('newduel:bettingStart', {
+        phase: 3, pot: nd.betting.pot,
+        currentTurn: nd.firstPlayer
+      })
+      newDuel_startTurnTimer(room)
+      console.log(`[newduel] betting_3: roomId=${room.roomId}`)
+      break
+
+    case 'betting_3_done':
+      room.status = 'playing'
+      nd.startedAt = Date.now()
+      const gridA = shuffleDeck([...nd.gridCards_A])
+      const gridB = shuffleDeck([...nd.gridCards_B])
+      if (sockA) sockA.emit('newduel:gameStart', {
+        myGrid: gridA, oppGrid: gridB,
+        pot: nd.betting.pot, startedAt: nd.startedAt, duration: 80
+      })
+      if (sockB) sockB.emit('newduel:gameStart', {
+        myGrid: gridB, oppGrid: gridA,
+        pot: nd.betting.pot, startedAt: nd.startedAt, duration: 80
+      })
+      nd.timer = setTimeout(() => newDuel_endGame(room, 'timeout'), 80000)
+      console.log(`[newduel] playing: roomId=${room.roomId}, pot=${nd.betting.pot}`)
+      break
+  }
+}
+
+// ─── 베팅 턴 타이머 ───
+function newDuel_startTurnTimer(room) {
+  const nd = room.newDuel
+  clearTimeout(nd.betting.turnTimer)
+  const duration = NEWDUEL_TURN_TIMERS[nd.betting.phase] || 15000
+  nd.betting.turnTimer = setTimeout(() => {
+    // 타임아웃 → 자동 CALL
+    newDuel_handleBet(room, nd.betting.currentTurn, 'call')
+  }, duration)
+}
+
+// ─── 베팅 처리 ───
+function newDuel_handleBet(room, socketId, action) {
+  const nd = room.newDuel
+  const bet = nd.betting
+  if (bet.currentTurn !== socketId) return
+  if (bet.allIn) return
+
+  clearTimeout(bet.turnTimer)
+
+  const [idA, idB] = room.players
+  const side = socketId === idA ? 'A' : 'B'
+  const oppSide = side === 'A' ? 'B' : 'A'
+  const oppId = side === 'A' ? idB : idA
+  const phase = bet.phase
+  const maxRaises = newDuel_getMaxRaises(phase)
+
+  if (action === 'fold') {
+    console.log(`[newduel] FOLD: ${socketId}, phase=${phase}`)
+    newDuel_endGame(room, 'fold', socketId)
+    return
+  }
+
+  if (action === 'raise') {
+    const myRaises = bet.phaseRaiseCounts[phase][side]
+    if (myRaises >= maxRaises) {
+      action = 'call' // 더 이상 레이즈 못하면 CALL 처리
+    } else {
+      const raiseAmount = newDuel_getRaiseAmount(phase, myRaises, bet.pot)
+      // 올인 체크: 상대 칩이 레이즈 금액보다 적으면 올인
+      const oppChip = room.playerInfo[oppId]?.chip || 0
+      const actualRaise = Math.min(raiseAmount, oppChip)
+      bet.pot += actualRaise * 2
+      bet.phaseRaiseCounts[phase][side]++
+
+      if (actualRaise < raiseAmount) {
+        bet.allIn = true
+        console.log(`[newduel] ALL-IN: ${socketId}, amount=${actualRaise}`)
+      }
+
+      io.to(room.roomId).emit('newduel:bettingUpdate', {
+        action: 'raise', bySocketId: socketId,
+        amount: actualRaise, pot: bet.pot,
+        currentTurn: bet.allIn ? null : oppId,
+        phase, raiseIndex: myRaises
+      })
+
+      if (bet.allIn) {
+        // 올인이면 모든 베팅 즉시 종료 → playing
+        newDuel_completeBettingPhase(room, true)
+        return
+      }
+
+      bet.currentTurn = oppId
+      newDuel_startTurnTimer(room)
+      return
+    }
+  }
+
+  // CALL 또는 SKIP
+  io.to(room.roomId).emit('newduel:bettingUpdate', {
+    action, bySocketId: socketId,
+    amount: 0, pot: bet.pot,
+    currentTurn: null, phase
+  })
+
+  // 상대도 아직 액션 안 했으면 턴 넘김
+  const oppRaises = bet.phaseRaiseCounts[phase][oppSide]
+  const myRaises = bet.phaseRaiseCounts[phase][side]
+
+  // 선이 SKIP/CALL → 후에게 기회
+  // 후가 SKIP/CALL → Phase 종료
+  if (!bet._firstActed) {
+    bet._firstActed = true
+    bet.currentTurn = oppId
+    io.to(room.roomId).emit('newduel:bettingUpdate', {
+      action: 'turn_change', bySocketId: socketId,
+      pot: bet.pot, currentTurn: oppId, phase
+    })
+    newDuel_startTurnTimer(room)
+  } else {
+    // 양쪽 모두 액션 완료 → Phase 베팅 종료
+    newDuel_completeBettingPhase(room, false)
+  }
+}
+
+// ─── 베팅 Phase 완료 ───
+function newDuel_completeBettingPhase(room, skipRemaining) {
+  const nd = room.newDuel
+  clearTimeout(nd.betting.turnTimer)
+  nd.betting._firstActed = false
+
+  if (skipRemaining || nd.betting.allIn) {
+    // 올인이면 모든 남은 베팅 스킵 → 바로 playing
+    room.status = 'betting_3_done'
+    io.to(room.roomId).emit('newduel:bettingComplete', {
+      phase: nd.betting.phase, pot: nd.betting.pot, nextPhase: 'playing'
+    })
+    nd.readySet.clear()
+    // 올인 시 ready 대기 없이 바로 카드 공개 후 playing으로
+    // Phase 2/3 카드 정보를 한번에 전송
+    const [idA, idB] = room.players
+    const sockA = io.sockets.sockets.get(idA)
+    const sockB = io.sockets.sockets.get(idB)
+    if (nd.betting.phase <= 1) {
+      // Phase 2 카드도 전송
+      if (sockA) sockA.emit('newduel:dealPhase2', {
+        myCards: nd.phase2Cards_A,
+        oppCards: [...nd.phase1Cards_B, ...nd.phase2Cards_B]
+      })
+      if (sockB) sockB.emit('newduel:dealPhase2', {
+        myCards: nd.phase2Cards_B,
+        oppCards: [...nd.phase1Cards_A, ...nd.phase2Cards_A]
+      })
+    }
+    if (nd.betting.phase <= 2) {
+      // Phase 3 카드도 전송
+      const assignments = []
+      for (let i = 0; i < 5; i++) {
+        assignments.push({ card: nd.phase3Cards_A[i], owner: 'A' })
+        assignments.push({ card: nd.phase3Cards_B[i], owner: 'B' })
+      }
+      if (sockA) sockA.emit('newduel:revealPhase3', {
+        assignments: assignments.map(a => ({
+          card: a.card, owner: a.owner === 'A' ? 'mine' : 'opponent'
+        }))
+      })
+      if (sockB) sockB.emit('newduel:revealPhase3', {
+        assignments: assignments.map(a => ({
+          card: a.card, owner: a.owner === 'B' ? 'mine' : 'opponent'
+        }))
+      })
+    }
+    // ready 대기 후 playing 진행
+    return
+  }
+
+  const phase = nd.betting.phase
+  const nextStatus = `betting_${phase}_done`
+  room.status = nextStatus
+
+  io.to(room.roomId).emit('newduel:bettingComplete', {
+    phase, pot: nd.betting.pot,
+    nextPhase: phase < 3 ? `phase${phase + 1}` : 'playing'
+  })
+  console.log(`[newduel] betting_${phase} 완료: pot=${nd.betting.pot}`)
+}
+
+// ─── 게임 종료 ───
+async function newDuel_endGame(room, reason, foldedId) {
+  if (room.status === 'result') return
+  room.status = 'result'
+  clearTimeout(room.newDuel.timer)
+  clearTimeout(room.newDuel.betting.turnTimer)
+
+  const [socketIdA, socketIdB] = room.players
+  const infoA = room.playerInfo[socketIdA]
+  const infoB = room.playerInfo[socketIdB]
+
+  console.log(`[newduel] 게임 종료: roomId=${room.roomId}, reason=${reason}`)
+
+  let comparison
+  if (reason === 'fold' && foldedId) {
+    const winnerId = room.players.find(id => id !== foldedId)
+    comparison = { results: ['winner'], winner: winnerId, winsA: winnerId === socketIdA ? 1 : 0, winsB: winnerId === socketIdB ? 1 : 0 }
+  } else if (reason === 'disconnect' && foldedId) {
+    const winnerId = room.players.find(id => id !== foldedId)
+    comparison = { results: ['winner'], winner: winnerId, winsA: winnerId === socketIdA ? 1 : 0, winsB: winnerId === socketIdB ? 1 : 0 }
+  } else {
+    comparison = compareDuelHands(
+      room.newDuel.completedHands[socketIdA],
+      room.newDuel.completedHands[socketIdB],
+      socketIdA, socketIdB
+    )
+  }
+
+  const pot = room.newDuel.betting.pot
+  const tableFee = calcTableFee(pot)
+  const chipResult = calculateDuelChips(
+    comparison.winner, pot, tableFee,
+    infoA.chip, infoB.chip, socketIdA, socketIdB
+  )
+
+  const playerIdA = infoA.playerId
+  const playerIdB = infoB.playerId
+
+  await updateChipDB(socketIdA, playerIdA, chipResult, 'duel')
+  await updateChipDB(socketIdB, playerIdB, chipResult, 'duel')
+
+  if (reason === 'disconnect' && foldedId) {
+    const foldedInfo = room.playerInfo[foldedId]
+    if (foldedInfo?.playerId) {
+      pendingNotifications.set(foldedInfo.playerId, {
+        type: 'pvp_disconnect_lose',
+        chipDelta: chipResult.delta[foldedId],
+        newChip: chipResult.newChip[foldedId],
+        reason: 'duel_disconnect',
+        createdAt: Date.now()
+      })
+    }
+  }
+
+  try {
+    await updateDuelStats(comparison, reason, foldedId,
+      socketIdA, socketIdB, playerIdA, playerIdB)
+  } catch(e) {
+    console.log('[newduel] 전적 업데이트 실패:', e)
+  }
+
+  const entryA = lobby.get(socketIdA)
+  const entryB = lobby.get(socketIdB)
+  if (entryA) entryA.chip = chipResult.newChip[socketIdA]
+  if (entryB) entryB.chip = chipResult.newChip[socketIdB]
+
+  const canRematch =
+    chipResult.newChip[socketIdA] >= 100 &&
+    chipResult.newChip[socketIdB] >= 100
+
+  const handsA = (room.newDuel.completedHands[socketIdA] || [])
+    .slice().sort(handSortComparator)
+  const handsB = (room.newDuel.completedHands[socketIdB] || [])
+    .slice().sort(handSortComparator)
+
+  const sockA = io.sockets.sockets.get(socketIdA)
+  const sockB = io.sockets.sockets.get(socketIdB)
+
+  const baseResult = {
+    roomId: room.roomId, reason,
+    pot, tableFee,
+    chipDelta: chipResult.delta,
+    newChip: chipResult.newChip,
+    canRematch
+  }
+
+  if (sockA) sockA.emit('newduel:result', {
+    ...baseResult,
+    iWin: comparison.winner === socketIdA,
+    isDraw: comparison.winner === 'draw',
+    noRematchReason: canRematch ? null :
+      (chipResult.newChip[socketIdA] < 100 ? 'my_chip' : 'opp_chip'),
+    myHands: handsA, oppHands: handsB,
+    results: comparison.results
+  })
+
+  if (sockB) {
+    const flipped = (comparison.results || []).map(r =>
+      r === 'A' ? 'B' : r === 'B' ? 'A' : r)
+    sockB.emit('newduel:result', {
+      ...baseResult,
+      iWin: comparison.winner === socketIdB,
+      isDraw: comparison.winner === 'draw',
+      noRematchReason: canRematch ? null :
+        (chipResult.newChip[socketIdB] < 100 ? 'my_chip' : 'opp_chip'),
+      myHands: handsB, oppHands: handsA,
+      results: flipped
+    })
+  }
+
+  console.log(`[newduel] 결과: winner=${comparison.winner}, pot=${pot}, delta=${JSON.stringify(chipResult.delta)}`)
+
+  if (entryA) { entryA.status = 'waiting'; entryA.mode = null }
+  if (entryB) { entryB.status = 'waiting'; entryB.mode = null }
+  io.emit('lobby:statusChanged', { socketId: socketIdA, status: 'waiting' })
+  io.emit('lobby:statusChanged', { socketId: socketIdB, status: 'waiting' })
+  gameRooms.delete(room.roomId)
+  console.log(`[newduel] 방 제거: roomId=${room.roomId}`)
 }
 
 // =============================================
