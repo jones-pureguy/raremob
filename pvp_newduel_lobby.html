@@ -62,10 +62,20 @@
   .nd-cm-cell[data-suit="\u2666"] .nd-cm-mark { color:#ff6b6b; }
   .nd-cm-cell[data-suit="\u2660"] .nd-cm-mark,
   .nd-cm-cell[data-suit="\u2663"] .nd-cm-mark { color:rgba(255,255,255,0.6); }
-  .nd-cm-cell.mine { border:1.5px solid #c9a84c; background:rgba(201,168,76,0.08); box-shadow:0 0 4px rgba(201,168,76,0.3); }
-  .nd-cm-cell.mine .nd-cm-val, .nd-cm-cell.mine .nd-cm-mark { color:#c9a84c; opacity:1; }
-  .nd-cm-cell.opponent { border:1.5px solid #00D4FF; background:rgba(0,212,255,0.08); box-shadow:0 0 4px rgba(0,212,255,0.3); }
-  .nd-cm-cell.opponent .nd-cm-val, .nd-cm-cell.opponent .nd-cm-mark { color:#00D4FF; opacity:1; }
+  /* 소유 카드: 흰 배경 + 수트별 텍스트 색상 */
+  .nd-cm-cell.mine, .nd-cm-cell.opponent { background:rgba(255,255,255,0.9); }
+  .nd-cm-cell.mine { border:1.5px solid #c9a84c; box-shadow:0 0 4px rgba(201,168,76,0.4); }
+  .nd-cm-cell.opponent { border:1.5px solid #00D4FF; box-shadow:0 0 4px rgba(0,212,255,0.4); }
+  .nd-cm-cell.mine .nd-cm-val, .nd-cm-cell.mine .nd-cm-mark,
+  .nd-cm-cell.opponent .nd-cm-val, .nd-cm-cell.opponent .nd-cm-mark { opacity:1; }
+  .nd-cm-cell.mine[data-suit="\u2660"] .nd-cm-val, .nd-cm-cell.mine[data-suit="\u2660"] .nd-cm-mark,
+  .nd-cm-cell.opponent[data-suit="\u2660"] .nd-cm-val, .nd-cm-cell.opponent[data-suit="\u2660"] .nd-cm-mark { color:#1a1a1a; }
+  .nd-cm-cell.mine[data-suit="\u2663"] .nd-cm-val, .nd-cm-cell.mine[data-suit="\u2663"] .nd-cm-mark,
+  .nd-cm-cell.opponent[data-suit="\u2663"] .nd-cm-val, .nd-cm-cell.opponent[data-suit="\u2663"] .nd-cm-mark { color:#1a6bc4; }
+  .nd-cm-cell.mine[data-suit="\u2665"] .nd-cm-val, .nd-cm-cell.mine[data-suit="\u2665"] .nd-cm-mark,
+  .nd-cm-cell.opponent[data-suit="\u2665"] .nd-cm-val, .nd-cm-cell.opponent[data-suit="\u2665"] .nd-cm-mark { color:#2d8a4e; }
+  .nd-cm-cell.mine[data-suit="\u2666"] .nd-cm-val, .nd-cm-cell.mine[data-suit="\u2666"] .nd-cm-mark,
+  .nd-cm-cell.opponent[data-suit="\u2666"] .nd-cm-val, .nd-cm-cell.opponent[data-suit="\u2666"] .nd-cm-mark { color:#d63031; }
   .nd-cm-cell.out { opacity:0.2; border-color:transparent; }
   .nd-cm-cell.out .nd-cm-val { text-decoration:line-through; }
   .nd-cm-cell.hidden { border:1.5px solid rgba(0,212,255,0.5); background:rgba(0,212,255,0.08); position:relative; }
@@ -419,14 +429,22 @@ async function animateDealing(containerId, cards, state, interval) {
 // =============================================
 // 베팅 UI
 // =============================================
-const RAISE_LABELS = { 1: [3,5,8], 2: [12,20,30], 3: 'pot' };
 
-function showBettingPanel(phase, pot, isMyTurn, turnTime) {
+// 현재 베팅 상태 추적
+const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, canRaise: true };
+
+function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
+  opts = opts || {};
   const panel = document.getElementById('ndBettingPanel');
   const info = document.getElementById('ndBetInfo');
   const buttons = document.getElementById('ndBetButtons');
   const timer = document.getElementById('ndBetTimer');
   panel.style.display = '';
+
+  betState.phase = phase;
+  if (opts.hasLastRaiser !== undefined) betState.hasLastRaiser = opts.hasLastRaiser;
+  if (opts.nextRaiseAmount !== undefined) betState.nextRaiseAmount = opts.nextRaiseAmount;
+  if (opts.canRaise !== undefined) betState.canRaise = opts.canRaise;
 
   document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
 
@@ -437,18 +455,22 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime) {
     info.className = 'nd-bet-info my-turn';
     info.textContent = 'NOW YOUR BET';
 
-    let raiseLabel;
-    if (phase === 3) {
-      raiseLabel = `+${pot}`;
+    let btns = '';
+    if (betState.hasLastRaiser) {
+      // 상대가 RAISE한 후: CALL + (RAISE if canRaise) + FOLD
+      btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">CALL</button>`;
+      if (betState.canRaise) {
+        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${betState.nextRaiseAmount}</button>`;
+      }
     } else {
-      const table = RAISE_LABELS[phase];
-      raiseLabel = `+${table[0]}`;
+      // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE + FOLD
+      btns += `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>`;
+      if (betState.canRaise) {
+        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${betState.nextRaiseAmount}</button>`;
+      }
     }
-
-    buttons.innerHTML =
-      `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>` +
-      `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE ${raiseLabel}</button>` +
-      `<button class="nd-bet-btn fold" onclick="sendNewDuelBet('fold')">FOLD</button>`;
+    btns += `<button class="nd-bet-btn fold" onclick="sendNewDuelBet('fold')">FOLD</button>`;
+    buttons.innerHTML = btns;
 
     // 타이머
     let remaining = Math.floor(turnTime / 1000);
@@ -615,16 +637,20 @@ socket.on('newduel:dealPhase1', async ({ myCards, oppCardCount }) => {
 });
 
 // ─── newduel:bettingStart ───
-socket.on('newduel:bettingStart', ({ phase, pot, currentTurn }) => {
+socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, canRaise, hasLastRaiser }) => {
   ndState.pot = pot;
   ndState.bettingActive = true;
   document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
   const turnTime = { 1:15000, 2:20000, 3:20000 }[phase] || 15000;
-  showBettingPanel(phase, pot, currentTurn === socket.id, turnTime);
+  showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
+    hasLastRaiser: hasLastRaiser || false,
+    nextRaiseAmount: nextRaiseAmount || 0,
+    canRaise: canRaise !== false
+  });
 });
 
 // ─── newduel:bettingUpdate ───
-socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase }) => {
+socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, canRaise, hasLastRaiser }) => {
   ndState.pot = pot;
   document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
 
@@ -633,14 +659,14 @@ socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTu
   }
 
   if (currentTurn === null) {
-    // 베팅 완료
     hideBettingPanel();
-  } else if (action === 'turn_change') {
-    const turnTime = { 1:15000, 2:20000, 3:20000 }[phase] || 15000;
-    showBettingPanel(phase, pot, currentTurn === socket.id, turnTime);
   } else if (currentTurn) {
     const turnTime = { 1:15000, 2:20000, 3:20000 }[phase] || 15000;
-    showBettingPanel(phase, pot, currentTurn === socket.id, turnTime);
+    showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
+      hasLastRaiser: hasLastRaiser || false,
+      nextRaiseAmount: nextRaiseAmount || 0,
+      canRaise: canRaise !== false
+    });
   }
 });
 
