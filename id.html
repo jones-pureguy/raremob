@@ -125,11 +125,11 @@
       // auth.uid()로 players 레코드 생성 또는 업데이트
       const INITIAL_GOLD = 1000;
       const { data: existingPlayer } = await sbRetry(() =>
-        sb.from('players').select('id').eq('id', uid).maybeSingle()
+        sb.from('players').select('id, gold').eq('id', uid).maybeSingle()
       );
 
       const upsertObj = { id: uid, username: username };
-      if (!existingPlayer) upsertObj.gold = INITIAL_GOLD;
+      if (!existingPlayer || !existingPlayer.gold) upsertObj.gold = INITIAL_GOLD;
 
       const { error: upsertErr } = await sbRetry(() =>
         sb.from('players').upsert(upsertObj, { onConflict: 'id' })
@@ -141,7 +141,7 @@
       localStorage.setItem('poker_player_id', uid);
 
       // 신규 계정 골드 지급
-      if (!existingPlayer) {
+      if (!existingPlayer || !existingPlayer.gold) {
         localStorage.setItem('poker_gold', INITIAL_GOLD);
         const { error: txErr } = await sb.from('gold_transactions').insert({
           player_id: uid,
