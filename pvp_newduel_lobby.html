@@ -68,6 +68,7 @@
   .nd-cm-cell.opponent { border:1.5px solid #00D4FF; box-shadow:0 0 4px rgba(0,212,255,0.4); }
   .nd-cm-cell.mine .nd-cm-val, .nd-cm-cell.mine .nd-cm-mark,
   .nd-cm-cell.opponent .nd-cm-val, .nd-cm-cell.opponent .nd-cm-mark { opacity:1; }
+  /* 수트별 색상 — JS로 인라인 적용하므로 CSS fallback만 */
   .nd-cm-cell.mine[data-suit="\u2660"] .nd-cm-val, .nd-cm-cell.mine[data-suit="\u2660"] .nd-cm-mark,
   .nd-cm-cell.opponent[data-suit="\u2660"] .nd-cm-val, .nd-cm-cell.opponent[data-suit="\u2660"] .nd-cm-mark { color:#1a1a1a; }
   .nd-cm-cell.mine[data-suit="\u2663"] .nd-cm-val, .nd-cm-cell.mine[data-suit="\u2663"] .nd-cm-mark,
@@ -408,11 +409,26 @@ function renderCardMap(containerId) {
   ).join('');
 }
 
+const SUIT_COLORS = { '\u2660':'#1a1a1a', '\u2663':'#1a6bc4', '\u2665':'#2d8a4e', '\u2666':'#d63031' };
+
 function updateCardMapCell(containerId, suit, value, state) {
   const cell = document.getElementById(`cm-${containerId}-${suit}-${value}`);
   if (!cell) return;
   cell.classList.remove('mine','opponent','out','hidden','unassigned','just-assigned');
+  // 인라인 색상 초기화
+  const val = cell.querySelector('.nd-cm-val');
+  const mark = cell.querySelector('.nd-cm-mark');
+  if (val) val.style.color = '';
+  if (mark) mark.style.color = '';
+
   if (state && state !== 'default') cell.classList.add(state);
+
+  // 소유 카드면 수트별 색상 인라인 적용 (CSS fallback 보완)
+  if (state === 'mine' || state === 'opponent') {
+    const c = SUIT_COLORS[suit] || '#1a1a1a';
+    if (val) val.style.color = c;
+    if (mark) mark.style.color = c;
+  }
 }
 
 function markCardsOnMap(containerId, cards, state) {
@@ -435,6 +451,7 @@ const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, canRaise:
 
 function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
   opts = opts || {};
+  console.log('[newduel] showBettingPanel:', { phase, pot, isMyTurn, opts });
   const panel = document.getElementById('ndBettingPanel');
   const info = document.getElementById('ndBetInfo');
   const buttons = document.getElementById('ndBetButtons');
@@ -585,14 +602,14 @@ socket.on('room:created', ({ roomId, mode, opponent }) => {
 });
 
 // ─── newduel:dealOut ───
-socket.on('newduel:dealOut', async ({ outCards, firstPlayer }) => {
+socket.on('newduel:dealOut', async ({ outCards, firstPlayer, myOutCard, oppOutCard }) => {
   ndState.outCards = outCards;
   ndState.firstPlayer = firstPlayer;
   ndState.isFirst = firstPlayer === socket.id;
 
   document.getElementById('ndPhaseBanner').textContent = 'OUT CARDS';
 
-  // 양쪽 카드맵에 OUT 표시
+  // 양쪽 카드맵에 OUT 표시 (순서대로)
   await new Promise(r => setTimeout(r, 500));
   markCardsOnMap('myCardMap', [outCards[0]], 'out');
   markCardsOnMap('oppCardMap', [outCards[0]], 'out');
@@ -602,18 +619,15 @@ socket.on('newduel:dealOut', async ({ outCards, firstPlayer }) => {
   await new Promise(r => setTimeout(r, 800));
 
   // OUT 카드 + 선/후 표시
-  const myOutIdx = ndState.isFirst ? 0 : 1;
-  const oppOutIdx = ndState.isFirst ? 1 : 0;
-  const myOut = outCards[myOutIdx];
-  const oppOut = outCards[oppOutIdx];
-  const suitColor = (s) => (s === '\u2665' || s === '\u2666') ? '#ff6b6b' : '#e0e0e0';
+  const suitColor = (s) => SUIT_COLORS[s] || '#e0e0e0';
   document.getElementById('ndMyOut').innerHTML =
-    `<span style="color:${suitColor(myOut.suit)}" class="nd-out-card">${VN[myOut.value]}${myOut.suit}</span>` +
-    (ndState.isFirst ? ' <span class="nd-first-mark">★</span>' : '');
+    `<span style="color:${suitColor(myOutCard.suit)}" class="nd-out-card">${VN[parseInt(myOutCard.value)]}${myOutCard.suit}</span>` +
+    (ndState.isFirst ? ' <span class="nd-first-mark">\u2605</span>' : '');
   document.getElementById('ndOppOut').innerHTML =
-    `<span style="color:${suitColor(oppOut.suit)}" class="nd-out-card">${VN[oppOut.value]}${oppOut.suit}</span>` +
-    (!ndState.isFirst ? ' <span class="nd-first-mark">★</span>' : '');
+    `<span style="color:${suitColor(oppOutCard.suit)}" class="nd-out-card">${VN[parseInt(oppOutCard.value)]}${oppOutCard.suit}</span>` +
+    (!ndState.isFirst ? ' <span class="nd-first-mark">\u2605</span>' : '');
 
+  console.log('[newduel] dealOut:', { myOut: myOutCard, oppOut: oppOutCard, isFirst: ndState.isFirst });
   await new Promise(r => setTimeout(r, 1000));
   socket.emit('newduel:ready', { roomId: ndState.roomId });
 });

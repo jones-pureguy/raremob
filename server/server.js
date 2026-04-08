@@ -2034,11 +2034,15 @@ function newDuel_advancePhase(room) {
   switch (room.status) {
     case 'matched':
       room.status = 'dealing_out'
-      io.to(room.roomId).emit('newduel:dealOut', {
-        outCards: nd.outCards,
-        firstPlayer: nd.firstPlayer
+      if (sockA) sockA.emit('newduel:dealOut', {
+        outCards: nd.outCards, firstPlayer: nd.firstPlayer,
+        myOutCard: nd.outCards[0], oppOutCard: nd.outCards[1]
       })
-      console.log(`[newduel] dealing_out: roomId=${room.roomId}`)
+      if (sockB) sockB.emit('newduel:dealOut', {
+        outCards: nd.outCards, firstPlayer: nd.firstPlayer,
+        myOutCard: nd.outCards[1], oppOutCard: nd.outCards[0]
+      })
+      console.log(`[newduel] dealing_out: roomId=${room.roomId}, first=${nd.firstPlayer}`)
       break
 
     case 'dealing_out':
