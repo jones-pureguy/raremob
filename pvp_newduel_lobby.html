@@ -51,17 +51,26 @@
   .pvp-popup-countdown { color:rgba(255,255,255,0.4); font-size:0.75rem; margin-top:8px; }
 
   /* ── 카드맵 ── */
-  .nd-cardmap { display:flex; flex-direction:column; gap:2px; padding:4px 6px; }
-  .nd-cm-row { display:flex; align-items:center; gap:1px; }
-  .nd-cm-suit { font-size:0.8rem; font-weight:700; width:16px; text-align:center; flex-shrink:0; }
-  .nd-cm-suit.spade, .nd-cm-suit.club { color:rgba(255,255,255,0.6); }
-  .nd-cm-suit.heart, .nd-cm-suit.diamond { color:#ff6b6b; }
-  .nd-cm-cell { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; font-weight:700; width:22px; text-align:center; color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:2px; padding:2px 0; transition:all 0.3s ease; line-height:1.2; }
-  .nd-cm-cell.mine { color:#c9a84c; border:1.5px solid #c9a84c; background:rgba(201,168,76,0.08); box-shadow:0 0 4px rgba(201,168,76,0.3); }
-  .nd-cm-cell.opponent { color:#00D4FF; border:1.5px solid #00D4FF; background:rgba(0,212,255,0.08); box-shadow:0 0 4px rgba(0,212,255,0.3); }
-  .nd-cm-cell.out { opacity:0.2; text-decoration:line-through; border-color:transparent; }
-  .nd-cm-cell.hidden { border:1.5px solid rgba(0,212,255,0.5); background:rgba(0,212,255,0.08); color:transparent; position:relative; }
-  .nd-cm-cell.hidden::after { content:'?'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:rgba(0,212,255,0.4); font-size:0.55rem; }
+  .nd-cardmap { display:flex; flex-direction:column; gap:4px; padding:4px 6px; }
+  .nd-cm-row { display:flex; align-items:center; gap:2px; }
+  .nd-cm-cell { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:24px; height:36px; border-radius:4px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); font-family:'IBM Plex Mono',monospace; transition:all 0.3s ease; color:rgba(255,255,255,0.4); }
+  .nd-cm-val { font-size:0.7rem; font-weight:700; line-height:1; }
+  .nd-cm-mark { font-size:0.55rem; line-height:1; opacity:0.7; }
+  .nd-cm-cell[data-suit="\u2665"] .nd-cm-val,
+  .nd-cm-cell[data-suit="\u2666"] .nd-cm-val { color:#ff6b6b; }
+  .nd-cm-cell[data-suit="\u2665"] .nd-cm-mark,
+  .nd-cm-cell[data-suit="\u2666"] .nd-cm-mark { color:#ff6b6b; }
+  .nd-cm-cell[data-suit="\u2660"] .nd-cm-mark,
+  .nd-cm-cell[data-suit="\u2663"] .nd-cm-mark { color:rgba(255,255,255,0.6); }
+  .nd-cm-cell.mine { border:1.5px solid #c9a84c; background:rgba(201,168,76,0.08); box-shadow:0 0 4px rgba(201,168,76,0.3); }
+  .nd-cm-cell.mine .nd-cm-val, .nd-cm-cell.mine .nd-cm-mark { color:#c9a84c; opacity:1; }
+  .nd-cm-cell.opponent { border:1.5px solid #00D4FF; background:rgba(0,212,255,0.08); box-shadow:0 0 4px rgba(0,212,255,0.3); }
+  .nd-cm-cell.opponent .nd-cm-val, .nd-cm-cell.opponent .nd-cm-mark { color:#00D4FF; opacity:1; }
+  .nd-cm-cell.out { opacity:0.2; border-color:transparent; }
+  .nd-cm-cell.out .nd-cm-val { text-decoration:line-through; }
+  .nd-cm-cell.hidden { border:1.5px solid rgba(0,212,255,0.5); background:rgba(0,212,255,0.08); position:relative; }
+  .nd-cm-cell.hidden .nd-cm-val, .nd-cm-cell.hidden .nd-cm-mark { visibility:hidden; }
+  .nd-cm-cell.hidden::after { content:'?'; position:absolute; color:rgba(0,212,255,0.4); font-size:0.6rem; font-weight:700; }
 
   /* ── 상대 카드맵 오버레이 (Phase 1 비공개) ── */
   .nd-cardmap-wrap { position:relative; }
@@ -383,8 +392,8 @@ const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:
 function renderCardMap(containerId) {
   const container = document.getElementById(containerId);
   container.innerHTML = SUITS_MAP.map(s =>
-    `<div class="nd-cm-row" data-suit="${s.suit}"><span class="nd-cm-suit ${s.cls}">${s.symbol}</span>${CM_VALUES.map(v =>
-      `<span class="nd-cm-cell" data-suit="${s.suit}" data-value="${v}" id="cm-${containerId}-${s.suit}-${v}">${VN[v]}</span>`
+    `<div class="nd-cm-row" data-suit="${s.suit}">${CM_VALUES.map(v =>
+      `<span class="nd-cm-cell" data-suit="${s.suit}" data-value="${v}" id="cm-${containerId}-${s.suit}-${v}"><span class="nd-cm-val">${VN[v]}</span><span class="nd-cm-mark">${s.symbol}</span></span>`
     ).join('')}</div>`
   ).join('');
 }
@@ -462,6 +471,27 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime) {
 function hideBettingPanel() {
   document.getElementById('ndBettingPanel').style.display = 'none';
   clearInterval(ndState.betTimerInterval);
+}
+
+function showBettingAction(action, amount) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
+  const box = document.createElement('div');
+  box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
+  let msg = '', color = 'var(--gold)';
+  if (action === 'raise') { msg = `상대방 RAISE\n+${amount}`; color = '#FFC107'; }
+  else if (action === 'call') { msg = '상대방 CALL'; color = '#4CAF50'; }
+  else if (action === 'skip') { msg = '상대방 SKIP'; color = 'rgba(255,255,255,0.7)'; }
+  else if (action === 'fold') { msg = '상대방 FOLD'; color = '#ff5252'; }
+  else return;
+  box.innerHTML = `<div style="font-size:1.3rem;font-weight:700;color:${color};white-space:pre-line;">${msg}</div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.3s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+  }, 1500);
 }
 
 function sendNewDuelBet(action) {
@@ -598,8 +628,8 @@ socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTu
   ndState.pot = pot;
   document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
 
-  if (action === 'raise' && bySocketId !== socket.id) {
-    showToast(`상대방 RAISE +${amount}`);
+  if (bySocketId !== socket.id && action !== 'turn_change') {
+    showBettingAction(action, amount);
   }
 
   if (currentTurn === null) {
