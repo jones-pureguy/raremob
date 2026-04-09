@@ -189,8 +189,8 @@
   .nd-opp-section { padding:0 8px; margin-bottom:4px; }
   .nd-opp-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.35); letter-spacing:0.08em; margin-bottom:2px; display:flex; align-items:center; gap:6px; }
   .nd-opp-grid-wrap { display:flex; align-items:flex-start; gap:8px; }
-  .nd-opp-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; width:120px; flex-shrink:0; }
-  .nd-opp-mini-cell { aspect-ratio:0.72; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:0.42rem; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; overflow:hidden; }
+  .nd-opp-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:min(58vw, 260px); flex-shrink:0; }
+  .nd-opp-mini-cell { aspect-ratio:1; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; overflow:hidden; }
   .nd-opp-mini-cell.has-card { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.08); }
   .nd-opp-mini-cell.empty { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.03); }
   .nd-opp-hands { flex:1; min-width:0; }
@@ -938,7 +938,7 @@ function ndInitOppMiniGrid(cards) {
     cell.id = `nd-mini-${i}`;
     if (c) {
       const col = SUIT_COLORS_GAME[c.suit] || '#e0e0e0';
-      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[c.value]}</span><span style="color:${col};font-size:0.35rem;">${c.suit}</span>`;
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[c.value]}</span><span style="color:${col};font-size:0.55rem;">${c.suit}</span>`;
     }
     grid.appendChild(cell);
   }
@@ -973,7 +973,7 @@ function ndUpdateOppMiniGrid(removedPositions) {
     if (card) {
       cell.className = 'nd-opp-mini-cell has-card';
       const col = SUIT_COLORS_GAME[card.suit] || '#e0e0e0';
-      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[card.value]}</span><span style="color:${col};font-size:0.35rem;">${card.suit}</span>`;
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[card.value]}</span><span style="color:${col};font-size:0.55rem;">${card.suit}</span>`;
     } else {
       cell.className = 'nd-opp-mini-cell empty';
       cell.innerHTML = '';
@@ -1179,13 +1179,26 @@ function showNewDuelResult(data) {
 // ─── room:created ───
 socket.on('room:created', ({ roomId, mode, opponent }) => {
   clearTimeout(challengeTimer);
+  clearTimeout(ndState.rematchTimer);
   if (mode !== 'newduel') return;
+
+  // 이전 게임 잔재 정리
+  document.getElementById('modalOverlay')?.classList.remove('active');
+  clearInterval(ndState.gameTimerInterval);
+  clearInterval(ndState.betTimerInterval);
+  hideBettingPanel();
+  ndSetGridOverlay('none');
+
   ndState.roomId = roomId;
   ndState.opponent = opponent;
   ndState.pot = 2;
   ndState.currentPhase = 0;
   ndState.myCards = [];
   ndState.oppCards = [];
+  ndState.myHands = [];
+  ndState.opponentHands = [];
+  ndState.gameStarted = false;
+  ndState.rematchRequested = false;
 
   // 딜링 뷰로 전환
   showView('dealing');
