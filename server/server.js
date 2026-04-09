@@ -1150,8 +1150,9 @@ io.on('connection', (socket) => {
     const oppSock = io.sockets.sockets.get(opponentId)
     if (oppSock) {
       oppSock.emit('newduel:opponentHandComplete', {
-        hands: completed.map(h => ({ rank: h.rank, label: h.label })),
-        removedPositions
+        hands: completed.map(h => ({ rank: h.rank, label: h.label, cards: h.cards })),
+        removedPositions,
+        handCount: completed.length
       })
     }
     console.log(`[newduel] 패 완성: ${socket.id}, count=${completed.length}`)
@@ -1738,6 +1739,40 @@ function compareDuelHands(handsA, handsB, socketIdA, socketIdB) {
       results = ['draw']
     }
   }
+
+  return { results, winsA, winsB, winner }
+}
+
+// ─── NEW DUEL: 3패 비교 (최상위 3패 중 2승) ───
+function newDuel_compareHands(handsA, handsB, socketIdA, socketIdB) {
+  const sortedA = (handsA || []).slice().sort(handSortComparator)
+  const sortedB = (handsB || []).slice().sort(handSortComparator)
+
+  const maxLen = Math.min(3, Math.max(sortedA.length, sortedB.length))
+  let winsA = 0, winsB = 0
+  const results = []
+
+  for (let i = 0; i < maxLen; i++) {
+    const a = sortedA[i], b = sortedB[i]
+    if (a && !b) { winsA++; results.push('A'); continue }
+    if (!a && b) { winsB++; results.push('B'); continue }
+    if (!a && !b) { results.push('draw'); continue }
+
+    let cmp = 0
+    if (a.rank !== b.rank) cmp = a.rank > b.rank ? 1 : -1
+    else cmp = compareHandsByCards(a, b)
+
+    if (cmp > 0) { winsA++; results.push('A') }
+    else if (cmp < 0) { winsB++; results.push('B') }
+    else { results.push('draw') }
+  }
+
+  // 3패 미만이면 나머지 draw로 채움
+  while (results.length < 3) results.push('draw')
+
+  let winner = 'draw'
+  if (winsA >= 2) winner = socketIdA
+  else if (winsB >= 2) winner = socketIdB
 
   return { results, winsA, winsB, winner }
 }
@@ -2374,7 +2409,7 @@ async function newDuel_endGame(room, reason, foldedId) {
     const winnerId = room.players.find(id => id !== foldedId)
     comparison = { results: ['winner'], winner: winnerId, winsA: winnerId === socketIdA ? 1 : 0, winsB: winnerId === socketIdB ? 1 : 0 }
   } else {
-    comparison = compareDuelHands(
+    comparison = newDuel_compareHands(
       room.newDuel.completedHands[socketIdA],
       room.newDuel.completedHands[socketIdB],
       socketIdA, socketIdB
@@ -2453,7 +2488,8 @@ async function newDuel_endGame(room, reason, foldedId) {
     noRematchReason: canRematch ? null :
       (chipResult.newChip[socketIdA] < 100 ? 'my_chip' : 'opp_chip'),
     myHands: handsA, oppHands: handsB,
-    results: comparison.results
+    results: comparison.results,
+    myWins: comparison.winsA, oppWins: comparison.winsB
   })
 
   if (sockB) {
@@ -2466,7 +2502,8 @@ async function newDuel_endGame(room, reason, foldedId) {
       noRematchReason: canRematch ? null :
         (chipResult.newChip[socketIdB] < 100 ? 'my_chip' : 'opp_chip'),
       myHands: handsB, oppHands: handsA,
-      results: flipped
+      results: flipped,
+      myWins: comparison.winsB, oppWins: comparison.winsA
     })
   }
 

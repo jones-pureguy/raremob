@@ -169,8 +169,48 @@
   @keyframes nd-ri-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
   .nd-bet-timer { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(255,255,255,0.35); margin-top:4px; }
 
-  /* ── 게임 플레이 placeholder ── */
-  .nd-game-placeholder { display:flex; align-items:center; justify-content:center; height:60vh; color:rgba(255,255,255,0.3); font-family:'IBM Plex Mono',monospace; font-size:0.9rem; }
+  /* ── 게임 플레이 ── */
+  .nd-game-view { width:100%; max-width:480px; margin:0 auto; padding:4px 0; }
+  .nd-game-status { display:flex; align-items:center; justify-content:space-between; padding:4px 12px; margin-bottom:2px; }
+  .nd-game-status .timer-wrap { width:36px; height:36px; position:relative; }
+  .nd-game-status .timer-ring { width:36px; height:36px; }
+  .nd-game-status .timer-ring-bg { fill:none; stroke:rgba(255,255,255,0.08); stroke-width:2; }
+  .nd-game-status .timer-ring-fg { fill:none; stroke:var(--gold); stroke-width:2.5; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .nd-game-status .timer-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:700; color:var(--gold); }
+  .nd-game-status .timer-num.time-attack { color:#ff3333 !important; }
+  .nd-game-status .timer-ring-fg.time-attack { stroke:#ff3333 !important; }
+  .nd-status-msg { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.08em; color:rgba(201,168,76,0.3); }
+  .nd-status-msg.blink { animation:pvpBlink 1s ease-in-out infinite; }
+  @keyframes pvpBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .nd-game-pot { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:3px; }
+  .nd-game-pot img { width:14px; height:14px; }
+
+  /* 상대 미니그리드 */
+  .nd-opp-section { padding:0 8px; margin-bottom:4px; }
+  .nd-opp-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.35); letter-spacing:0.08em; margin-bottom:2px; display:flex; align-items:center; gap:6px; }
+  .nd-opp-grid-wrap { display:flex; align-items:flex-start; gap:8px; }
+  .nd-opp-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; width:120px; flex-shrink:0; }
+  .nd-opp-mini-cell { aspect-ratio:0.72; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:0.42rem; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; overflow:hidden; }
+  .nd-opp-mini-cell.has-card { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.08); }
+  .nd-opp-mini-cell.empty { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.03); }
+  .nd-opp-hands { flex:1; min-width:0; }
+
+  /* 내 그리드 */
+  .nd-my-grid-wrap { position:relative; padding:0 6px; }
+  .nd-my-grid-wrap .grid-container { width:100% !important; max-width:100% !important; padding:0 !important; margin:0 !important; left:auto !important; right:auto !important; }
+  .nd-my-grid-wrap .grid { width:100% !important; grid-template-columns:repeat(5,1fr) !important; }
+  .nd-grid-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:700; color:var(--gold); border-radius:8px; z-index:10; }
+
+  /* 스코어보드 */
+  .nd-scoreboard { max-width:480px; width:100%; margin:4px auto; padding:0 12px; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; }
+  .nd-sb-header { display:flex; justify-content:space-between; color:rgba(255,255,255,0.35); padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:0.6rem; letter-spacing:0.05em; }
+  .nd-sb-row { display:flex; align-items:center; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.03); min-height:18px; }
+  .nd-sb-row.top3 { background:rgba(201,168,76,0.04); }
+  .nd-sb-cell { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nd-sb-cell.left { text-align:left; color:rgba(255,255,255,0.6); }
+  .nd-sb-cell.right { text-align:right; color:rgba(255,255,255,0.6); }
+  .nd-sb-cell.vs { flex:0; width:20px; text-align:center; color:rgba(255,255,255,0.2); font-size:0.55rem; }
+  .nd-sb-cell .win { color:var(--gold); }
 </style>
 </head>
 <body class="game-page">
@@ -280,7 +320,64 @@
 
 <!-- ==================== VIEW: GAME ==================== -->
 <div id="view-game" style="display:none">
-  <div class="nd-game-placeholder">게임 화면 준비 중...</div>
+  <div class="nd-game-view">
+    <!-- 상단: 타이머 + 상태 + POT -->
+    <div class="nd-game-status">
+      <div class="timer-wrap">
+        <svg class="timer-ring" viewBox="0 0 40 40">
+          <circle class="timer-ring-bg" cx="20" cy="20" r="16"/>
+          <circle class="timer-ring-fg" id="ndTimerRing" cx="20" cy="20" r="16"
+            stroke-dasharray="100.53" stroke-dashoffset="0"
+            transform="rotate(-90 20 20)"/>
+        </svg>
+        <div class="timer-num" id="ndTimerNum">80</div>
+      </div>
+      <div class="nd-status-msg" id="ndStatusMsg">PLAYING</div>
+      <div class="nd-game-pot"><img src="./images/chip.png">POT <span id="ndGamePot">0</span></div>
+    </div>
+
+    <!-- 상대 미니그리드 + 상대 패 현황 -->
+    <div class="nd-opp-section">
+      <div class="nd-opp-label">OPPONENT — <span id="ndOppNameGame">OPP</span></div>
+      <div class="nd-opp-grid-wrap">
+        <div class="nd-opp-mini-grid" id="ndOppMiniGrid"></div>
+        <div class="nd-opp-hands" id="ndOppHandsList"></div>
+      </div>
+    </div>
+
+    <!-- 내 그리드 -->
+    <div class="nd-my-grid-wrap">
+      <div class="grid-container" id="gridContainer">
+        <div class="grid" id="grid"></div>
+        <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points=""/></svg>
+        <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+      </div>
+      <div class="nd-grid-overlay" id="ndGridOverlay" style="display:none">
+        <span id="ndGridOverlayText"></span>
+      </div>
+    </div>
+
+    <!-- hand preview (script.js 호환) -->
+    <div class="hand-preview" id="handPreview"></div>
+
+    <!-- 스코어보드 -->
+    <div class="nd-scoreboard" id="ndScoreboard"></div>
+  </div>
+
+  <!-- script.js 호환 더미 -->
+  <div style="display:none">
+    <button id="restartBtn"></button>
+    <div id="currentScore"></div>
+    <div id="highScoreDisplay"></div>
+    <div id="retryLabel"></div>
+    <div id="leaderboardOverlay"><div id="leaderboardModal"></div></div>
+    <button id="btnSaveReplay"></button>
+    <div id="allUserTopScoreRow"></div>
+    <div id="usernameDisplay"></div>
+    <div class="removed-cards" id="removedCards"></div>
+    <div class="hand-slots" id="handSlots"></div>
+    <div id="handCount"></div>
+  </div>
 </div>
 
 <!-- ==================== 결과 모달 ==================== -->
@@ -301,6 +398,7 @@
 <script src="scorepolicy.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="server_client.js"></script>
+<script src="pvp_utils.js"></script>
 <script src="header.js"></script>
 <script>
   async function syncGoldToServer(playerId, gold) {
@@ -326,6 +424,16 @@ const ndState = {
   gameStarted: false,
   rematchRequested: false,
   disconnectTimeout: null,
+  // 게임 플레이
+  myHands: [],
+  opponentHands: [],
+  oppGrid: [],
+  oppMiniGridCards: [],
+  gameTimerInterval: null,
+  gameTimeRemaining: 80,
+  myChipBefore: 0,
+  oppChipBefore: 0,
+  rematchTimer: null,
 };
 
 let lobbyUsers = [];
@@ -343,6 +451,16 @@ let challengeTimer = null;
   initHeader();
   Sound.loadSettings();
   BGM.loadSettings();
+  await ScorePolicy.load();
+
+  // script.js 로드 (게임 엔진)
+  window._duelGridSize = 5;
+  await new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'script.js';
+    s.onload = resolve;
+    document.body.appendChild(s);
+  });
 
   if (socket.connected) joinLobby();
   else socket.once('connect', joinLobby);
@@ -656,6 +774,397 @@ socket.on('challenge:rejected', () => showToast('도전이 거절되었습니다
 socket.on('challenge:failed', () => showToast('도전 실패'));
 
 // =============================================
+// 게임 플레이 로직
+// =============================================
+
+const SUIT_COLORS_GAME = { '♠':'#e0e0e0', '♣':'#1a6bc4', '♥':'#2d8a4e', '♦':'#d63031' };
+const VN_GAME = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+
+function ndCardDisplay(cards) {
+  if (!cards || !cards.length) return '';
+  return cards.slice().sort((a,b) => b.value - a.value).map(c => {
+    const col = (c.suit === '♥' || c.suit === '♦') ? '#ff6b6b' : '#e0e0e0';
+    return `<span style="color:${col}">${VN_GAME[c.value]}${c.suit}</span>`;
+  }).join(' ');
+}
+
+function ndHandSort(a, b) {
+  if (b.rank !== a.rank) return b.rank - a.rank;
+  return 0;
+}
+
+function setupNewDuelGameUI(data) {
+  ndState.myHands = [];
+  ndState.opponentHands = [];
+  ndState.gameStarted = true;
+  ndState.gameTimeRemaining = data.duration || 80;
+  ndState.myChipBefore = parseInt(localStorage.getItem('userChip') || '0');
+  ndState.oppChipBefore = ndState.opponent?.chip || 0;
+
+  // GRID_SIZE = 5
+  GRID_SIZE = 5;
+
+  // initGrid 오버라이드 — 서버에서 받은 25장으로 5×5 채움
+  const origInitGrid = window.initGrid;
+  window.initGrid = function() {
+    const cards = data.myGrid.map(c => ({
+      suit: c.suit, value: c.value,
+      id: String(c.value) + c.suit
+    }));
+    state.removedCards = [];
+    state.grid = [];
+    let idx = 0;
+    for (let r = 0; r < GRID_SIZE; r++) {
+      const row = [];
+      for (let c = 0; c < GRID_SIZE; c++) {
+        row.push({ card: idx < cards.length ? cards[idx++] : null, row: r, col: c });
+      }
+      state.grid.push(row);
+    }
+  };
+
+  // isValidHand 오버라이드 — 원페어부터 유효 (가드 패턴)
+  if (!window._origIsValidHandND) {
+    window._origIsValidHandND = window.isValidHand;
+  }
+  window.isValidHand = function(hand) {
+    if (!hand) return false;
+    if (hand.rank === RANK.HIGH_CARD || hand.rank === 0) return false;
+    if (hand.rank === RANK.ONE_PAIR || hand.rank === 1) return true;
+    return window._origIsValidHandND
+      ? window._origIsValidHandND(hand)
+      : hand.rank > 1;
+  };
+
+  initState();
+  initGrid();
+  renderGrid();
+  document.getElementById('grid').style.gridTemplateColumns = 'repeat(5, 1fr)';
+
+  // 원본 복원
+  window.initGrid = origInitGrid;
+
+  // 상대 미니그리드 초기화
+  ndState.oppGrid = data.oppGrid.slice();
+  ndState.oppMiniGridCards = data.oppGrid.map(c => ({ ...c }));
+  ndInitOppMiniGrid(data.oppGrid);
+
+  // 스코어보드 초기화
+  ndRenderScoreboard();
+
+  // 상태 표시
+  document.getElementById('ndOppNameGame').textContent = ndState.opponent?.username || 'OPP';
+  document.getElementById('ndGamePot').textContent = data.pot;
+  ndSetStatus('playing');
+
+  // 타이머 시작
+  ndStartTimer(ndState.gameTimeRemaining);
+
+  // 그리드 터치 활성화
+  const gc = document.getElementById('gridContainer');
+  if (gc) gc.style.pointerEvents = '';
+
+  // endGame 오버라이드
+  window.endGame = function(reason) {
+    if (!ndState.gameStarted) return;
+    if (state.phase === 'result') return;
+    if (reason === 'complete' || reason === 'nomoves') {
+      state.phase = 'done';
+      ndSetGridOverlay('done');
+      socket.emit('newduel:playerDone', { roomId: ndState.roomId, reason });
+      ndSetStatus('completed');
+    } else if (reason === 'timeout') {
+      state.phase = 'done';
+      ndSetGridOverlay('done');
+      socket.emit('newduel:playerDone', { roomId: ndState.roomId, reason: 'timeout' });
+      ndSetStatus('timelimit');
+    }
+  };
+
+  // finalizePath 래핑 (가드 패턴)
+  if (!window._origFinalizePathND) {
+    window._origFinalizePathND = window.finalizePath;
+  }
+  window.finalizePath = function() {
+    const removedPositions = [...state.selectedPath];
+    const prevCount = state.hands.length;
+    window._origFinalizePathND.call(this);
+    const newCount = state.hands.length;
+    if (newCount > prevCount) {
+      const newHand = state.hands[state.hands.length - 1];
+      const evalResult = evaluateHand(newHand.cards);
+      const sortedCards = [...newHand.cards].sort((a, b) => b.value - a.value);
+      const topSuit = sortedCards[0].suit;
+
+      ndState.myHands = state.hands.map(h => {
+        const ev = evaluateHand(h.cards);
+        const sc = [...h.cards].sort((a, b) => b.value - a.value);
+        return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: h.cards };
+      }).sort(ndHandSort);
+
+      ndRenderScoreboard();
+
+      socket.emit('newduel:handComplete', {
+        roomId: ndState.roomId,
+        hand: {
+          rank: evalResult.rank,
+          label: evalResult.label,
+          suit: topSuit,
+          cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
+        },
+        removedPositions
+      });
+    }
+  };
+}
+
+// ─── 상대 미니그리드 ───
+function ndInitOppMiniGrid(cards) {
+  const grid = document.getElementById('ndOppMiniGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement('div');
+    const c = cards[i];
+    cell.className = 'nd-opp-mini-cell has-card';
+    cell.id = `nd-mini-${i}`;
+    if (c) {
+      const col = SUIT_COLORS_GAME[c.suit] || '#e0e0e0';
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[c.value]}</span><span style="color:${col};font-size:0.35rem;">${c.suit}</span>`;
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function ndUpdateOppMiniGrid(removedPositions) {
+  if (!removedPositions || !removedPositions.length) return;
+
+  // 1. 제거된 위치를 빈칸으로
+  removedPositions.forEach(([r, c]) => {
+    const idx = r * 5 + c;
+    ndState.oppMiniGridCards[idx] = null;
+  });
+
+  // 2. 열별 중력 적용
+  for (let c = 0; c < 5; c++) {
+    const colCards = [];
+    for (let r = 4; r >= 0; r--) {
+      if (ndState.oppMiniGridCards[r * 5 + c]) {
+        colCards.push(ndState.oppMiniGridCards[r * 5 + c]);
+      }
+    }
+    for (let r = 4; r >= 0; r--) {
+      ndState.oppMiniGridCards[r * 5 + c] = colCards.length > 0 ? colCards.shift() : null;
+    }
+  }
+
+  // 3. DOM 업데이트
+  ndState.oppMiniGridCards.forEach((card, idx) => {
+    const cell = document.getElementById(`nd-mini-${idx}`);
+    if (!cell) return;
+    if (card) {
+      cell.className = 'nd-opp-mini-cell has-card';
+      const col = SUIT_COLORS_GAME[card.suit] || '#e0e0e0';
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[card.value]}</span><span style="color:${col};font-size:0.35rem;">${card.suit}</span>`;
+    } else {
+      cell.className = 'nd-opp-mini-cell empty';
+      cell.innerHTML = '';
+    }
+  });
+}
+
+// ─── 스코어보드 ───
+function ndRenderScoreboard() {
+  const container = document.getElementById('ndScoreboard');
+  if (!container) return;
+  const myName = localStorage.getItem('poker_username') || 'ME';
+  const oppName = ndState.opponent?.username || 'OPP';
+  const myCount = ndState.myHands.length;
+  const oppCount = ndState.opponentHands.length;
+
+  const mySorted = [...ndState.myHands].sort(ndHandSort);
+  const oppSorted = [...ndState.opponentHands].sort(ndHandSort);
+
+  let html = `<div class="nd-sb-header"><span class="nd-sb-cell left">${myName} (${myCount}/5)</span><span class="nd-sb-cell vs"></span><span class="nd-sb-cell right">${oppName} (${oppCount}/5)</span></div>`;
+
+  const maxRows = Math.max(5, mySorted.length, oppSorted.length);
+  for (let i = 0; i < maxRows; i++) {
+    const my = mySorted[i], opp = oppSorted[i];
+    let myText = '—', oppText = '—', myClass = '', oppClass = '', vsIcon = '';
+    if (my) myText = my.label;
+    if (opp) oppText = opp.label;
+    if (my && opp) {
+      if (my.rank > opp.rank) { myClass = 'win'; vsIcon = '👑'; }
+      else if (opp.rank > my.rank) { oppClass = 'win'; vsIcon = '👑'; }
+      else { vsIcon = '?'; }
+    } else if (my && !opp) { myClass = 'win'; }
+    else if (!my && opp) { oppClass = 'win'; }
+    const lc = myClass === 'win' ? '👑 ' : '', rc = oppClass === 'win' ? ' 👑' : '';
+    const top3 = i < 3 ? ' top3' : '';
+    html += `<div class="nd-sb-row${top3}"><span class="nd-sb-cell left"><span class="${myClass}">${lc}${myText}</span></span><span class="nd-sb-cell vs">${i < 3 ? (vsIcon || (i+1)) : vsIcon}</span><span class="nd-sb-cell right"><span class="${oppClass}">${oppText}${rc}</span></span></div>`;
+  }
+
+  container.innerHTML = html;
+
+  // 상대 패 현황 (미니그리드 옆)
+  const oppEl = document.getElementById('ndOppHandsList');
+  if (oppEl) {
+    oppEl.innerHTML = oppSorted.map((h, i) =>
+      `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:${i < 3 ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i+1}. ${h.label}</div>`
+    ).join('') || '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.55rem;color:rgba(255,255,255,0.2);">—</div>';
+  }
+}
+
+// ─── 타이머 ───
+function ndStartTimer(seconds) {
+  ndState.gameTimeRemaining = seconds;
+  const timerNum = document.getElementById('ndTimerNum');
+  const timerRing = document.getElementById('ndTimerRing');
+  const totalTime = seconds;
+  const circumference = 100.53;
+
+  clearInterval(ndState.gameTimerInterval);
+  timerNum.textContent = seconds;
+  timerNum.classList.remove('time-attack');
+  timerRing.classList.remove('time-attack');
+
+  ndState.gameTimerInterval = setInterval(() => {
+    ndState.gameTimeRemaining--;
+    const t = ndState.gameTimeRemaining;
+    if (t <= 0) {
+      clearInterval(ndState.gameTimerInterval);
+      timerNum.textContent = '0';
+      if (state.phase === 'playing') {
+        window.endGame('timeout');
+      }
+      return;
+    }
+    timerNum.textContent = t;
+    const offset = circumference * (1 - t / totalTime);
+    timerRing.style.strokeDashoffset = offset;
+
+    if (t <= 15) {
+      timerNum.classList.add('time-attack');
+      timerRing.classList.add('time-attack');
+    }
+  }, 1000);
+}
+
+// ─── 상태 메시지 ───
+function ndSetStatus(type) {
+  const el = document.getElementById('ndStatusMsg');
+  if (!el) return;
+  el.classList.remove('blink');
+  switch(type) {
+    case 'playing':
+      el.textContent = 'PLAYING'; el.style.color = 'rgba(201,168,76,0.5)'; break;
+    case 'completed':
+      el.textContent = 'COMPLETED'; el.style.color = '#4CAF50'; el.classList.add('blink'); break;
+    case 'oppdone':
+      el.textContent = 'OPP DONE'; el.style.color = '#FFC107'; el.classList.add('blink'); break;
+    case 'timelimit':
+      el.textContent = 'TIME LIMIT'; el.style.color = '#ff3333'; el.classList.add('blink'); break;
+  }
+}
+
+// ─── 그리드 오버레이 ───
+function ndSetGridOverlay(type) {
+  const overlay = document.getElementById('ndGridOverlay');
+  const text = document.getElementById('ndGridOverlayText');
+  if (!overlay) return;
+  if (type === 'none') { overlay.style.display = 'none'; return; }
+  overlay.style.display = 'flex';
+  if (type === 'done') text.textContent = '✓ COMPLETED';
+}
+
+// =============================================
+// 결과 표시 (3패 비교)
+// =============================================
+function showNewDuelResult(data) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const myDelta = data.chipDelta?.[socket.id] || 0;
+  const myNewChip = data.newChip?.[socket.id] || 0;
+  const prevChip = myNewChip - myDelta;
+
+  // 승/패/무 제목
+  let titleText = 'DRAW';
+  let titleColor = 'rgba(255,255,255,0.5)';
+  if (data.reason === 'fold') {
+    titleText = data.iWin ? 'WIN (FOLD)' : 'LOSE (FOLD)';
+    titleColor = data.iWin ? '#4CAF50' : '#ff5252';
+  } else if (data.reason === 'disconnect') {
+    titleText = 'WIN (DISCONNECT)';
+    titleColor = '#4CAF50';
+  } else if (data.iWin) {
+    titleText = 'WIN!';
+    titleColor = '#4CAF50';
+  } else if (!data.isDraw) {
+    titleText = 'LOSE';
+    titleColor = '#ff5252';
+  }
+
+  // 3패 비교 테이블
+  let tableHTML = '';
+  if (data.reason !== 'fold' && data.reason !== 'disconnect') {
+    const mySorted = (data.myHands || []).sort(ndHandSort);
+    const oppSorted = (data.oppHands || []).sort(ndHandSort);
+    tableHTML = '<div style="margin:12px 0;">';
+    for (let i = 0; i < 3; i++) {
+      const r = data.results?.[i] || 'draw';
+      const my = mySorted[i];
+      const opp = oppSorted[i];
+      const myLabel = my ? my.label : '—';
+      const oppLabel = opp ? opp.label : '—';
+      const myWin = r === 'A', oppWin = r === 'B';
+      const ordinal = ['1st','2nd','3rd'][i];
+      tableHTML += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex;font-size:0.65rem;color:rgba(255,255,255,0.2);margin-bottom:2px;"><span>${ordinal}</span></div>
+        <div style="display:flex;font-size:0.78rem;font-weight:700;">
+          <span style="flex:1;color:${myWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${myWin ? '👑 ' : ''}${myLabel}</span>
+          <span style="color:rgba(255,255,255,0.15);font-size:0.65rem;align-self:center;">VS</span>
+          <span style="flex:1;text-align:right;color:${oppWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${oppLabel}${oppWin ? ' 👑' : ''}</span>
+        </div>
+        <div style="display:flex;font-size:0.58rem;">
+          <span style="flex:1;opacity:0.6;">${ndCardDisplay(my?.cards)}</span>
+          <span style="flex:1;text-align:right;opacity:0.6;">${ndCardDisplay(opp?.cards)}</span>
+        </div>
+      </div>`;
+    }
+    tableHTML += `<div style="display:flex;justify-content:center;gap:24px;font-size:0.78rem;margin-top:8px;"><span style="color:var(--gold);">내 승: ${data.myWins || 0}</span><span style="color:rgba(255,255,255,0.4);">상대 승: ${data.oppWins || 0}</span></div>`;
+    tableHTML += '</div>';
+  }
+
+  // 칩 변동
+  const sign = myDelta >= 0 ? '+' : '';
+  const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+  let chipHTML = '';
+  if (data.isDraw) {
+    chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">무승부! 베팅금 반환</div>`;
+  } else if (data.reason === 'fold') {
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">FOLD 처리</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
+  } else {
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">POT ${data.pot}${data.tableFee > 0 ? ` <span style="font-size:0.65rem;color:rgba(255,255,255,0.3);">(테이블피 ${data.tableFee})</span>` : ''}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
+  }
+
+  // 버튼
+  let buttonsHTML = '';
+  if (data.reason === 'disconnect') {
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">상대방이 접속을 종료했습니다.</div><button class="pvp-popup-btn" onclick="goToLobby()">로비로</button>`;
+  } else if (data.canRematch) {
+    buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" id="btnNDRematch" onclick="requestRematch()" style="flex:1;">재대결</button><button class="pvp-popup-btn reject" onclick="goToLobby()" style="flex:1;">로비로</button></div><div id="ndRematchWait" style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:6px;"></div>`;
+  } else {
+    const noRematchMsg = data.noRematchReason === 'opp_chip'
+      ? '상대방 칩 부족으로 재대결이 불가합니다.'
+      : '칩이 부족하여 재대결이 불가합니다.';
+    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">${noRematchMsg}</div><button class="pvp-popup-btn" onclick="goToLobby()">로비로</button>`;
+  }
+
+  modal.innerHTML = `<h2 style="font-size:1.3rem;color:${titleColor};">${titleText}</h2>${tableHTML}${chipHTML}${buttonsHTML}`;
+  overlay.classList.add('active');
+}
+
+// =============================================
 // 게임 소켓 이벤트 — Phase 흐름
 // =============================================
 
@@ -865,15 +1374,20 @@ socket.on('newduel:revealPhase3', async ({ assignments }) => {
 // ─── newduel:gameStart ───
 socket.on('newduel:gameStart', (data) => {
   ndState.gameStarted = true;
+  ndState.pot = data.pot;
   document.getElementById('ndPhaseBanner').textContent = 'GAME START';
-  // 게임 뷰로 전환 (placeholder)
-  setTimeout(() => showView('game'), 1500);
+  setTimeout(() => {
+    showView('game');
+    setupNewDuelGameUI(data);
+  }, 1500);
 });
 
 // ─── newduel:result ───
 socket.on('newduel:result', (data) => {
   ndState.gameStarted = false;
   ndState.bettingActive = false;
+  state.phase = 'result';
+  clearInterval(ndState.gameTimerInterval);
   hideBettingPanel();
 
   const myChip = data.newChip[socket.id];
@@ -886,13 +1400,19 @@ socket.on('newduel:result', (data) => {
 });
 
 // ─── newduel:opponentHandComplete ───
-socket.on('newduel:opponentHandComplete', ({ hands }) => {
-  // TODO: 게임 뷰에서 상대 패 현황 표시
+socket.on('newduel:opponentHandComplete', ({ hands, removedPositions, handCount }) => {
+  ndState.opponentHands = (hands || []).sort(ndHandSort);
+  ndUpdateOppMiniGrid(removedPositions);
+  ndRenderScoreboard();
 });
 
 // ─── newduel:opponentDone ───
-socket.on('newduel:opponentDone', ({ username }) => {
+socket.on('newduel:opponentDone', ({ username, timerAdjusted, newRemaining }) => {
   showToast(`${username}님이 게임을 완료했습니다`);
+  ndSetStatus('oppdone');
+  if (timerAdjusted && newRemaining) {
+    ndStartTimer(newRemaining);
+  }
 });
 
 // ─── room:opponentDisconnected ───
@@ -900,49 +1420,51 @@ socket.on('room:opponentDisconnected', () => {
   showToast('상대방 연결이 끊어졌습니다');
 });
 
+// ─── rematch:declined ───
+socket.on('rematch:declined', () => {
+  showToast('재대결이 거절되었습니다');
+  const b = document.getElementById('btnNDRematch');
+  if (b) b.style.display = 'none';
+});
+
 // =============================================
-// 결과 표시
+// 재대결 / 로비 이동
 // =============================================
-function showNewDuelResult(data) {
-  const modal = document.getElementById('modal');
-  const overlay = document.getElementById('modalOverlay');
-  const myDelta = data.chipDelta?.[socket.id] || 0;
-  const myNewChip = data.newChip?.[socket.id] || 0;
-  const prevChip = myNewChip - myDelta;
-  const sign = myDelta >= 0 ? '+' : '';
-  const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
-
-  let chipHTML = '';
-  if (data.isDraw) {
-    chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">무승부! 베팅금 반환</div>`;
-  } else if (data.reason === 'fold') {
-    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">FOLD 처리</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} &rarr; ${myNewChip}</div>`;
-  } else {
-    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">POT ${data.pot}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} &rarr; ${myNewChip}</div>`;
-  }
-
-  let buttonsHTML = '';
-  if (data.reason === 'disconnect') {
-    buttonsHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:8px 0;">상대방이 접속을 종료했습니다.</div><button class="pvp-popup-btn" onclick="goToLobby()">로비로</button>`;
-  } else if (data.canRematch) {
-    buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" onclick="requestRematch()" style="flex:1;">재대결</button><button class="pvp-popup-btn reject" onclick="goToLobby()" style="flex:1;">로비로</button></div>`;
-  } else {
-    buttonsHTML = `<button class="pvp-popup-btn" onclick="goToLobby()" style="margin-top:12px;">로비로</button>`;
-  }
-
-  modal.innerHTML = `<h2 style="font-size:1.3rem;">GAMBLE DUEL 결과</h2>${chipHTML}${buttonsHTML}`;
-  overlay.classList.add('active');
-}
-
 function requestRematch() {
-  socket.emit('newduel:rematch', { roomId: ndState.roomId });
-  showToast('재대결 요청 전송');
+  if (ndState.rematchRequested) return;
+  ndState.rematchRequested = true;
+  socket.emit('rematch:request', { roomId: ndState.roomId, mode: 'newduel' });
+  const w = document.getElementById('ndRematchWait');
+  const b = document.getElementById('btnNDRematch');
+  if (w) w.textContent = '상대방 확인 중...';
+  if (b) b.disabled = true;
+  ndState.rematchTimer = setTimeout(() => {
+    showToast('상대방이 재대결을 거절했습니다.');
+    if (w) w.textContent = '';
+    if (b) b.style.display = 'none';
+  }, 30000);
 }
 
 function goToLobby() {
+  if (ndState.roomId) {
+    socket.emit('rematch:cancel', { roomId: ndState.roomId });
+  }
   document.getElementById('modalOverlay').classList.remove('active');
   clearInterval(ndState.betTimerInterval);
+  clearInterval(ndState.gameTimerInterval);
   clearTimeout(ndState.disconnectTimeout);
+  clearTimeout(ndState.rematchTimer);
+  if (state && state.timerInterval) clearInterval(state.timerInterval);
+
+  // 오버라이드 복원
+  if (window._origIsValidHandND) {
+    window.isValidHand = window._origIsValidHandND;
+    window._origIsValidHandND = null;
+  }
+  if (window._origFinalizePathND) {
+    window.finalizePath = window._origFinalizePathND;
+    window._origFinalizePathND = null;
+  }
 
   ndState.roomId = null;
   ndState.opponent = null;
@@ -954,11 +1476,16 @@ function goToLobby() {
   ndState.rematchRequested = false;
   ndState.pot = 2;
   ndState.currentPhase = 0;
+  ndState.myHands = [];
+  ndState.opponentHands = [];
+  ndState.oppGrid = [];
+  ndState.oppMiniGridCards = [];
 
+  if (state) state.phase = 'idle';
   matchingMode = null;
   showView('lobby');
+  joinLobby();
   renderMatchButtons();
-  renderLobby();
 }
 </script>
 </body>
