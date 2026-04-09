@@ -17,7 +17,7 @@
   .match-btn:active { transform:scale(0.97); }
   .match-btn.active { background:rgba(255,82,82,0.15); border-color:rgba(255,82,82,0.4); color:#ff5252; animation:matchPulse 1.5s ease-in-out infinite; }
   @keyframes matchPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
-  .lobby-section-title { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(255,255,255,0.35); letter-spacing:0.1em; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); margin-top:8px; }
+  .lobby-section-title { font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(255,255,255,0.3); letter-spacing:0.08em; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.06); margin-top:4px; }
   .lobby-user { display:flex; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid rgba(255,255,255,0.04); }
   .lobby-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
   .lobby-status-dot.waiting { background:#4CAF50; }
@@ -32,9 +32,10 @@
   .lobby-empty { text-align:center; color:rgba(255,255,255,0.2); font-size:0.8rem; padding:24px 0; }
   .pvp-title-bar { display:flex; align-items:center; justify-content:center; position:relative; padding:12px 16px 8px; }
   .pvp-lobby-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gold); font-weight:700; text-align:center; }
-  .pvp-rule-btn { position:absolute; right:16px; width:32px; height:32px; border-radius:50%; border:1.5px solid rgba(201,168,76,0.4); background:rgba(201,168,76,0.1); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:700; cursor:pointer; }
-  .pvp-user-list-box { margin:8px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; }
-  .pvp-stat-box { margin:8px 16px; border:1px solid rgba(201,168,76,0.15); border-radius:12px; background:rgba(201,168,76,0.05); padding:12px 16px; }
+  .pvp-user-list-box { width:90%; margin:8px auto; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; }
+  .pvp-stat-box { width:90%; margin:8px auto; border:1px solid rgba(201,168,76,0.15); border-radius:12px; background:rgba(201,168,76,0.05); padding:12px 16px; box-sizing:border-box; }
+  .pvp-rule-text-btn { display:block; margin:8px auto 0; padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.4); font-family:'IBM Plex Mono',monospace; font-size:0.72rem; cursor:pointer; float:right; }
+  .pvp-rule-text-btn:hover { border-color:rgba(255,255,255,0.3); color:rgba(255,255,255,0.6); }
   .pvp-stat-title { font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(201,168,76,0.5); letter-spacing:0.1em; margin-bottom:8px; }
   .pvp-stat-content { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:rgba(255,255,255,0.7); }
   .pvp-match-footer { position:fixed; bottom:0; left:0; right:0; padding-bottom:max(12px, env(safe-area-inset-bottom)); z-index:10; }
@@ -227,7 +228,6 @@
   <div class="lobby-container">
     <div class="pvp-title-bar">
       <div class="pvp-lobby-title">GAMBLE DUEL</div>
-      <button class="pvp-rule-btn" onclick="openRulePopup()">?</button>
     </div>
     <div class="pvp-user-list-box">
       <div id="lobbyList"></div>
@@ -236,6 +236,7 @@
       <div class="pvp-stat-title">MY RECORD</div>
       <div class="pvp-stat-content" id="pvpStatContent">로딩 중...</div>
     </div>
+    <button class="pvp-rule-text-btn" onclick="openRulePopup()">게임규칙</button>
   </div>
   <div class="pvp-match-footer">
     <div id="matchButtons"></div>
@@ -502,12 +503,34 @@ function renderLobby() {
   const list = document.getElementById('lobbyList');
   const myId = socket.id;
   const others = lobbyUsers.filter(u => u.socketId !== myId);
-  if (!others.length) { list.innerHTML = '<div class="lobby-empty">접속자가 없습니다</div>'; return; }
-  list.innerHTML = others.map(u => {
-    const dotCls = u.status === 'waiting' ? 'waiting' : u.status === 'matching' ? 'matching' : 'playing';
-    const canChallenge = u.status === 'waiting';
-    return `<div class="lobby-user"><span class="lobby-status-dot ${dotCls}"></span><span class="lobby-username">${u.username}</span><span class="lobby-chip"><img src="./images/chip.png">${(u.chip||0).toLocaleString()}</span>${canChallenge ? `<button class="lobby-challenge-btn" onclick="sendChallenge('${u.socketId}')">도전</button>` : ''}</div>`;
-  }).join('');
+  const waiting = others.filter(u => u.status === 'waiting');
+  const matching = others.filter(u => u.status === 'matching');
+  const playing = others.filter(u => u.status === 'playing');
+
+  let html = '';
+  if (waiting.length === 0 && matching.length === 0 && playing.length === 0) {
+    html += '<div class="lobby-empty">접속자가 없습니다</div>';
+  }
+  const disabledAttr = matchingMode ? ' disabled' : '';
+  if (waiting.length > 0) {
+    html += `<div class="lobby-section-title">대기 중 (${waiting.length})</div>`;
+    waiting.forEach(u => {
+      html += `<div class="lobby-user"><span class="lobby-status-dot waiting"></span><span class="lobby-username">${u.username}</span><span class="lobby-chip"><img src="./images/chip.png">${(u.chip||0).toLocaleString()}</span><button class="lobby-challenge-btn" onclick="sendChallenge('${u.socketId}')"${disabledAttr}>도전</button></div>`;
+    });
+  }
+  if (matching.length > 0) {
+    html += `<div class="lobby-section-title">매칭 중 (${matching.length})</div>`;
+    matching.forEach(u => {
+      html += `<div class="lobby-user"><span class="lobby-status-dot matching"></span><span class="lobby-username">${u.username}</span><span class="lobby-chip"><img src="./images/chip.png">${(u.chip||0).toLocaleString()}</span></div>`;
+    });
+  }
+  if (playing.length > 0) {
+    html += `<div class="lobby-section-title">게임 중 (${playing.length})</div>`;
+    playing.forEach(u => {
+      html += `<div class="lobby-user"><span class="lobby-status-dot playing"></span><span class="lobby-username">${u.username}</span><span class="lobby-chip"><img src="./images/chip.png">${(u.chip||0).toLocaleString()}</span></div>`;
+    });
+  }
+  list.innerHTML = html;
 }
 
 function renderMatchButtons() {
@@ -523,14 +546,17 @@ function startMatch() {
   matchingMode = 'newduel';
   socket.emit('match:start', { mode: 'newduel' });
   renderMatchButtons();
+  renderLobby();
 }
 function cancelMatch() {
   matchingMode = null;
   socket.emit('match:cancel', { mode: 'newduel' });
   renderMatchButtons();
+  renderLobby();
 }
 
 function sendChallenge(targetSocketId) {
+  if (matchingMode) return;
   socket.emit('challenge:send', { targetSocketId, mode: 'newduel' });
   showToast('도전 신청을 보냈습니다');
 }
