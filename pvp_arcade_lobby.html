@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="style.css">
 <style>
   /* ── 로비 ── */
-  .lobby-container { width:100%; max-width:none; margin:0; padding:12px 12px; position:relative; z-index:1; padding-bottom:80px; }
+  .lobby-container { width:340px; max-width:none; margin:0 auto; padding:12px 0; position:relative; z-index:1; padding-bottom:80px; }
   .match-buttons { display:flex; gap:8px; margin-bottom:16px; }
   .match-btn { flex:1; padding:14px 8px; border-radius:10px; border:1.5px solid rgba(201,168,76,0.3); background:rgba(201,168,76,0.1); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:700; letter-spacing:0.05em; cursor:pointer; transition:all 0.15s; text-align:center; }
   .match-btn:hover { background:rgba(201,168,76,0.2); }
@@ -118,7 +118,7 @@
 </div>
 
 <!-- ==================== VIEW: LOBBY ==================== -->
-<div id="view-lobby" style="width:100%">
+<div id="view-lobby">
   <div class="lobby-container">
     <div class="pvp-title-bar">
       <div class="pvp-lobby-title" id="lobbyTitle">BATTLE LOBBY</div>
@@ -198,7 +198,7 @@
 </div>
 
 <!-- ==================== VIEW: GAME ==================== -->
-<div id="view-game" style="display:none;width:100%">
+<div id="view-game" style="display:none">
   <div class="status-bar" style="margin-top:8px;">
     <div class="timer-wrap">
       <svg class="timer-ring" viewBox="0 0 40 40">
