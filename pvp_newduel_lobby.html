@@ -750,7 +750,7 @@ function sendNewDuelBet(action) {
 // 로비 소켓 이벤트
 // =============================================
 socket.on('lobby:list', (list) => { lobbyUsers = list; renderLobby(); renderMatchButtons(); });
-socket.on('lobby:userJoined', (user) => { lobbyUsers.push(user); renderLobby(); });
+socket.on('lobby:userJoined', (user) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== user.socketId); lobbyUsers.push(user); renderLobby(); });
 socket.on('lobby:userLeft', (socketId) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== socketId); renderLobby(); });
 socket.on('lobby:statusChanged', ({ socketId, status }) => {
   const u = lobbyUsers.find(u => u.socketId === socketId);
