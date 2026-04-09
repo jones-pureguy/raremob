@@ -235,6 +235,9 @@ const BGM = (() => {
   // [ADAPTER] BGM 초기화
   function init(src) {
     loadSettings();
+    if (pendingSrc === src && audio && !audio.paused) return;
+    stop();
+    if (audio) { audio.src = ''; audio = null; }
     pendingSrc = src;
   }
 

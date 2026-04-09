@@ -466,6 +466,14 @@ let challengeTimer = null;
 
   if (socket.connected) joinLobby();
   else socket.once('connect', joinLobby);
+
+  // 첫 유저 인터랙션에서 로비 BGM 시작
+  document.addEventListener('click', function initLobbyBGM() {
+    Sound.warmup();
+    BGM.init('./audio/Duel_Lobby.mp3');
+    BGM.start();
+    document.removeEventListener('click', initLobbyBGM);
+  }, { once: true });
 })();
 
 function joinLobby() {
@@ -1200,7 +1208,9 @@ socket.on('room:created', ({ roomId, mode, opponent }) => {
   ndState.gameStarted = false;
   ndState.rematchRequested = false;
 
-  // 딜링 뷰로 전환
+  // 딜링 뷰로 전환 + 베팅 BGM
+  BGM.init('./audio/Duel_Betting.mp3');
+  BGM.start();
   showView('dealing');
   document.getElementById('ndOppName').textContent = opponent.username;
   document.getElementById('ndOppChip').textContent = (opponent.chip || 0).toLocaleString();
@@ -1398,6 +1408,8 @@ socket.on('newduel:gameStart', (data) => {
   ndState.pot = data.pot;
   document.getElementById('ndPhaseBanner').textContent = 'GAME START';
   setTimeout(() => {
+    BGM.init('./audio/Duel_Game.mp3');
+    BGM.start();
     showView('game');
     setupNewDuelGameUI(data);
   }, 1500);
@@ -1408,6 +1420,7 @@ socket.on('newduel:result', (data) => {
   ndState.gameStarted = false;
   ndState.bettingActive = false;
   state.phase = 'result';
+  BGM.stop();
   clearInterval(ndState.gameTimerInterval);
   hideBettingPanel();
 
@@ -1504,6 +1517,8 @@ function goToLobby() {
 
   if (state) state.phase = 'idle';
   matchingMode = null;
+  BGM.init('./audio/Duel_Lobby.mp3');
+  BGM.start();
   showView('lobby');
   joinLobby();
   renderMatchButtons();
