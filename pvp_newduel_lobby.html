@@ -122,7 +122,51 @@
   .nd-bet-btn.call { border-color:rgba(76,175,80,0.5); color:#4CAF50; }
   .nd-bet-btn.skip { border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.5); }
   .nd-bet-btn.fold { border-color:rgba(255,82,82,0.5); color:#ff5252; }
-  .nd-pot-display { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:700; color:var(--gold); padding:6px 0; }
+  .nd-pot-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(201,168,76,0.12) 0%, transparent 70%);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 50%;
+    width: 100px; height: 100px;
+    margin: 12px auto;
+    position: relative;
+  }
+  .nd-pot-chip-stack { display: flex; align-items: center; justify-content: center; }
+  .nd-pot-chip-icon { width: 24px; height: 24px; }
+  .nd-pot-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.6rem; font-weight: 900;
+    color: #c9a84c;
+    text-shadow: 0 0 12px rgba(201,168,76,0.5);
+    line-height: 1;
+  }
+  .nd-pot-amount.pulse { animation: nd-pot-pulse 0.4s ease-out; }
+  @keyframes nd-pot-pulse {
+    0% { transform: scale(1.3); color: #FFD740; }
+    100% { transform: scale(1); color: #c9a84c; }
+  }
+  .nd-pot-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem; font-weight: 700;
+    color: rgba(201,168,76,0.5);
+    letter-spacing: 0.15em;
+  }
+  .nd-raise-indicator {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem; margin: 8px 0 4px;
+  }
+  .nd-ri-step {
+    min-width: 26px; height: 20px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; padding: 0 4px;
+  }
+  .nd-ri-step.pending { color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.08); }
+  .nd-ri-step.active { color: #FFC107; border: 1px solid rgba(255,193,7,0.5); background: rgba(255,193,7,0.08); animation: nd-ri-pulse 1s ease-in-out infinite; }
+  .nd-ri-step.done { color: #c9a84c; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); }
+  .nd-ri-arrow { color: rgba(255,255,255,0.12); font-size: 0.55rem; }
+  @keyframes nd-ri-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
   .nd-bet-timer { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(255,255,255,0.35); margin-top:4px; }
 
   /* ── 게임 플레이 placeholder ── */
@@ -205,7 +249,16 @@
 
     <!-- Phase + 베팅 -->
     <div class="nd-phase-banner" id="ndPhaseBanner"></div>
-    <div class="nd-pot-display" id="ndPotDisplay">POT 2</div>
+    <div class="nd-raise-indicator" id="ndRaiseIndicator"></div>
+    <div class="nd-pot-wrap" id="ndPotWrap">
+      <div class="nd-pot-chip-stack">
+        <img src="./images/chip.png" alt="chip" class="nd-pot-chip-icon"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+        <span style="display:none; font-size:1.2rem;">&#127920;</span>
+      </div>
+      <div class="nd-pot-amount" id="ndPotDisplay">2</div>
+      <div class="nd-pot-label">POT</div>
+    </div>
 
     <div class="nd-betting-panel" id="ndBettingPanel" style="display:none">
       <div class="nd-bet-info" id="ndBetInfo"></div>
@@ -449,6 +502,28 @@ async function animateDealing(containerId, cards, state, interval) {
 // 현재 베팅 상태 추적
 const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, nextRaiseTotalCost: 0, canRaise: true, callAmount: 0 };
 
+function updatePotDisplay(amount) {
+  const el = document.getElementById('ndPotDisplay');
+  el.textContent = amount;
+  el.classList.remove('pulse');
+  void el.offsetWidth;
+  el.classList.add('pulse');
+}
+
+function updateRaiseIndicator(phase, currentStepIndex) {
+  const el = document.getElementById('ndRaiseIndicator');
+  if (!el) return;
+  const tables = { 1: [3, 5, 8], 2: [12, 20, 30], 3: ['POT'] };
+  const steps = tables[phase] || [];
+  el.innerHTML = steps.map((amount, i) => {
+    let cls = 'pending';
+    if (i < currentStepIndex) cls = 'done';
+    else if (i === currentStepIndex) cls = 'active';
+    const arrow = i < steps.length - 1 ? '<span class="nd-ri-arrow">\u2192</span>' : '';
+    return `<span class="nd-ri-step ${cls}">${amount}</span>${arrow}`;
+  }).join('');
+}
+
 function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
   opts = opts || {};
   console.log('[newduel] showBettingPanel:', { phase, pot, isMyTurn, opts });
@@ -465,10 +540,16 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
   if (opts.canRaise !== undefined) betState.canRaise = opts.canRaise;
   if (opts.callAmount !== undefined) betState.callAmount = opts.callAmount;
 
-  document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
+  updatePotDisplay(pot);
 
   const phaseLabels = { 1:'1st BETTING', 2:'2nd BETTING', 3:'FINAL BET' };
   document.getElementById('ndPhaseBanner').textContent = phaseLabels[phase] || '';
+
+  // 레이즈 인디케이터 업데이트
+  const riTables = { 1: [3, 5, 8], 2: [12, 20, 30], 3: ['POT'] };
+  const riSteps = riTables[phase] || [];
+  const stepIdx = phase === 3 ? 0 : riSteps.indexOf(betState.nextRaiseAmount);
+  updateRaiseIndicator(phase, stepIdx >= 0 ? stepIdx : 0);
 
   if (isMyTurn) {
     info.className = 'nd-bet-info my-turn';
@@ -599,7 +680,7 @@ socket.on('room:created', ({ roomId, mode, opponent }) => {
   renderCardMap('oppCardMap');
   renderCardMap('myCardMap');
   document.getElementById('ndPhaseBanner').textContent = '매칭 완료';
-  document.getElementById('ndPotDisplay').textContent = 'POT 2';
+  updatePotDisplay(2);
   hideBettingPanel();
 
   // Ready 전송
@@ -659,7 +740,7 @@ socket.on('newduel:dealPhase1', async ({ myCards, oppCardCount }) => {
 socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount }) => {
   ndState.pot = pot;
   ndState.bettingActive = true;
-  document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
+  updatePotDisplay(pot);
   const turnTime = { 1:15000, 2:20000, 3:20000 }[phase] || 15000;
   showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
     hasLastRaiser: hasLastRaiser || false,
@@ -673,7 +754,7 @@ socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, n
 // ─── newduel:bettingUpdate ───
 socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount }) => {
   ndState.pot = pot;
-  document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
+  updatePotDisplay(pot);
 
   if (bySocketId !== socket.id && action !== 'turn_change') {
     showBettingAction(action, amount);
@@ -698,8 +779,9 @@ socket.on('newduel:bettingComplete', ({ phase, pot, nextPhase }) => {
   ndState.pot = pot;
   ndState.bettingActive = false;
   hideBettingPanel();
-  document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
+  updatePotDisplay(pot);
   document.getElementById('ndPhaseBanner').textContent = `BETTING ${phase} COMPLETE`;
+  document.getElementById('ndRaiseIndicator').innerHTML = '';
 
   // ready 전송하여 다음 Phase 진행
   setTimeout(() => {
