@@ -404,7 +404,7 @@ function joinLobby() {
   const playerId = localStorage.getItem('poker_player_id');
   const username = localStorage.getItem('poker_username');
   const chip = parseInt(localStorage.getItem('userChip') || '0');
-  socket.emit('lobby:join', { playerId, username, chip });
+  socket.emit('lobby:join', { playerId, username, chip, mode: 'arcade' });
   clearInterval(heartbeatInterval);
   heartbeatInterval = setInterval(() => socket.emit('heartbeat'), 3000);
   loadMyPvpStat();
@@ -418,8 +418,9 @@ function showToast(msg) {
 }
 
 // ─── 로비 소켓 이벤트 ───
-socket.on('lobby:list', (list) => { lobbyUsers = list; renderLobby(); });
+socket.on('lobby:list', (list) => { lobbyUsers = list.filter(u => u.mode === 'arcade'); renderLobby(); });
 socket.on('lobby:userJoined', (user) => {
+  if (user.mode && user.mode !== 'arcade') return;
   const idx = lobbyUsers.findIndex(u => u.socketId === user.socketId);
   if (idx !== -1) {
     lobbyUsers[idx] = user;

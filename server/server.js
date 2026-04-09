@@ -331,7 +331,8 @@ function toLobbyUser(entry) {
     socketId: entry.socketId,
     username: entry.username,
     chip: entry.chip,
-    status: entry.status
+    status: entry.status,
+    mode: entry.mode
   }
 }
 
@@ -531,7 +532,7 @@ io.on('connection', (socket) => {
   })
 
   // ─── lobby:join ───
-  socket.on('lobby:join', ({ playerId, username, chip }) => {
+  socket.on('lobby:join', ({ playerId, username, chip, mode }) => {
     // 1. 동일 playerId 기존 항목 전부 제거
     const toRemove = []
     for (const [sid, entry] of lobby) {
@@ -548,14 +549,17 @@ io.on('connection', (socket) => {
     // 2. 신규 등록
     const entry = {
       playerId, username, chip,
-      status: 'waiting', mode: null,
+      status: 'waiting', mode: mode || 'arcade',
       socketId: socket.id
     }
     lobby.set(socket.id, entry)
 
-    // 3. 본인에게 현재 로비 전체 목록 전송
+    // 3. 본인에게 같은 mode 로비 목록만 전송
+    const joinedMode = entry.mode
     const list = []
-    for (const [, e] of lobby) list.push(toLobbyUser(e))
+    for (const [, e] of lobby) {
+      if (e.mode === joinedMode) list.push(toLobbyUser(e))
+    }
     socket.emit('lobby:list', list)
 
     // 4. 전체에게 새 유저 알림 (본인 제외)

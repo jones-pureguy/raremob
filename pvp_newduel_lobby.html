@@ -481,7 +481,7 @@ function joinLobby() {
   const playerId = localStorage.getItem('poker_player_id');
   const username = localStorage.getItem('poker_username');
   const chip = parseInt(localStorage.getItem('userChip') || '0');
-  socket.emit('lobby:join', { playerId, username, chip });
+  socket.emit('lobby:join', { playerId, username, chip, mode: 'newduel' });
   clearInterval(heartbeatInterval);
   heartbeatInterval = setInterval(() => socket.emit('heartbeat'), 3000);
   loadMyPvpStat();
@@ -783,8 +783,8 @@ function sendNewDuelBet(action) {
 // =============================================
 // 로비 소켓 이벤트
 // =============================================
-socket.on('lobby:list', (list) => { lobbyUsers = list; renderLobby(); renderMatchButtons(); });
-socket.on('lobby:userJoined', (user) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== user.socketId); lobbyUsers.push(user); renderLobby(); });
+socket.on('lobby:list', (list) => { lobbyUsers = list.filter(u => u.mode === 'newduel'); renderLobby(); renderMatchButtons(); });
+socket.on('lobby:userJoined', (user) => { if (user.mode && user.mode !== 'newduel') return; lobbyUsers = lobbyUsers.filter(u => u.socketId !== user.socketId); lobbyUsers.push(user); renderLobby(); });
 socket.on('lobby:userLeft', (socketId) => { lobbyUsers = lobbyUsers.filter(u => u.socketId !== socketId); renderLobby(); });
 socket.on('lobby:statusChanged', ({ socketId, status }) => {
   const u = lobbyUsers.find(u => u.socketId === socketId);
