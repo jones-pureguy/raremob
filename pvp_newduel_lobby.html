@@ -491,6 +491,7 @@ function markCardsOnMap(containerId, cards, state) {
 async function animateDealing(containerId, cards, state, interval) {
   for (const card of cards) {
     updateCardMapCell(containerId, card.suit, card.value, state);
+    Sound.cardDrop();
     await new Promise(r => setTimeout(r, interval));
   }
 }
@@ -699,9 +700,11 @@ socket.on('newduel:dealOut', async ({ outCards, firstPlayer, myOutCard, oppOutCa
   await new Promise(r => setTimeout(r, 500));
   markCardsOnMap('myCardMap', [outCards[0]], 'out');
   markCardsOnMap('oppCardMap', [outCards[0]], 'out');
+  Sound.cardDrop();
   await new Promise(r => setTimeout(r, 800));
   markCardsOnMap('myCardMap', [outCards[1]], 'out');
   markCardsOnMap('oppCardMap', [outCards[1]], 'out');
+  Sound.cardDrop();
   await new Promise(r => setTimeout(r, 800));
 
   // OUT 카드 + 선/후 표시
@@ -828,31 +831,28 @@ socket.on('newduel:revealPhase3', async ({ assignments }) => {
   ndState.currentPhase = 3;
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 3 — ASSIGNMENT';
 
-  // 미배분 카드 하이라이트
-  const allAssigned = [...ndState.myCards, ...ndState.oppCards, ...ndState.outCards];
-  // 남은 미배분 카드 = assignments에 포함된 카드들
-  const unassignedCards = assignments.map(a => a.card);
-  markCardsOnMap('myCardMap', unassignedCards, 'unassigned');
-  markCardsOnMap('oppCardMap', unassignedCards, 'unassigned');
+  // 미배분 카드 하이라이트 — 각 카드맵에 해당하는 것만 표시
+  const myUnassigned = assignments.filter(a => a.owner === 'mine').map(a => a.card);
+  const oppUnassigned = assignments.filter(a => a.owner === 'opponent').map(a => a.card);
+  markCardsOnMap('myCardMap', myUnassigned, 'unassigned');
+  markCardsOnMap('oppCardMap', oppUnassigned, 'unassigned');
 
   await new Promise(r => setTimeout(r, 1000));
 
-  // 하나씩 귀속 공개
+  // 하나씩 귀속 공개 — mine은 내 카드맵에만, opponent는 상대 카드맵에만
+  let soundIdx = 0;
   for (const { card, owner } of assignments) {
-    const myState = owner === 'mine' ? 'mine' : 'opponent';
-    const oppState = owner === 'mine' ? 'opponent' : 'mine';
-    // 내 카드맵
-    updateCardMapCell('myCardMap', card.suit, card.value, myState);
-    document.getElementById(`cm-myCardMap-${card.suit}-${card.value}`)?.classList.add('just-assigned');
-    // 상대 카드맵 (반전)
-    updateCardMapCell('oppCardMap', card.suit, card.value, oppState);
-    document.getElementById(`cm-oppCardMap-${card.suit}-${card.value}`)?.classList.add('just-assigned');
-
     if (owner === 'mine') {
+      updateCardMapCell('myCardMap', card.suit, card.value, 'mine');
+      document.getElementById(`cm-myCardMap-${card.suit}-${card.value}`)?.classList.add('just-assigned');
       ndState.myCards.push(card);
     } else {
+      updateCardMapCell('oppCardMap', card.suit, card.value, 'opponent');
+      document.getElementById(`cm-oppCardMap-${card.suit}-${card.value}`)?.classList.add('just-assigned');
       ndState.oppCards.push(card);
     }
+    Sound.cardSelect(soundIdx % 4);
+    soundIdx++;
     await new Promise(r => setTimeout(r, 600));
   }
 
