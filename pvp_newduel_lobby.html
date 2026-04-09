@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="style.css">
 <style>
   /* ── 로비 ── */
-  .lobby-container { width:100%; max-width:480px; margin:0 auto; padding:12px 16px; position:relative; z-index:1; padding-bottom:80px; }
+  .lobby-container { width:100%; max-width:none; margin:0; padding:12px 12px; position:relative; z-index:1; padding-bottom:80px; }
   .match-buttons { display:flex; gap:8px; margin-bottom:16px; }
   .match-btn { flex:1; padding:14px 8px; border-radius:10px; border:1.5px solid rgba(201,168,76,0.3); background:rgba(201,168,76,0.1); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:700; letter-spacing:0.05em; cursor:pointer; transition:all 0.15s; text-align:center; }
   .match-btn:hover { background:rgba(201,168,76,0.2); }
@@ -32,9 +32,9 @@
   .lobby-empty { text-align:center; color:rgba(255,255,255,0.2); font-size:0.8rem; padding:24px 0; }
   .pvp-title-bar { display:flex; align-items:center; justify-content:center; position:relative; padding:12px 16px 8px; }
   .pvp-lobby-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gold); font-weight:700; text-align:center; }
-  .pvp-user-list-box { width:90%; margin:8px auto; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; box-sizing:border-box; }
-  .pvp-stat-box { width:90%; margin:8px auto; border:1px solid rgba(201,168,76,0.15); border-radius:12px; background:rgba(201,168,76,0.05); padding:12px 16px; box-sizing:border-box; }
-  .pvp-rule-text-btn { width:90%; margin:8px auto 0; display:block; padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.4); font-family:'IBM Plex Mono',monospace; font-size:0.72rem; cursor:pointer; text-align:right; box-sizing:border-box; }
+  .pvp-user-list-box { width:100%; margin:8px 0; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; box-sizing:border-box; }
+  .pvp-stat-box { width:100%; margin:8px 0; border:1px solid rgba(201,168,76,0.15); border-radius:12px; background:rgba(201,168,76,0.05); padding:12px 16px; box-sizing:border-box; }
+  .pvp-rule-text-btn { width:100%; margin:8px 0 0; display:block; padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.4); font-family:'IBM Plex Mono',monospace; font-size:0.72rem; cursor:pointer; text-align:right; box-sizing:border-box; }
   .pvp-rule-text-btn:hover { border-color:rgba(255,255,255,0.3); color:rgba(255,255,255,0.6); }
   .pvp-stat-title { font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(201,168,76,0.5); letter-spacing:0.1em; margin-bottom:8px; }
   .pvp-stat-content { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:rgba(255,255,255,0.7); }
