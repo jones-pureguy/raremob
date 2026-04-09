@@ -34,12 +34,12 @@
   .pvp-title-bar { display:flex; align-items:center; justify-content:center; position:relative; padding:12px 16px 8px; }
   .pvp-lobby-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gold); font-weight:700; text-align:center; }
   /* ── 접속자 리스트 박스 ── */
-  .pvp-user-list-box { width:90%; margin:8px auto; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; }
+  .pvp-user-list-box { width:90%; margin:8px auto; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:rgba(0,0,0,0.15); height:240px; overflow-y:auto; padding:4px 0; box-sizing:border-box; }
   .pvp-user-list-box::-webkit-scrollbar { width:3px; }
   .pvp-user-list-box::-webkit-scrollbar-thumb { background:rgba(201,168,76,0.3); border-radius:3px; }
   /* ── 전적 박스 ── */
   .pvp-stat-box { width:90%; margin:8px auto; border:1px solid rgba(201,168,76,0.15); border-radius:12px; background:rgba(201,168,76,0.05); padding:12px 16px; box-sizing:border-box; }
-  .pvp-rule-text-btn { display:block; margin:8px auto 0; padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.4); font-family:'IBM Plex Mono',monospace; font-size:0.72rem; cursor:pointer; float:right; }
+  .pvp-rule-text-btn { width:90%; margin:8px auto 0; display:block; padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.4); font-family:'IBM Plex Mono',monospace; font-size:0.72rem; cursor:pointer; text-align:right; box-sizing:border-box; }
   .pvp-rule-text-btn:hover { border-color:rgba(255,255,255,0.3); color:rgba(255,255,255,0.6); }
   .pvp-stat-title { font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(201,168,76,0.5); letter-spacing:0.1em; margin-bottom:8px; }
   .pvp-stat-content { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:rgba(255,255,255,0.7); }
@@ -121,7 +121,7 @@
 <div id="view-lobby">
   <div class="lobby-container">
     <div class="pvp-title-bar">
-      <div class="pvp-lobby-title" id="lobbyTitle">PvP 로비</div>
+      <div class="pvp-lobby-title" id="lobbyTitle">BATTLE LOBBY</div>
     </div>
     <div class="pvp-user-list-box">
       <div id="lobbyList"></div>
@@ -148,8 +148,6 @@
       <div class="pvp-rule-section">
         <div class="pvp-rule-section-title">게임 규칙</div>
         <ul>
-          <li>매칭 혹은 대전 신청을 통해 게임을 시작합니다.</li>
-          <li>1대1로 각자의 카드로 게임을 플레이 합니다. (베이직 모드와 유사)</li>
           <li>게임 종료 시 각자가 완성한 패를 높은 등급부터 비교하여 각각 승패를 정합니다.</li>
           <li>최대 9개 패 중 더 많은 패를 승리한 사람이 게임을 승리합니다.</li>
         </ul>
@@ -158,8 +156,7 @@
       <div class="pvp-rule-section">
         <div class="pvp-rule-section-title">칩 정산 규칙</div>
         <ul>
-          <li>이긴 패 하나당 10칩을 획득합니다.</li>
-          <li>9개 패를 모두 패배하면 최대 90칩을 잃게 됩니다.</li>
+          <li>이긴 패 하나당 10칩을 상대에게 획득합니다.</li>
           <li>승자는 획득칩에서 테이블피 1칩을 제외한 칩을 얻게 됩니다.</li>
         </ul>
       </div>
@@ -176,8 +173,7 @@
       <div class="pvp-rule-section">
         <div class="pvp-rule-section-title">기타 규칙</div>
         <ul>
-          <li>게임 종료 50초 전 이전에 한 쪽이 먼저 게임을 끝낸 경우, 남은 플레이어는 50초 안에 게임을 끝내야 합니다.</li>
-          <li>100칩 미만의 칩만 남았을 경우 재대결에 참여할 수 없습니다.</li>
+          <li>한 쪽이 게임을 끝낸 경우, 남은 쪽은 50초 내에 게임을 끝내야 합니다.</li>
           <li>게임 중 이탈하면 90칩을 잃고 패배 처리됩니다.</li>
         </ul>
       </div>
@@ -1089,7 +1085,6 @@ async function loadMyPvpStat() {
     if (error || !data) {
       el.innerHTML = `
         <div class="pvp-stat-row">
-          <span class="pvp-stat-mode">ARCADE</span>
           <span class="pvp-stat-num">전적 없음</span>
         </div>`;
       return;
@@ -1100,7 +1095,6 @@ async function loadMyPvpStat() {
 
     el.innerHTML = `
       <div class="pvp-stat-row">
-        <span class="pvp-stat-mode">ARCADE</span>
         <span class="pvp-stat-num">${arcade_match}전</span>
         <span class="pvp-stat-win">${arcade_win}승</span>
         <span class="pvp-stat-lose">${arcade_lose}패</span>
