@@ -1274,7 +1274,8 @@ socket.on('newduel:dealOut', async ({ outCards, firstPlayer, myOutCard, oppOutCa
   await new Promise(r => setTimeout(r, 800));
 
   // OUT 카드 + 선/후 표시
-  const suitColor = (s) => SUIT_COLORS[s] || '#e0e0e0';
+  const outSuitColors = { '♠':'#c0c0c0', '♣':'#5a9fd4', '♥':'#4dba6e', '♦':'#e05555' };
+  const suitColor = (s) => outSuitColors[s] || '#e0e0e0';
   document.getElementById('ndMyOut').innerHTML =
     `<span style="color:${suitColor(myOutCard.suit)}" class="nd-out-card">${VN[parseInt(myOutCard.value)]}${myOutCard.suit}</span>` +
     (ndState.isFirst ? ' <span class="nd-first-mark">\u2605</span>' : '');
