@@ -247,12 +247,30 @@
   <div class="pvp-overlay" id="ruleOverlay">
     <div class="pvp-popup" style="max-width:360px;text-align:left;">
       <div class="pvp-popup-title" style="text-align:center;margin-bottom:16px;">GAMBLE DUEL</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:rgba(255,255,255,0.65);line-height:1.7;">
-        <p style="margin-bottom:8px;"><b style="color:var(--gold);">Phase 1</b> - 15장씩 배분 후 블라인드 베팅 (내 카드만 공개)</p>
-        <p style="margin-bottom:8px;"><b style="color:var(--gold);">Phase 2</b> - 5장 추가 + 상대 카드 공개 후 본격 베팅</p>
-        <p style="margin-bottom:8px;"><b style="color:var(--gold);">Phase 3</b> - 마지막 5장 귀속 공개 후 "따라올래?" 베팅</p>
-        <p style="margin-bottom:8px;"><b style="color:var(--gold);">Game</b> - 80초 안에 5x5 그리드에서 최상위 1패 완성</p>
-        <p style="margin-bottom:4px;"><b style="color:var(--gold);">레이즈</b> - P1: 3/5/8, P2: 12/20/30, P3: pot 전액</p>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:rgba(255,255,255,0.65);line-height:1.8;">
+
+        <div style="margin-bottom:14px;">
+          <div style="color:var(--gold);font-weight:700;font-size:0.72rem;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.2);">승패 규칙</div>
+          <p style="margin-bottom:6px;">카드를 25장씩 나눠 갖고 플레이해 만든 <span style="color:#FFD740;font-weight:700;">최상위패 3개</span>로 승부</p>
+          <p style="margin-bottom:2px;">*중요규칙 : <span style="color:#ff6b6b;font-weight:700;">10미만의 ONE PAIR도 패로 인정</span></p>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="color:var(--gold);font-weight:700;font-size:0.72rem;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.2);">베팅 단계</div>
+          <p style="margin-bottom:8px;">25장의 카드를 나눠 갖는 동안 3 Phase 베팅 진행</p>
+          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 1</b> — 10장씩 배분. 내카드만 공개 후 최대 3회씩 베팅</p>
+          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 2</b> — 10장 추가 후 서로 카드 공개 후 최대 3회씩 베팅</p>
+          <p style="margin-bottom:8px;"><b style="color:var(--gold);">Phase 3</b> — 모든 카드 공개 후 최대 1회씩 베팅</p>
+        </div>
+
+        <div>
+          <div style="color:var(--gold);font-weight:700;font-size:0.72rem;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.2);">베팅 액션</div>
+          <p style="margin-bottom:4px;"><b style="color:rgba(255,255,255,0.8);">SKIP</b> — 베팅 안함. 상대방이 SKIP시 베팅종료. 상대방 레이즈 가능.</p>
+          <p style="margin-bottom:4px;"><b style="color:#4CAF50;">CALL</b> — 상대방 레이즈만 받고 베팅 종료.</p>
+          <p style="margin-bottom:4px;"><b style="color:#FFC107;">RAISE</b> — 버튼에 표시된 금액만큼 판돈을 올림.</p>
+          <p style="margin-bottom:2px;"><b style="color:#ff5252;">FOLD</b> — 모든 판돈을 잃고 게임 포기.</p>
+        </div>
+
       </div>
       <button class="pvp-popup-btn" onclick="document.getElementById('ruleOverlay').classList.remove('active')" style="margin-top:12px;">확인</button>
     </div>
