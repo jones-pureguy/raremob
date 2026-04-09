@@ -470,7 +470,7 @@ let challengeTimer = null;
   // 첫 유저 인터랙션에서 로비 BGM 시작
   document.addEventListener('click', function initLobbyBGM() {
     Sound.warmup();
-    BGM.init('./audio/Duel_Lobby.mp3');
+    BGM.init('./audio/Duel_Theme.mp3');
     BGM.start();
     document.removeEventListener('click', initLobbyBGM);
   }, { once: true });
@@ -1208,9 +1208,6 @@ socket.on('room:created', ({ roomId, mode, opponent }) => {
   ndState.gameStarted = false;
   ndState.rematchRequested = false;
 
-  // 딜링 뷰로 전환 + 베팅 BGM
-  BGM.init('./audio/Duel_Betting.mp3');
-  BGM.start();
   showView('dealing');
   document.getElementById('ndOppName').textContent = opponent.username;
   document.getElementById('ndOppChip').textContent = (opponent.chip || 0).toLocaleString();
@@ -1362,6 +1359,23 @@ socket.on('newduel:dealPhase2', async ({ myCards, oppCards }) => {
   await animateDealing('oppCardMap', phase2Opp, 'opponent', 200);
 
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 2';
+
+  // 미배분 카드 하이라이트 — 양쪽 카드맵에 즉시 표시
+  const allSuits = ['♠','♥','♦','♣'];
+  const allValues = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+  allSuits.forEach(suit => {
+    allValues.forEach(value => {
+      const myCell = document.getElementById(`cm-myCardMap-${suit}-${value}`);
+      const oppCell = document.getElementById(`cm-oppCardMap-${suit}-${value}`);
+      if (myCell && !myCell.classList.contains('mine') && !myCell.classList.contains('opponent') && !myCell.classList.contains('out')) {
+        myCell.classList.add('unassigned');
+      }
+      if (oppCell && !oppCell.classList.contains('mine') && !oppCell.classList.contains('opponent') && !oppCell.classList.contains('out')) {
+        oppCell.classList.add('unassigned');
+      }
+    });
+  });
+
   await new Promise(r => setTimeout(r, 3000));
   socket.emit('newduel:ready', { roomId: ndState.roomId });
 });
@@ -1408,8 +1422,6 @@ socket.on('newduel:gameStart', (data) => {
   ndState.pot = data.pot;
   document.getElementById('ndPhaseBanner').textContent = 'GAME START';
   setTimeout(() => {
-    BGM.init('./audio/Duel_Game.mp3');
-    BGM.start();
     showView('game');
     setupNewDuelGameUI(data);
   }, 1500);
@@ -1420,7 +1432,6 @@ socket.on('newduel:result', (data) => {
   ndState.gameStarted = false;
   ndState.bettingActive = false;
   state.phase = 'result';
-  BGM.stop();
   clearInterval(ndState.gameTimerInterval);
   hideBettingPanel();
 
@@ -1517,8 +1528,6 @@ function goToLobby() {
 
   if (state) state.phase = 'idle';
   matchingMode = null;
-  BGM.init('./audio/Duel_Lobby.mp3');
-  BGM.start();
   showView('lobby');
   joinLobby();
   renderMatchButtons();
