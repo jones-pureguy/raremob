@@ -1387,28 +1387,24 @@ socket.on('newduel:dealPhase2', async ({ myCards, oppCards }) => {
 
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 2';
 
-  // 디버그: 클래스 적용 상태 확인
-  console.log('[newduel] unassigned 적용 전 - myCardMap: mine=',
-    document.querySelectorAll('#myCardMap .mine').length,
-    'opponent=', document.querySelectorAll('#myCardMap .opponent').length,
-    'out=', document.querySelectorAll('#myCardMap .out').length);
-  console.log('[newduel] unassigned 적용 전 - oppCardMap: mine=',
-    document.querySelectorAll('#oppCardMap .mine').length,
-    'opponent=', document.querySelectorAll('#oppCardMap .opponent').length,
-    'out=', document.querySelectorAll('#oppCardMap .out').length);
+  // 미배분 카드 하이라이트 — 데이터 기반으로 계산
+  // 내 20장 + 상대 20장 + out 2장 = 42장 → 나머지 10장이 미배분
+  const knownCards = new Set();
+  ndState.myCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
+  ndState.oppCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
+  if (ndState.outCards) ndState.outCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
+  console.log('[newduel] unassigned: known=', knownCards.size, '미배분=', 52 - knownCards.size);
 
-  // 미배분 카드 하이라이트 — 양쪽 카드맵에 즉시 표시
   const allSuits = ['♠','♥','♦','♣'];
   const allValues = [2,3,4,5,6,7,8,9,10,11,12,13,14];
   allSuits.forEach(suit => {
     allValues.forEach(value => {
-      const myCell = document.getElementById(`cm-myCardMap-${suit}-${value}`);
-      const oppCell = document.getElementById(`cm-oppCardMap-${suit}-${value}`);
-      if (myCell && !myCell.classList.contains('mine') && !myCell.classList.contains('opponent') && !myCell.classList.contains('out')) {
-        myCell.classList.add('unassigned');
-      }
-      if (oppCell && !oppCell.classList.contains('mine') && !oppCell.classList.contains('opponent') && !oppCell.classList.contains('out')) {
-        oppCell.classList.add('unassigned');
+      const key = `${suit}-${value}`;
+      if (!knownCards.has(key)) {
+        const myCell = document.getElementById(`cm-myCardMap-${suit}-${value}`);
+        const oppCell = document.getElementById(`cm-oppCardMap-${suit}-${value}`);
+        if (myCell) myCell.classList.add('unassigned');
+        if (oppCell) oppCell.classList.add('unassigned');
       }
     });
   });
