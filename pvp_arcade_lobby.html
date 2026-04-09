@@ -121,7 +121,7 @@
 <div id="view-lobby">
   <div class="lobby-container">
     <div class="pvp-title-bar">
-      <div class="pvp-lobby-title" id="lobbyTitle">BATTLE LOBBY</div>
+      <div class="pvp-lobby-title" id="lobbyTitle">ARCADE BATTLE LOBBY</div>
     </div>
     <div class="pvp-user-list-box">
       <div id="lobbyList"></div>
@@ -370,7 +370,7 @@ let scriptLoaded = false;
   BGM.loadSettings();
   await ScorePolicy.load();
 
-  document.getElementById('lobbyTitle').textContent = 'BATTLE LOBBY';
+  document.getElementById('lobbyTitle').textContent = 'ARCADE BATTLE LOBBY';
   renderMatchButtons('idle', null);
 
   // script.js 로드 (게임 엔진)

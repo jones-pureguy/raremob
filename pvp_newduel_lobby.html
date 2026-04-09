@@ -96,9 +96,9 @@
   @keyframes nd-assign-flash { 0%{transform:scale(1.4);box-shadow:0 0 16px currentColor;} 100%{transform:scale(1);} }
 
   /* ── 딜링 뷰 ── */
-  .nd-dealing-view { max-width:480px; margin:0 auto; padding:0; display:flex; flex-direction:column; height:calc(100vh - 50px); justify-content:space-between; }
-  .nd-betting-section { flex-shrink:0; min-height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .nd-my-section { flex-shrink:0; }
+  .nd-dealing-view { position:relative; max-width:480px; margin:0 auto; height:calc(100vh - 50px); overflow:hidden; }
+  .nd-betting-section { position:absolute; top:50%; left:16px; right:16px; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .nd-my-section { position:absolute; bottom:12px; left:16px; right:16px; }
   .nd-section-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.3); letter-spacing:0.1em; padding:2px 12px; }
   .nd-player-bar { display:flex; align-items:center; justify-content:space-between; padding:4px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; }
   .nd-player-name { color:var(--gold); font-weight:700; }
@@ -189,7 +189,7 @@
   .nd-game-pot img { width:14px; height:14px; }
 
   /* 상대 미니그리드 */
-  .nd-opp-section { padding:0 4px; margin-bottom:4px; flex-shrink:0; }
+  .nd-opp-section { position:absolute; top:12px; left:16px; right:16px; }
   .nd-opp-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.35); letter-spacing:0.08em; margin-bottom:2px; display:flex; align-items:center; gap:6px; }
   .nd-opp-grid-wrap { display:flex; align-items:flex-start; gap:4px; }
   .nd-opp-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; width:min(35vw, 156px); flex-shrink:0; }
@@ -1391,6 +1391,16 @@ socket.on('newduel:dealPhase2', async ({ myCards, oppCards }) => {
   await animateDealing('oppCardMap', phase2Opp, 'opponent', 200);
 
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 2';
+
+  // 디버그: 클래스 적용 상태 확인
+  console.log('[newduel] unassigned 적용 전 - myCardMap: mine=',
+    document.querySelectorAll('#myCardMap .mine').length,
+    'opponent=', document.querySelectorAll('#myCardMap .opponent').length,
+    'out=', document.querySelectorAll('#myCardMap .out').length);
+  console.log('[newduel] unassigned 적용 전 - oppCardMap: mine=',
+    document.querySelectorAll('#oppCardMap .mine').length,
+    'opponent=', document.querySelectorAll('#oppCardMap .opponent').length,
+    'out=', document.querySelectorAll('#oppCardMap .out').length);
 
   // 미배분 카드 하이라이트 — 양쪽 카드맵에 즉시 표시
   const allSuits = ['♠','♥','♦','♣'];
