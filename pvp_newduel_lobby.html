@@ -380,6 +380,8 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <!-- ==================== 결과 모달 ==================== -->
 <div id="modalOverlay" class="pvp-overlay">
   <div class="pvp-popup" id="modal" style="max-width:360px;"></div>
@@ -886,34 +888,40 @@ function setupNewDuelGameUI(data) {
     window._origFinalizePathND = window.finalizePath;
   }
   window.finalizePath = function() {
-    const removedPositions = [...state.selectedPath];
-    const prevCount = state.hands.length;
-    window._origFinalizePathND.call(this);
-    const newCount = state.hands.length;
-    if (newCount > prevCount) {
-      const newHand = state.hands[state.hands.length - 1];
-      const evalResult = evaluateHand(newHand.cards);
-      const sortedCards = [...newHand.cards].sort((a, b) => b.value - a.value);
-      const topSuit = sortedCards[0].suit;
+    try {
+      const removedPositions = [...state.selectedPath];
+      const prevCount = state.hands.length;
+      window._origFinalizePathND.call(this);
+      const newCount = state.hands.length;
+      if (newCount > prevCount) {
+        const newHand = state.hands[state.hands.length - 1];
+        const evalResult = evaluateHand(newHand.cards);
+        const sortedCards = [...newHand.cards].sort((a, b) => b.value - a.value);
+        const topSuit = sortedCards[0].suit;
 
-      ndState.myHands = state.hands.map(h => {
-        const ev = evaluateHand(h.cards);
-        const sc = [...h.cards].sort((a, b) => b.value - a.value);
-        return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: h.cards };
-      }).sort(ndHandSort);
+        ndState.myHands = state.hands.map(h => {
+          const ev = evaluateHand(h.cards);
+          const sc = [...h.cards].sort((a, b) => b.value - a.value);
+          return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: h.cards };
+        }).sort(ndHandSort);
 
-      ndRenderScoreboard();
+        ndRenderScoreboard();
 
-      socket.emit('newduel:handComplete', {
-        roomId: ndState.roomId,
-        hand: {
-          rank: evalResult.rank,
-          label: evalResult.label,
-          suit: topSuit,
-          cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
-        },
-        removedPositions
-      });
+        socket.emit('newduel:handComplete', {
+          roomId: ndState.roomId,
+          hand: {
+            rank: evalResult.rank,
+            label: evalResult.label,
+            suit: topSuit,
+            cards: newHand.cards.map(c => ({ value: c.value, suit: c.suit }))
+          },
+          removedPositions
+        });
+      }
+    } catch(e) {
+      console.error('[newduel] finalizePath error:', e);
+      state.isDragging = false;
+      clearSelection();
     }
   };
 }
