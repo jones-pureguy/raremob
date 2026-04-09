@@ -97,6 +97,7 @@
 
   /* ── 딜링 뷰 ── */
   .nd-dealing-view { max-width:480px; margin:0 auto; padding:8px 0; }
+  .nd-betting-area { height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .nd-section-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.3); letter-spacing:0.1em; padding:2px 12px; }
   .nd-player-bar { display:flex; align-items:center; justify-content:space-between; padding:4px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; }
   .nd-player-name { color:var(--gold); font-weight:700; }
@@ -288,23 +289,24 @@
 
     <div class="nd-divider"></div>
 
-    <!-- Phase + 베팅 -->
-    <div class="nd-phase-banner" id="ndPhaseBanner"></div>
-    <div class="nd-raise-indicator" id="ndRaiseIndicator"></div>
-    <div class="nd-pot-wrap" id="ndPotWrap">
-      <div class="nd-pot-chip-stack">
-        <img src="./images/chip.png" alt="chip" class="nd-pot-chip-icon"
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-        <span style="display:none; font-size:1.2rem;">&#127920;</span>
+    <!-- Phase + 베팅 (고정 높이) -->
+    <div class="nd-betting-area">
+      <div class="nd-phase-banner" id="ndPhaseBanner"></div>
+      <div class="nd-raise-indicator" id="ndRaiseIndicator"></div>
+      <div class="nd-pot-wrap" id="ndPotWrap">
+        <div class="nd-pot-chip-stack">
+          <img src="./images/chip.png" alt="chip" class="nd-pot-chip-icon"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+          <span style="display:none; font-size:1.2rem;">&#127920;</span>
+        </div>
+        <div class="nd-pot-amount" id="ndPotDisplay">2</div>
+        <div class="nd-pot-label">POT</div>
       </div>
-      <div class="nd-pot-amount" id="ndPotDisplay">2</div>
-      <div class="nd-pot-label">POT</div>
-    </div>
-
-    <div class="nd-betting-panel" id="ndBettingPanel" style="display:none">
-      <div class="nd-bet-info" id="ndBetInfo"></div>
-      <div class="nd-bet-buttons" id="ndBetButtons"></div>
-      <div class="nd-bet-timer" id="ndBetTimer"></div>
+      <div class="nd-betting-panel" id="ndBettingPanel" style="display:none">
+        <div class="nd-bet-info" id="ndBetInfo"></div>
+        <div class="nd-bet-buttons" id="ndBetButtons"></div>
+        <div class="nd-bet-timer" id="ndBetTimer"></div>
+      </div>
     </div>
 
     <div class="nd-divider"></div>
