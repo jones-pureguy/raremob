@@ -447,7 +447,7 @@ async function animateDealing(containerId, cards, state, interval) {
 // =============================================
 
 // 현재 베팅 상태 추적
-const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, canRaise: true, callAmount: 0 };
+const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, nextRaiseTotalCost: 0, canRaise: true, callAmount: 0 };
 
 function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
   opts = opts || {};
@@ -461,6 +461,7 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
   betState.phase = phase;
   if (opts.hasLastRaiser !== undefined) betState.hasLastRaiser = opts.hasLastRaiser;
   if (opts.nextRaiseAmount !== undefined) betState.nextRaiseAmount = opts.nextRaiseAmount;
+  if (opts.nextRaiseTotalCost !== undefined) betState.nextRaiseTotalCost = opts.nextRaiseTotalCost;
   if (opts.canRaise !== undefined) betState.canRaise = opts.canRaise;
   if (opts.callAmount !== undefined) betState.callAmount = opts.callAmount;
 
@@ -479,13 +480,15 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
       const callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
       btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">${callLabel}</button>`;
       if (betState.canRaise) {
-        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${betState.nextRaiseAmount}</button>`;
+        const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
+        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
       }
     } else {
       // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE + FOLD
       btns += `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>`;
       if (betState.canRaise) {
-        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${betState.nextRaiseAmount}</button>`;
+        const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
+        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
       }
     }
     btns += `<button class="nd-bet-btn fold" onclick="sendNewDuelBet('fold')">FOLD</button>`;
@@ -653,7 +656,7 @@ socket.on('newduel:dealPhase1', async ({ myCards, oppCardCount }) => {
 });
 
 // ─── newduel:bettingStart ───
-socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, canRaise, hasLastRaiser }) => {
+socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount }) => {
   ndState.pot = pot;
   ndState.bettingActive = true;
   document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
@@ -661,12 +664,14 @@ socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, c
   showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
     hasLastRaiser: hasLastRaiser || false,
     nextRaiseAmount: nextRaiseAmount || 0,
-    canRaise: canRaise !== false
+    nextRaiseTotalCost: nextRaiseTotalCost || 0,
+    canRaise: canRaise !== false,
+    callAmount: callAmount || 0
   });
 });
 
 // ─── newduel:bettingUpdate ───
-socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, canRaise, hasLastRaiser, callAmount }) => {
+socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount }) => {
   ndState.pot = pot;
   document.getElementById('ndPotDisplay').textContent = `POT ${pot}`;
 
@@ -681,6 +686,7 @@ socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTu
     showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
       hasLastRaiser: hasLastRaiser || false,
       nextRaiseAmount: nextRaiseAmount || 0,
+      nextRaiseTotalCost: nextRaiseTotalCost || 0,
       canRaise: canRaise !== false,
       callAmount: callAmount || 0
     });
