@@ -370,6 +370,8 @@ let scriptLoaded = false;
 (async () => {
   await i18n.init();
   initHeader();
+  Sound.loadSettings();
+  BGM.loadSettings();
   await ScorePolicy.load();
 
   document.getElementById('lobbyTitle').textContent = i18n.t('pvp.lobby.title');
@@ -389,6 +391,14 @@ let scriptLoaded = false;
   } else {
     socket.once('connect', joinLobby);  // once로 변경 (1회만 실행)
   }
+
+  // 첫 유저 인터랙션에서 BGM 시작
+  document.addEventListener('click', function initArcadeBGM() {
+    Sound.warmup();
+    BGM.init('./audio/Arcade_Theme.mp3');
+    BGM.start();
+    document.removeEventListener('click', initArcadeBGM);
+  }, { once: true });
 })();
 
 // =============================================
@@ -780,9 +790,6 @@ socket.on('game:started', ({ roomId, startedAt }) => {
       if (grid) grid.style.pointerEvents = '';
     }, 300);
   }
-
-  BGM.init('./audio/Main_Theme.mp3');
-  BGM.start();
 
   state.phase = 'playing';
   const elapsed = Math.floor((Date.now() - startedAt) / 1000);
