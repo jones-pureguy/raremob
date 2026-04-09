@@ -96,9 +96,7 @@
   @keyframes nd-assign-flash { 0%{transform:scale(1.4);box-shadow:0 0 16px currentColor;} 100%{transform:scale(1);} }
 
   /* ── 딜링 뷰 ── */
-  .nd-dealing-view { position:relative; max-width:480px; margin:0 auto; height:calc(100vh - 50px); overflow:hidden; }
-  .nd-betting-section { position:absolute; top:50%; left:16px; right:16px; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .nd-my-section { position:absolute; bottom:12px; left:16px; right:16px; }
+  .nd-dealing-view { max-width:480px; margin:0 auto; padding:8px 0; }
   .nd-section-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.3); letter-spacing:0.1em; padding:2px 12px; }
   .nd-player-bar { display:flex; align-items:center; justify-content:space-between; padding:4px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; }
   .nd-player-name { color:var(--gold); font-weight:700; }
@@ -189,7 +187,7 @@
   .nd-game-pot img { width:14px; height:14px; }
 
   /* 상대 미니그리드 */
-  .nd-opp-section { position:absolute; top:12px; left:16px; right:16px; }
+  .nd-opp-section { padding:0 4px; margin-bottom:4px; }
   .nd-opp-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.35); letter-spacing:0.08em; margin-bottom:2px; display:flex; align-items:center; gap:6px; }
   .nd-opp-grid-wrap { display:flex; align-items:flex-start; gap:4px; }
   .nd-opp-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; width:min(35vw, 156px); flex-shrink:0; }
@@ -271,55 +269,52 @@
 </div>
 
 <!-- ==================== VIEW: DEALING ==================== -->
-<div id="view-dealing" style="display:none;width:100%">
+<div id="view-dealing" style="display:none">
   <div class="nd-dealing-view">
     <!-- 상대 영역 -->
-    <div class="nd-opp-section">
-      <div class="nd-player-bar">
-        <span class="nd-player-name" id="ndOppName">OPPONENT</span>
-        <span class="nd-player-chip"><img src="./images/chip.png"><span id="ndOppChip">0</span></span>
-        <span class="nd-out-display" id="ndOppOut"></span>
-      </div>
-      <div class="nd-cardmap-wrap">
-        <div class="nd-cardmap" id="oppCardMap"></div>
-        <div class="nd-opp-overlay" id="ndOppOverlay" style="display:none">
-          <div class="nd-opp-ov-icon">🂠</div>
-          <div class="nd-opp-ov-text">OPPONENT <span id="ndOppCardCount">15</span> CARDS</div>
-          <div class="nd-opp-ov-sub">HIDDEN</div>
-        </div>
+    <div class="nd-player-bar">
+      <span class="nd-player-name" id="ndOppName">OPPONENT</span>
+      <span class="nd-player-chip"><img src="./images/chip.png"><span id="ndOppChip">0</span></span>
+      <span class="nd-out-display" id="ndOppOut"></span>
+    </div>
+    <div class="nd-cardmap-wrap">
+      <div class="nd-cardmap" id="oppCardMap"></div>
+      <div class="nd-opp-overlay" id="ndOppOverlay" style="display:none">
+        <div class="nd-opp-ov-icon">🂠</div>
+        <div class="nd-opp-ov-text">OPPONENT <span id="ndOppCardCount">15</span> CARDS</div>
+        <div class="nd-opp-ov-sub">HIDDEN</div>
       </div>
     </div>
+
+    <div class="nd-divider"></div>
 
     <!-- Phase + 베팅 -->
-    <div class="nd-betting-section">
-      <div class="nd-divider" style="width:100%;"></div>
-      <div class="nd-phase-banner" id="ndPhaseBanner"></div>
-      <div class="nd-raise-indicator" id="ndRaiseIndicator"></div>
-      <div class="nd-pot-wrap" id="ndPotWrap">
-        <div class="nd-pot-chip-stack">
-          <img src="./images/chip.png" alt="chip" class="nd-pot-chip-icon"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
-          <span style="display:none; font-size:1.2rem;">&#127920;</span>
-        </div>
-        <div class="nd-pot-amount" id="ndPotDisplay">2</div>
-        <div class="nd-pot-label">POT</div>
+    <div class="nd-phase-banner" id="ndPhaseBanner"></div>
+    <div class="nd-raise-indicator" id="ndRaiseIndicator"></div>
+    <div class="nd-pot-wrap" id="ndPotWrap">
+      <div class="nd-pot-chip-stack">
+        <img src="./images/chip.png" alt="chip" class="nd-pot-chip-icon"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+        <span style="display:none; font-size:1.2rem;">&#127920;</span>
       </div>
-      <div class="nd-betting-panel" id="ndBettingPanel" style="display:none">
-        <div class="nd-bet-info" id="ndBetInfo"></div>
-        <div class="nd-bet-buttons" id="ndBetButtons"></div>
-        <div class="nd-bet-timer" id="ndBetTimer"></div>
-      </div>
-      <div class="nd-divider" style="width:100%;"></div>
+      <div class="nd-pot-amount" id="ndPotDisplay">2</div>
+      <div class="nd-pot-label">POT</div>
     </div>
 
+    <div class="nd-betting-panel" id="ndBettingPanel" style="display:none">
+      <div class="nd-bet-info" id="ndBetInfo"></div>
+      <div class="nd-bet-buttons" id="ndBetButtons"></div>
+      <div class="nd-bet-timer" id="ndBetTimer"></div>
+    </div>
+
+    <div class="nd-divider"></div>
+
     <!-- 내 영역 -->
-    <div class="nd-my-section">
-      <div class="nd-cardmap" id="myCardMap"></div>
-      <div class="nd-player-bar">
-        <span class="nd-player-name" id="ndMyName">ME</span>
-        <span class="nd-player-chip"><img src="./images/chip.png"><span id="ndMyChip">0</span></span>
-        <span class="nd-out-display" id="ndMyOut"></span>
-      </div>
+    <div class="nd-cardmap" id="myCardMap"></div>
+    <div class="nd-player-bar">
+      <span class="nd-player-name" id="ndMyName">ME</span>
+      <span class="nd-player-chip"><img src="./images/chip.png"><span id="ndMyChip">0</span></span>
+      <span class="nd-out-display" id="ndMyOut"></span>
     </div>
   </div>
 </div>
