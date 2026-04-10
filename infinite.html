@@ -21,13 +21,13 @@
   body.infinite-mode .inf-hand-row { font-size:0.72rem; }
   body.infinite-mode .grid { grid-template-columns: repeat(6, 1fr); }
   .outside-cards-area { display:flex; flex-direction:column; gap:2px; padding:6px 10px; border-bottom:0.5px solid rgba(0,212,255,0.15); margin-bottom:4px; }
-  .inf-oc-row { display:flex; align-items:center; gap:2px; }
+  .inf-oc-row { display:flex; align-items:center; gap:3px; }
   .inf-oc-suit { font-size:0.85rem; font-weight:700; width:18px; flex-shrink:0; text-align:center; line-height:1; padding:2px 0; border-radius:3px; background:rgba(255,255,255,0.75); }
   .inf-oc-suit.spade, .inf-oc-suit.club { color:#1A1A1A; }
   .inf-oc-suit.heart { color:#2E7D32; }
   .inf-oc-suit.diamond { color:#D32F2F; }
   .inf-oc-suit.club { color:#1565C0; }
-  .inf-oc-cell { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; font-weight:700; flex:1; min-width:0; text-align:center; padding:2px 0; border-radius:3px; color:rgba(255,255,255,0.15); border:1px solid transparent; }
+  .inf-oc-cell { font-family:'IBM Plex Mono',monospace; font-size:0.58rem; font-weight:700; flex:1; min-width:14px; text-align:center; padding:2px 1px; border-radius:3px; color:rgba(255,255,255,0.15); border:1px solid transparent; box-sizing:border-box; }
   .inf-oc-cell.has-card { background:rgba(255,255,255,0.85); border-color:rgba(255,255,255,0.3); }
   .inf-oc-row[data-suit="♠"] .inf-oc-cell.has-card { color:#1A1A1A; }
   .inf-oc-row[data-suit="♥"] .inf-oc-cell.has-card { color:#2E7D32; }
