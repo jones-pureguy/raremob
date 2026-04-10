@@ -333,7 +333,9 @@ function showView(name) {
     };
   }
   const header = document.getElementById('global-header');
-  if (header && header.parentElement) header.parentElement.style.display = name === 'game' ? 'none' : '';
+  if (header && header.parentElement) header.parentElement.style.display = name === 'lobby' ? '' : 'none';
+  const backFixed = document.querySelector('.back-fixed');
+  if (backFixed) backFixed.style.display = name === 'lobby' ? '' : 'none';
 }
 
 // =============================================

@@ -514,6 +514,10 @@ function showView(name) {
   document.getElementById('view-lobby').style.display = name === 'lobby' ? '' : 'none';
   document.getElementById('view-dealing').style.display = name === 'dealing' ? '' : 'none';
   document.getElementById('view-game').style.display = name === 'game' ? '' : 'none';
+  const header = document.getElementById('global-header');
+  if (header && header.parentElement) header.parentElement.style.display = name === 'lobby' ? '' : 'none';
+  const backFixed = document.querySelector('.back-fixed');
+  if (backFixed) backFixed.style.display = name === 'lobby' ? '' : 'none';
 }
 
 // =============================================
