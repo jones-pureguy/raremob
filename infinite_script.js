@@ -762,26 +762,30 @@ function showComboBadge(handLabel, count, score) {
   setTimeout(() => badge.classList.remove('active'), 1500);
 }
 
-// ─── Outside Cards (4-row suit-sorted) ───
+// ─── Outside Cards (4-row × 13-cell fixed grid) ───
 // [REWRITE]
-function renderOutsideCards() {
+function ensureOutsideCardsGrid() {
   const area = document.getElementById('outsideCardsArea');
-  if (!area) return;
-
+  if (!area || area.dataset.gridReady === '1') return area;
+  const allValues = [14,13,12,11,10,9,8,7,6,5,4,3,2]; // A → 2
   area.innerHTML = SUIT_CONFIG.map(({ suit, cls, symbol }) => {
-    const suitCards = outsideCards
-      .filter(card => card.suit === suit)
-      .sort((a, b) => b.value - a.value); // 내림차순 (A=14 first)
-
-    const cardsHTML = suitCards.map(card =>
-      `<span class="oc-card ${cls}">${VALUE_NAMES[card.value]}</span>`
+    const cellsHTML = allValues.map(v =>
+      `<span class="inf-oc-cell" data-value="${v}">${VALUE_NAMES[v]}</span>`
     ).join('');
-
-    return `<div class="oc-row">
-      <span class="oc-suit-label ${cls}">${symbol}</span>
-      <div class="oc-card-list">${cardsHTML || '<span class="oc-empty">—</span>'}</div>
-    </div>`;
+    return `<div class="inf-oc-row" data-suit="${suit}"><span class="inf-oc-suit ${cls}">${symbol}</span>${cellsHTML}</div>`;
   }).join('');
+  area.dataset.gridReady = '1';
+  return area;
+}
+
+function renderOutsideCards() {
+  const area = ensureOutsideCardsGrid();
+  if (!area) return;
+  area.querySelectorAll('.inf-oc-cell').forEach(c => c.classList.remove('has-card'));
+  outsideCards.forEach(card => {
+    const cell = area.querySelector(`.inf-oc-row[data-suit="${card.suit}"] .inf-oc-cell[data-value="${card.value}"]`);
+    if (cell) cell.classList.add('has-card');
+  });
 }
 
 // ─── Shuffle ───
