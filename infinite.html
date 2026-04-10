@@ -21,6 +21,7 @@
   body.infinite-mode .inf-hand-row { font-size:0.72rem; }
   body.infinite-mode .grid { grid-template-columns: repeat(6, 1fr); }
   .outside-cards-area { display:flex; flex-direction:column; gap:2px; padding:6px 10px; border-bottom:0.5px solid rgba(0,212,255,0.15); margin-bottom:4px; }
+  .inf-oc-title { font-family:'IBM Plex Mono',monospace; font-size:0.55rem; font-weight:700; color:rgba(0,212,255,0.55); letter-spacing:0.12em; text-align:center; padding:0 0 4px; }
   .inf-oc-row { display:flex; align-items:center; gap:3px; }
   .inf-oc-suit { font-size:0.85rem; font-weight:700; width:18px; flex-shrink:0; text-align:center; line-height:1; padding:2px 0; border-radius:3px; background:rgba(255,255,255,0.75); }
   .inf-oc-suit.spade, .inf-oc-suit.club { color:#1A1A1A; }
@@ -129,6 +130,7 @@
 <!-- Combo badge -->
 <div class="combo-badge" id="comboBadge"></div>
 
+<div class="inf-oc-title">OUT OF GRID</div>
 <div class="outside-cards-area" id="outsideCardsArea"></div>
 
 <div class="inf-panel-header">
