@@ -116,11 +116,15 @@
   .nd-bet-info { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-align:center; margin-bottom:6px; }
   .nd-bet-info.my-turn { color:var(--gold); }
   .nd-bet-info.opp-turn { color:rgba(255,255,255,0.4); }
-  .nd-bet-buttons { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
-  .nd-bet-btn { padding:10px 16px; border-radius:8px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.06); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; cursor:pointer; min-width:60px; text-align:center; transition:all 0.15s; }
+  .nd-bet-buttons { display:flex; gap:4px; justify-content:center; flex-wrap:nowrap; width:100%; }
+  .nd-bet-btn { flex:0 1 auto; min-width:0; min-height:44px; padding:8px 6px; border-radius:6px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.06); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.6rem; font-weight:700; cursor:pointer; text-align:center; white-space:nowrap; transition:all 0.15s; }
   .nd-bet-btn:active { transform:scale(0.97); }
   .nd-bet-btn:disabled { opacity:0.25; cursor:not-allowed; }
+  .nd-bet-btn .btn-size { display:block; font-size:0.45rem; opacity:0.6; line-height:1; margin-bottom:2px; }
+  .nd-bet-btn .btn-amount { display:block; font-size:0.6rem; line-height:1.2; }
   .nd-bet-btn.raise { border-color:rgba(255,193,7,0.5); color:#FFC107; }
+  .nd-bet-btn.raise.medium { border-color:rgba(255,193,7,0.7); }
+  .nd-bet-btn.raise.large { border-color:rgba(255,193,7,1); }
   .nd-bet-btn.call { border-color:rgba(76,175,80,0.5); color:#4CAF50; }
   .nd-bet-btn.skip { border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.5); }
   .nd-bet-btn.fold { border-color:rgba(255,82,82,0.5); color:#ff5252; }
@@ -761,16 +765,21 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
     const makeRaiseBtns = () => {
       const opts = betState.raiseOptions || {};
       let html = '';
+      let isFirst = true;
       for (const size of ['small', 'medium', 'large']) {
         const info = opts[size];
         if (!info) continue;
         const cost = info.totalCost || info.amount;
         const action = `raise_${size}`;
-        if (cost >= myRemainingForBtn) {
-          html += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('${action}')">ALL-IN ${labels[size]}+${myRemainingForBtn}</button>`;
-        } else {
-          html += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('${action}')">RAISE ${labels[size]}+${cost}</button>`;
-        }
+        const isAllIn = cost >= myRemainingForBtn;
+        const displayCost = isAllIn ? myRemainingForBtn : cost;
+        const prefix = isAllIn ? 'ALL' : (isFirst ? 'R' : '');
+        const amountText = `${prefix}+${displayCost}`;
+        html += `<button class="nd-bet-btn raise ${size}" onclick="sendNewDuelBet('${action}')">` +
+                `<span class="btn-size">${labels[size]}</span>` +
+                `<span class="btn-amount">${amountText}</span>` +
+                `</button>`;
+        isFirst = false;
       }
       return html;
     };
