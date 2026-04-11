@@ -39,10 +39,11 @@ function pingServer() {
 async function syncGoldToServer(userId, gold) {
   if (!userId || gold === undefined) return
   try {
+    const username = (typeof localStorage !== 'undefined' ? localStorage.getItem('poker_username') : null) || null
     const res = await fetch(`${RENDER_SERVER}/api/gold-sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, gold })
+      body: JSON.stringify({ userId, gold, username })
     })
     return await res.json()
   } catch (e) {

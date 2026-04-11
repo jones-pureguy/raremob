@@ -390,11 +390,12 @@
   async function addTestChip(amount) {
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
+    const username = localStorage.getItem('poker_username') || null;
     try {
       const res = await fetch(`${RENDER_SERVER}/chip/grant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, amount, reason: 'test_charge' })
+        body: JSON.stringify({ playerId, amount, reason: 'test_charge', username })
       });
       if (res.ok) {
         const { balance } = await res.json();

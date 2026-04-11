@@ -146,7 +146,7 @@ function calcTableFee(pot) {
 // =============================================
 // [REUSE] players 행 보장 — 없으면 자동 생성
 // =============================================
-async function ensurePlayer(userId) {
+async function ensurePlayer(userId, username = null) {
   const { data, error } = await supabase
     .from('players')
     .select('id, username, gold, chip')
@@ -158,11 +158,26 @@ async function ensurePlayer(userId) {
     return null
   }
 
-  if (data) return data
+  if (data) {
+    // 기존 행의 username이 비어 있으면 이번 요청의 username으로 채움 (덮어쓰지 않음)
+    if (!data.username && username) {
+      const { error: updateErr } = await supabase
+        .from('players')
+        .update({ username })
+        .eq('id', userId)
+      if (updateErr) {
+        console.error('[ensurePlayer] username 채움 오류:', updateErr)
+      } else {
+        data.username = username
+        console.log('[ensurePlayer] username 동기화:', userId, '→', username)
+      }
+    }
+    return data
+  }
 
   const { data: newPlayer, error: insertErr } = await supabase
     .from('players')
-    .insert({ id: userId, username: null, gold: 0, chip: 100 })
+    .insert({ id: userId, username: username || null, gold: 0, chip: 100 })
     .select('id, username, gold, chip')
     .single()
 
@@ -188,14 +203,14 @@ app.get('/health', (req, res) => {
 // Expo 전환 시: 동일하게 재활용
 // =============================================
 app.post('/api/gold-sync', async (req, res) => {
-  const { userId, gold } = req.body
+  const { userId, gold, username } = req.body
   console.log(`[gold-sync] 요청: userId=${userId}, gold=${gold}`)
   if (!userId || gold === undefined) {
     console.log('[gold-sync] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  await ensurePlayer(userId)
+  await ensurePlayer(userId, username)
 
   const { error } = await supabase
     .from('players')
@@ -214,14 +229,14 @@ app.post('/api/gold-sync', async (req, res) => {
 // [ADAPTER] 칩 잔액 조회 API
 // =============================================
 app.get('/chip/balance', async (req, res) => {
-  const { playerId } = req.query
+  const { playerId, username } = req.query
   console.log(`[chip/balance] 요청: playerId=${playerId}`)
   if (!playerId) {
     console.log('[chip/balance] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  const player = await ensurePlayer(playerId)
+  const player = await ensurePlayer(playerId, username)
   if (!player) {
     console.log(`[chip/balance] DB 오류: ensurePlayer 실패`)
     return res.status(500).json({ error: 'ensurePlayer failed' })
@@ -235,14 +250,14 @@ app.get('/chip/balance', async (req, res) => {
 // [ADAPTER] 칩 지급 API (신규 가입 시 최초 지급)
 // =============================================
 app.post('/chip/grant', async (req, res) => {
-  const { playerId, amount, reason } = req.body
+  const { playerId, amount, reason, username } = req.body
   console.log(`[chip/grant] 요청: playerId=${playerId}, amount=${amount}, reason=${reason}`)
   if (!playerId || !amount || !reason) {
     console.log('[chip/grant] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  const player = await ensurePlayer(playerId)
+  const player = await ensurePlayer(playerId, username)
   if (!player) {
     console.log(`[chip/grant] DB 조회 오류: ensurePlayer 실패`)
     return res.status(500).json({ error: 'ensurePlayer failed' })
@@ -277,14 +292,14 @@ app.post('/chip/grant', async (req, res) => {
 // [ADAPTER] 칩 데일리 리셋 API (매일 첫 로그인 시 100칩 복구)
 // =============================================
 app.post('/chip/daily-reset', async (req, res) => {
-  const { playerId } = req.body
+  const { playerId, username } = req.body
   console.log(`[chip/daily-reset] 요청: playerId=${playerId}`)
   if (!playerId) {
     console.log('[chip/daily-reset] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  const player = await ensurePlayer(playerId)
+  const player = await ensurePlayer(playerId, username)
   if (!player) {
     console.log(`[chip/daily-reset] DB 조회 오류: ensurePlayer 실패`)
     return res.status(500).json({ error: 'ensurePlayer failed' })

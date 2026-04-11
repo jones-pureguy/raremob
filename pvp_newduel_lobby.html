@@ -425,7 +425,8 @@
 <script src="header.js"></script>
 <script>
   async function syncGoldToServer(playerId, gold) {
-    try { await fetch(`${SERVER_URL}/api/gold-sync`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:playerId, gold}) }); } catch(e) {}
+    const username = localStorage.getItem('poker_username') || null;
+    try { await fetch(`${SERVER_URL}/api/gold-sync`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:playerId, gold, username}) }); } catch(e) {}
   }
 </script>
 <script>

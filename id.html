@@ -156,7 +156,7 @@
           const chipRes = await fetch(`${RENDER_SERVER}/chip/grant`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId: uid, amount: 100, reason: 'initial_grant' })
+            body: JSON.stringify({ playerId: uid, amount: 100, reason: 'initial_grant', username })
           });
           if (chipRes.ok) {
             localStorage.setItem('userChip', '100');

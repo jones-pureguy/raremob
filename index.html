@@ -106,9 +106,11 @@
   async function syncChipOnStart() {
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
+    const username = localStorage.getItem('poker_username') || '';
 
     try {
-      const res = await fetch(`${RENDER_SERVER}/chip/balance?playerId=${encodeURIComponent(playerId)}`);
+      const qs = `playerId=${encodeURIComponent(playerId)}${username ? `&username=${encodeURIComponent(username)}` : ''}`;
+      const res = await fetch(`${RENDER_SERVER}/chip/balance?${qs}`);
       if (res.ok) {
         const { chip } = await res.json();
         localStorage.setItem('userChip', String(chip));
@@ -130,7 +132,7 @@
         const res = await fetch(`${RENDER_SERVER}/chip/daily-reset`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerId })
+          body: JSON.stringify({ playerId, username: username || null })
         });
         if (res.ok) {
           localStorage.setItem('userChip', '100');
