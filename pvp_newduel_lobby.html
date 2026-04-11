@@ -736,11 +736,11 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
     info.className = 'nd-bet-info my-turn';
     info.textContent = 'NOW YOUR BET';
 
-    const remaining = (betState.myRemainingChip === undefined || betState.myRemainingChip === null) ? Infinity : betState.myRemainingChip;
+    const myRemainingForBtn = (betState.myRemainingChip === undefined || betState.myRemainingChip === null) ? Infinity : betState.myRemainingChip;
     const makeRaiseBtn = () => {
       const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
-      if (raiseCost >= remaining) {
-        return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">ALL-IN +${remaining}</button>`;
+      if (raiseCost >= myRemainingForBtn) {
+        return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">ALL-IN +${myRemainingForBtn}</button>`;
       }
       return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
     };
@@ -749,17 +749,17 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
     if (betState.hasLastRaiser) {
       // 상대가 RAISE한 후: CALL + (RAISE if canRaise) + FOLD
       let callLabel;
-      if (betState.callAmount && betState.callAmount >= remaining) {
-        callLabel = `ALL-IN CALL +${remaining}`;
+      if (betState.callAmount && betState.callAmount >= myRemainingForBtn) {
+        callLabel = `ALL-IN CALL +${myRemainingForBtn}`;
       } else {
         callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
       }
       btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">${callLabel}</button>`;
-      if (betState.canRaise && remaining > 0) btns += makeRaiseBtn();
+      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtn();
     } else {
       // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE + FOLD
       btns += `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>`;
-      if (betState.canRaise && remaining > 0) btns += makeRaiseBtn();
+      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtn();
     }
     btns += `<button class="nd-bet-btn fold" onclick="sendNewDuelBet('fold')">FOLD</button>`;
     buttons.innerHTML = btns;
