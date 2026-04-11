@@ -376,10 +376,11 @@ let scriptLoaded = false;
   renderMatchButtons('idle', null);
 
   // script.js 로드 (게임 엔진)
+  window._arcadeTimerSeconds = 240;
   await new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = 'script.js';
-    s.onload = () => { TIMER_SECONDS = 240; scriptLoaded = true; resolve(); };
+    s.onload = () => { scriptLoaded = true; resolve(); };
     document.body.appendChild(s);
   });
 
