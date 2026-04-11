@@ -834,6 +834,22 @@ socket.on('pvp:pendingNotification', (data) => {
   overlay.classList.add('active');
 });
 
+function showArcadeOppDoneMessage(timerAdjusted) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
+  const box = document.createElement('div');
+  box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
+  const msg = timerAdjusted ? '상대방 게임 종료\nTIME ATTACK 시작' : '상대방 게임 종료';
+  box.innerHTML = `<div style="font-size:1.3rem;font-weight:700;color:#fff;white-space:pre-line;">${msg}</div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.3s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+  }, 1700);
+}
+
 socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRemaining }) => {
   if (timerAdjusted) {
     clearInterval(state.timerInterval);
@@ -855,6 +871,8 @@ socket.on('game:playerDone', ({ socketId, username, reason, timerAdjusted, newRe
   const isMine = socketId === socket.id;
   setPvpStatus(isMine ? 'completed' : 'oppdone');
   if (timerAdjusted) setTimeout(() => setPvpStatus('timelimit'), 500);
+
+  if (!isMine) showArcadeOppDoneMessage(timerAdjusted);
 });
 
 socket.on('game:result', (data) => {

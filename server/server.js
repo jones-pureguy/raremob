@@ -422,6 +422,7 @@ function createRoom(socketIdA, socketIdB, mode) {
       betting: {
         phase: 1, pot: 2, currentTurn: null, turnTimer: null,
         phaseRaiseCounts: { 1: { A: 0, B: 0 }, 2: { A: 0, B: 0 }, 3: { A: 0, B: 0 } },
+        totalBetByPlayer: { A: 1, B: 1 },  // 초기 참가비 각 1
         allIn: false, _firstActed: false, _lastRaiser: null, _callAmount: 0
       },
       completedHands: { [socketIdA]: [], [socketIdB]: [] },
@@ -2063,6 +2064,16 @@ function newDuel_dealCards(room) {
   nd.gridCards_B = [...nd.phase1Cards_B, ...nd.phase2Cards_B, ...nd.phase3Cards_B]
 }
 
+// ─── 플레이어 잔여 칩 ───
+function newDuel_getRemaining(room, socketId) {
+  const nd = room.newDuel
+  const [idA, idB] = room.players
+  const side = socketId === idA ? 'A' : 'B'
+  const myChip = room.playerInfo[socketId]?.chip || 0
+  const spent = nd.betting.totalBetByPlayer?.[side] || 0
+  return Math.max(0, myChip - spent)
+}
+
 // ─── 베팅 시작 emit (플레이어별 다른 정보) ───
 function newDuel_emitBettingStart(room, phase) {
   const nd = room.newDuel
@@ -2071,9 +2082,23 @@ function newDuel_emitBettingStart(room, phase) {
   const sockB = io.sockets.sockets.get(idB)
   const raiseA = newDuel_getNextRaiseInfo(room, idA)
   const raiseB = newDuel_getNextRaiseInfo(room, idB)
+  const remainA = newDuel_getRemaining(room, idA)
+  const remainB = newDuel_getRemaining(room, idB)
   const base = { phase, pot: nd.betting.pot, currentTurn: nd.firstPlayer, hasLastRaiser: false }
-  if (sockA) sockA.emit('newduel:bettingStart', { ...base, nextRaiseAmount: raiseA.amount, nextRaiseTotalCost: raiseA.totalCost, canRaise: raiseA.canRaise, callAmount: 0 })
-  if (sockB) sockB.emit('newduel:bettingStart', { ...base, nextRaiseAmount: raiseB.amount, nextRaiseTotalCost: raiseB.totalCost, canRaise: raiseB.canRaise, callAmount: 0 })
+  if (sockA) sockA.emit('newduel:bettingStart', { ...base, nextRaiseAmount: raiseA.amount, nextRaiseTotalCost: raiseA.totalCost, canRaise: raiseA.canRaise, callAmount: 0, myRemainingChip: remainA })
+  if (sockB) sockB.emit('newduel:bettingStart', { ...base, nextRaiseAmount: raiseB.amount, nextRaiseTotalCost: raiseB.totalCost, canRaise: raiseB.canRaise, callAmount: 0, myRemainingChip: remainB })
+  console.log(`[newduel] bettingStart phase=${phase} remaining: A=${remainA}, B=${remainB}, pot=${nd.betting.pot}`)
+}
+
+// ─── bettingUpdate를 플레이어별 remainingChip 포함해서 emit ───
+function newDuel_emitBettingUpdate(room, payload) {
+  const [idA, idB] = room.players
+  const sockA = io.sockets.sockets.get(idA)
+  const sockB = io.sockets.sockets.get(idB)
+  const remainA = newDuel_getRemaining(room, idA)
+  const remainB = newDuel_getRemaining(room, idB)
+  if (sockA) sockA.emit('newduel:bettingUpdate', { ...payload, myRemainingChip: remainA })
+  if (sockB) sockB.emit('newduel:bettingUpdate', { ...payload, myRemainingChip: remainB })
 }
 
 // ─── Phase 진행 (양쪽 ready 수신 후 다음 단계) ───
@@ -2232,6 +2257,13 @@ function newDuel_handleBet(room, socketId, action) {
     return
   }
 
+  if (!bet.totalBetByPlayer) bet.totalBetByPlayer = { A: 1, B: 1 }
+
+  const myChip = room.playerInfo[socketId]?.chip || 0
+  const myRemaining = Math.max(0, myChip - (bet.totalBetByPlayer[side] || 0))
+  const oppChip = room.playerInfo[oppId]?.chip || 0
+  const oppRemaining = Math.max(0, oppChip - (bet.totalBetByPlayer[oppSide] || 0))
+
   // ─── RAISE ───
   if (action === 'raise') {
     const myRaises = bet.phaseRaiseCounts[phase][side]
@@ -2239,42 +2271,50 @@ function newDuel_handleBet(room, socketId, action) {
       action = 'call'
     } else {
       const raiseAmount = newDuel_getRaiseAmount(phase, myRaises, bet.pot)
-      const matchAmount = bet._callAmount || 0  // 상대 베팅 매칭
-      const totalCost = matchAmount + raiseAmount  // 실제 내는 금액
-      const myChip = room.playerInfo[socketId]?.chip || 0
+      const matchAmount = bet._callAmount || 0
+      const totalCost = matchAmount + raiseAmount
 
       let actualTotal = totalCost
-      if (totalCost > myChip) {
-        actualTotal = myChip
+      let actualRaisePortion = raiseAmount
+      let isAllIn = false
+      if (totalCost >= myRemaining) {
+        actualTotal = myRemaining
+        actualRaisePortion = Math.max(0, actualTotal - matchAmount)
+        isAllIn = true
         bet.allIn = true
-        console.log(`[newduel] ALL-IN: ${socketId}, wanted=${totalCost}, actual=${actualTotal}`)
+        console.log(`[newduel] ALL-IN RAISE: ${socketId} side=${side}, wanted=${totalCost}, myRemaining=${myRemaining}, actualTotal=${actualTotal}, raisePortion=${actualRaisePortion}`)
       }
 
       bet.pot += actualTotal
-      bet._callAmount = raiseAmount  // 다음 상대가 CALL 시 내야 할 금액 = 레이즈 단가
+      bet.totalBetByPlayer[side] += actualTotal
+      bet._callAmount = actualRaisePortion
       bet.phaseRaiseCounts[phase][side]++
       bet._lastRaiser = socketId
 
-      console.log(`[newduel] RAISE: ${socketId}, match=${matchAmount}, raise=${raiseAmount}, totalCost=${actualTotal}, pot=${bet.pot}, callAmount=${raiseAmount}`)
+      console.log(`[newduel] RAISE: ${socketId} side=${side}, match=${matchAmount}, raise=${raiseAmount}, totalCost=${actualTotal}, pot=${bet.pot}, callOwed=${actualRaisePortion}, totalBet[${side}]=${bet.totalBetByPlayer[side]}, myRemainingAfter=${myChip - bet.totalBetByPlayer[side]}`)
 
       const nextRaise = newDuel_getNextRaiseInfo(room, oppId)
 
-      io.to(room.roomId).emit('newduel:bettingUpdate', {
+      newDuel_emitBettingUpdate(room, {
         action: 'raise', bySocketId: socketId,
         amount: actualTotal, pot: bet.pot,
-        currentTurn: bet.allIn ? null : oppId,
+        currentTurn: isAllIn ? null : oppId,
         phase, raiseIndex: myRaises,
         nextRaiseAmount: nextRaise.amount,
         nextRaiseTotalCost: nextRaise.totalCost,
         canRaise: nextRaise.canRaise,
         hasLastRaiser: true,
-        callAmount: raiseAmount
+        callAmount: actualRaisePortion,
+        isAllIn
       })
 
-      if (bet.allIn) {
-        // 올인 시 상대 콜 금액도 pot에 추가
-        bet.pot += raiseAmount
+      if (isAllIn) {
+        // 올인: 상대가 강제 매칭 (잔여칩만큼만)
+        const forcedMatch = Math.min(actualRaisePortion, oppRemaining)
+        bet.pot += forcedMatch
+        bet.totalBetByPlayer[oppSide] += forcedMatch
         bet._callAmount = 0
+        console.log(`[newduel] ALL-IN forced opp match: opp=${oppId} side=${oppSide}, forcedMatch=${forcedMatch}, oppRemaining=${oppRemaining}, pot=${bet.pot}`)
         newDuel_completeBettingPhase(room, true)
         return
       }
@@ -2289,15 +2329,24 @@ function newDuel_handleBet(room, socketId, action) {
   if (bet._lastRaiser && bet._lastRaiser !== socketId) {
     // 상대가 RAISE한 후 내가 CALL → 콜 금액 매칭 + Phase 종료
     const callAmt = bet._callAmount
-    bet.pot += callAmt
+    let actualCall = callAmt
+    let isAllInCall = false
+    if (callAmt >= myRemaining) {
+      actualCall = myRemaining
+      isAllInCall = true
+      bet.allIn = true
+      console.log(`[newduel] ALL-IN CALL: ${socketId} side=${side}, callAmt=${callAmt}, myRemaining=${myRemaining}, actualCall=${actualCall}`)
+    }
+    bet.pot += actualCall
+    bet.totalBetByPlayer[side] += actualCall
     bet._callAmount = 0
-    io.to(room.roomId).emit('newduel:bettingUpdate', {
+    newDuel_emitBettingUpdate(room, {
       action: 'call', bySocketId: socketId,
-      amount: callAmt, pot: bet.pot, currentTurn: null, phase,
-      hasLastRaiser: false, callAmount: 0
+      amount: actualCall, pot: bet.pot, currentTurn: null, phase,
+      hasLastRaiser: false, callAmount: 0, isAllIn: isAllInCall
     })
-    console.log(`[newduel] CALL: ${socketId}, matched=${callAmt}, pot=${bet.pot}, phase=${phase} ends`)
-    newDuel_completeBettingPhase(room, false)
+    console.log(`[newduel] CALL: ${socketId} side=${side}, matched=${actualCall}, pot=${bet.pot}, totalBet[${side}]=${bet.totalBetByPlayer[side]}, phase=${phase} ends`)
+    newDuel_completeBettingPhase(room, isAllInCall)
     return
   }
 
@@ -2306,7 +2355,7 @@ function newDuel_handleBet(room, socketId, action) {
     bet._firstActed = true
     bet.currentTurn = oppId
     const nextRaise = newDuel_getNextRaiseInfo(room, oppId)
-    io.to(room.roomId).emit('newduel:bettingUpdate', {
+    newDuel_emitBettingUpdate(room, {
       action: 'skip', bySocketId: socketId,
       pot: bet.pot, currentTurn: oppId, phase,
       nextRaiseAmount: nextRaise.amount,
@@ -2318,7 +2367,7 @@ function newDuel_handleBet(room, socketId, action) {
     console.log(`[newduel] SKIP: ${socketId}, turn→${oppId}`)
   } else {
     // 양쪽 모두 SKIP → Phase 종료 (pot 변동 없음)
-    io.to(room.roomId).emit('newduel:bettingUpdate', {
+    newDuel_emitBettingUpdate(room, {
       action: 'skip', bySocketId: socketId,
       amount: 0, pot: bet.pot, currentTurn: null, phase,
       hasLastRaiser: false, callAmount: 0

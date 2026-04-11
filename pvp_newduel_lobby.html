@@ -680,7 +680,7 @@ async function animateDealing(containerId, cards, state, interval) {
 // =============================================
 
 // 현재 베팅 상태 추적
-const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, nextRaiseTotalCost: 0, canRaise: true, callAmount: 0 };
+const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, nextRaiseTotalCost: 0, canRaise: true, callAmount: 0, myRemainingChip: Infinity };
 
 function updatePotDisplay(amount) {
   const el = document.getElementById('ndPotDisplay');
@@ -719,6 +719,7 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
   if (opts.nextRaiseTotalCost !== undefined) betState.nextRaiseTotalCost = opts.nextRaiseTotalCost;
   if (opts.canRaise !== undefined) betState.canRaise = opts.canRaise;
   if (opts.callAmount !== undefined) betState.callAmount = opts.callAmount;
+  if (opts.myRemainingChip !== undefined) betState.myRemainingChip = opts.myRemainingChip;
 
   updatePotDisplay(pot);
 
@@ -735,22 +736,30 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
     info.className = 'nd-bet-info my-turn';
     info.textContent = 'NOW YOUR BET';
 
+    const remaining = (betState.myRemainingChip === undefined || betState.myRemainingChip === null) ? Infinity : betState.myRemainingChip;
+    const makeRaiseBtn = () => {
+      const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
+      if (raiseCost >= remaining) {
+        return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">ALL-IN +${remaining}</button>`;
+      }
+      return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
+    };
+
     let btns = '';
     if (betState.hasLastRaiser) {
       // 상대가 RAISE한 후: CALL + (RAISE if canRaise) + FOLD
-      const callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
-      btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">${callLabel}</button>`;
-      if (betState.canRaise) {
-        const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
-        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
+      let callLabel;
+      if (betState.callAmount && betState.callAmount >= remaining) {
+        callLabel = `ALL-IN CALL +${remaining}`;
+      } else {
+        callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
       }
+      btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">${callLabel}</button>`;
+      if (betState.canRaise && remaining > 0) btns += makeRaiseBtn();
     } else {
       // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE + FOLD
       btns += `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>`;
-      if (betState.canRaise) {
-        const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
-        btns += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
-      }
+      if (betState.canRaise && remaining > 0) btns += makeRaiseBtn();
     }
     btns += `<button class="nd-bet-btn fold" onclick="sendNewDuelBet('fold')">FOLD</button>`;
     buttons.innerHTML = btns;
@@ -1330,7 +1339,7 @@ socket.on('newduel:dealPhase1', async ({ myCards, oppCardCount }) => {
 });
 
 // ─── newduel:bettingStart ───
-socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount }) => {
+socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount, myRemainingChip }) => {
   ndState.pot = pot;
   ndState.bettingActive = true;
   updatePotDisplay(pot);
@@ -1340,12 +1349,13 @@ socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, n
     nextRaiseAmount: nextRaiseAmount || 0,
     nextRaiseTotalCost: nextRaiseTotalCost || 0,
     canRaise: canRaise !== false,
-    callAmount: callAmount || 0
+    callAmount: callAmount || 0,
+    myRemainingChip: myRemainingChip
   });
 });
 
 // ─── newduel:bettingUpdate ───
-socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount }) => {
+socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount, myRemainingChip }) => {
   ndState.pot = pot;
   updatePotDisplay(pot);
 
@@ -1362,7 +1372,8 @@ socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTu
       nextRaiseAmount: nextRaiseAmount || 0,
       nextRaiseTotalCost: nextRaiseTotalCost || 0,
       canRaise: canRaise !== false,
-      callAmount: callAmount || 0
+      callAmount: callAmount || 0,
+      myRemainingChip: myRemainingChip
     });
   }
 });
