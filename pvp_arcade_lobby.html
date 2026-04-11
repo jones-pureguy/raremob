@@ -207,7 +207,7 @@
           stroke-dasharray="100.53" stroke-dashoffset="0"
           transform="rotate(-90 20 20)" />
       </svg>
-      <div class="timer-num" id="timerNum">200</div>
+      <div class="timer-num" id="timerNum">240</div>
     </div>
     <div id="pvpStatusMsg" style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:rgba(201,168,76,0.3);">ARCADE BATTLE</div>
     <div></div>
@@ -379,7 +379,7 @@ let scriptLoaded = false;
   await new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = 'script.js';
-    s.onload = () => { scriptLoaded = true; resolve(); };
+    s.onload = () => { TIMER_SECONDS = 240; scriptLoaded = true; resolve(); };
     document.body.appendChild(s);
   });
 
@@ -695,7 +695,7 @@ function setupGameUI() {
   // 타이머 리셋 (색상 + 값)
   const timerNumEl = document.getElementById('timerNum');
   const timerRingEl = document.getElementById('timerRing');
-  if (timerNumEl) { timerNumEl.classList.remove('time-attack'); timerNumEl.style.color = ''; timerNumEl.textContent = '200'; }
+  if (timerNumEl) { timerNumEl.classList.remove('time-attack'); timerNumEl.style.color = ''; timerNumEl.textContent = '240'; }
   if (timerRingEl) { timerRingEl.classList.remove('time-attack'); timerRingEl.style.stroke = ''; }
 
   // 모달 닫기

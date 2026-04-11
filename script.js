@@ -27,7 +27,7 @@ function navigateTo(page) {
 // =============================================
 
 // ─── Constants ─── // [REUSE]
-const TIMER_SECONDS = 200;
+let TIMER_SECONDS = 200;
 let GRID_SIZE = window._duelGridSize || 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;

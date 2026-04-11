@@ -351,7 +351,7 @@
             stroke-dasharray="100.53" stroke-dashoffset="0"
             transform="rotate(-90 20 20)"/>
         </svg>
-        <div class="timer-num" id="ndTimerNum">80</div>
+        <div class="timer-num" id="ndTimerNum">120</div>
       </div>
       <div class="nd-status-msg" id="ndStatusMsg">PLAYING</div>
       <div class="nd-game-pot"><img src="./images/chip.png">POT <span id="ndGamePot">0</span></div>
@@ -454,7 +454,7 @@ const ndState = {
   oppGrid: [],
   oppMiniGridCards: [],
   gameTimerInterval: null,
-  gameTimeRemaining: 80,
+  gameTimeRemaining: 120,
   myChipBefore: 0,
   oppChipBefore: 0,
   rematchTimer: null,
@@ -858,7 +858,7 @@ function setupNewDuelGameUI(data) {
   ndState.myHands = [];
   ndState.opponentHands = [];
   ndState.gameStarted = true;
-  ndState.gameTimeRemaining = data.duration || 80;
+  ndState.gameTimeRemaining = data.duration || 120;
   ndState.myChipBefore = parseInt(localStorage.getItem('userChip') || '0');
   ndState.oppChipBefore = ndState.opponent?.chip || 0;
 

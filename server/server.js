@@ -707,7 +707,7 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('game:started', { roomId, startedAt: room.arcade.startedAt })
 
       // 200초 타이머
-      room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 200000)
+      room.arcade.timer = setTimeout(() => endArcadeGame(room, 'timeout'), 240000)
     } else {
       // 한쪽만 ready → 대기 알림
       socket.emit('game:waiting', { waiting: true })
@@ -759,7 +759,7 @@ io.on('connection', (socket) => {
 
     // 한쪽만 완료 → 남은시간 50초 초과면 50초로 재설정
     const elapsed = Date.now() - room.arcade.startedAt
-    const remaining = Math.max(0, 200000 - elapsed)
+    const remaining = Math.max(0, 240000 - elapsed)
     const timerAdjusted = remaining > 50000
 
     if (timerAdjusted) {
@@ -1193,7 +1193,7 @@ io.on('connection', (socket) => {
     }
 
     const elapsed = Date.now() - room.newDuel.startedAt
-    const remaining = Math.max(0, 80000 - elapsed)
+    const remaining = Math.max(0, 120000 - elapsed)
     const timerAdjusted = remaining > 30000
 
     if (timerAdjusted) {
@@ -2186,13 +2186,13 @@ function newDuel_advancePhase(room) {
       const gridB = shuffleDeck([...nd.gridCards_B])
       if (sockA) sockA.emit('newduel:gameStart', {
         myGrid: gridA, oppGrid: gridB,
-        pot: nd.betting.pot, startedAt: nd.startedAt, duration: 80
+        pot: nd.betting.pot, startedAt: nd.startedAt, duration: 120
       })
       if (sockB) sockB.emit('newduel:gameStart', {
         myGrid: gridB, oppGrid: gridA,
-        pot: nd.betting.pot, startedAt: nd.startedAt, duration: 80
+        pot: nd.betting.pot, startedAt: nd.startedAt, duration: 120
       })
-      nd.timer = setTimeout(() => newDuel_endGame(room, 'timeout'), 80000)
+      nd.timer = setTimeout(() => newDuel_endGame(room, 'timeout'), 120000)
       console.log(`[newduel] playing: roomId=${room.roomId}, pot=${nd.betting.pot}`)
       break
   }
