@@ -580,6 +580,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
+    WakeLock.acquire();
     overlay.classList.add('hiding');
     setTimeout(() => {
       overlay.remove();
@@ -876,6 +877,7 @@ function skipTutorial() {
 function completeTutorial() {
   tutorialEnded = true;
   saveLocal('poker_tutorial_done', '1');
+  WakeLock.release();
   navigateTo(isReplay ? 'mode_select.html' : 'id.html');
 }
 

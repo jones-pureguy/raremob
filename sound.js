@@ -290,3 +290,34 @@ const BGM = (() => {
 //   - loadSettings, setEnabled, setVolume → AsyncStorage
 // REWRITE : 0개
 // =============================================
+
+// ─── Wake Lock ───
+// [ADAPTER] Wake Lock — Expo 전환 시 expo-keep-awake의 activateKeepAwake/deactivateKeepAwake로 교체
+const WakeLock = (() => {
+  let _lock = null;
+
+  async function acquire() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      _lock = await navigator.wakeLock.request('screen');
+    } catch (e) {
+      // 배터리 부족 등 실패 시 무시 — 게임 동작에 영향 없음
+    }
+  }
+
+  function release() {
+    if (_lock) {
+      _lock.release();
+      _lock = null;
+    }
+  }
+
+  // 탭 전환(백그라운드) 시 자동 해제됐다가 복귀하면 재획득
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && _lock === null) {
+      acquire();
+    }
+  });
+
+  return { acquire, release };
+})();

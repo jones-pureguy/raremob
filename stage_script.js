@@ -1030,6 +1030,7 @@ function triggerStageComplete() {
   if (stageCleared) return;
   stageCleared = true;
   state.phase = 'complete';
+  WakeLock.release();
   Sound.stageClear();
   clearInterval(state.timerInterval);
   clearInterval(stageTimerInterval);
@@ -1091,6 +1092,7 @@ function triggerStageFail(reason, customMessage) {
   if (stageFailed || stageCleared) return;
   stageFailed = true;
   state.phase = 'failed';
+  WakeLock.release();
   Sound.stageFail();
   clearInterval(state.timerInterval);
   clearInterval(stageTimerInterval);
@@ -1579,6 +1581,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
+    WakeLock.acquire();
     BGM.start();
     overlay.classList.add('hiding');
     setTimeout(() => {

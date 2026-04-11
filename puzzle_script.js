@@ -696,6 +696,7 @@ function triggerPuzzleComplete() { // [REWRITE]
   if (puzzleCleared) return;
   puzzleCleared = true;
   state.phase = 'complete';
+  WakeLock.release();
 
   const goldBase = puzzleConfig.rewards.gold;
   const hintBonus = hintLevel === 0 ? Math.floor(goldBase * 1) : 0;
@@ -714,6 +715,7 @@ function triggerPuzzleFail(reason) { // [REWRITE]
   if (puzzleFailed || puzzleCleared) return;
   puzzleFailed = true;
   state.phase = 'failed';
+  WakeLock.release();
 
   showPuzzleFailPopup(reason);
 }
@@ -1018,6 +1020,7 @@ function initStartOverlay(onStart) { // [REWRITE]
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
+    WakeLock.acquire();
     BGM.start();
     overlay.classList.add('hiding');
     setTimeout(() => {

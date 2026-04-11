@@ -884,6 +884,7 @@ function showToast(msg) {
 // ─── Game End ───
 // [REWRITE]
 function endGame(reason) {
+  WakeLock.release();
   state.phase = 'gameover';
   clearInterval(state.timerInterval);
 
@@ -994,6 +995,7 @@ function initStartOverlay(onStart) {
   function handleStart(e) {
     e.stopPropagation();
     playSoundWarmup();
+    WakeLock.acquire();
     bgmStart();
     overlay.classList.add('hiding');
     setTimeout(() => {

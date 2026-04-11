@@ -1013,6 +1013,7 @@ function updateHandPanel() { // [REWRITE]
 
 // ─── Game End ───
 function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
+  WakeLock.release();
   state.phase = reason === 'complete' ? 'complete' : (reason === 'nomoves' ? 'nomoves' : 'gameover');
   clearInterval(state.timerInterval);
 
@@ -1420,6 +1421,7 @@ function initStartOverlay(onStart) { // [REWRITE]
   function handleStart(e) {
     e.stopPropagation();
     Sound.warmup();
+    WakeLock.acquire();
     BGM.start();
     overlay.classList.add('hiding');
     setTimeout(() => {
