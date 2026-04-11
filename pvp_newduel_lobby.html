@@ -257,17 +257,19 @@
 
         <div style="margin-bottom:14px;">
           <div style="color:var(--gold);font-weight:700;font-size:0.72rem;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.2);">베팅 단계</div>
-          <p style="margin-bottom:8px;">25장의 카드를 나눠 갖는 동안 3 Phase 베팅 진행</p>
-          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 1</b> — 15장씩 배분. 내카드만 공개 후 최대 3회씩 베팅</p>
-          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 2</b> — 5장 추가 후 서로 20장 카드 공개 후 최대 3회씩 베팅</p>
-          <p style="margin-bottom:8px;"><b style="color:var(--gold);">Phase 3</b> — 서로 모든 카드 공개 후 최대 1회씩 베팅</p>
+          <p style="margin-bottom:8px;">25장의 카드를 블라인드로 나눠 갖는 동안 4번 베팅</p>
+          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 1-A</b> — 15장씩 블라인드 배분 → 베팅</p>
+          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 1-B</b> — 3장 추가 블라인드 → 베팅</p>
+          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 1-C</b> — 2장 추가 블라인드 → 베팅</p>
+          <p style="margin-bottom:4px;"><b style="color:var(--gold);">Phase 2</b> — 양쪽 20장 공개 → 베팅</p>
+          <p style="margin-bottom:8px;"><b style="color:var(--gold);">Phase 3</b> — 남은 10장 귀속 공개 (베팅 없음)</p>
         </div>
 
         <div>
           <div style="color:var(--gold);font-weight:700;font-size:0.72rem;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.2);">베팅 액션</div>
-          <p style="margin-bottom:4px;"><b style="color:rgba(255,255,255,0.8);">SKIP</b> — 선이 베팅을 스킵. 상대방은 레이즈 가능.</p>
-          <p style="margin-bottom:4px;"><b style="color:#4CAF50;">CALL</b> — 상대방 레이즈만 받고 베팅 종료.</p>
-          <p style="margin-bottom:4px;"><b style="color:#FFC107;">RAISE</b> — 버튼에 표시된 금액만큼 판돈을 올림.</p>
+          <p style="margin-bottom:4px;"><b style="color:rgba(255,255,255,0.8);">SKIP</b> — 베팅을 스킵. 상대방은 레이즈 가능.</p>
+          <p style="margin-bottom:4px;"><b style="color:#4CAF50;">CALL</b> — 상대방 레이즈 매칭 후 베팅 종료.</p>
+          <p style="margin-bottom:4px;"><b style="color:#FFC107;">RAISE 소/중/대</b> — 각자 1회. 리레이즈는 상대 이상 크기만 가능.</p>
           <p style="margin-bottom:2px;"><b style="color:#ff5252;">FOLD</b> — 모든 판돈을 잃고 게임 포기.</p>
         </div>
 
@@ -680,7 +682,27 @@ async function animateDealing(containerId, cards, state, interval) {
 // =============================================
 
 // 현재 베팅 상태 추적
-const betState = { phase: 0, hasLastRaiser: false, nextRaiseAmount: 0, nextRaiseTotalCost: 0, canRaise: true, callAmount: 0, myRemainingChip: Infinity };
+const betState = {
+  phase: '1A', hasLastRaiser: false, canRaise: true,
+  callAmount: 0, lastRaiseAmount: 0,
+  raiseOptions: {},   // { small: { amount, totalCost }, medium: {...}, large: {...} }
+  raiseTable: {},     // 해당 phase의 원본 테이블 (인디케이터용)
+  myRemainingChip: Infinity
+};
+
+const ND_RAISE_TABLE_CLIENT = {
+  '1A': { small: 3,  medium: 8,  large: 15 },
+  '1B': { small: 5,  medium: 12, large: 25 },
+  '1C': { small: 8,  medium: 20, large: 40 },
+  '2':  { small: 15, medium: 40, large: 100 }
+};
+
+const ND_PHASE_LABELS = {
+  '1A': '1st BETTING', '1B': '2nd BETTING',
+  '1C': '3rd BETTING', '2': 'FINAL BETTING'
+};
+
+const ND_TURN_TIME_MS = { '1A': 15000, '1B': 15000, '1C': 15000, '2': 20000 };
 
 function updatePotDisplay(amount) {
   const el = document.getElementById('ndPotDisplay');
@@ -690,17 +712,20 @@ function updatePotDisplay(amount) {
   el.classList.add('pulse');
 }
 
-function updateRaiseIndicator(phase, currentStepIndex) {
+function updateRaiseIndicator(phase) {
   const el = document.getElementById('ndRaiseIndicator');
   if (!el) return;
-  const tables = { 1: [3, 5, 8], 2: [12, 20, 30], 3: ['POT'] };
-  const steps = tables[phase] || [];
-  el.innerHTML = steps.map((amount, i) => {
-    let cls = 'pending';
-    if (i < currentStepIndex) cls = 'done';
-    else if (i === currentStepIndex) cls = 'active';
-    const arrow = i < steps.length - 1 ? '<span class="nd-ri-arrow">\u2192</span>' : '';
-    return `<span class="nd-ri-step ${cls}">${amount}</span>${arrow}`;
+  const table = ND_RAISE_TABLE_CLIENT[phase] || {};
+  const sizes = ['small', 'medium', 'large'];
+  const labels = { small: '소', medium: '중', large: '대' };
+  const minAllowed = betState.lastRaiseAmount || 0;
+  el.innerHTML = sizes.map((size, i) => {
+    const amount = table[size];
+    if (amount === undefined) return '';
+    const disabled = amount < minAllowed;
+    const cls = disabled ? 'done' : 'active';
+    const arrow = i < sizes.length - 1 ? '<span class="nd-ri-arrow">\u2192</span>' : '';
+    return `<span class="nd-ri-step ${cls}">${labels[size]} ${amount}</span>${arrow}`;
   }).join('');
 }
 
@@ -715,39 +740,44 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
 
   betState.phase = phase;
   if (opts.hasLastRaiser !== undefined) betState.hasLastRaiser = opts.hasLastRaiser;
-  if (opts.nextRaiseAmount !== undefined) betState.nextRaiseAmount = opts.nextRaiseAmount;
-  if (opts.nextRaiseTotalCost !== undefined) betState.nextRaiseTotalCost = opts.nextRaiseTotalCost;
   if (opts.canRaise !== undefined) betState.canRaise = opts.canRaise;
   if (opts.callAmount !== undefined) betState.callAmount = opts.callAmount;
+  if (opts.lastRaiseAmount !== undefined) betState.lastRaiseAmount = opts.lastRaiseAmount;
+  if (opts.raiseOptions !== undefined) betState.raiseOptions = opts.raiseOptions || {};
   if (opts.myRemainingChip !== undefined) betState.myRemainingChip = opts.myRemainingChip;
 
   updatePotDisplay(pot);
-
-  const phaseLabels = { 1:'1st BETTING', 2:'2nd BETTING', 3:'FINAL BET' };
-  document.getElementById('ndPhaseBanner').textContent = phaseLabels[phase] || '';
-
-  // 레이즈 인디케이터 업데이트
-  const riTables = { 1: [3, 5, 8], 2: [12, 20, 30], 3: ['POT'] };
-  const riSteps = riTables[phase] || [];
-  const stepIdx = phase === 3 ? 0 : riSteps.indexOf(betState.nextRaiseAmount);
-  updateRaiseIndicator(phase, stepIdx >= 0 ? stepIdx : 0);
+  document.getElementById('ndPhaseBanner').textContent = ND_PHASE_LABELS[phase] || '';
+  updateRaiseIndicator(phase);
 
   if (isMyTurn) {
     info.className = 'nd-bet-info my-turn';
     info.textContent = 'NOW YOUR BET';
 
-    const myRemainingForBtn = (betState.myRemainingChip === undefined || betState.myRemainingChip === null) ? Infinity : betState.myRemainingChip;
-    const makeRaiseBtn = () => {
-      const raiseCost = betState.nextRaiseTotalCost || betState.nextRaiseAmount;
-      if (raiseCost >= myRemainingForBtn) {
-        return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">ALL-IN +${myRemainingForBtn}</button>`;
+    const myRemainingForBtn = (betState.myRemainingChip === undefined || betState.myRemainingChip === null)
+      ? Infinity : betState.myRemainingChip;
+    const labels = { small: '소', medium: '중', large: '대' };
+
+    const makeRaiseBtns = () => {
+      const opts = betState.raiseOptions || {};
+      let html = '';
+      for (const size of ['small', 'medium', 'large']) {
+        const info = opts[size];
+        if (!info) continue;
+        const cost = info.totalCost || info.amount;
+        const action = `raise_${size}`;
+        if (cost >= myRemainingForBtn) {
+          html += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('${action}')">ALL-IN ${labels[size]}+${myRemainingForBtn}</button>`;
+        } else {
+          html += `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('${action}')">RAISE ${labels[size]}+${cost}</button>`;
+        }
       }
-      return `<button class="nd-bet-btn raise" onclick="sendNewDuelBet('raise')">RAISE +${raiseCost}</button>`;
+      return html;
     };
 
     let btns = '';
     if (betState.hasLastRaiser) {
-      // 상대가 RAISE한 후: CALL + (RAISE if canRaise) + FOLD
+      // 상대가 RAISE한 후: CALL + (리레이즈 옵션) + FOLD
       let callLabel;
       if (betState.callAmount && betState.callAmount >= myRemainingForBtn) {
         callLabel = `ALL-IN CALL +${myRemainingForBtn}`;
@@ -755,11 +785,11 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
         callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
       }
       btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">${callLabel}</button>`;
-      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtn();
+      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtns();
     } else {
-      // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE + FOLD
+      // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE 옵션 + FOLD
       btns += `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>`;
-      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtn();
+      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtns();
     }
     btns += `<button class="nd-bet-btn fold" onclick="sendNewDuelBet('fold')">FOLD</button>`;
     buttons.innerHTML = btns;
@@ -787,13 +817,18 @@ function hideBettingPanel() {
   clearInterval(ndState.betTimerInterval);
 }
 
-function showBettingAction(action, amount) {
+function showBettingAction(action, amount, raiseSize) {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
   const box = document.createElement('div');
   box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
+  const sizeLabels = { small: '소', medium: '중', large: '대' };
   let msg = '', color = 'var(--gold)';
-  if (action === 'raise') { msg = `상대방 RAISE\n+${amount}`; color = '#FFC107'; }
+  if (action === 'raise') {
+    const label = raiseSize && sizeLabels[raiseSize] ? ` ${sizeLabels[raiseSize]}` : '';
+    msg = `상대방 RAISE${label}\n+${amount}`;
+    color = '#FFC107';
+  }
   else if (action === 'call') { msg = '상대방 CALL'; color = '#4CAF50'; }
   else if (action === 'skip') { msg = '상대방 SKIP'; color = 'rgba(255,255,255,0.7)'; }
   else if (action === 'fold') { msg = '상대방 FOLD'; color = '#ff5252'; }
@@ -1322,57 +1357,92 @@ socket.on('newduel:dealOut', async ({ outCards, firstPlayer, myOutCard, oppOutCa
 
 // ─── newduel:dealPhase1 ───
 socket.on('newduel:dealPhase1', async ({ myCards, oppCardCount }) => {
-  ndState.currentPhase = 1;
+  ndState.currentPhase = '1A';
   ndState.myCards = myCards;
-  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1 — DEALING';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-A — DEALING';
 
   // 내 카드 순차 표시
   await animateDealing('myCardMap', myCards, 'mine', 150);
 
-  // 상대 카드맵 오버레이 표시 (비공개)
+  // 상대 카드맵 오버레이 표시 (비공개, 15장)
   document.getElementById('ndOppCardCount').textContent = oppCardCount;
   document.getElementById('ndOppOverlay').style.display = 'flex';
 
-  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-A';
   await new Promise(r => setTimeout(r, 2000));
   socket.emit('newduel:ready', { roomId: ndState.roomId });
 });
 
+// ─── newduel:dealPhase1B (추가 3장) ───
+socket.on('newduel:dealPhase1B', async ({ myCards, oppCardCount }) => {
+  ndState.currentPhase = '1B';
+  ndState.myCards = [...ndState.myCards, ...myCards];
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-B — DEALING';
+
+  await animateDealing('myCardMap', myCards, 'mine', 250);
+
+  // 상대 비공개 카드 수 업데이트 (18장)
+  const prevCount = parseInt(document.getElementById('ndOppCardCount').textContent) || 0;
+  document.getElementById('ndOppCardCount').textContent = prevCount + (oppCardCount || 0);
+  document.getElementById('ndOppOverlay').style.display = 'flex';
+
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-B';
+  await new Promise(r => setTimeout(r, 1200));
+  socket.emit('newduel:ready', { roomId: ndState.roomId });
+});
+
+// ─── newduel:dealPhase1C (추가 2장) ───
+socket.on('newduel:dealPhase1C', async ({ myCards, oppCardCount }) => {
+  ndState.currentPhase = '1C';
+  ndState.myCards = [...ndState.myCards, ...myCards];
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-C — DEALING';
+
+  await animateDealing('myCardMap', myCards, 'mine', 250);
+
+  const prevCount = parseInt(document.getElementById('ndOppCardCount').textContent) || 0;
+  document.getElementById('ndOppCardCount').textContent = prevCount + (oppCardCount || 0);
+  document.getElementById('ndOppOverlay').style.display = 'flex';
+
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-C';
+  await new Promise(r => setTimeout(r, 1200));
+  socket.emit('newduel:ready', { roomId: ndState.roomId });
+});
+
 // ─── newduel:bettingStart ───
-socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount, myRemainingChip }) => {
+socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, raiseOptions, canRaise, hasLastRaiser, callAmount, lastRaiseAmount, myRemainingChip }) => {
   ndState.pot = pot;
   ndState.bettingActive = true;
   updatePotDisplay(pot);
-  const turnTime = { 1:15000, 2:20000, 3:20000 }[phase] || 15000;
+  const turnTime = ND_TURN_TIME_MS[phase] || 15000;
   showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
     hasLastRaiser: hasLastRaiser || false,
-    nextRaiseAmount: nextRaiseAmount || 0,
-    nextRaiseTotalCost: nextRaiseTotalCost || 0,
+    raiseOptions: raiseOptions || {},
     canRaise: canRaise !== false,
     callAmount: callAmount || 0,
+    lastRaiseAmount: lastRaiseAmount || 0,
     myRemainingChip: myRemainingChip
   });
 });
 
 // ─── newduel:bettingUpdate ───
-socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, nextRaiseAmount, nextRaiseTotalCost, canRaise, hasLastRaiser, callAmount, myRemainingChip }) => {
+socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, raiseOptions, canRaise, hasLastRaiser, callAmount, lastRaiseAmount, raiseSize, myRemainingChip }) => {
   ndState.pot = pot;
   updatePotDisplay(pot);
 
   if (bySocketId !== socket.id && action !== 'turn_change') {
-    showBettingAction(action, amount);
+    showBettingAction(action, amount, raiseSize);
   }
 
   if (currentTurn === null) {
     hideBettingPanel();
   } else if (currentTurn) {
-    const turnTime = { 1:15000, 2:20000, 3:20000 }[phase] || 15000;
+    const turnTime = ND_TURN_TIME_MS[phase] || 15000;
     showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
       hasLastRaiser: hasLastRaiser || false,
-      nextRaiseAmount: nextRaiseAmount || 0,
-      nextRaiseTotalCost: nextRaiseTotalCost || 0,
+      raiseOptions: raiseOptions || {},
       canRaise: canRaise !== false,
       callAmount: callAmount || 0,
+      lastRaiseAmount: lastRaiseAmount || 0,
       myRemainingChip: myRemainingChip
     });
   }
@@ -1393,9 +1463,9 @@ socket.on('newduel:bettingComplete', ({ phase, pot, nextPhase }) => {
   }, 1000);
 });
 
-// ─── newduel:dealPhase2 ───
-socket.on('newduel:dealPhase2', async ({ myCards, oppCards }) => {
-  ndState.currentPhase = 2;
+// ─── newduel:dealPhase2 (상대 20장 공개) ───
+socket.on('newduel:dealPhase2', async ({ oppCards }) => {
+  ndState.currentPhase = '2';
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 2 — REVEALING';
 
   // 상대 카드맵 오버레이 걷기 (fade out)
@@ -1405,27 +1475,13 @@ socket.on('newduel:dealPhase2', async ({ myCards, oppCards }) => {
   overlay.style.display = 'none';
   overlay.style.opacity = '1';
 
-  // oppCards에는 phase1(15) + phase2(5) = 20장 전체가 옴
-  // 기존 15장을 순차 공개 (상대 카드 최초 공개)
-  const phase1Opp = oppCards.slice(0, 15);
-  const phase2Opp = oppCards.slice(15);
-  await animateDealing('oppCardMap', phase1Opp, 'opponent', 100);
-  await new Promise(r => setTimeout(r, 500));
-
-  document.getElementById('ndPhaseBanner').textContent = 'PHASE 2 — DEALING';
-
-  // 내 추가 5장 표시
-  ndState.myCards = [...ndState.myCards, ...myCards];
-  await animateDealing('myCardMap', myCards, 'mine', 200);
-
-  // 상대 추가 5장 표시
+  // 상대 20장 순차 공개
   ndState.oppCards = oppCards;
-  await animateDealing('oppCardMap', phase2Opp, 'opponent', 200);
+  await animateDealing('oppCardMap', oppCards, 'opponent', 100);
 
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 2';
 
-  // 미배분 카드 하이라이트 — 데이터 기반으로 계산
-  // 내 20장 + 상대 20장 + out 2장 = 42장 → 나머지 10장이 미배분
+  // 미배분 카드 하이라이트 — 내 20장 + 상대 20장 + out 2장 = 42장 → 나머지 10장
   const knownCards = new Set();
   ndState.myCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
   ndState.oppCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
@@ -1446,13 +1502,13 @@ socket.on('newduel:dealPhase2', async ({ myCards, oppCards }) => {
     });
   });
 
-  await new Promise(r => setTimeout(r, 3000));
+  await new Promise(r => setTimeout(r, 2000));
   socket.emit('newduel:ready', { roomId: ndState.roomId });
 });
 
 // ─── newduel:revealPhase3 ───
 socket.on('newduel:revealPhase3', async ({ assignments }) => {
-  ndState.currentPhase = 3;
+  ndState.currentPhase = '3';
   document.getElementById('ndPhaseBanner').textContent = 'PHASE 3 — ASSIGNMENT';
 
   // 미배분 카드 하이라이트 — 양쪽 카드맵 모두에 표시
