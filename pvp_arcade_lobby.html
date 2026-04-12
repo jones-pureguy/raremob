@@ -477,8 +477,10 @@ function renderLobby() {
   }
   if (waiting.length > 0) {
     html += `<div class="lobby-section-title">대기 중 (${waiting.length})</div>`;
+    const myChipNow = parseInt(localStorage.getItem('userChip') || '0');
+    const iCanPlay = myChipNow >= 100;
     waiting.forEach(u => {
-      const canChallenge = u.chip >= 100;
+      const canChallenge = (u.chip >= 100) && iCanPlay;
       html += renderUserRow(u, 'waiting', canChallenge);
     });
   }
@@ -504,8 +506,11 @@ function renderUserRow(user, status, showBtn) {
 
 function renderMatchButtons(status) {
   const container = document.getElementById('matchButtons');
+  const myChipNow = parseInt(localStorage.getItem('userChip') || '0');
   if (status === 'matching') {
     container.innerHTML = `<button class="match-btn active" onclick="toggleMatch()">${i18n.t('pvp.lobby.cancelMatch')}</button>`;
+  } else if (myChipNow < 100) {
+    container.innerHTML = `<button class="match-btn" disabled>칩이 부족합니다</button>`;
   } else {
     container.innerHTML = `<button class="match-btn" onclick="toggleMatch()">${i18n.t('pvp.lobby.arcadeMatch')}</button>`;
   }

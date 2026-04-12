@@ -107,6 +107,11 @@
   .nd-out-card { font-weight:700; }
   .nd-first-mark { color:#FFD740; font-size:0.7rem; }
   .nd-divider { height:1px; background:rgba(255,255,255,0.06); margin:4px 12px; }
+  .nd-chip-info { display:flex; align-items:center; justify-content:center; gap:4px; padding:2px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.5); }
+  .nd-chip-ico { width:10px; height:10px; vertical-align:-1px; margin-right:1px; }
+  .nd-chip-bet { color:#ff5252; }
+  .nd-chip-sep { color:rgba(255,255,255,0.2); }
+  .nd-chip-remain { color:rgba(255,255,255,0.7); }
 
   /* ── Phase 표시 ── */
   .nd-phase-banner { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; font-weight:700; color:var(--gold); padding:8px 0; letter-spacing:0.1em; }
@@ -296,12 +301,7 @@
 <!-- ==================== VIEW: DEALING ==================== -->
 <div id="view-dealing" style="display:none">
   <div class="nd-dealing-view">
-    <!-- 상대 영역 -->
-    <div class="nd-player-bar">
-      <span class="nd-player-name" id="ndOppName">OPPONENT</span>
-      <span class="nd-player-chip"><img src="./images/chip.png"><span id="ndOppChip">0</span></span>
-      <span class="nd-out-display" id="ndOppOut"></span>
-    </div>
+    <!-- 상대 카드맵 -->
     <div class="nd-cardmap-wrap">
       <div class="nd-cardmap" id="oppCardMap"></div>
       <div class="nd-opp-overlay" id="ndOppOverlay" style="display:none">
@@ -310,8 +310,18 @@
         <div class="nd-opp-ov-sub">HIDDEN</div>
       </div>
     </div>
-
-    <div class="nd-divider"></div>
+    <!-- 상대 정보 -->
+    <div class="nd-player-bar">
+      <span class="nd-player-name" id="ndOppName">OPPONENT</span>
+      <span class="nd-out-display" id="ndOppOut"></span>
+    </div>
+    <div class="nd-chip-info" id="ndOppChipInfo">
+      <span class="nd-chip-initial"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndOppChipStart">0</span></span>
+      <span class="nd-chip-sep">-</span>
+      <span class="nd-chip-bet">BET <span id="ndOppTotalBet">1</span></span>
+      <span class="nd-chip-sep">=</span>
+      <span class="nd-chip-remain"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndOppChipRemain">0</span></span>
+    </div>
 
     <!-- Phase + 베팅 (고정 높이) -->
     <div class="nd-betting-area">
@@ -333,15 +343,20 @@
       </div>
     </div>
 
-    <div class="nd-divider"></div>
-
-    <!-- 내 영역 -->
-    <div class="nd-cardmap" id="myCardMap"></div>
+    <!-- 내 정보 -->
+    <div class="nd-chip-info" id="ndMyChipInfo">
+      <span class="nd-chip-initial"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndMyChipStart">0</span></span>
+      <span class="nd-chip-sep">-</span>
+      <span class="nd-chip-bet">BET <span id="ndMyTotalBet">1</span></span>
+      <span class="nd-chip-sep">=</span>
+      <span class="nd-chip-remain"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndMyChipRemain">0</span></span>
+    </div>
     <div class="nd-player-bar">
       <span class="nd-player-name" id="ndMyName">ME</span>
-      <span class="nd-player-chip"><img src="./images/chip.png"><span id="ndMyChip">0</span></span>
       <span class="nd-out-display" id="ndMyOut"></span>
     </div>
+    <!-- 내 카드맵 -->
+    <div class="nd-cardmap" id="myCardMap"></div>
   </div>
 </div>
 
@@ -463,6 +478,10 @@ const ndState = {
   gameTimeRemaining: 120,
   myChipBefore: 0,
   oppChipBefore: 0,
+  myChipStart: 0,
+  oppChipStart: 0,
+  myTotalBet: 1,
+  oppTotalBet: 1,
   rematchTimer: null,
 };
 
@@ -542,11 +561,15 @@ function renderLobby() {
   if (waiting.length === 0 && matching.length === 0 && playing.length === 0) {
     html += '<div class="lobby-empty">접속자가 없습니다</div>';
   }
-  const disabledAttr = matchingMode ? ' disabled' : '';
+  const myChipNow = parseInt(localStorage.getItem('userChip') || '0');
+  const canPlay = myChipNow >= 2;
+  const disabledAttr = (matchingMode || !canPlay) ? ' disabled' : '';
   if (waiting.length > 0) {
     html += `<div class="lobby-section-title">대기 중 (${waiting.length})</div>`;
     waiting.forEach(u => {
-      html += `<div class="lobby-user"><span class="lobby-status-dot waiting"></span><span class="lobby-username">${u.username}</span><span class="lobby-chip"><img src="./images/chip.png">${(u.chip||0).toLocaleString()}</span><button class="lobby-challenge-btn" onclick="sendChallenge('${u.socketId}')"${disabledAttr}>도전</button></div>`;
+      const oppOk = (u.chip || 0) >= 2;
+      const btnDisabled = (matchingMode || !canPlay || !oppOk) ? ' disabled' : '';
+      html += `<div class="lobby-user"><span class="lobby-status-dot waiting"></span><span class="lobby-username">${u.username}</span><span class="lobby-chip"><img src="./images/chip.png">${(u.chip||0).toLocaleString()}</span><button class="lobby-challenge-btn" onclick="sendChallenge('${u.socketId}')"${btnDisabled}>도전</button></div>`;
     });
   }
   if (matching.length > 0) {
@@ -566,8 +589,11 @@ function renderLobby() {
 
 function renderMatchButtons() {
   const el = document.getElementById('matchButtons');
+  const myChipNow = parseInt(localStorage.getItem('userChip') || '0');
   if (matchingMode === 'newduel') {
     el.innerHTML = `<button class="match-btn active" onclick="cancelMatch()">매칭 취소</button>`;
+  } else if (myChipNow < 2) {
+    el.innerHTML = `<button class="match-btn" disabled>칩이 부족합니다</button>`;
   } else {
     el.innerHTML = `<button class="match-btn" onclick="startMatch()">GAMBLE DUEL 매칭</button>`;
   }
@@ -716,6 +742,18 @@ function updatePotDisplay(amount) {
   el.classList.add('pulse');
 }
 
+function updateChipDisplay() {
+  const myR = ndState.myChipStart - ndState.myTotalBet;
+  const oppR = ndState.oppChipStart - ndState.oppTotalBet;
+  const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  s('ndMyChipStart', ndState.myChipStart);
+  s('ndMyTotalBet', ndState.myTotalBet);
+  s('ndMyChipRemain', Math.max(0, myR));
+  s('ndOppChipStart', ndState.oppChipStart);
+  s('ndOppTotalBet', ndState.oppTotalBet);
+  s('ndOppChipRemain', Math.max(0, oppR));
+}
+
 function updateRaiseIndicator(phase) {
   const el = document.getElementById('ndRaiseIndicator');
   if (!el) return;
@@ -833,7 +871,11 @@ function showBettingAction(action, amount, raiseSize) {
   box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
   const sizeLabels = { small: 'LOW', medium: 'MID', large: 'HIGH' };
   let msg = '', color = 'var(--gold)';
-  if (action === 'raise') {
+  if (action === 'allin') {
+    msg = `상대방 ALL-IN\n+${amount}`;
+    color = '#FF6B6B';
+  }
+  else if (action === 'raise') {
     const label = raiseSize && sizeLabels[raiseSize] ? ` ${sizeLabels[raiseSize]}` : '';
     msg = `상대방 RAISE${label}\n+${amount}`;
     color = '#FFC107';
@@ -1313,11 +1355,16 @@ socket.on('room:created', ({ roomId, mode, opponent }) => {
   ndState.gameStarted = false;
   ndState.rematchRequested = false;
 
+  const myChipVal = parseInt(localStorage.getItem('userChip') || '0');
+  ndState.myChipStart = myChipVal;
+  ndState.oppChipStart = opponent.chip || 0;
+  ndState.myTotalBet = 1;
+  ndState.oppTotalBet = 1;
+
   showView('dealing');
   document.getElementById('ndOppName').textContent = opponent.username;
-  document.getElementById('ndOppChip').textContent = (opponent.chip || 0).toLocaleString();
   document.getElementById('ndMyName').textContent = localStorage.getItem('poker_username') || 'ME';
-  document.getElementById('ndMyChip').textContent = parseInt(localStorage.getItem('userChip') || '0').toLocaleString();
+  updateChipDisplay();
 
   // 카드맵 초기화
   renderCardMap('oppCardMap');
@@ -1418,10 +1465,13 @@ socket.on('newduel:dealPhase1C', async ({ myCards, oppCardCount }) => {
 });
 
 // ─── newduel:bettingStart ───
-socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, raiseOptions, canRaise, hasLastRaiser, callAmount, lastRaiseAmount, myRemainingChip }) => {
+socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, raiseOptions, canRaise, hasLastRaiser, callAmount, lastRaiseAmount, myRemainingChip, myTotalBet, oppTotalBet }) => {
   ndState.pot = pot;
   ndState.bettingActive = true;
+  if (myTotalBet !== undefined) ndState.myTotalBet = myTotalBet;
+  if (oppTotalBet !== undefined) ndState.oppTotalBet = oppTotalBet;
   updatePotDisplay(pot);
+  updateChipDisplay();
   const turnTime = ND_TURN_TIME_MS[phase] || 15000;
   showBettingPanel(phase, pot, currentTurn === socket.id, turnTime, {
     hasLastRaiser: hasLastRaiser || false,
@@ -1434,12 +1484,19 @@ socket.on('newduel:bettingStart', ({ phase, pot, currentTurn, raiseOptions, canR
 });
 
 // ─── newduel:bettingUpdate ───
-socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, raiseOptions, canRaise, hasLastRaiser, callAmount, lastRaiseAmount, raiseSize, myRemainingChip }) => {
+socket.on('newduel:bettingUpdate', ({ action, bySocketId, amount, pot, currentTurn, phase, raiseOptions, canRaise, hasLastRaiser, callAmount, lastRaiseAmount, raiseSize, myRemainingChip, isAllIn, myTotalBet, oppTotalBet }) => {
   ndState.pot = pot;
+  if (myTotalBet !== undefined) ndState.myTotalBet = myTotalBet;
+  if (oppTotalBet !== undefined) ndState.oppTotalBet = oppTotalBet;
   updatePotDisplay(pot);
+  updateChipDisplay();
 
   if (bySocketId !== socket.id && action !== 'turn_change') {
-    showBettingAction(action, amount, raiseSize);
+    if (isAllIn && action === 'raise') {
+      showBettingAction('allin', amount, raiseSize);
+    } else {
+      showBettingAction(action, amount, raiseSize);
+    }
   }
 
   if (currentTurn === null) {

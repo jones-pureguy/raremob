@@ -612,9 +612,16 @@ io.on('connection', (socket) => {
   })
 
   // ─── match:start ───
+  const PVP_MIN_CHIP = { newduel: 2, arcade: 100, gamble: 2 }
   socket.on('match:start', ({ mode }) => {
     const entry = lobby.get(socket.id)
     if (!entry) return
+    const minChip = PVP_MIN_CHIP[mode] || 2
+    if ((entry.chip || 0) < minChip) {
+      socket.emit('challenge:failed', { reason: 'low_chip' })
+      console.log(`[pvp] 매칭 거부 (칩 부족): ${entry.username} chip=${entry.chip} < ${minChip}`)
+      return
+    }
     console.log(`[pvp] 매칭 시작: ${entry.username} (${socket.id}), mode=${mode}`)
 
     entry.status = 'matching'
@@ -628,6 +635,17 @@ io.on('connection', (socket) => {
     if (matchQueue[mode].length >= 2) {
       const idA = matchQueue[mode].shift()
       const idB = matchQueue[mode].shift()
+      const entryA = lobby.get(idA)
+      const entryB = lobby.get(idB)
+      const modeMin = PVP_MIN_CHIP[mode] || 2
+      if ((entryA?.chip || 0) < modeMin || (entryB?.chip || 0) < modeMin) {
+        console.log(`[pvp] 매칭 거부 (칩 부족): A=${entryA?.chip} B=${entryB?.chip} min=${modeMin}`)
+        if (entryA) { entryA.status = 'waiting'; entryA.mode = null; io.emit('lobby:statusChanged', { socketId: idA, status: 'waiting' }) }
+        if (entryB) { entryB.status = 'waiting'; entryB.mode = null; io.emit('lobby:statusChanged', { socketId: idB, status: 'waiting' }) }
+        const sA = io.sockets.sockets.get(idA); if (sA) sA.emit('challenge:failed', { reason: 'low_chip' })
+        const sB = io.sockets.sockets.get(idB); if (sB) sB.emit('challenge:failed', { reason: 'low_chip' })
+        return
+      }
       console.log(`[pvp] 자동매칭 성사: ${idA} vs ${idB}, mode=${mode}`)
       createRoom(idA, idB, mode)
     }
@@ -679,6 +697,16 @@ io.on('connection', (socket) => {
 
     const entry = lobby.get(socket.id)
     if (!entry) return
+
+    const minChip = PVP_MIN_CHIP[mode] || 2
+    if ((entry.chip || 0) < minChip || (fromEntry.chip || 0) < minChip) {
+      socket.emit('challenge:failed', { reason: 'low_chip' })
+      const fromSock = io.sockets.sockets.get(fromSocketId)
+      if (fromSock) fromSock.emit('challenge:failed', { reason: 'low_chip' })
+      console.log(`[pvp] 도전 거부 (칩 부족): ${entry.username} chip=${entry.chip}, ${fromEntry.username} chip=${fromEntry.chip}, min=${minChip}`)
+      return
+    }
+
     console.log(`[pvp] 직접 신청 수락: ${entry.username} ← ${fromEntry.username}, mode=${mode}`)
 
     createRoom(fromSocketId, socket.id, mode)
@@ -2105,29 +2133,47 @@ function newDuel_emitBettingStart(room, phase) {
     hasLastRaiser: false, callAmount: 0, lastRaiseAmount: 0,
     raiseTable: NEWDUEL_RAISE_TABLE[phase] || {}
   }
+  const betA = nd.betting.totalBetByPlayer?.A || 0
+  const betB = nd.betting.totalBetByPlayer?.B || 0
   if (sockA) sockA.emit('newduel:bettingStart', {
-    ...base, raiseOptions: optsA.options, canRaise: optsA.canRaise, myRemainingChip: remainA
+    ...base, raiseOptions: optsA.options, canRaise: optsA.canRaise, myRemainingChip: remainA, myTotalBet: betA, oppTotalBet: betB
   })
   if (sockB) sockB.emit('newduel:bettingStart', {
-    ...base, raiseOptions: optsB.options, canRaise: optsB.canRaise, myRemainingChip: remainB
+    ...base, raiseOptions: optsB.options, canRaise: optsB.canRaise, myRemainingChip: remainB, myTotalBet: betB, oppTotalBet: betA
   })
   console.log(`[newduel] bettingStart phase=${phase} remaining: A=${remainA}, B=${remainB}, pot=${nd.betting.pot}`)
 }
 
 // ─── bettingUpdate를 플레이어별 remainingChip 포함해서 emit ───
 function newDuel_emitBettingUpdate(room, payload) {
+  const nd = room.newDuel
   const [idA, idB] = room.players
   const sockA = io.sockets.sockets.get(idA)
   const sockB = io.sockets.sockets.get(idB)
   const remainA = newDuel_getRemaining(room, idA)
   const remainB = newDuel_getRemaining(room, idB)
-  if (sockA) sockA.emit('newduel:bettingUpdate', { ...payload, myRemainingChip: remainA })
-  if (sockB) sockB.emit('newduel:bettingUpdate', { ...payload, myRemainingChip: remainB })
+  const betA = nd.betting.totalBetByPlayer?.A || 0
+  const betB = nd.betting.totalBetByPlayer?.B || 0
+  if (sockA) sockA.emit('newduel:bettingUpdate', { ...payload, myRemainingChip: remainA, myTotalBet: betA, oppTotalBet: betB })
+  if (sockB) sockB.emit('newduel:bettingUpdate', { ...payload, myRemainingChip: remainB, myTotalBet: betB, oppTotalBet: betA })
 }
 
 // ─── 베팅 Phase 시작 공통 처리 ───
 function newDuel_startBetting(room, phase) {
   const nd = room.newDuel
+
+  // ALL-IN 상태면 베팅 스킵 → 바로 phase_done
+  if (nd.betting.allIn) {
+    nd.betting.phase = phase
+    room.status = `betting_${phase}_done`
+    io.to(room.roomId).emit('newduel:bettingComplete', {
+      phase, pot: nd.betting.pot, nextPhase: NEWDUEL_NEXT_PHASE[phase] || 'playing'
+    })
+    nd.readySet.clear()
+    console.log(`[newduel] betting_${phase} SKIPPED (all-in): pot=${nd.betting.pot}`)
+    return
+  }
+
   nd.betting.phase = phase
   nd.betting.currentTurn = nd.firstPlayer
   nd.betting._firstActed = false
@@ -2450,50 +2496,8 @@ function newDuel_completeBettingPhase(room, skipRemaining) {
   const phase = nd.betting.phase
 
   if (skipRemaining) {
-    // 올인 → 남은 딜링/귀속만 전송 후 → revealing_phase3 상태에서 ready 대기 → playing
-    room.status = 'revealing_phase3'
-    io.to(room.roomId).emit('newduel:bettingComplete', {
-      phase, pot: nd.betting.pot, nextPhase: 'playing'
-    })
-    nd.readySet.clear()
-
-    const [idA, idB] = room.players
-    const sockA = io.sockets.sockets.get(idA)
-    const sockB = io.sockets.sockets.get(idB)
-
-    // Phase 1-A 이후: 1B 카드 전송
-    if (phase === '1A') {
-      if (sockA) sockA.emit('newduel:dealPhase1B', { myCards: nd.phase1BCards_A, oppCardCount: 3 })
-      if (sockB) sockB.emit('newduel:dealPhase1B', { myCards: nd.phase1BCards_B, oppCardCount: 3 })
-    }
-    // Phase 1-A/1-B 이후: 1C 카드 전송
-    if (phase === '1A' || phase === '1B') {
-      if (sockA) sockA.emit('newduel:dealPhase1C', { myCards: nd.phase1CCards_A, oppCardCount: 2 })
-      if (sockB) sockB.emit('newduel:dealPhase1C', { myCards: nd.phase1CCards_B, oppCardCount: 2 })
-    }
-    // Phase 2 이전: 상대 20장 공개
-    if (phase === '1A' || phase === '1B' || phase === '1C') {
-      if (sockA) sockA.emit('newduel:dealPhase2', {
-        oppCards: [...nd.phase1Cards_B, ...nd.phase1BCards_B, ...nd.phase1CCards_B]
-      })
-      if (sockB) sockB.emit('newduel:dealPhase2', {
-        oppCards: [...nd.phase1Cards_A, ...nd.phase1BCards_A, ...nd.phase1CCards_A]
-      })
-    }
-    // 귀속 공개는 항상
-    const assignments = []
-    for (let i = 0; i < 5; i++) {
-      assignments.push({ card: nd.phase3Cards_A[i], owner: 'A' })
-      assignments.push({ card: nd.phase3Cards_B[i], owner: 'B' })
-    }
-    if (sockA) sockA.emit('newduel:revealPhase3', {
-      assignments: assignments.map(a => ({ card: a.card, owner: a.owner === 'A' ? 'mine' : 'opponent' }))
-    })
-    if (sockB) sockB.emit('newduel:revealPhase3', {
-      assignments: assignments.map(a => ({ card: a.card, owner: a.owner === 'B' ? 'mine' : 'opponent' }))
-    })
-    console.log(`[newduel] ALL-IN fast-forward from phase=${phase} → revealing_phase3`)
-    return
+    nd.betting.allIn = true
+    console.log(`[newduel] betting_${phase} 완료 (all-in set): pot=${nd.betting.pot}`)
   }
 
   room.status = `betting_${phase}_done`
