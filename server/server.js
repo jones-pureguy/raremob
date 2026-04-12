@@ -428,7 +428,7 @@ function createRoom(socketIdA, socketIdB, mode) {
         },
         totalBetByPlayer: { A: 1, B: 1 },  // 초기 참가비 각 1
         allIn: false, _firstActed: false, _lastRaiser: null,
-        _callAmount: 0, _lastRaiseAmount: 0
+        _callAmount: 0, _lastRaiseAmount: 0, _allInRaiser: null
       },
       completedHands: { [socketIdA]: [], [socketIdB]: [] },
       donePlayers: new Set(),
@@ -2134,6 +2134,7 @@ function newDuel_startBetting(room, phase) {
   nd.betting._lastRaiser = null
   nd.betting._lastRaiseAmount = 0
   nd.betting._callAmount = 0
+  nd.betting._allInRaiser = null
   newDuel_emitBettingStart(room, phase)
   newDuel_startTurnTimer(room)
   console.log(`[newduel] betting_${phase}: roomId=${room.roomId}`)
@@ -2270,7 +2271,6 @@ function newDuel_handleBet(room, socketId, action) {
   const nd = room.newDuel
   const bet = nd.betting
   if (bet.currentTurn !== socketId) return
-  if (bet.allIn) return
 
   clearTimeout(bet.turnTimer)
 
@@ -2325,25 +2325,25 @@ function newDuel_handleBet(room, socketId, action) {
         actualTotal = myRemaining
         actualRaisePortion = Math.max(0, actualTotal - matchAmount)
         isAllIn = true
-        bet.allIn = true
+        bet._allInRaiser = socketId
         console.log(`[newduel] ALL-IN RAISE: ${socketId} side=${side}, wanted=${totalCost}, myRemaining=${myRemaining}, actualTotal=${actualTotal}, raisePortion=${actualRaisePortion}`)
       }
 
       bet.pot += actualTotal
       bet.totalBetByPlayer[side] += actualTotal
       bet._callAmount = actualRaisePortion
-      bet._lastRaiseAmount = raiseAmount  // 리레이즈 최소 기준은 명목 크기
+      bet._lastRaiseAmount = raiseAmount
       bet.phaseRaiseCounts[phase][side]++
       bet._lastRaiser = socketId
 
-      console.log(`[newduel] RAISE_${raiseSize}: ${socketId} side=${side} phase=${phase}, match=${matchAmount}, raise=${raiseAmount}, totalCost=${actualTotal}, pot=${bet.pot}, callOwed=${actualRaisePortion}, totalBet[${side}]=${bet.totalBetByPlayer[side]}, myRemainingAfter=${myChip - bet.totalBetByPlayer[side]}`)
+      console.log(`[newduel] RAISE_${raiseSize}: ${socketId} side=${side} phase=${phase}, match=${matchAmount}, raise=${raiseAmount}, totalCost=${actualTotal}, pot=${bet.pot}, callOwed=${actualRaisePortion}, totalBet[${side}]=${bet.totalBetByPlayer[side]}, myRemainingAfter=${myChip - bet.totalBetByPlayer[side]}, allIn=${isAllIn}`)
 
       const oppOpts = newDuel_getNextRaiseInfo(room, oppId)
 
       newDuel_emitBettingUpdate(room, {
         action: 'raise', bySocketId: socketId,
         amount: actualTotal, pot: bet.pot,
-        currentTurn: isAllIn ? null : oppId,
+        currentTurn: oppId,
         phase, raiseSize,
         raiseOptions: oppOpts.options,
         canRaise: oppOpts.canRaise,
@@ -2352,16 +2352,6 @@ function newDuel_handleBet(room, socketId, action) {
         lastRaiseAmount: raiseAmount,
         isAllIn
       })
-
-      if (isAllIn) {
-        const forcedMatch = Math.min(actualRaisePortion, oppRemaining)
-        bet.pot += forcedMatch
-        bet.totalBetByPlayer[oppSide] += forcedMatch
-        bet._callAmount = 0
-        console.log(`[newduel] ALL-IN forced opp match: opp=${oppId} side=${oppSide}, forcedMatch=${forcedMatch}, oppRemaining=${oppRemaining}, pot=${bet.pot}`)
-        newDuel_completeBettingPhase(room, true)
-        return
-      }
 
       bet.currentTurn = oppId
       newDuel_startTurnTimer(room)
@@ -2377,19 +2367,19 @@ function newDuel_handleBet(room, socketId, action) {
     if (callAmt >= myRemaining) {
       actualCall = myRemaining
       isAllInCall = true
-      bet.allIn = true
       console.log(`[newduel] ALL-IN CALL: ${socketId} side=${side}, callAmt=${callAmt}, myRemaining=${myRemaining}, actualCall=${actualCall}`)
     }
     bet.pot += actualCall
     bet.totalBetByPlayer[side] += actualCall
     bet._callAmount = 0
+    const skipRemaining = isAllInCall || !!bet._allInRaiser
     newDuel_emitBettingUpdate(room, {
       action: 'call', bySocketId: socketId,
       amount: actualCall, pot: bet.pot, currentTurn: null, phase,
       hasLastRaiser: false, callAmount: 0, isAllIn: isAllInCall
     })
-    console.log(`[newduel] CALL: ${socketId} side=${side}, matched=${actualCall}, pot=${bet.pot}, totalBet[${side}]=${bet.totalBetByPlayer[side]}, phase=${phase} ends`)
-    newDuel_completeBettingPhase(room, isAllInCall)
+    console.log(`[newduel] CALL: ${socketId} side=${side}, matched=${actualCall}, pot=${bet.pot}, totalBet[${side}]=${bet.totalBetByPlayer[side]}, phase=${phase} ends, skipRemaining=${skipRemaining}`)
+    newDuel_completeBettingPhase(room, skipRemaining)
     return
   }
 
@@ -2428,7 +2418,7 @@ function newDuel_getNextRaiseInfo(room, forSocketId) {
   const phase = bet.phase
   const counts = bet.phaseRaiseCounts[phase] || { A: 0, B: 0 }
   const myRaises = counts[side] || 0
-  if (myRaises >= 1) {
+  if (myRaises >= 1 || bet._allInRaiser) {
     return { canRaise: false, options: {} }
   }
   const table = NEWDUEL_RAISE_TABLE[phase] || {}
@@ -2455,10 +2445,11 @@ function newDuel_completeBettingPhase(room, skipRemaining) {
   nd.betting._lastRaiser = null
   nd.betting._lastRaiseAmount = 0
   nd.betting._callAmount = 0
+  nd.betting._allInRaiser = null
 
   const phase = nd.betting.phase
 
-  if (skipRemaining || nd.betting.allIn) {
+  if (skipRemaining) {
     // 올인 → 남은 딜링/귀속만 전송 후 → revealing_phase3 상태에서 ready 대기 → playing
     room.status = 'revealing_phase3'
     io.to(room.roomId).emit('newduel:bettingComplete', {
