@@ -827,7 +827,8 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
         callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
       }
       btns += `<button class="nd-bet-btn call" onclick="sendNewDuelBet('call')">${callLabel}</button>`;
-      if (betState.canRaise && myRemainingForBtn > 0) btns += makeRaiseBtns();
+      const isAllInCall = betState.callAmount && betState.callAmount >= myRemainingForBtn;
+      if (betState.canRaise && myRemainingForBtn > 0 && !isAllInCall) btns += makeRaiseBtns();
     } else {
       // 첫 액션 또는 양쪽 SKIP 상태: SKIP + RAISE 옵션 + FOLD
       btns += `<button class="nd-bet-btn skip" onclick="sendNewDuelBet('call')">SKIP</button>`;
