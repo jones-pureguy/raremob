@@ -2350,15 +2350,24 @@ function newDuel_handleBet(room, socketId, action) {
       console.log(`[newduel] raise rejected (already raised): ${socketId} side=${side} phase=${phase} → auto CALL`)
       action = 'call'
     } else {
-      const raiseAmount = newDuel_getRaiseAmount(phase, raiseSize)
-      if (!raiseAmount) {
+      const tableRaise = newDuel_getRaiseAmount(phase, raiseSize)
+      if (!tableRaise) {
         console.log(`[newduel] raise rejected (invalid size): ${socketId} phase=${phase} size=${raiseSize}`)
         return
       }
-      // 리레이즈 최소 금액 체크
-      if (bet._lastRaiseAmount && raiseAmount < bet._lastRaiseAmount) {
-        console.log(`[newduel] raise rejected (too small): ${socketId} side=${side} raise=${raiseAmount} < lastRaise=${bet._lastRaiseAmount}`)
+      if (bet._lastRaiseAmount && tableRaise < bet._lastRaiseAmount) {
+        console.log(`[newduel] raise rejected (too small): ${socketId} side=${side} raise=${tableRaise} < lastRaise=${bet._lastRaiseAmount}`)
         return
+      }
+
+      // 상대 잔여칩으로 레이즈 캡 (상대가 콜 가능해야 함)
+      const raiseAmount = Math.min(tableRaise, oppRemaining)
+      if (raiseAmount <= 0) {
+        console.log(`[newduel] raise rejected (opp has no chips): ${socketId} oppRemaining=${oppRemaining}`)
+        return
+      }
+      if (raiseAmount < tableRaise) {
+        console.log(`[newduel] raise capped by oppRemaining: ${tableRaise} → ${raiseAmount}, oppRemaining=${oppRemaining}`)
       }
 
       const matchAmount = bet._callAmount || 0
@@ -2372,7 +2381,7 @@ function newDuel_handleBet(room, socketId, action) {
         actualRaisePortion = Math.max(0, actualTotal - matchAmount)
         isAllIn = true
         bet._allInRaiser = socketId
-        console.log(`[newduel] ALL-IN RAISE: ${socketId} side=${side}, wanted=${totalCost}, myRemaining=${myRemaining}, actualTotal=${actualTotal}, raisePortion=${actualRaisePortion}`)
+        console.log(`[newduel] ALL-IN RAISE: ${socketId} side=${side}, wanted=${totalCost}, myRemaining=${myRemaining}, actualTotal=${actualTotal}, raisePortion=${actualRaisePortion}, oppRemaining=${oppRemaining}`)
       }
 
       bet.pot += actualTotal
@@ -2417,6 +2426,14 @@ function newDuel_handleBet(room, socketId, action) {
     }
     bet.pot += actualCall
     bet.totalBetByPlayer[side] += actualCall
+    // pot 대칭 보정: 콜러가 부족하면 레이저의 초과분 환불
+    const excess = callAmt - actualCall
+    if (excess > 0) {
+      const raiserSide = oppSide
+      bet.pot -= excess
+      bet.totalBetByPlayer[raiserSide] -= excess
+      console.log(`[newduel] pot refund: raiser excess=${excess}, pot=${bet.pot}, totalBet[${raiserSide}]=${bet.totalBetByPlayer[raiserSide]}`)
+    }
     bet._callAmount = 0
     const skipRemaining = isAllInCall || !!bet._allInRaiser
     newDuel_emitBettingUpdate(room, {
@@ -2455,25 +2472,37 @@ function newDuel_handleBet(room, socketId, action) {
   }
 }
 
-// ─── 다음 레이즈 옵션 계산 (소/중/대 필터링) ───
+// ─── 다음 레이즈 옵션 계산 (상대 잔여칩 캡 + 중복 제거) ───
 function newDuel_getNextRaiseInfo(room, forSocketId) {
   const nd = room.newDuel
   const bet = nd.betting
   const [idA, idB] = room.players
   const side = forSocketId === idA ? 'A' : 'B'
+  const oppSide = side === 'A' ? 'B' : 'A'
+  const oppId = side === 'A' ? idB : idA
   const phase = bet.phase
   const counts = bet.phaseRaiseCounts[phase] || { A: 0, B: 0 }
   const myRaises = counts[side] || 0
   if (myRaises >= 1 || bet._allInRaiser) {
     return { canRaise: false, options: {} }
   }
+  const oppChip = room.playerInfo[oppId]?.chip || 0
+  const oppRemaining = Math.max(0, oppChip - (bet.totalBetByPlayer?.[oppSide] || 0))
+  if (oppRemaining <= 0) {
+    return { canRaise: false, options: {} }
+  }
   const table = NEWDUEL_RAISE_TABLE[phase] || {}
   const minRaise = bet._lastRaiseAmount || 0
   const match = bet._callAmount || 0
   const options = {}
+  const seen = new Set()
   for (const [size, amount] of Object.entries(table)) {
     if (amount >= minRaise) {
-      options[size] = { amount, totalCost: match + amount }
+      const capped = Math.min(amount, oppRemaining)
+      if (capped > 0 && !seen.has(capped)) {
+        seen.add(capped)
+        options[size] = { amount: capped, totalCost: match + capped, capped: capped < amount }
+      }
     }
   }
   return { canRaise: Object.keys(options).length > 0, options }

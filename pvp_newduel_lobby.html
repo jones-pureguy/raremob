@@ -759,7 +759,6 @@ function updateRaiseIndicator(phase) {
   if (!el) return;
   const table = ND_RAISE_TABLE_CLIENT[phase] || {};
   const sizes = ['small', 'medium', 'large'];
-  const labels = { small: 'LOW', medium: 'MID', large: 'HIGH' };
   const minAllowed = betState.lastRaiseAmount || 0;
   el.innerHTML = sizes.map((size, i) => {
     const amount = table[size];
@@ -767,7 +766,7 @@ function updateRaiseIndicator(phase) {
     const disabled = amount < minAllowed;
     const cls = disabled ? 'done' : 'active';
     const arrow = i < sizes.length - 1 ? '<span class="nd-ri-arrow">\u2192</span>' : '';
-    return `<span class="nd-ri-step ${cls}">${labels[size]} ${amount}</span>${arrow}`;
+    return `<span class="nd-ri-step ${cls}">${amount}</span>${arrow}`;
   }).join('');
 }
 
@@ -798,12 +797,10 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
 
     const myRemainingForBtn = (betState.myRemainingChip === undefined || betState.myRemainingChip === null)
       ? Infinity : betState.myRemainingChip;
-    const labels = { small: 'LOW', medium: 'MID', large: 'HIGH' };
 
     const makeRaiseBtns = () => {
       const opts = betState.raiseOptions || {};
       let html = '';
-      let isFirst = true;
       for (const size of ['small', 'medium', 'large']) {
         const info = opts[size];
         if (!info) continue;
@@ -811,13 +808,11 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
         const action = `raise_${size}`;
         const isAllIn = cost >= myRemainingForBtn;
         const displayCost = isAllIn ? myRemainingForBtn : cost;
-        const prefix = isAllIn ? 'ALL' : (isFirst ? 'R' : '');
-        const amountText = `${prefix}+${displayCost}`;
+        const topLabel = isAllIn ? 'ALL-IN' : 'RAISE';
         html += `<button class="nd-bet-btn raise ${size}" onclick="sendNewDuelBet('${action}')">` +
-                `<span class="btn-size">${labels[size]}</span>` +
-                `<span class="btn-amount">${amountText}</span>` +
+                `<span class="btn-size">${topLabel}</span>` +
+                `<span class="btn-amount">+${displayCost}</span>` +
                 `</button>`;
-        isFirst = false;
       }
       return html;
     };
@@ -869,15 +864,13 @@ function showBettingAction(action, amount, raiseSize) {
   overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
   const box = document.createElement('div');
   box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
-  const sizeLabels = { small: 'LOW', medium: 'MID', large: 'HIGH' };
   let msg = '', color = 'var(--gold)';
   if (action === 'allin') {
     msg = `상대방 ALL-IN\n+${amount}`;
     color = '#FF6B6B';
   }
   else if (action === 'raise') {
-    const label = raiseSize && sizeLabels[raiseSize] ? ` ${sizeLabels[raiseSize]}` : '';
-    msg = `상대방 RAISE${label}\n+${amount}`;
+    msg = `상대방 RAISE\n+${amount}`;
     color = '#FFC107';
   }
   else if (action === 'call') { msg = '상대방 CALL'; color = '#4CAF50'; }
