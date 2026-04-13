@@ -110,11 +110,11 @@
       "ko": "순서의 예술"
     },
     "description": {
-      "ko": "드래그 순서대로 숫자가 이어지는 스트레이트 플러시를 찾으세요."
+      "ko": "드래그 순서대로 숫자가 이어지는 스트레이트 플러쉬를 찾으세요."
     },
     "hint": {
       "level1": {
-        "ko": "스트레이트 플러시는 같은 수트의 연속된 숫자 5장이에요. 드래그 순서도 숫자 순서와 일치해야 해요."
+        "ko": "스트레이트 플러쉬는 같은 수트의 연속된 숫자 5장이에요. 드래그 순서도 숫자 순서와 일치해야 해요."
       },
       "level2": {
         "ko": "스페이드(♠) 카드 중 연속된 숫자 5장을 찾아보세요."
@@ -198,7 +198,7 @@
           "type": "ordered_straight",
           "hand": "STRAIGHT_FLUSH",
           "count_gte": 1,
-          "description": "순서 있는 스트레이트 플러시 1개"
+          "description": "순서 있는 스트레이트 플러쉬 1개"
         }
       ]
     },
@@ -425,10 +425,10 @@
   {
     "id": 5,
     "title": {
-      "ko": "로열플러시+"
+      "ko": "로열플러쉬+ I"
     },
     "description": {
-      "ko": "로열플러시+를 하나 만드세요."
+      "ko": "로열플러쉬+를 하나 만드세요."
     },
     "hint": {
       "level1": {
@@ -468,7 +468,7 @@
           "type": "specific_hand",
           "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 1,
-          "description": "로열플러시 1개"
+          "description": "로열플러쉬 1개"
         }
       ]
     },
@@ -642,7 +642,7 @@
         "ko": "패를 만들 수 있는 건 ♥ 뿐이에요. 10♥ → J♥ → Q♥ → K♥ → A♥ 순서로 드래그하려면?"
       },
       "level2": {
-        "ko": "첫 턴에 J♦ → Q♦ → K♦ → A♦ → 10♣ 순서로 드래그하세요."
+        "ko": "첫 턴에 J♠ → Q♠ → 6♥ → K♠ → J♣ 순서로 드래그하세요."
       },
       "level3": {
         "ko": "두번째 턴에 J♠ → Q♠ → 6♥ → K♠ → J♣ 순서로 드래그하세요."
@@ -765,5 +765,63 @@
     "initialDeck": [
       "","","","","","","","","","","","","","","4s","","5d","","","","","3s","","5h","","Ac","4c","","5s","4d","4h","Ad","3d","Ah","","6d","2s","Ks","6c","5c","2h","","2d","As","3c","6h","3h","2c","6s"
     ]
-  }																				
+  },	
+  {
+    "id": 11,
+    "title": {
+      "ko": "로열플러쉬+ II"
+    },
+    "description": {
+      "ko": "로열플러쉬+를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+     "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 1,
+          "description": "로열플러쉬 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 10
+    },
+    "hint": {
+      "level1": {
+        "ko": "5♣ → 5♦ → 5♥ → 6♥ → 5♠"
+      },
+      "level2": {
+        "ko": "9♣ → 9♠ → 9♦ → 4♠ → 9♥"
+      },
+      "level3": {
+        "ko": "8♦ → 2♣ → 8♠ → 2♦ → 2♠"
+      }
+    },
+    "initialDeck": [
+      "10d", "5c", "As", "Kh", "7c", "8c", "Qd", "Ah", "5d", "8s", "9s", "4d", "Jc", "10c", "Kd", "5h", "9d", "3s", "9c", "10h", "Qc", "Ac", "Js", "6h", "5s", "Ad", "4c", "Qh", "7h", "4s", "Ks", "6s", "6d", "3h", "6c", "10s", "2c", "9h", "2d", "2s", "7s", "Jd", "3c", "8d", "Qs", "3d", "Jh", "Kc", "4h"
+    ]
+  }		
 ]
