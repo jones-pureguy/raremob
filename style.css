@@ -43,6 +43,7 @@ html { font-size: 16px !important; -webkit-text-size-adjust: 100%; text-size-adj
   --empty-slot: #1a3a22;
   --bg: #0a1f14;
   --menu-width: 220px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html, body {
@@ -52,6 +53,7 @@ body.game-page {
   overflow: hidden;
   justify-content: center;
   touch-action: none;
+  padding-bottom: 0;
 }
 
 body {
@@ -67,6 +69,7 @@ body {
   min-height: 100dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--safe-bottom);
 }
 
 /* Noise overlay */
