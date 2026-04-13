@@ -1092,7 +1092,7 @@ body.debug-mode .card .debug-info { display: block; }
 /* Back button — fixed top-left */
 .back-fixed {
   position: fixed;
-  top: 8px;
+  top: max(8px, env(safe-area-inset-top));
   left: 8px;
   z-index: 100;
 }
