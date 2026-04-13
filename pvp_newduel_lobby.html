@@ -822,7 +822,7 @@ function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
       // 상대가 RAISE한 후: CALL + (리레이즈 옵션) + FOLD
       let callLabel;
       if (betState.callAmount && betState.callAmount >= myRemainingForBtn) {
-        callLabel = `ALL-IN CALL +${myRemainingForBtn}`;
+        callLabel = `<span class="btn-size">ALL-IN</span><span class="btn-amount">+${myRemainingForBtn}</span>`;
       } else {
         callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
       }
