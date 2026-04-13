@@ -50,7 +50,7 @@ html, body {
 }
 body.game-page {
   overflow: hidden;
-  justify-content: flex-start;
+  justify-content: center;
   touch-action: none;
 }
 
