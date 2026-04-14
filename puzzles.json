@@ -15,7 +15,7 @@
         "ko": "10, J, Q, K, A 다섯 카드를 한번에 모을 수 있나요?"
       },
       "level3": {
-        "ko": "Q♦ → K♦ → A♥ → 10♥ → 10♦ 경로를 확인해보세요."
+        "ko": "Q♦ → K♦ → A♥ → 10♥ → J♦"
       }
     },
     "theme": {
@@ -24,55 +24,13 @@
       "cardBack": "default"
     },
     "initialDeck": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "2s",
-      "Kh",
-      "Qd",
-      "Ah",
-      "3c",
-      "Jh",
-      "4d",
-      "6h",
-      "9s",
-      "8d",
-      "Kd",
-      "10h",
-      "Qc",
-      "As",
-      "7c",
-      "3h",
-      "8h",
-      "9h",
-      "Ks",
-      "Jd",
-      "5s"
+      "","","","","","","",
+      "","","","","","","",
+      "","","","","","","",
+      "","","","","","","",
+      "2s","Kh","Qd","Ah","3c","Jh","4d",
+      "6h","9s","8d","Kd","10h","Qc","As",
+      "7c","3h","8h","9h","Ks","Jd","5s"
     ],
     "constraints": {
       "resetLimit": 0,
@@ -110,11 +68,11 @@
       "ko": "순서의 예술"
     },
     "description": {
-      "ko": "드래그 순서대로 숫자가 이어지는 스트레이트 플러쉬를 찾으세요."
+      "ko": "드래그 순서대로 숫자가 이어지는 스트레이트플러시를 찾으세요."
     },
     "hint": {
       "level1": {
-        "ko": "스트레이트 플러쉬는 같은 수트의 연속된 숫자 5장이에요. 드래그 순서도 숫자 순서와 일치해야 해요."
+        "ko": "대각선과 직선 드래그를 한꺼번에 사용해야 해요."
       },
       "level2": {
         "ko": "스페이드(♠) 카드 중 연속된 숫자 5장을 찾아보세요."
@@ -129,55 +87,13 @@
       "cardBack": "default"
     },
     "initialDeck": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Kh",
-      "3d",
-      "Jc",
-      "Ah",
-      "2h",
-      "",
-      "",
-      "Qd",
-      "5s",
-      "8s",
-      "7s",
-      "10c",
-      "",
-      "",
-      "4h",
-      "Kc",
-      "6s",
-      "9s",
-      "Jd",
-      "",
-      "",
-      "Ad",
-      "3c",
-      "Qs",
-      "2c",
-      "Kd",
-      "",
-      "",
-      "10h",
-      "Jh",
-      "4c",
-      "5h",
-      "6d",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
+      "","","","","","","",
+      "","Kh","3d","Jc","Ah","2h","",
+      "","Qd","5s","8s","7s","10c","",
+      "","4h","Kc","6s","9s","Jd","",
+      "","Ad","3c","Qs","2c","Kd","",
+      "","10h","Jh","4c","5h","6d","",
+      "","","","","","",""
     ],
     "constraints": {
       "resetLimit": 0,
@@ -198,7 +114,7 @@
           "type": "ordered_straight",
           "hand": "STRAIGHT_FLUSH",
           "count_gte": 1,
-          "description": "순서 있는 스트레이트 플러쉬 1개"
+          "description": "순서 있는 스트레이트플러시 1개"
         }
       ]
     },
@@ -213,112 +129,6 @@
   {
     "id": 3,
     "title": {
-      "ko": "길을 찾아라"
-    },
-    "description": {
-      "ko": "풀하우스 이상의 패를 하나 만드세요"
-    },
-    "hint": {
-      "level1": {
-        "ko": "점프도 생각해야 해요."
-      },
-      "level2": {
-        "ko": "첫 시도에 스트레이트 플러쉬를 만들 수 있어요."
-      },
-      "level3": {
-        "ko": " ♠ 5->8->6->2->7 순서를 찾아보세요."
-      }
-    },
-    "theme": {
-      "bgColor": "#1a1000",
-      "accentColor": "#d4ac0d",
-      "cardBack": "default"
-    },
-    "initialDeck": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "5s",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "7s",
-      "7h",
-      "",
-      "",
-      "9h",
-      "",
-      "",
-      "9s",
-      "Jd",
-      "Ks",
-      "",
-      "Ac",
-      "2s",
-      "",
-      "4h",
-      "3d",
-      "Qs",
-      "7d",
-      "8s",
-      "6s",
-      "Jc",
-      "8c"
-    ],
-    "constraints": {
-      "resetLimit": 0,
-      "moveMode": "freehand",
-      "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": false,
-      "forbiddenHands": [],
-      "forbiddenValues": []
-    },
-    "mission": {
-      "type": "real_time",
-      "failTrigger": null,
-      "completionMode": "all",
-      "conditions": [
-        {
-          "id": "c1",
-          "type": "specific_hand",
-          "hand": "FULL_HOUSE",
-          "count_gte": 1,
-          "description": "풀하우스 이상 1개"
-        }
-      ]
-    },
-    "rewards": {
-      "gold": 10
-    },
-    "unlockCondition": {
-      "type": "puzzle_clear",
-      "puzzleId": 2
-    }
-  },
-  {
-    "id": 4,
-    "title": {
       "ko": "좁은 길"
     },
     "description": {
@@ -326,7 +136,7 @@
     },
     "hint": {
       "level1": {
-        "ko": "포카드는 같은 숫자 카드 4장이 필요해요."
+        "ko": "대각선 경로를 잘 찾아보세요."
       },
       "level2": {
         "ko": "7카드가 4장 있어요. 5장 중 4장을 모을 수 있는지 확인해보세요."
@@ -341,55 +151,13 @@
       "cardBack": "default"
     },
     "initialDeck": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "7s",
-      "2h",
-      "Kc",
-      "Ah",
-      "7c",
-      "3s",
-      "",
-      "5c",
-      "7h",
-      "9d",
-      "Jc",
-      "4h",
-      "10s",
-      "",
-      "Ks",
-      "6h",
-      "7d",
-      "8s",
-      "2c",
-      "Qh",
-      "",
-      "Ad",
-      "Jh",
-      "3d",
-      "Qd",
-      "9s",
-      "5h",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
+      "","","","","","","",
+      "","","","","","","",
+      "7s","2h","Kc","Ah","7c","3s","",
+      "5c","7h","9d","Jc","4h","10s","",
+      "Ks","6h","7d","8s","2c","Qh","",
+      "Ad","Jh","3d","Qd","9s","5h","",
+      "","","","","","",""
     ],
     "constraints": {
       "resetLimit": 0,
@@ -419,69 +187,11 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 3
+      "puzzleId": 2
     }
-  },
+  },  
   {
-    "id": 5,
-    "title": {
-      "ko": "로열플러쉬+ I"
-    },
-    "description": {
-      "ko": "로열플러쉬+를 하나 만드세요."
-    },
-    "hint": {
-      "level1": {
-        "ko": "첫 턴에는 만들 수 없어요."
-      },
-      "level2": {
-        "ko": "클로버 10,J,Q,K,A를 점프로 연결하려면 가운데를 비워야 해요."
-      },
-      "level3": {
-        "ko": "첫 턴에 다이아5부터 클로버3까지 투페어 길을 찾아보세요."
-      }
-    },
-    "theme": {
-      "bgColor": "#1a1000",
-      "accentColor": "#d4ac0d",
-      "cardBack": "default"
-    },
-    "initialDeck": [
-      "8c","3c","2d","6h","9s","2c","10d","Kh","4s","Jd","8s","4h","10h","4c","Ah","7s","10c","5h","Jc","Ac","2h","2s","6s","9c","3d","Kc","Qc","4d","Js","5s","8h","5d","8d","3s","7h","10s","As","3h","6d","7d","9h","Jh","5c","9d","Ks","7c","Ad","6c","Kd"
-    ],
-    "constraints": {
-      "resetLimit": 0,
-      "moveMode": "freehand",
-      "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": false,
-      "forbiddenHands": [],
-      "forbiddenValues": []
-    },
-    "mission": {
-      "type": "real_time",
-      "failTrigger": null,
-      "completionMode": "all",
-      "conditions": [
-        {
-          "id": "c1",
-          "type": "specific_hand",
-          "hand": "ROYAL_FLUSH_PLUS",
-          "count_gte": 1,
-          "description": "로열플러쉬 1개"
-        }
-      ]
-    },
-    "rewards": {
-      "gold": 10
-    },
-    "unlockCondition": {
-      "type": "puzzle_clear",
-      "puzzleId": 4
-    }
-  },
-  {
-    "id": 6,
+    "id": 4,
     "title": {
       "ko": "깨끗하게"
     },
@@ -519,17 +229,17 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 5
+      "puzzleId": 3
     },
     "hint": {
       "level1": {
         "ko": "플러시를 먼저 만들면 그다음 수가 없어요."
       },
       "level2": {
-        "ko": "두 쌍의 스트레이트를 찾아보세요 ."
+        "ko": "대각선을 활용해서 두 쌍의 스트레이트를 찾아보세요 ."
       },
       "level3": {
-        "ko": "지그재그로 7-8-10-6-9, 5-7-3-6-4 쌍을 찾으세요"
+        "ko": "지그재그로 7♠ → 8♣ → 10♣ → 6♦ → 9♣. 다음 5♠ → 7♦ → 3♣ → 6♣ → 4♥ 쌍을 찾으세요"
       }
     },
     "initialDeck": [
@@ -537,7 +247,7 @@
     ]
   },
   {
-    "id": 7,
+    "id": 5,
     "title": {
       "ko": "포카드로 가는 길"
     },
@@ -577,7 +287,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 6
+      "puzzleId": 4
     },
     "hint": {
       "level1": {
@@ -595,12 +305,134 @@
     ]
   },
   {
+    "id": 6,
+    "title": {
+      "ko": "로열플러시+ I"
+    },
+    "description": {
+      "ko": "로열플러시+를 하나 만드세요."
+    },
+    "hint": {
+      "level1": {
+        "ko": "두번째 턴에 만들 수 있어요."
+      },
+      "level2": {
+        "ko": "10♣,J♣,Q♣,K♣,A♣를 순서대로 연결하려면 10♣과 J♣ 사이를 비워야 해요."
+      },
+      "level3": {
+        "ko": "첫 턴 5♦ → 3♦ → 5♥ → J♦ → 3♣"
+      }
+    },
+    "theme": {
+      "bgColor": "#1a1000",
+      "accentColor": "#d4ac0d",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "8c","3c","2d","6h","9s","2c","10d","Kh","4s","Jd","8s","4h","10h","4c","Ah","7s","10c","5h","Jc","Ac","2h","2s","6s","9c","3d","Kc","Qc","4d","Js","5s","8h","5d","8d","3s","7h","10s","As","3h","6d","7d","9h","Jh","5c","9d","Ks","7c","Ad","6c","Kd"
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 1,
+          "description": "로열플러시 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 5
+    }
+  },
+  {
+    "id": 7,
+    "title": {
+      "ko": "길을 찾아라"
+    },
+    "description": {
+      "ko": "풀하우스 이상의 패를 하나 만드세요"
+    },
+    "hint": {
+      "level1": {
+        "ko": "떨어진 패를 맞추기 위한 점프 길도 생각해야 해요."
+      },
+      "level2": {
+        "ko": "첫 시도에 스트레이트 플러시를 만들 수 있어요."
+      },
+      "level3": {
+        "ko": "5♠ → 8♠ → 6♠ → 9♠ → 7♠"
+      }
+    },
+    "theme": {
+      "bgColor": "#1a1000",
+      "accentColor": "#d4ac0d",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "","","","","","","",
+      "","","","","","","",      
+      "","","","","","","", 
+      "5s","","","","","","7s",
+      "7h","","","9h","","","9s",
+      "Jd","Ks","","Ac","2s","","4h",
+      "3d","Qs","7d","8s","6s","Jc","8c"
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "FULL_HOUSE",
+          "count_gte": 1,
+          "description": "풀하우스 이상 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 6
+    }
+  },
+  {
     "id": 8,
     "title": {
       "ko": "어떤 마크가 진짜?"
     },
     "description": {
-      "ko": "점프없이 로열플러쉬PLUS를 만드세요."
+      "ko": "점프없이 로열플러시PLUS를 만드세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -626,7 +458,7 @@
           "type": "specific_hand",
           "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 1,
-          "description": "로열플러쉬PLUS 1개"
+          "description": "로열플러시PLUS 1개"
         }
       ]
     },
@@ -642,10 +474,10 @@
         "ko": "패를 만들 수 있는 건 ♥ 뿐이에요. 10♥ → J♥ → Q♥ → K♥ → A♥ 순서로 드래그하려면?"
       },
       "level2": {
-        "ko": "첫 턴에 J♠ → Q♠ → 6♥ → K♠ → J♣ 순서로 드래그하세요."
+        "ko": "첫 턴 6♥ → K♠ → J♣ → 9♥ → J♠"
       },
       "level3": {
-        "ko": "두번째 턴에 J♠ → Q♠ → 6♥ → K♠ → J♣ 순서로 드래그하세요."
+        "ko": "두번째 턴 10♣ → A♦ → K♦ → Q♦ → J♦"
       }
     },
     "initialDeck": [
@@ -695,13 +527,13 @@
     },
     "hint": {
       "level1": {
-        "ko": "첫번 째는 같은 마크 5개 로열플러쉬에요."
+        "ko": "첫 턴 Q♥ → 10♥ → K♥ → A♥ → J♥"
       },
       "level2": {
         "ko": "스트레이트 두쌍이 가능해요."
       },
       "level3": {
-        "ko": "6-7-8-9-10과 2-3-4-5-6 스트레이트를 만드세요."
+        "ko": "6♣ → 9♦ → 8♦ → 10♠ → 7♠과 3♦ → 5♠ → 6♦ → 2♣ → 4♠ 스트레이트를 만드세요."
       }
     },
     "initialDeck": [
@@ -711,10 +543,10 @@
   {
     "id": 10,
     "title": {
-      "ko": "스트레이트플러쉬 4종"
+      "ko": "스트레이트플러시 4종"
     },
     "description": {
-      "ko": "스트레이트플러쉬 4개를 만드세요."
+      "ko": "스트레이트플러시 4개를 만드세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -740,7 +572,7 @@
           "type": "specific_hand",
           "hand": "STRAIGHT_FLUSH",
           "count_gte": 4,
-          "description": "스트레이트플러쉬 4개"
+          "description": "스트레이트플러시 4개"
         }
       ]
     },
@@ -756,10 +588,10 @@
         "ko": "포카드를 먼저 만들어야 해요."
       },
       "level2": {
-        "ko": "K를 포함한 A포카드를 먼저 만드세요."
+        "ko": "첫 턴에 A포카드 A♠ → K♠ → A♦ → A♣ → A♥"
       },
       "level3": {
-        "ko": "하트-클로버-다이아-스페이드 순서로 2-3-4-5-6 스트레이트플러쉬를 만드세요."
+        "ko": "♥,♣,♦,♠ 각각 순서로 2,3,4,5,6 스트레이트플러시를 만드세요."
       }
     },
     "initialDeck": [
@@ -769,10 +601,10 @@
   {
     "id": 11,
     "title": {
-      "ko": "로열플러쉬+ II"
+      "ko": "로열플러시+ II"
     },
     "description": {
-      "ko": "로열플러쉬+를 만드세요."
+      "ko": "로열플러시+를 만드세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -798,7 +630,7 @@
           "type": "specific_hand",
           "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 1,
-          "description": "로열플러쉬 1개"
+          "description": "로열플러시 1개"
         }
       ]
     },
@@ -823,5 +655,64 @@
     "initialDeck": [
       "10d", "5c", "As", "Kh", "7c", "8c", "Qd", "Ah", "5d", "8s", "9s", "4d", "Jc", "10c", "Kd", "5h", "9d", "3s", "9c", "10h", "Qc", "Ac", "Js", "6h", "5s", "Ad", "4c", "Qh", "7h", "4s", "Ks", "6s", "6d", "3h", "6c", "10s", "2c", "9h", "2d", "2s", "7s", "Jd", "3c", "8d", "Qs", "3d", "Jh", "Kc", "4h"
     ]
-  }		
+  },
+  {
+    "id": 12,
+    "title": {
+      "ko": "숨겨진 길"
+    },
+    "description": {
+      "ko": "스트레이트플러시를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+     "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 1,
+          "description": "스트레이트플러시 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 11
+    },
+    "hint": {
+      "level1": {
+        "ko": "첫 턴 Q♦ → 6♦ → K♦ → 3♦ → 8♦"
+      },
+      "level2": {
+        "ko": "두번째 턴 A♥ → A♦ → 2♠ → 9♣ → 2♥"
+      },
+      "level3": {
+        "ko": "세번째 턴 7♣ → 10♣ → 5♦ → J♣ → J♥, 마지막 9♥ → 7♥ → 10♥ → J♥ → 8♥"
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","9h","","","","","","","Qd","","","","","","","7h","6d","Kd","","7c","","8h","8d","3d","8s","","10c","","2c","5s","2h","9c","2s","Jh","5d","Qc","4h","10s","10h","Ad","Ah","Jc","Jd"
+    ]
+  }	
 ]
+
