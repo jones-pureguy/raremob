@@ -662,10 +662,10 @@
   {
     "id": 12,
     "title": {
-      "ko": "숨겨진 길"
+      "ko": "낮은 패 매니아"
     },
     "description": {
-      "ko": "스트레이트플러시를 만드세요."
+      "ko": "원페어 8개를 만드세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -685,16 +685,17 @@
       "type": "real_time",
       "failTrigger": null,
       "completionMode": "all",
-     "conditions": [
+      "conditions": [   
         {
           "id": "c1",
           "type": "specific_hand",
-          "hand": "STRAIGHT_FLUSH",
-          "count_gte": 1,
-          "description": "스트레이트플러시 1개"
+          "hand": "ONE_PAIR",
+          "count_gte": 8,
+          "exact": true,
+          "description": "원페어 8개"
         }
       ]
-    },
+    },   
     "rewards": {
       "gold": 10
     },
@@ -704,77 +705,21 @@
     },
     "hint": {
       "level1": {
-        "ko": "첫 턴 Q♦ → 6♦ → K♦ → 3♦ → 8♦"
+        "ko": "투페어 이상은 안되요. A,K,Q,J,10중 같은 숫자 2개로 만들어지는 원페어를 찾아야 해요."
       },
       "level2": {
-        "ko": "두번째 턴 A♥ → A♦ → 2♠ → 9♣ → 2♥"
+        "ko": "원페어를 만들 때, 다른 A,K,Q,J,10 카드를 포함하지 않게 조심하세요."
       },
       "level3": {
-        "ko": "세번째 턴 7♣ → 10♣ → 5♦ → J♣ → J♥, 마지막 9♥ → 7♥ → 10♥ → J♥ → 8♥"
+        "ko": "아랫쪽에서 Q♠ → 8♠ → 2♣ → 7♠ → Q♥부터 시작하세요."
       }
     },
     "initialDeck": [
-      "","","","","","","","9h","","","","","","","Qd","","","","","","","7h","6d","Kd","","7c","","8h","8d","3d","8s","","10c","","2c","5s","2h","9c","2s","Jh","5d","Qc","4h","10s","10h","Ad","Ah","Jc","Jd"
+      "Kh","Qc","6c","Js","4d","10c","Ad","As","8d","9c","6s","8h","Kc","Qd","6d","7d","8c","5s","5h","7h","9h","2d","5d","7c","4s","5c","6h","2h","10d","3d","9d","3s","4c","4h","3h","Qs","Ks","9s","2s","3c","10s","Jc","Ac","8s","2c","7s","Qh","Ah","Kd"
     ]
   },
   {
     "id": 13,
-    "title": {
-      "ko": "두개의 탑"
-    },
-    "description": {
-      "ko": "그리드의 모든 카드를 없애세요."
-    },
-    "theme": {
-      "bgColor": "#0a1f14",
-      "accentColor": "#C9A84C",
-      "cardBack": "default"
-    },
-    "constraints": {
-      "resetLimit": 0,
-      "moveMode": "freehand",
-      "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": false,
-      "forbiddenHands": [],
-      "forbiddenValues": []
-    },
-    "mission": {
-      "type": "end_of_game",
-      "failTrigger": null,
-      "completionMode": "all",
-      "conditions": [
-        {
-          "id": "c1",
-          "type": "grid_empty",
-          "description": "그리드의 모든 카드를 없애세요"
-        }
-      ]
-    },   
-    "rewards": {
-      "gold": 10
-    },
-    "unlockCondition": {
-      "type": "puzzle_clear",
-      "puzzleId": 12
-    },
-    "hint": {
-      "level1": {
-        "ko": "스트레이트 세 쌍으로 클리어하세요."
-      },
-      "level2": {
-        "ko": "첫 턴 8♥ → 10♠ → 7♦ → 9♣ → 6♠"
-      },
-      "level3": {
-        "ko": "두번째 턴 A♠ → 4♣ → 5♠ → 3♥ → 2♦"
-      }
-    },
-    "initialDeck": [
-      "","","Ac","","Kc","","","","","As","","Qh","","","","","Jd","","8h","","","","","2d","","4c","","","","","10s","","7d","","","","","3h","","5s","","","","","9c","","6s","10h",""
-    ]
-  },
-  {
-    "id": 14,
     "title": {
       "ko": "신중한 청소"
     },
@@ -819,7 +764,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 13
+      "puzzleId": 12
     },
     "hint": {
       "level1": {
@@ -835,14 +780,72 @@
     "initialDeck": [
       "","","","","","","","","","","","","","","","","","","","","","","4c","5s","Jd","8h","7h","","","10c","Kd","6h","3d","Ks","","","5h","2d","9d","8d","3s","","","4s","5d","6d","7d","2c",""
     ]
+  },  
+  {
+    "id": 14,
+    "title": {
+      "ko": "숨겨진 길"
+    },
+    "description": {
+      "ko": "스트레이트플러시를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+     "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 1,
+          "description": "스트레이트플러시 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 13
+    },
+    "hint": {
+      "level1": {
+        "ko": "첫 턴 Q♦ → 6♦ → K♦ → 3♦ → 8♦"
+      },
+      "level2": {
+        "ko": "두번째 턴 A♥ → A♦ → 2♠ → 9♣ → 2♥"
+      },
+      "level3": {
+        "ko": "세번째 턴 7♣ → 10♣ → 5♦ → J♣ → J♥, 마지막 9♥ → 7♥ → 10♥ → J♥ → 8♥"
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","9h","","","","","","","Qd","","","","","","","7h","6d","Kd","","7c","","8h","8d","3d","8s","","10c","","2c","5s","2h","9c","2s","Jh","5d","Qc","4h","10s","10h","Ad","Ah","Jc","Jd"
+    ]
   },
   {
     "id": 15,
     "title": {
-      "ko": "낮은 패 매니아"
+      "ko": "두개의 탑"
     },
     "description": {
-      "ko": "원페어 8개를 만들고 그리드를 모두 비우세요."
+      "ko": "그리드의 모든 카드를 없애세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -867,14 +870,6 @@
           "id": "c1",
           "type": "grid_empty",
           "description": "그리드의 모든 카드를 없애세요"
-        },
-        {
-          "id": "c2",
-          "type": "specific_hand",
-          "hand": "ONE_PAIR",
-          "count_gte": 8,
-          "exact": true,
-          "description": "원페어 8개"
         }
       ]
     },   
@@ -887,18 +882,18 @@
     },
     "hint": {
       "level1": {
-        "ko": "투페어 이상은 안되요. A,K,Q,J,10중 2개로 만들어지는 원페어를 찾아야 해요."
+        "ko": "스트레이트 세 쌍으로 클리어하세요."
       },
       "level2": {
-        "ko": "원페어를 만들 때, 다른 A,K,Q,J,10 카드를 포함하지 않게 조심하세요."
+        "ko": "첫 턴 8♥ → 10♠ → 7♦ → 9♣ → 6♠"
       },
       "level3": {
-        "ko": "아랫쪽에서 Q♠ → 8♠ → 2♣ → 7♠ → Q♥부터 시작하세요."
+        "ko": "두번째 턴 A♠ → 4♣ → 5♠ → 3♥ → 2♦"
       }
     },
     "initialDeck": [
-      "Kh","Qc","6c","Js","4d","10c","Ad","As","8d","9c","6s","8h","Kc","Qd","6d","7d","8c","5s","5h","7h","9h","2d","5d","7c","4s","5c","6h","2h","10d","3d","9d","3s","4c","4h","3h","Qs","Ks","9s","2s","3c","10s","Jc","Ac","8s","2c","7s","Qh","Ah","Kd"
+      "","","Ac","","Kc","","","","","As","","Qh","","","","","Jd","","8h","","","","","2d","","4c","","","","","10s","","7d","","","","","3h","","5s","","","","","9c","","6s","10h",""
     ]
-  }  	  		
+  }  		
 ]
 
