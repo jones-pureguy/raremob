@@ -51,6 +51,7 @@
           "type": "specific_hand",
           "hand": "STRAIGHT",
           "count_gte": 1,
+          "exact": true,
           "description": "스트레이트 1개"
         }
       ]
@@ -178,6 +179,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 1,
+          "exact": true,
           "description": "포카드 1개"
         }
       ]
@@ -278,6 +280,7 @@
           "type": "specific_hand",
           "hand": "FOUR_KIND",
           "count_gte": 1,
+          "exact": true,
           "description": "포카드 1개"
         }
       ]
@@ -350,7 +353,7 @@
           "type": "specific_hand",
           "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 1,
-          "description": "로열플러시 1개"
+          "description": "로열플러시+ 1개"
         }
       ]
     },
@@ -432,7 +435,7 @@
       "ko": "어떤 마크가 진짜?"
     },
     "description": {
-      "ko": "점프없이 로열플러시PLUS를 만드세요."
+      "ko": "점프없이 로열플러시+를 만드세요."
     },
     "theme": {
       "bgColor": "#0a1f14",
@@ -458,7 +461,7 @@
           "type": "specific_hand",
           "hand": "ROYAL_FLUSH_PLUS",
           "count_gte": 1,
-          "description": "로열플러시PLUS 1개"
+          "description": "로열플러시+ 1개"
         }
       ]
     },
@@ -760,7 +763,7 @@
         "ko": "스트레이트 세 쌍으로 클리어하세요."
       },
       "level2": {
-        "ko": "첫 턴 8♥ → 10♠ → 7♦ → 9♣ → 10♠"
+        "ko": "첫 턴 8♥ → 10♠ → 7♦ → 9♣ → 6♠"
       },
       "level3": {
         "ko": "두번째 턴 A♠ → 4♣ → 5♠ → 3♥ → 2♦"
@@ -769,6 +772,69 @@
     "initialDeck": [
       "","","Ac","","Kc","","","","","As","","Qh","","","","","Jd","","8h","","","","","2d","","4c","","","","","10s","","7d","","","","","3h","","5s","","","","","9c","","6s","10h",""
     ]
-  }		
+  },
+  {
+    "id": 14,
+    "title": {
+      "ko": "신중한 청소"
+    },
+    "description": {
+      "ko": "스트레이트 이상의 패를 3개이상 만들고 그리드를 모두 비우세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "grid_empty",
+          "description": "그리드의 모든 카드를 없애세요"
+        },
+        {
+          "id": "c2",
+          "type": "specific_hand",
+          "hand": "STRAIGHT",
+          "count_gte": 3,
+          "description": "스트레이트 이상 3개"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 13
+    },
+    "hint": {
+      "level1": {
+        "ko": "스트레이트 두 쌍과 플러시 하나로 조건을 만족하세요."
+      },
+      "level2": {
+        "ko": "첫 턴 10♣ → K♦ → J♦ → 3♦ → K♠, 두번째 턴 4♣ → 5♠ → 6♥ → 8♥ → 7♥"
+      },
+      "level3": {
+        "ko": "세번째 턴 5♦ → 2♦ → 9♦ → 8♦ → 7♦"
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","","","","","","","","","","","","4c","5s","Jd","8h","7h","","","10c","Kd","6h","3d","Ks","","","5h","2d","9d","8d","3s","","","4s","5d","6d","7d","2c",""
+    ]
+  }  		
 ]
 
