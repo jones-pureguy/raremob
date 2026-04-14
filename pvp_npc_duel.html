@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DragON POKER - NPC DUEL</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* 팝업 */
+  .pvp-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; justify-content:center; align-items:center; }
+  .pvp-overlay.active { display:flex; }
+  .pvp-popup { background:linear-gradient(145deg,#1a3a22,#0d2818); border:2px solid var(--gold); border-radius:16px; padding:24px 20px; max-width:340px; width:90%; text-align:center; box-shadow:0 0 40px rgba(201,168,76,0.2); }
+  .pvp-popup-title { font-family:'Playfair Display',serif; color:var(--gold); font-size:1.1rem; margin-bottom:14px; }
+  .pvp-popup-btn { width:100%; padding:12px; margin-top:6px; border-radius:8px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.08); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .pvp-popup-btn:hover { background:rgba(201,168,76,0.15); }
+  .pvp-popup-btn.reject { color:rgba(255,255,255,0.5); border-color:rgba(255,255,255,0.15); }
+
+  /* 카드맵 */
+  .nd-cardmap { display:flex; flex-direction:column; gap:4px; padding:4px 6px; }
+  .nd-cm-row { display:flex; align-items:center; gap:2px; }
+  .nd-cm-cell { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:24px; height:34px; border-radius:4px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); font-family:'IBM Plex Mono',monospace; transition:all 0.3s ease; color:rgba(255,255,255,0.4); }
+  .nd-cm-val { font-size:0.7rem; font-weight:700; line-height:1; }
+  .nd-cm-mark { font-size:0.55rem; line-height:1; opacity:0.7; }
+  .nd-cm-cell[data-suit="\u2665"] .nd-cm-val,
+  .nd-cm-cell[data-suit="\u2666"] .nd-cm-val { color:#ff6b6b; }
+  .nd-cm-cell[data-suit="\u2665"] .nd-cm-mark,
+  .nd-cm-cell[data-suit="\u2666"] .nd-cm-mark { color:#ff6b6b; }
+  .nd-cm-cell[data-suit="\u2660"] .nd-cm-mark,
+  .nd-cm-cell[data-suit="\u2663"] .nd-cm-mark { color:rgba(255,255,255,0.6); }
+  .nd-cm-cell.mine, .nd-cm-cell.opponent { background:rgba(255,255,255,0.9); }
+  .nd-cm-cell.mine { border:1.5px solid #c9a84c; box-shadow:0 0 4px rgba(201,168,76,0.4); }
+  .nd-cm-cell.opponent { border:1.5px solid #00D4FF; box-shadow:0 0 4px rgba(0,212,255,0.4); }
+  .nd-cm-cell.mine .nd-cm-val, .nd-cm-cell.mine .nd-cm-mark,
+  .nd-cm-cell.opponent .nd-cm-val, .nd-cm-cell.opponent .nd-cm-mark { opacity:1; }
+  .nd-cm-cell.out { opacity:0.2; border-color:transparent; }
+  .nd-cm-cell.out .nd-cm-val { text-decoration:line-through; }
+  .nd-cm-cell.hidden { border:1.5px solid rgba(0,212,255,0.5); background:rgba(0,212,255,0.08); position:relative; }
+  .nd-cm-cell.hidden .nd-cm-val, .nd-cm-cell.hidden .nd-cm-mark { visibility:hidden; }
+  .nd-cm-cell.hidden::after { content:'?'; position:absolute; color:rgba(0,212,255,0.4); font-size:0.6rem; font-weight:700; }
+
+  .nd-cardmap-wrap { position:relative; }
+  .nd-opp-overlay { position:absolute; inset:0; background:rgba(0,20,30,0.85); border:1.5px solid rgba(0,212,255,0.25); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; z-index:5; transition:opacity 0.5s ease; }
+  .nd-opp-overlay .nd-opp-ov-icon { font-size:1.8rem; opacity:0.4; }
+  .nd-opp-overlay .nd-opp-ov-text { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; color:rgba(0,212,255,0.6); letter-spacing:0.08em; }
+  .nd-opp-overlay .nd-opp-ov-sub { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.3); }
+  .nd-cm-cell.unassigned { color:rgba(255,255,255,0.9); border:1px solid rgba(255,255,255,0.6); animation:nd-pulse 1.2s ease-in-out infinite; }
+  @keyframes nd-pulse { 0%,100%{box-shadow:0 0 4px rgba(255,255,255,0.2);} 50%{box-shadow:0 0 10px rgba(255,255,255,0.5);} }
+  .nd-cm-cell.just-assigned { animation:nd-assign-flash 0.6s ease-out; }
+  @keyframes nd-assign-flash { 0%{transform:scale(1.4);box-shadow:0 0 16px currentColor;} 100%{transform:scale(1);} }
+
+  /* 딜링 뷰 */
+  .nd-dealing-view { max-width:480px; margin:0 auto; padding:8px 0; }
+  .nd-betting-area { height:320px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .nd-section-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.3); letter-spacing:0.1em; padding:2px 12px; }
+  .nd-player-bar { display:flex; align-items:center; justify-content:space-between; padding:4px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; }
+  .nd-player-name { color:var(--gold); font-weight:700; }
+  .nd-player-chip { color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:3px; }
+  .nd-player-chip img { width:12px; height:12px; }
+  .nd-out-display { display:flex; align-items:center; gap:4px; font-size:0.72rem; }
+  .nd-out-card { font-weight:700; }
+  .nd-first-mark { color:#FFD740; font-size:0.7rem; }
+  .nd-divider { height:1px; background:rgba(255,255,255,0.06); margin:4px 12px; }
+  .nd-chip-info { display:flex; align-items:center; justify-content:center; gap:4px; padding:2px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.5); }
+  .nd-chip-ico { width:10px; height:10px; vertical-align:-1px; margin-right:1px; }
+  .nd-chip-bet { color:#ff5252; }
+  .nd-chip-sep { color:rgba(255,255,255,0.2); }
+  .nd-chip-remain { color:rgba(255,255,255,0.7); }
+
+  .nd-phase-banner { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; font-weight:700; color:var(--gold); padding:8px 0; letter-spacing:0.1em; }
+
+  .nd-betting-panel { padding:8px 12px; }
+  .nd-bet-info { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-align:center; margin-bottom:6px; }
+  .nd-bet-info.my-turn { color:var(--gold); }
+  .nd-bet-info.opp-turn { color:rgba(255,255,255,0.4); }
+  .nd-bet-buttons { display:flex; gap:6px; justify-content:center; flex-wrap:nowrap; }
+  .nd-bet-btn { width:60px; min-width:60px; max-width:60px; height:44px; padding:4px 2px; border-radius:6px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.06); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.6rem; font-weight:700; cursor:pointer; text-align:center; white-space:nowrap; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all 0.15s; }
+  .nd-bet-btn:active { transform:scale(0.97); }
+  .nd-bet-btn:disabled { opacity:0.25; cursor:not-allowed; }
+  .nd-bet-btn .btn-size { display:block; font-size:0.4rem; letter-spacing:0.05em; opacity:0.55; line-height:1; margin-bottom:2px; }
+  .nd-bet-btn .btn-amount { display:block; font-size:0.6rem; line-height:1.2; }
+  .nd-bet-btn.raise { border-color:rgba(255,193,7,0.5); color:#FFC107; }
+  .nd-bet-btn.raise.medium { border-color:rgba(255,193,7,0.7); }
+  .nd-bet-btn.raise.large { border-color:rgba(255,193,7,1); }
+  .nd-bet-btn.call { border-color:rgba(76,175,80,0.5); color:#4CAF50; }
+  .nd-bet-btn.skip { border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.5); }
+  .nd-bet-btn.fold { border-color:rgba(255,82,82,0.5); color:#ff5252; }
+  .nd-pot-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(ellipse at center, rgba(201,168,76,0.12) 0%, transparent 70%); border:1px solid rgba(201,168,76,0.25); border-radius:50%; width:100px; height:100px; margin:12px auto; position:relative; }
+  .nd-pot-chip-stack { display:flex; align-items:center; justify-content:center; }
+  .nd-pot-chip-icon { width:24px; height:24px; }
+  .nd-pot-amount { font-family:'IBM Plex Mono',monospace; font-size:1.6rem; font-weight:900; color:#c9a84c; text-shadow:0 0 12px rgba(201,168,76,0.5); line-height:1; }
+  .nd-pot-amount.pulse { animation:nd-pot-pulse 0.4s ease-out; }
+  @keyframes nd-pot-pulse { 0%{transform:scale(1.3);color:#FFD740;} 100%{transform:scale(1);color:#c9a84c;} }
+  .nd-pot-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; font-weight:700; color:rgba(201,168,76,0.5); letter-spacing:0.15em; }
+  .nd-raise-indicator { display:flex; align-items:center; justify-content:center; gap:4px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; margin:8px 0 4px; }
+  .nd-ri-step { min-width:26px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:700; padding:0 4px; }
+  .nd-ri-step.pending { color:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.08); }
+  .nd-ri-step.active { color:#FFC107; border:1px solid rgba(255,193,7,0.5); background:rgba(255,193,7,0.08); animation:nd-ri-pulse 1s ease-in-out infinite; }
+  .nd-ri-step.done { color:#c9a84c; background:rgba(201,168,76,0.15); border:1px solid rgba(201,168,76,0.3); }
+  .nd-ri-arrow { color:rgba(255,255,255,0.12); font-size:0.55rem; }
+  @keyframes nd-ri-pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+  .nd-bet-timer { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:rgba(255,255,255,0.35); margin-top:4px; }
+
+  .nd-game-view { width:100%; max-width:480px; margin:0 auto; padding:4px 0; }
+  .nd-game-status { display:flex; align-items:center; justify-content:space-between; padding:4px 12px; margin-bottom:2px; }
+  .nd-game-status .timer-wrap { width:36px; height:36px; position:relative; }
+  .nd-game-status .timer-ring { width:36px; height:36px; }
+  .nd-game-status .timer-ring-bg { fill:none; stroke:rgba(255,255,255,0.08); stroke-width:2; }
+  .nd-game-status .timer-ring-fg { fill:none; stroke:var(--gold); stroke-width:2.5; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .nd-game-status .timer-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:700; color:var(--gold); }
+  .nd-game-status .timer-num.time-attack { color:#ff3333 !important; }
+  .nd-game-status .timer-ring-fg.time-attack { stroke:#ff3333 !important; }
+  .nd-status-msg { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.08em; color:rgba(201,168,76,0.3); }
+  .nd-status-msg.blink { animation:pvpBlink 1s ease-in-out infinite; }
+  @keyframes pvpBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .nd-game-pot { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:3px; }
+  .nd-game-pot img { width:14px; height:14px; }
+
+  .nd-opp-section { padding:0 4px; margin-bottom:4px; }
+  .nd-opp-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.35); letter-spacing:0.08em; margin-bottom:2px; display:flex; align-items:center; gap:6px; }
+  .nd-opp-grid-wrap { display:flex; align-items:flex-start; gap:4px; }
+  .nd-opp-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; width:min(35vw, 156px); flex-shrink:0; }
+  .nd-opp-mini-cell { aspect-ratio:1; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; overflow:hidden; padding:0; }
+  .nd-opp-mini-cell.has-card { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.08); }
+  .nd-opp-mini-cell.empty { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.03); }
+  .nd-opp-hands { flex:1; min-width:0; }
+
+  .nd-my-grid-wrap { position:relative; padding:0 4px; }
+  .nd-my-grid-wrap .grid-container { padding:4px !important; margin:0 auto !important; left:auto !important; right:auto !important; }
+  .nd-my-grid-wrap .grid { grid-template-columns:repeat(5,1fr) !important; gap:4px !important; }
+  .nd-grid-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:700; color:var(--gold); border-radius:8px; z-index:10; }
+
+  .nd-scoreboard { max-width:480px; width:100%; margin:4px auto; padding:0 12px; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; }
+  .nd-sb-header { display:flex; justify-content:space-between; color:rgba(255,255,255,0.35); padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:0.6rem; letter-spacing:0.05em; }
+  .nd-sb-row { display:flex; align-items:center; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.03); min-height:18px; }
+  .nd-sb-row.top3 { background:rgba(201,168,76,0.04); }
+  .nd-sb-cell { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nd-sb-cell.left { text-align:left; color:rgba(255,255,255,0.6); }
+  .nd-sb-cell.right { text-align:right; color:rgba(255,255,255,0.6); }
+  .nd-sb-cell.vs { flex:0; width:20px; text-align:center; color:rgba(255,255,255,0.2); font-size:0.55rem; }
+  .nd-sb-cell .win { color:var(--gold); }
+
+  /* START overlay */
+  #startOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; font-family:'IBM Plex Mono',monospace; }
+  #startOverlay .so-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--gold); letter-spacing:0.1em; }
+  #startOverlay .so-opp { font-size:0.9rem; color:rgba(0,212,255,0.8); letter-spacing:0.08em; }
+  #startOverlay .so-chip { font-size:1.1rem; color:#e0e0e0; }
+  #startOverlay .so-btn { margin-top:10px; padding:14px 48px; background:rgba(201,168,76,0.15); border:2px solid var(--gold); border-radius:12px; color:var(--gold); font-weight:700; font-size:1.1rem; letter-spacing:0.1em; cursor:pointer; }
+  #startOverlay .so-btn:active { transform:scale(0.97); }
+</style>
+</head>
+<body class="game-page">
+<div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
+
+<div class="back-fixed"><a href="mode_select.html" id="backLink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
+
+<div class="header"><div id="global-header"></div></div>
+
+<!-- VIEW: DEALING -->
+<div id="view-dealing" style="display:none">
+  <div class="nd-dealing-view">
+    <div class="nd-cardmap-wrap">
+      <div class="nd-cardmap" id="oppCardMap"></div>
+      <div class="nd-opp-overlay" id="ndOppOverlay" style="display:none">
+        <div class="nd-opp-ov-icon">🂠</div>
+        <div class="nd-opp-ov-text">OPPONENT <span id="ndOppCardCount">15</span> CARDS</div>
+        <div class="nd-opp-ov-sub">HIDDEN</div>
+      </div>
+    </div>
+    <div class="nd-player-bar">
+      <span class="nd-player-name" id="ndOppName">NPC Dragon</span>
+      <span class="nd-out-display" id="ndOppOut"></span>
+    </div>
+    <div class="nd-chip-info" id="ndOppChipInfo">
+      <span class="nd-chip-initial"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndOppChipStart">0</span></span>
+      <span class="nd-chip-sep">-</span>
+      <span class="nd-chip-bet">BET <span id="ndOppTotalBet">1</span></span>
+      <span class="nd-chip-sep">=</span>
+      <span class="nd-chip-remain"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndOppChipRemain">0</span></span>
+    </div>
+
+    <div class="nd-betting-area">
+      <div class="nd-phase-banner" id="ndPhaseBanner"></div>
+      <div class="nd-raise-indicator" id="ndRaiseIndicator"></div>
+      <div class="nd-pot-wrap" id="ndPotWrap">
+        <div class="nd-pot-chip-stack">
+          <img src="./images/chip.png" alt="chip" class="nd-pot-chip-icon"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+          <span style="display:none; font-size:1.2rem;">&#127920;</span>
+        </div>
+        <div class="nd-pot-amount" id="ndPotDisplay">2</div>
+        <div class="nd-pot-label">POT</div>
+      </div>
+      <div class="nd-betting-panel" id="ndBettingPanel" style="display:none">
+        <div class="nd-bet-info" id="ndBetInfo"></div>
+        <div class="nd-bet-buttons" id="ndBetButtons"></div>
+        <div class="nd-bet-timer" id="ndBetTimer"></div>
+      </div>
+    </div>
+
+    <div class="nd-chip-info" id="ndMyChipInfo">
+      <span class="nd-chip-initial"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndMyChipStart">0</span></span>
+      <span class="nd-chip-sep">-</span>
+      <span class="nd-chip-bet">BET <span id="ndMyTotalBet">1</span></span>
+      <span class="nd-chip-sep">=</span>
+      <span class="nd-chip-remain"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndMyChipRemain">0</span></span>
+    </div>
+    <div class="nd-player-bar">
+      <span class="nd-player-name" id="ndMyName">ME</span>
+      <span class="nd-out-display" id="ndMyOut"></span>
+    </div>
+    <div class="nd-cardmap" id="myCardMap"></div>
+  </div>
+</div>
+
+<!-- VIEW: GAME -->
+<div id="view-game" style="display:none">
+  <div class="nd-game-view">
+    <div class="nd-game-status">
+      <div class="timer-wrap">
+        <svg class="timer-ring" viewBox="0 0 40 40">
+          <circle class="timer-ring-bg" cx="20" cy="20" r="16"/>
+          <circle class="timer-ring-fg" id="ndTimerRing" cx="20" cy="20" r="16"
+            stroke-dasharray="100.53" stroke-dashoffset="0"
+            transform="rotate(-90 20 20)"/>
+        </svg>
+        <div class="timer-num" id="ndTimerNum">120</div>
+      </div>
+      <div class="nd-status-msg" id="ndStatusMsg">PLAYING</div>
+      <div class="nd-game-pot"><img src="./images/chip.png">POT <span id="ndGamePot">0</span></div>
+    </div>
+
+    <div class="nd-opp-section">
+      <div class="nd-opp-label">OPPONENT — <span id="ndOppNameGame">NPC</span></div>
+      <div class="nd-opp-grid-wrap">
+        <div class="nd-opp-mini-grid" id="ndOppMiniGrid"></div>
+        <div class="nd-opp-hands" id="ndOppHandsList"></div>
+      </div>
+    </div>
+
+    <div class="nd-my-grid-wrap">
+      <div class="grid-container" id="gridContainer">
+        <div class="grid" id="grid"></div>
+        <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points=""/></svg>
+        <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+      </div>
+      <div class="nd-grid-overlay" id="ndGridOverlay" style="display:none">
+        <span id="ndGridOverlayText"></span>
+      </div>
+    </div>
+
+    <div class="hand-preview" id="handPreview"></div>
+
+    <div class="nd-scoreboard" id="ndScoreboard"></div>
+  </div>
+
+  <div style="display:none">
+    <button id="restartBtn"></button>
+    <div id="currentScore"></div>
+    <div id="highScoreDisplay"></div>
+    <div id="retryLabel"></div>
+    <div id="leaderboardOverlay"><div id="leaderboardModal"></div></div>
+    <button id="btnSaveReplay"></button>
+    <div id="allUserTopScoreRow"></div>
+    <div id="usernameDisplay"></div>
+    <div class="removed-cards" id="removedCards"></div>
+    <div class="hand-slots" id="handSlots"></div>
+    <div id="handCount"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 결과 모달 -->
+<div id="modalOverlay" class="pvp-overlay">
+  <div class="pvp-popup" id="modal" style="max-width:360px;"></div>
+</div>
+
+<!-- START 오버레이 -->
+<div id="startOverlay">
+  <div class="so-title">NPC DUEL</div>
+  <div class="so-opp">vs NPC Dragon</div>
+  <div class="so-chip">300 vs 300</div>
+  <button class="so-btn" id="startBtn">START</button>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL='https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY='sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script src="sound.js"></script>
+<script src="scorepolicy.js"></script>
+<script src="pvp_utils.js"></script>
+<script src="npc_ai.js"></script>
+<script src="header.js"></script>
+<script>window._duelGridSize=5; window._pvpMode=true;</script>
+<script src="script.js"></script>
+
+<script>
+// ============================================================
+// NPC DUEL — client-only, no server
+// NOTE: chip state is local only; we do NOT touch localStorage.userChip
+//       (intentionally — this is a standalone test page).
+// ============================================================
+
+const NPC_CHIP_START = 300, MY_CHIP_START = 300;
+const NEWDUEL_RAISE_TABLE = {
+  '1A': { small: 3,  medium: 8,  large: 15 },
+  '1B': { small: 5,  medium: 12, large: 25 },
+  '1C': { small: 8,  medium: 20, large: 40 },
+  '2':  { small: 15, medium: 40, large: 100 }
+};
+const NEWDUEL_TURN_TIMERS = { '1A': 15000, '1B': 15000, '1C': 15000, '2': 20000 };
+const NEWDUEL_NEXT_PHASE = { '1A': 'phase1B', '1B': 'phase1C', '1C': 'phase2', '2': 'phase3' };
+const ND_PHASE_LABELS = { '1A':'1st BETTING','1B':'2nd BETTING','1C':'3rd BETTING','2':'FINAL BETTING' };
+const NEWDUEL_RAISE_SIZES = { raise_small:'small', raise_medium:'medium', raise_large:'large' };
+
+const PLAYER='player', NPC='npc';
+
+// Local chip state (page-scoped; never synced to localStorage.userChip)
+let myChip = MY_CHIP_START;
+let npcChip = NPC_CHIP_START;
+
+const ndState = {
+  outCards: [], firstPlayer: null, isFirst: false,
+  myCards: [], oppCards: [],
+  currentPhase: 0, pot: 2, bettingActive: false,
+  betTimerInterval: null, gameStarted: false,
+  myHands: [], opponentHands: [],
+  oppGrid: [], oppMiniGridCards: [],
+  gameTimerInterval: null, gameTimeRemaining: 120,
+  myChipStart: 0, oppChipStart: 0,
+  myTotalBet: 1, oppTotalBet: 1
+};
+
+// Deck state
+const deckState = {
+  outCards: null,
+  phase1Cards_me: null, phase1Cards_npc: null,
+  phase1BCards_me: null, phase1BCards_npc: null,
+  phase1CCards_me: null, phase1CCards_npc: null,
+  phase3Cards_me: null, phase3Cards_npc: null,
+  gridCards_me: null, gridCards_npc: null
+};
+
+// Betting state
+const localBet = {
+  phase: '1A', pot: 2, currentTurn: null, firstPlayer: null,
+  totalBet: { player: 1, npc: 1 },
+  phaseRaiseCounts: {},
+  _lastRaiser: null, _lastRaiseAmount: 0, _callAmount: 0,
+  _firstActed: false, _allInRaiser: null, allIn: false,
+  turnTimer: null
+};
+
+// NPC gameplay state
+const npcState = {
+  simulation: null,
+  completedHands: [],
+  handTimers: [],
+  doneTimer: null
+};
+
+// Player state
+const playerState = {
+  completedHands: []
+};
+
+// ============================================================
+// START
+// ============================================================
+(async () => {
+  if (typeof requireRegistration === 'function' && !requireRegistration()) return;
+  if (typeof i18n !== 'undefined' && i18n.init) await i18n.init();
+  if (typeof initHeader === 'function') initHeader();
+  if (typeof Sound !== 'undefined' && Sound.loadSettings) Sound.loadSettings();
+  if (typeof BGM !== 'undefined' && BGM.loadSettings) BGM.loadSettings();
+  if (typeof ScorePolicy !== 'undefined' && ScorePolicy.load) await ScorePolicy.load();
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    if (typeof Sound !== 'undefined' && Sound.warmup) Sound.warmup();
+    try { if (typeof BGM !== 'undefined') { BGM.init('./audio/Duel_Theme.mp3'); BGM.start(); } } catch(e) {}
+    document.getElementById('startOverlay').style.display = 'none';
+    startNPCDuel();
+  });
+})();
+
+// ============================================================
+// Deck helpers (ported from server.js)
+// ============================================================
+function ndCreateDeck() {
+  const SUITS=['\u2660','\u2666','\u2665','\u2663'];
+  const VALUES=[2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const deck=[];
+  for (const s of SUITS) for (const v of VALUES) deck.push({suit:s,value:v});
+  return deck;
+}
+function ndShuffle(deck) {
+  const a=[...deck];
+  for (let i=a.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+const ND_SUIT_RANK={'\u2660':4,'\u2666':3,'\u2665':2,'\u2663':1};
+function ndDetermineFirst(outMe, outNpc) {
+  if (outMe.value !== outNpc.value) return outMe.value > outNpc.value ? PLAYER : NPC;
+  const sm=ND_SUIT_RANK[outMe.suit]||0;
+  const sn=ND_SUIT_RANK[outNpc.suit]||0;
+  return sm >= sn ? PLAYER : NPC;
+}
+function ndDealCards() {
+  const deck = ndShuffle(ndCreateDeck());
+  deckState.outCards = [deck[0], deck[1]];
+  deckState.phase1Cards_me  = deck.slice(2,17);
+  deckState.phase1Cards_npc = deck.slice(17,32);
+  deckState.phase1BCards_me  = deck.slice(32,35);
+  deckState.phase1BCards_npc = deck.slice(35,38);
+  deckState.phase1CCards_me  = deck.slice(38,40);
+  deckState.phase1CCards_npc = deck.slice(40,42);
+  deckState.phase3Cards_me  = deck.slice(42,47);
+  deckState.phase3Cards_npc = deck.slice(47,52);
+  deckState.gridCards_me = [...deckState.phase1Cards_me,...deckState.phase1BCards_me,...deckState.phase1CCards_me,...deckState.phase3Cards_me];
+  deckState.gridCards_npc= [...deckState.phase1Cards_npc,...deckState.phase1BCards_npc,...deckState.phase1CCards_npc,...deckState.phase3Cards_npc];
+  ndState.outCards = deckState.outCards;
+  const myOut = deckState.outCards[0];
+  const npcOut = deckState.outCards[1];
+  const first = ndDetermineFirst(myOut, npcOut);
+  ndState.firstPlayer = first;
+  ndState.isFirst = first === PLAYER;
+  localBet.firstPlayer = first;
+}
+
+// ============================================================
+// View switching
+// ============================================================
+function showView(name) {
+  document.getElementById('view-dealing').style.display = name === 'dealing' ? '' : 'none';
+  document.getElementById('view-game').style.display = name === 'game' ? '' : 'none';
+}
+
+// ============================================================
+// Card map rendering
+// ============================================================
+const SUITS_MAP = [
+  { suit:'\u2660', cls:'spade', symbol:'\u2660' },
+  { suit:'\u2665', cls:'heart', symbol:'\u2665' },
+  { suit:'\u2666', cls:'diamond', symbol:'\u2666' },
+  { suit:'\u2663', cls:'club', symbol:'\u2663' }
+];
+const CM_VALUES = [14,13,12,11,10,9,8,7,6,5,4,3,2];
+const VN = {14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+const SUIT_COLORS = { '\u2660':'#1a1a1a', '\u2663':'#1a6bc4', '\u2665':'#2d8a4e', '\u2666':'#d63031' };
+
+function renderCardMap(containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = SUITS_MAP.map(s =>
+    `<div class="nd-cm-row" data-suit="${s.suit}">${CM_VALUES.map(v =>
+      `<span class="nd-cm-cell" data-suit="${s.suit}" data-value="${v}" id="cm-${containerId}-${s.suit}-${v}"><span class="nd-cm-val">${VN[v]}</span><span class="nd-cm-mark">${s.symbol}</span></span>`
+    ).join('')}</div>`
+  ).join('');
+}
+function updateCardMapCell(containerId, suit, value, state) {
+  const cell = document.getElementById(`cm-${containerId}-${suit}-${value}`);
+  if (!cell) return;
+  cell.classList.remove('mine','opponent','out','hidden','unassigned','just-assigned');
+  const val = cell.querySelector('.nd-cm-val');
+  const mark = cell.querySelector('.nd-cm-mark');
+  if (val) val.style.color = '';
+  if (mark) mark.style.color = '';
+  if (state && state !== 'default') cell.classList.add(state);
+  if (state === 'mine' || state === 'opponent') {
+    const c = SUIT_COLORS[suit] || '#1a1a1a';
+    if (val) val.style.color = c;
+    if (mark) mark.style.color = c;
+  }
+}
+function markCardsOnMap(containerId, cards, state) {
+  cards.forEach(c => updateCardMapCell(containerId, c.suit, c.value, state));
+}
+async function animateDealing(containerId, cards, state, interval) {
+  for (const card of cards) {
+    updateCardMapCell(containerId, card.suit, card.value, state);
+    try { Sound.cardDrop && Sound.cardDrop(); } catch(e) {}
+    await new Promise(r => setTimeout(r, interval));
+  }
+}
+
+// ============================================================
+// Pot / Chip UI
+// ============================================================
+const betState = {
+  phase: '1A', hasLastRaiser: false, canRaise: true,
+  callAmount: 0, lastRaiseAmount: 0,
+  raiseOptions: {}, myRemainingChip: Infinity
+};
+
+function updatePotDisplay(amount) {
+  const el = document.getElementById('ndPotDisplay');
+  el.textContent = amount;
+  el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+}
+function updateChipDisplay() {
+  const myR = ndState.myChipStart - ndState.myTotalBet;
+  const oppR = ndState.oppChipStart - ndState.oppTotalBet;
+  const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  s('ndMyChipStart', ndState.myChipStart);
+  s('ndMyTotalBet', ndState.myTotalBet);
+  s('ndMyChipRemain', Math.max(0, myR));
+  s('ndOppChipStart', ndState.oppChipStart);
+  s('ndOppTotalBet', ndState.oppTotalBet);
+  s('ndOppChipRemain', Math.max(0, oppR));
+}
+function updateRaiseIndicator(phase) {
+  const el = document.getElementById('ndRaiseIndicator');
+  if (!el) return;
+  const table = NEWDUEL_RAISE_TABLE[phase] || {};
+  const sizes = ['small','medium','large'];
+  const minAllowed = betState.lastRaiseAmount || 0;
+  el.innerHTML = sizes.map((size, i) => {
+    const amount = table[size];
+    if (amount === undefined) return '';
+    const disabled = amount < minAllowed;
+    const cls = disabled ? 'done' : 'active';
+    const arrow = i < sizes.length - 1 ? '<span class="nd-ri-arrow">\u2192</span>' : '';
+    return `<span class="nd-ri-step ${cls}">${amount}</span>${arrow}`;
+  }).join('');
+}
+function hideBettingPanel() {
+  document.getElementById('ndBettingPanel').style.display = 'none';
+  clearInterval(ndState.betTimerInterval);
+}
+
+function showBettingPanel(phase, pot, isMyTurn, turnTime, opts) {
+  opts = opts || {};
+  const panel = document.getElementById('ndBettingPanel');
+  const info = document.getElementById('ndBetInfo');
+  const buttons = document.getElementById('ndBetButtons');
+  const timer = document.getElementById('ndBetTimer');
+  panel.style.display = '';
+  betState.phase = phase;
+  if (opts.hasLastRaiser !== undefined) betState.hasLastRaiser = opts.hasLastRaiser;
+  if (opts.canRaise !== undefined) betState.canRaise = opts.canRaise;
+  if (opts.callAmount !== undefined) betState.callAmount = opts.callAmount;
+  if (opts.lastRaiseAmount !== undefined) betState.lastRaiseAmount = opts.lastRaiseAmount;
+  if (opts.raiseOptions !== undefined) betState.raiseOptions = opts.raiseOptions || {};
+  if (opts.myRemainingChip !== undefined) betState.myRemainingChip = opts.myRemainingChip;
+
+  updatePotDisplay(pot);
+  document.getElementById('ndPhaseBanner').textContent = ND_PHASE_LABELS[phase] || '';
+  updateRaiseIndicator(phase);
+
+  if (isMyTurn) {
+    info.className = 'nd-bet-info my-turn';
+    info.textContent = 'NOW YOUR BET';
+    const myR = (betState.myRemainingChip == null) ? Infinity : betState.myRemainingChip;
+    const makeRaiseBtns = () => {
+      const opts2 = betState.raiseOptions || {};
+      let html='';
+      for (const size of ['small','medium','large']) {
+        const info2 = opts2[size]; if (!info2) continue;
+        const cost = info2.totalCost || info2.amount;
+        const action = `raise_${size}`;
+        const isAllIn = cost >= myR;
+        const displayCost = isAllIn ? myR : cost;
+        const topLabel = isAllIn ? 'ALL-IN' : 'RAISE';
+        html += `<button class="nd-bet-btn raise ${size}" onclick="sendBet('${action}')"><span class="btn-size">${topLabel}</span><span class="btn-amount">+${displayCost}</span></button>`;
+      }
+      return html;
+    };
+    let btns = '';
+    if (betState.hasLastRaiser) {
+      let callLabel;
+      if (betState.callAmount && betState.callAmount >= myR) {
+        callLabel = `<span class="btn-size">ALL-IN</span><span class="btn-amount">+${myR}</span>`;
+      } else {
+        callLabel = betState.callAmount ? `CALL +${betState.callAmount}` : 'CALL';
+      }
+      btns += `<button class="nd-bet-btn call" onclick="sendBet('call')">${callLabel}</button>`;
+      const isAllInCall = betState.callAmount && betState.callAmount >= myR;
+      if (betState.canRaise && myR > 0 && !isAllInCall) btns += makeRaiseBtns();
+    } else {
+      btns += `<button class="nd-bet-btn skip" onclick="sendBet('call')">SKIP</button>`;
+      if (betState.canRaise && myR > 0) btns += makeRaiseBtns();
+    }
+    btns += `<button class="nd-bet-btn fold" onclick="sendBet('fold')">FOLD</button>`;
+    buttons.innerHTML = btns;
+
+    let remaining = Math.floor(turnTime / 1000);
+    timer.textContent = `REMAINING: ${remaining}s`;
+    clearInterval(ndState.betTimerInterval);
+    ndState.betTimerInterval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) { clearInterval(ndState.betTimerInterval); timer.textContent=''; return; }
+      timer.textContent = `REMAINING: ${remaining}s`;
+    }, 1000);
+  } else {
+    info.className = 'nd-bet-info opp-turn';
+    info.textContent = 'NPC 베팅 중...';
+    buttons.innerHTML = '';
+    timer.textContent = '';
+    clearInterval(ndState.betTimerInterval);
+  }
+}
+
+function showBettingAction(action, amount, raiseSize) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;pointer-events:none;';
+  const box = document.createElement('div');
+  box.style.cssText = "background:rgba(0,0,0,0.85);border:2px solid var(--gold);border-radius:16px;padding:24px 40px;text-align:center;font-family:'IBM Plex Mono',monospace;";
+  let msg='', color='var(--gold)';
+  if (action === 'allin') { msg = `NPC ALL-IN\n+${amount}`; color='#FF6B6B'; }
+  else if (action === 'raise') { msg = `NPC RAISE\n+${amount}`; color='#FFC107'; }
+  else if (action === 'call') { msg='NPC CALL'; color='#4CAF50'; }
+  else if (action === 'skip') { msg='NPC SKIP'; color='rgba(255,255,255,0.7)'; }
+  else if (action === 'fold') { msg='NPC FOLD'; color='#ff5252'; }
+  else return;
+  box.innerHTML = `<div style="font-size:1.3rem;font-weight:700;color:${color};white-space:pre-line;">${msg}</div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(() => { overlay.style.transition='opacity 0.3s'; overlay.style.opacity='0'; setTimeout(() => overlay.remove(), 300); }, 1500);
+}
+
+function sendBet(action) {
+  document.querySelectorAll('.nd-bet-btn').forEach(b => b.disabled = true);
+  localHandleBet(PLAYER, action);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:var(--gold);padding:10px 20px;border-radius:8px;font-size:0.8rem;z-index:999;font-family:"IBM Plex Mono",monospace;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ============================================================
+// Betting (ported from server.js newDuel_handleBet / newDuel_getNextRaiseInfo)
+// ============================================================
+function remainingChipFor(who) {
+  const chip = who === PLAYER ? myChip : npcChip;
+  return Math.max(0, chip - (localBet.totalBet[who] || 0));
+}
+function oppOf(who) { return who === PLAYER ? NPC : PLAYER; }
+
+function getNextRaiseInfo(forWho) {
+  const phase = localBet.phase;
+  const counts = localBet.phaseRaiseCounts[phase] || { player: 0, npc: 0 };
+  const myRaises = counts[forWho] || 0;
+  if (myRaises >= 1 || localBet._allInRaiser) return { canRaise: false, options: {} };
+  const oppR = remainingChipFor(oppOf(forWho));
+  if (oppR <= 0) return { canRaise: false, options: {} };
+  const table = NEWDUEL_RAISE_TABLE[phase] || {};
+  const minRaise = localBet._lastRaiseAmount || 0;
+  const match = localBet._callAmount || 0;
+  const options = {};
+  const seen = new Set();
+  for (const [size, amount] of Object.entries(table)) {
+    if (amount >= minRaise) {
+      const capped = Math.min(amount, oppR);
+      if (capped > 0 && !seen.has(capped)) {
+        seen.add(capped);
+        options[size] = { amount: capped, totalCost: match + capped, capped: capped < amount };
+      }
+    }
+  }
+  return { canRaise: Object.keys(options).length > 0, options };
+}
+
+function emitBettingUI(payload) {
+  // mimic bettingUpdate for UI rendering
+  const currentTurn = payload.currentTurn;
+  ndState.pot = payload.pot;
+  ndState.myTotalBet = localBet.totalBet.player;
+  ndState.oppTotalBet = localBet.totalBet.npc;
+  updatePotDisplay(payload.pot);
+  updateChipDisplay();
+
+  if (payload.bySocket && payload.bySocket !== PLAYER && payload.action !== 'turn_change') {
+    if (payload.isAllIn && payload.action === 'raise') showBettingAction('allin', payload.amount, payload.raiseSize);
+    else showBettingAction(payload.action, payload.amount, payload.raiseSize);
+  }
+  if (currentTurn == null) { hideBettingPanel(); return; }
+  const isMine = currentTurn === PLAYER;
+  const oppts = getNextRaiseInfo(currentTurn);
+  showBettingPanel(payload.phase, payload.pot, isMine, NEWDUEL_TURN_TIMERS[payload.phase] || 15000, {
+    hasLastRaiser: !!payload.hasLastRaiser,
+    raiseOptions: oppts.options,
+    canRaise: oppts.canRaise,
+    callAmount: payload.callAmount || 0,
+    lastRaiseAmount: payload.lastRaiseAmount || 0,
+    myRemainingChip: remainingChipFor(currentTurn)
+  });
+}
+
+function startLocalTurnTimer() {
+  clearTimeout(localBet.turnTimer);
+  const ms = NEWDUEL_TURN_TIMERS[localBet.phase] || 15000;
+  localBet.turnTimer = setTimeout(() => {
+    localHandleBet(localBet.currentTurn, 'call');
+  }, ms);
+}
+
+function localHandleBet(who, action) {
+  if (localBet.currentTurn !== who) return;
+  clearTimeout(localBet.turnTimer);
+  const opp = oppOf(who);
+  const phase = localBet.phase;
+
+  if (action === 'fold') {
+    updateDebug('FOLD', `${who} folds`);
+    localEndGame('fold', who);
+    return;
+  }
+
+  if (!localBet.phaseRaiseCounts[phase]) localBet.phaseRaiseCounts[phase] = { player: 0, npc: 0 };
+
+  const myChipVal = who === PLAYER ? myChip : npcChip;
+  const oppChipVal = opp === PLAYER ? myChip : npcChip;
+  const myRem = Math.max(0, myChipVal - (localBet.totalBet[who] || 0));
+  const oppRem = Math.max(0, oppChipVal - (localBet.totalBet[opp] || 0));
+
+  const raiseSize = NEWDUEL_RAISE_SIZES[action];
+  if (raiseSize) {
+    const myRaises = localBet.phaseRaiseCounts[phase][who];
+    if (myRaises >= 1) {
+      action = 'call';
+    } else {
+      const tableRaise = (NEWDUEL_RAISE_TABLE[phase] || {})[raiseSize];
+      if (!tableRaise) return;
+      if (localBet._lastRaiseAmount && tableRaise < localBet._lastRaiseAmount) return;
+      const raiseAmount = Math.min(tableRaise, oppRem);
+      if (raiseAmount <= 0) return;
+      const matchAmount = localBet._callAmount || 0;
+      const totalCost = matchAmount + raiseAmount;
+      let actualTotal = totalCost;
+      let actualRaisePortion = raiseAmount;
+      let isAllIn = false;
+      if (totalCost >= myRem) {
+        actualTotal = myRem;
+        actualRaisePortion = Math.max(0, actualTotal - matchAmount);
+        isAllIn = true;
+        localBet._allInRaiser = who;
+      }
+      localBet.pot += actualTotal;
+      localBet.totalBet[who] += actualTotal;
+      localBet._callAmount = actualRaisePortion;
+      localBet._lastRaiseAmount = raiseAmount;
+      localBet.phaseRaiseCounts[phase][who]++;
+      localBet._lastRaiser = who;
+      localBet.currentTurn = opp;
+      emitBettingUI({
+        action: 'raise', bySocket: who, amount: actualTotal, pot: localBet.pot,
+        currentTurn: opp, phase, raiseSize, hasLastRaiser: true,
+        callAmount: actualRaisePortion, lastRaiseAmount: raiseAmount, isAllIn
+      });
+      if (opp === NPC) scheduleNpcBet();
+      else startLocalTurnTimer();
+      return;
+    }
+  }
+
+  // CALL after a raise
+  if (localBet._lastRaiser && localBet._lastRaiser !== who) {
+    const callAmt = localBet._callAmount;
+    let actualCall = callAmt;
+    let isAllInCall = false;
+    if (callAmt >= myRem) { actualCall = myRem; isAllInCall = true; }
+    localBet.pot += actualCall;
+    localBet.totalBet[who] += actualCall;
+    const excess = callAmt - actualCall;
+    if (excess > 0) {
+      const raiserSide = opp;
+      localBet.pot -= excess;
+      localBet.totalBet[raiserSide] -= excess;
+    }
+    localBet._callAmount = 0;
+    const skipRemaining = isAllInCall || !!localBet._allInRaiser;
+    emitBettingUI({
+      action: 'call', bySocket: who, amount: actualCall, pot: localBet.pot,
+      currentTurn: null, phase, hasLastRaiser: false, callAmount: 0, isAllIn: isAllInCall
+    });
+    completeBettingPhase(skipRemaining);
+    return;
+  }
+
+  // SKIP
+  if (!localBet._firstActed) {
+    localBet._firstActed = true;
+    localBet.currentTurn = opp;
+    emitBettingUI({
+      action: 'skip', bySocket: who, pot: localBet.pot, currentTurn: opp, phase,
+      hasLastRaiser: false, callAmount: 0, lastRaiseAmount: 0
+    });
+    if (opp === NPC) scheduleNpcBet();
+    else startLocalTurnTimer();
+  } else {
+    emitBettingUI({
+      action: 'skip', bySocket: who, amount: 0, pot: localBet.pot, currentTurn: null, phase,
+      hasLastRaiser: false, callAmount: 0, lastRaiseAmount: 0
+    });
+    completeBettingPhase(false);
+  }
+}
+
+function completeBettingPhase(skipRemaining) {
+  clearTimeout(localBet.turnTimer);
+  localBet._firstActed = false;
+  localBet._lastRaiser = null;
+  localBet._lastRaiseAmount = 0;
+  localBet._callAmount = 0;
+  localBet._allInRaiser = null;
+  const phase = localBet.phase;
+  if (skipRemaining) localBet.allIn = true;
+  updateDebug('PHASE', `betting_${phase} done, pot=${localBet.pot}`);
+  setTimeout(() => {
+    hideBettingPanel();
+    document.getElementById('ndPhaseBanner').textContent = `BETTING ${phase} COMPLETE`;
+    document.getElementById('ndRaiseIndicator').innerHTML = '';
+    setTimeout(() => advanceAfterBetting(phase), 900);
+  }, 400);
+}
+
+// ============================================================
+// NPC bet
+// ============================================================
+function scheduleNpcBet() {
+  const delay = 1500 + Math.random() * 2500;
+  setTimeout(npcDoBet, delay);
+}
+function npcDoBet() {
+  if (localBet.currentTurn !== NPC) return;
+  const opts = getNextRaiseInfo(NPC);
+  const ctx = {
+    phase: localBet.phase,
+    myCards: ndState.oppCards,  // NPC cards
+    oppCards: ndState.myCards,
+    hasLastRaiser: !!(localBet._lastRaiser && localBet._lastRaiser !== NPC),
+    canRaise: opts.canRaise,
+    personality: NpcAI.DEFAULT_PERSONALITY
+  };
+  const decision = NpcAI.decideBet(ctx);
+  updateDebug('BET', `strength=${decision.strength.toFixed(2)} conf=${decision.confidence.toFixed(2)} -> ${decision.action}`);
+  // if NPC picked a raise but cannot, fall back to call
+  let action = decision.action;
+  if ((action === 'raise_small' || action === 'raise_medium' || action === 'raise_large') && !opts.canRaise) {
+    action = 'call';
+  }
+  localHandleBet(NPC, action);
+}
+
+// ============================================================
+// Phase advancement
+// ============================================================
+async function advanceAfterBetting(phase) {
+  if (phase === '1A') await doDealPhase1B();
+  else if (phase === '1B') await doDealPhase1C();
+  else if (phase === '1C') await doDealPhase2();
+  else if (phase === '2') await doRevealPhase3();
+}
+
+async function startNPCDuel() {
+  // reset state
+  myChip = MY_CHIP_START;
+  npcChip = NPC_CHIP_START;
+  ndState.myChipStart = myChip;
+  ndState.oppChipStart = npcChip;
+  ndState.myTotalBet = 1;
+  ndState.oppTotalBet = 1;
+  ndState.pot = 2;
+  ndState.myCards = [];
+  ndState.oppCards = [];
+  ndState.myHands = [];
+  ndState.opponentHands = [];
+  ndState.gameStarted = false;
+  localBet.phase = '1A';
+  localBet.pot = 2;
+  localBet.totalBet = { player: 1, npc: 1 };
+  localBet.phaseRaiseCounts = {};
+  localBet._lastRaiser = null;
+  localBet._lastRaiseAmount = 0;
+  localBet._callAmount = 0;
+  localBet._firstActed = false;
+  localBet._allInRaiser = null;
+  localBet.allIn = false;
+  npcState.completedHands = [];
+  npcState.handTimers.forEach(t => clearTimeout(t));
+  npcState.handTimers = [];
+  if (npcState.doneTimer) { clearTimeout(npcState.doneTimer); npcState.doneTimer = null; }
+  playerState.completedHands = [];
+
+  ndDealCards();
+
+  showView('dealing');
+  document.getElementById('ndOppName').textContent = 'NPC Dragon';
+  document.getElementById('ndMyName').textContent = localStorage.getItem('poker_username') || 'ME';
+  renderCardMap('oppCardMap');
+  renderCardMap('myCardMap');
+  document.getElementById('ndPhaseBanner').textContent = '매칭 완료';
+  updatePotDisplay(2);
+  updateChipDisplay();
+  hideBettingPanel();
+
+  await doDealOut();
+  await doDealPhase1();
+  startBettingPhase('1A');
+}
+
+async function doDealOut() {
+  document.getElementById('ndPhaseBanner').textContent = 'OUT CARDS';
+  await new Promise(r => setTimeout(r, 500));
+  const [out0, out1] = deckState.outCards;
+  markCardsOnMap('myCardMap', [out0], 'out');
+  markCardsOnMap('oppCardMap', [out0], 'out');
+  try { Sound.cardDrop && Sound.cardDrop(); } catch(e) {}
+  await new Promise(r => setTimeout(r, 800));
+  markCardsOnMap('myCardMap', [out1], 'out');
+  markCardsOnMap('oppCardMap', [out1], 'out');
+  try { Sound.cardDrop && Sound.cardDrop(); } catch(e) {}
+  await new Promise(r => setTimeout(r, 800));
+
+  const outSuitColors = {'\u2660':'#c0c0c0','\u2663':'#5a9fd4','\u2665':'#4dba6e','\u2666':'#e05555'};
+  const suitColor = s => outSuitColors[s] || '#e0e0e0';
+  const myOut = out0, npcOut = out1;
+  document.getElementById('ndMyOut').innerHTML = `<span style="color:${suitColor(myOut.suit)}" class="nd-out-card">${VN[myOut.value]}${myOut.suit}</span>` + (ndState.isFirst ? ' <span class="nd-first-mark">\u2605</span>' : '');
+  document.getElementById('ndOppOut').innerHTML = `<span style="color:${suitColor(npcOut.suit)}" class="nd-out-card">${VN[npcOut.value]}${npcOut.suit}</span>` + (!ndState.isFirst ? ' <span class="nd-first-mark">\u2605</span>' : '');
+  await new Promise(r => setTimeout(r, 1000));
+}
+
+async function doDealPhase1() {
+  ndState.currentPhase = '1A';
+  ndState.myCards = deckState.phase1Cards_me.slice();
+  ndState.oppCards = deckState.phase1Cards_npc.slice();
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-A — DEALING';
+  await animateDealing('myCardMap', deckState.phase1Cards_me, 'mine', 150);
+  document.getElementById('ndOppCardCount').textContent = 15;
+  document.getElementById('ndOppOverlay').style.display = 'flex';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-A';
+  await new Promise(r => setTimeout(r, 1500));
+}
+
+async function doDealPhase1B() {
+  ndState.currentPhase = '1B';
+  ndState.myCards = [...ndState.myCards, ...deckState.phase1BCards_me];
+  ndState.oppCards = [...ndState.oppCards, ...deckState.phase1BCards_npc];
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-B — DEALING';
+  await animateDealing('myCardMap', deckState.phase1BCards_me, 'mine', 250);
+  const prevCount = parseInt(document.getElementById('ndOppCardCount').textContent) || 0;
+  document.getElementById('ndOppCardCount').textContent = prevCount + 3;
+  document.getElementById('ndOppOverlay').style.display = 'flex';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-B';
+  await new Promise(r => setTimeout(r, 900));
+  startBettingPhase('1B');
+}
+
+async function doDealPhase1C() {
+  ndState.currentPhase = '1C';
+  ndState.myCards = [...ndState.myCards, ...deckState.phase1CCards_me];
+  ndState.oppCards = [...ndState.oppCards, ...deckState.phase1CCards_npc];
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-C — DEALING';
+  await animateDealing('myCardMap', deckState.phase1CCards_me, 'mine', 250);
+  const prevCount = parseInt(document.getElementById('ndOppCardCount').textContent) || 0;
+  document.getElementById('ndOppCardCount').textContent = prevCount + 2;
+  document.getElementById('ndOppOverlay').style.display = 'flex';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 1-C';
+  await new Promise(r => setTimeout(r, 900));
+  startBettingPhase('1C');
+}
+
+async function doDealPhase2() {
+  ndState.currentPhase = '2';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 2 — REVEALING';
+  const overlay = document.getElementById('ndOppOverlay');
+  overlay.style.opacity = '0';
+  await new Promise(r => setTimeout(r, 500));
+  overlay.style.display = 'none';
+  overlay.style.opacity = '1';
+  // Reveal NPC 20 cards
+  const npcRevealed = [...deckState.phase1Cards_npc, ...deckState.phase1BCards_npc, ...deckState.phase1CCards_npc];
+  await animateDealing('oppCardMap', npcRevealed, 'opponent', 100);
+
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 2';
+  const knownCards = new Set();
+  ndState.myCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
+  ndState.oppCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
+  if (ndState.outCards) ndState.outCards.forEach(c => knownCards.add(`${c.suit}-${c.value}`));
+  const allSuits=['\u2660','\u2665','\u2666','\u2663'];
+  const allValues=[2,3,4,5,6,7,8,9,10,11,12,13,14];
+  allSuits.forEach(s => allValues.forEach(v => {
+    const k=`${s}-${v}`;
+    if (!knownCards.has(k)) {
+      document.getElementById(`cm-myCardMap-${s}-${v}`)?.classList.add('unassigned');
+      document.getElementById(`cm-oppCardMap-${s}-${v}`)?.classList.add('unassigned');
+    }
+  }));
+  await new Promise(r => setTimeout(r, 1500));
+  startBettingPhase('2');
+}
+
+async function doRevealPhase3() {
+  ndState.currentPhase = '3';
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 3 — ASSIGNMENT';
+  const assignments = [];
+  for (let i = 0; i < 5; i++) {
+    assignments.push({ card: deckState.phase3Cards_me[i], owner: 'mine' });
+    assignments.push({ card: deckState.phase3Cards_npc[i], owner: 'opponent' });
+  }
+  const allUnassigned = assignments.map(a => a.card);
+  markCardsOnMap('myCardMap', allUnassigned, 'unassigned');
+  markCardsOnMap('oppCardMap', allUnassigned, 'unassigned');
+  await new Promise(r => setTimeout(r, 800));
+  let soundIdx = 0;
+  for (const { card, owner } of assignments) {
+    if (owner === 'mine') {
+      updateCardMapCell('myCardMap', card.suit, card.value, 'mine');
+      document.getElementById(`cm-myCardMap-${card.suit}-${card.value}`)?.classList.add('just-assigned');
+      updateCardMapCell('oppCardMap', card.suit, card.value, 'default');
+      ndState.myCards.push(card);
+    } else {
+      updateCardMapCell('oppCardMap', card.suit, card.value, 'opponent');
+      document.getElementById(`cm-oppCardMap-${card.suit}-${card.value}`)?.classList.add('just-assigned');
+      updateCardMapCell('myCardMap', card.suit, card.value, 'default');
+      ndState.oppCards.push(card);
+    }
+    try { Sound.cardSelect && Sound.cardSelect(soundIdx % 4); } catch(e) {}
+    soundIdx++;
+    await new Promise(r => setTimeout(r, 450));
+  }
+  document.getElementById('ndPhaseBanner').textContent = 'PHASE 3';
+  await new Promise(r => setTimeout(r, 1500));
+  startGamePlay();
+}
+
+function startBettingPhase(phase) {
+  if (localBet.allIn) {
+    // auto-skip betting
+    document.getElementById('ndPhaseBanner').textContent = `BETTING ${phase} (ALL-IN SKIP)`;
+    setTimeout(() => advanceAfterBetting(phase), 800);
+    return;
+  }
+  localBet.phase = phase;
+  localBet.currentTurn = localBet.firstPlayer;
+  localBet._firstActed = false;
+  localBet._lastRaiser = null;
+  localBet._lastRaiseAmount = 0;
+  localBet._callAmount = 0;
+  localBet._allInRaiser = null;
+  const opts = getNextRaiseInfo(localBet.currentTurn);
+  const isMine = localBet.currentTurn === PLAYER;
+  showBettingPanel(phase, localBet.pot, isMine, NEWDUEL_TURN_TIMERS[phase] || 15000, {
+    hasLastRaiser: false, canRaise: opts.canRaise, callAmount: 0, lastRaiseAmount: 0,
+    raiseOptions: opts.options, myRemainingChip: remainingChipFor(localBet.currentTurn)
+  });
+  updateDebug('PHASE', `betting_${phase} start, first=${localBet.currentTurn}`);
+  if (!isMine) scheduleNpcBet();
+  else startLocalTurnTimer();
+}
+
+// ============================================================
+// Game play (playing phase)
+// ============================================================
+const SUIT_COLORS_GAME = { '\u2660':'#e0e0e0', '\u2663':'#1a6bc4', '\u2665':'#2d8a4e', '\u2666':'#d63031' };
+const VN_GAME = VN;
+
+function ndCardDisplay(cards) {
+  if (!cards || !cards.length) return '';
+  return cards.slice().sort((a,b) => b.value - a.value).map(c => {
+    const col = (c.suit === '\u2665' || c.suit === '\u2666') ? '#ff6b6b' : '#e0e0e0';
+    return `<span style="color:${col}">${VN_GAME[c.value]}${c.suit}</span>`;
+  }).join(' ');
+}
+function ndHandSort(a,b) { if (b.rank !== a.rank) return b.rank - a.rank; return 0; }
+
+function ndInitOppMiniGrid(cards) {
+  const grid = document.getElementById('ndOppMiniGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement('div');
+    const c = cards[i];
+    cell.className = 'nd-opp-mini-cell has-card';
+    cell.id = `nd-mini-${i}`;
+    if (c) {
+      const col = SUIT_COLORS_GAME[c.suit] || '#e0e0e0';
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[c.value]}</span><span style="color:${col};font-size:0.55rem;">${c.suit}</span>`;
+    }
+    grid.appendChild(cell);
+  }
+}
+function ndUpdateOppMiniGrid(removedPositions) {
+  if (!removedPositions || !removedPositions.length) return;
+  removedPositions.forEach(([r,c]) => { ndState.oppMiniGridCards[r*5+c] = null; });
+  for (let c = 0; c < 5; c++) {
+    const colCards = [];
+    for (let r = 4; r >= 0; r--) {
+      if (ndState.oppMiniGridCards[r*5+c]) colCards.push(ndState.oppMiniGridCards[r*5+c]);
+    }
+    for (let r = 4; r >= 0; r--) {
+      ndState.oppMiniGridCards[r*5+c] = colCards.length > 0 ? colCards.shift() : null;
+    }
+  }
+  ndState.oppMiniGridCards.forEach((card, idx) => {
+    const cell = document.getElementById(`nd-mini-${idx}`);
+    if (!cell) return;
+    if (card) {
+      cell.className = 'nd-opp-mini-cell has-card';
+      const col = SUIT_COLORS_GAME[card.suit] || '#e0e0e0';
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_GAME[card.value]}</span><span style="color:${col};font-size:0.55rem;">${card.suit}</span>`;
+    } else {
+      cell.className = 'nd-opp-mini-cell empty';
+      cell.innerHTML = '';
+    }
+  });
+}
+
+function ndRenderScoreboard() {
+  const container = document.getElementById('ndScoreboard');
+  if (!container) return;
+  const myName = localStorage.getItem('poker_username') || 'ME';
+  const oppName = 'NPC Dragon';
+  const myCount = ndState.myHands.length;
+  const oppCount = ndState.opponentHands.length;
+  const mySorted = [...ndState.myHands].sort(ndHandSort);
+  const oppSorted = [...ndState.opponentHands].sort(ndHandSort);
+  let html = `<div class="nd-sb-header"><span class="nd-sb-cell left">${myName} (${myCount}/5)</span><span class="nd-sb-cell vs"></span><span class="nd-sb-cell right">${oppName} (${oppCount}/5)</span></div>`;
+  const maxRows = Math.max(5, mySorted.length, oppSorted.length);
+  for (let i = 0; i < maxRows; i++) {
+    const my = mySorted[i], opp = oppSorted[i];
+    let myText = my ? my.label : '—', oppText = opp ? opp.label : '—';
+    const isTop3 = i < 3;
+    let myClass='', oppClass='', vsIcon='', lc='', rc='';
+    if (isTop3 && my && opp) {
+      if (my.rank > opp.rank) { myClass='win'; vsIcon='👑'; lc='👑 '; }
+      else if (opp.rank > my.rank) { oppClass='win'; vsIcon='👑'; rc=' 👑'; }
+      else vsIcon='?';
+    } else if (isTop3) {
+      if (my && !opp) myClass='win';
+      else if (!my && opp) oppClass='win';
+    }
+    const top3 = isTop3 ? ' top3' : '';
+    html += `<div class="nd-sb-row${top3}"><span class="nd-sb-cell left"><span class="${myClass}">${lc}${myText}</span></span><span class="nd-sb-cell vs">${isTop3 ? (vsIcon || (i+1)) : (i+1)}</span><span class="nd-sb-cell right"><span class="${oppClass}">${oppText}${rc}</span></span></div>`;
+  }
+  container.innerHTML = html;
+  const oppEl = document.getElementById('ndOppHandsList');
+  if (oppEl) {
+    oppEl.innerHTML = oppSorted.map((h, i) =>
+      `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:${i < 3 ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i+1}. ${h.label}</div>`
+    ).join('') || '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.55rem;color:rgba(255,255,255,0.2);">—</div>';
+  }
+}
+
+function ndStartTimer(seconds) {
+  ndState.gameTimeRemaining = seconds;
+  const timerNum = document.getElementById('ndTimerNum');
+  const timerRing = document.getElementById('ndTimerRing');
+  const totalTime = seconds;
+  const circumference = 100.53;
+  clearInterval(ndState.gameTimerInterval);
+  timerNum.textContent = seconds;
+  timerNum.classList.remove('time-attack');
+  timerRing.classList.remove('time-attack');
+  ndState.gameTimerInterval = setInterval(() => {
+    ndState.gameTimeRemaining--;
+    const t = ndState.gameTimeRemaining;
+    if (t <= 0) {
+      clearInterval(ndState.gameTimerInterval);
+      timerNum.textContent = '0';
+      if (state.phase === 'playing') window.endGame('timeout');
+      return;
+    }
+    timerNum.textContent = t;
+    const offset = circumference * (1 - t / totalTime);
+    timerRing.style.strokeDashoffset = offset;
+    if (t <= 15) { timerNum.classList.add('time-attack'); timerRing.classList.add('time-attack'); }
+  }, 1000);
+}
+function ndSetStatus(type) {
+  const el = document.getElementById('ndStatusMsg');
+  if (!el) return;
+  el.classList.remove('blink');
+  switch(type) {
+    case 'playing': el.textContent='PLAYING'; el.style.color='rgba(201,168,76,0.5)'; break;
+    case 'completed': el.textContent='COMPLETED'; el.style.color='#4CAF50'; el.classList.add('blink'); break;
+    case 'oppdone': el.textContent='NPC DONE'; el.style.color='#FFC107'; el.classList.add('blink'); break;
+    case 'timelimit': el.textContent='TIME LIMIT'; el.style.color='#ff3333'; el.classList.add('blink'); break;
+  }
+}
+function ndSetGridOverlay(type) {
+  const overlay = document.getElementById('ndGridOverlay');
+  const text = document.getElementById('ndGridOverlayText');
+  if (!overlay) return;
+  if (type === 'none') { overlay.style.display='none'; return; }
+  overlay.style.display = 'flex';
+  if (type === 'done') text.textContent = '✓ COMPLETED';
+}
+
+function startGamePlay() {
+  ndState.pot = localBet.pot;
+  document.getElementById('ndPhaseBanner').textContent = 'GAME START';
+  setTimeout(() => {
+    showView('game');
+    setupGameUI();
+    startNPCGamePlay();
+  }, 1200);
+}
+
+function setupGameUI() {
+  ndState.myHands = [];
+  ndState.opponentHands = [];
+  ndState.gameStarted = true;
+  ndState.gameTimeRemaining = 120;
+
+  GRID_SIZE = 5;
+  const myShuffled = ndShuffle(deckState.gridCards_me);
+  const oppShuffled = ndShuffle(deckState.gridCards_npc);
+
+  const origInitGrid = window.initGrid;
+  window.initGrid = function() {
+    const cards = myShuffled.map(c => ({ suit:c.suit, value:c.value, id:String(c.value)+c.suit }));
+    state.removedCards = [];
+    state.grid = [];
+    let idx = 0;
+    for (let r = 0; r < GRID_SIZE; r++) {
+      const row = [];
+      for (let c = 0; c < GRID_SIZE; c++) {
+        row.push({ card: idx < cards.length ? cards[idx++] : null, row: r, col: c });
+      }
+      state.grid.push(row);
+    }
+  };
+
+  if (!window._origIsValidHandND) window._origIsValidHandND = window.isValidHand;
+  window.isValidHand = function(hand) {
+    if (!hand) return false;
+    if (hand.rank === 0) return false;
+    if (hand.rank === 1) return true;
+    return window._origIsValidHandND ? window._origIsValidHandND(hand) : hand.rank > 1;
+  };
+
+  initState();
+  initGrid();
+  renderGrid();
+  document.getElementById('grid').style.gridTemplateColumns = 'repeat(5, 1fr)';
+  window.initGrid = origInitGrid;
+
+  ndState.oppGrid = oppShuffled.slice();
+  ndState.oppMiniGridCards = oppShuffled.map(c => ({ ...c }));
+  ndInitOppMiniGrid(oppShuffled);
+  ndRenderScoreboard();
+
+  document.getElementById('ndOppNameGame').textContent = 'NPC Dragon';
+  document.getElementById('ndGamePot').textContent = localBet.pot;
+  ndSetStatus('playing');
+  ndStartTimer(120);
+
+  const gc = document.getElementById('gridContainer');
+  if (gc) gc.style.pointerEvents = '';
+
+  window.endGame = function(reason) {
+    if (!ndState.gameStarted) return;
+    if (state.phase === 'result') return;
+    if (reason === 'complete' || reason === 'nomoves') {
+      state.phase = 'done';
+      ndSetGridOverlay('done');
+      ndSetStatus('completed');
+      checkEndCondition('complete');
+    } else if (reason === 'timeout') {
+      state.phase = 'done';
+      ndSetGridOverlay('done');
+      ndSetStatus('timelimit');
+      checkEndCondition('timeout');
+    }
+  };
+
+  if (!window._origFinalizePathND) window._origFinalizePathND = window.finalizePath;
+  window.finalizePath = function() {
+    try {
+      const removedPositions = [...state.selectedPath];
+      const prevCount = state.hands.length;
+      window._origFinalizePathND.call(this);
+      const newCount = state.hands.length;
+      if (newCount > prevCount) {
+        const newHand = state.hands[state.hands.length - 1];
+        const evalResult = evaluateHand(newHand.cards);
+        const sortedCards = [...newHand.cards].sort((a,b) => b.value - a.value);
+        const topSuit = sortedCards[0].suit;
+        ndState.myHands = state.hands.map(h => {
+          const ev = evaluateHand(h.cards);
+          const sc = [...h.cards].sort((a,b) => b.value - a.value);
+          return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: h.cards, values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal, secondaryVal: ev.secondaryVal, kickers: ev.kickers };
+        }).sort(ndHandSort);
+        playerState.completedHands = ndState.myHands;
+        updateDebug('HAND', `player ${prevCount+1}: ${evalResult.label}`);
+        ndRenderScoreboard();
+      }
+    } catch(e) {
+      console.error('[npc-duel] finalizePath error', e);
+      state.isDragging = false;
+      clearSelection();
+    }
+  };
+}
+
+// NPC simulation
+function startNPCGamePlay() {
+  const sim = NpcAI.simulateNPCGame(deckState.gridCards_npc, NpcAI.DEFAULT_PERSONALITY);
+  npcState.simulation = sim;
+  updateDebug('SIM', `totalTime=${sim.totalTime.toFixed(1)}s hands=${sim.hands.length}`);
+  sim.hands.forEach((h, i) => {
+    const t = setTimeout(() => {
+      npcState.completedHands.push(h);
+      ndState.opponentHands = npcState.completedHands.map(ch => {
+        const ev = { rank: ch.hand.rank, label: ch.hand.label };
+        const sc = [...ch.cards].sort((a,b) => b.value - a.value);
+        return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: ch.cards };
+      }).sort(ndHandSort);
+      ndUpdateOppMiniGrid(h.path);
+      ndRenderScoreboard();
+      updateDebug('HAND', `npc ${i+1}: ${h.hand.label} @ ${h.completedAt.toFixed(1)}s`);
+    }, h.completedAt * 1000);
+    npcState.handTimers.push(t);
+  });
+  npcState.doneTimer = setTimeout(() => {
+    showToast('NPC DONE');
+    ndSetStatus('oppdone');
+    if (ndState.gameTimeRemaining > 30) ndStartTimer(30);
+    updateDebug('SIM', `NPC DONE @ ${sim.totalTime.toFixed(1)}s`);
+  }, sim.totalTime * 1000);
+}
+
+function checkEndCondition(reason) {
+  // Player finished — end the game now
+  localEndGame(reason);
+}
+
+// ============================================================
+// End game / result
+// ============================================================
+function localEndGame(reason, foldedBy) {
+  if (state && state.phase === 'result') return;
+  if (state) state.phase = 'result';
+  clearInterval(ndState.gameTimerInterval);
+  clearTimeout(localBet.turnTimer);
+  npcState.handTimers.forEach(t => clearTimeout(t));
+  if (npcState.doneTimer) clearTimeout(npcState.doneTimer);
+  hideBettingPanel();
+
+  const pot = localBet.pot;
+  const tableFee = pot < 22 ? 0 : Math.min(Math.floor(pot * 0.05), 20);
+  const winAmount = pot - Math.floor(pot / 2) - tableFee;
+  const loseAmount = Math.floor(pot / 2);
+
+  let winner='draw', myWins=0, oppWins=0, results=['draw','draw','draw'];
+  if (reason === 'fold') {
+    winner = foldedBy === PLAYER ? NPC : PLAYER;
+    results = ['winner','draw','draw'];
+  } else {
+    const playerHands = playerState.completedHands.map(h => ({ rank:h.rank, label:h.label, values:h.values, suits:h.suits, primaryVal:h.primaryVal, secondaryVal:h.secondaryVal, kickers:h.kickers, cards:h.cards }));
+    const npcHands = npcState.completedHands.map(ch => {
+      const cards = ch.cards;
+      const ev = evaluateHand(cards);
+      return { rank: ev.rank, label: ev.label, values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal, secondaryVal: ev.secondaryVal, kickers: ev.kickers, cards };
+    });
+    const cmp = compareHandLists(playerHands, npcHands);
+    myWins = cmp.winsA; oppWins = cmp.winsB;
+    // first 3 results
+    results = (cmp.results.slice(0, 3)).map(r => r === 1 ? 'A' : r === -1 ? 'B' : 'draw');
+    while (results.length < 3) results.push('draw');
+    if (myWins >= 2) winner = PLAYER;
+    else if (oppWins >= 2) winner = NPC;
+    else winner = 'draw';
+  }
+
+  let myDelta = 0, oppDelta = 0;
+  if (winner === 'draw') {
+    myDelta = 0; oppDelta = 0;
+  } else if (winner === PLAYER) {
+    myDelta = winAmount; oppDelta = -loseAmount;
+  } else {
+    myDelta = -loseAmount; oppDelta = winAmount;
+  }
+  const prevMy = myChip, prevNpc = npcChip;
+  myChip = Math.max(0, myChip + myDelta);
+  npcChip = Math.max(0, npcChip + oppDelta);
+
+  const isDraw = winner === 'draw';
+  const iWin = winner === PLAYER;
+
+  // build hand arrays for display
+  const myHandsForDisplay = (reason === 'fold') ? [] : playerState.completedHands.map(h => ({ rank: h.rank, label: h.label, cards: h.cards }));
+  const oppHandsForDisplay = (reason === 'fold') ? [] : npcState.completedHands.map(ch => ({ rank: ch.hand.rank, label: ch.hand.label, cards: ch.cards }));
+
+  showNewDuelResult({
+    reason, iWin, isDraw, pot, tableFee,
+    myDelta, prevChip: prevMy, newChip: myChip,
+    myWins, oppWins, results,
+    myHands: myHandsForDisplay, oppHands: oppHandsForDisplay
+  });
+}
+
+function showNewDuelResult(data) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const myDelta = data.myDelta || 0;
+  const myNewChip = data.newChip;
+  const prevChip = data.prevChip;
+
+  let titleText = 'DRAW', titleColor = 'rgba(255,255,255,0.5)';
+  if (data.reason === 'fold') {
+    titleText = data.iWin ? 'WIN (FOLD)' : 'LOSE (FOLD)';
+    titleColor = data.iWin ? '#4CAF50' : '#ff5252';
+  } else if (data.iWin) { titleText = 'WIN!'; titleColor = '#4CAF50'; }
+  else if (!data.isDraw) { titleText = 'LOSE'; titleColor = '#ff5252'; }
+
+  let tableHTML = '';
+  if (data.reason !== 'fold') {
+    const mySorted = (data.myHands || []).slice().sort(ndHandSort);
+    const oppSorted = (data.oppHands || []).slice().sort(ndHandSort);
+    tableHTML = '<div style="margin:12px 0;">';
+    for (let i = 0; i < 3; i++) {
+      const r = data.results?.[i] || 'draw';
+      const my = mySorted[i], opp = oppSorted[i];
+      const myLabel = my ? my.label : '—', oppLabel = opp ? opp.label : '—';
+      const myWin = r === 'A', oppWin = r === 'B';
+      const ordinal = ['1st','2nd','3rd'][i];
+      tableHTML += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex;font-size:0.65rem;color:rgba(255,255,255,0.2);margin-bottom:2px;"><span>${ordinal}</span></div>
+        <div style="display:flex;font-size:0.78rem;font-weight:700;">
+          <span style="flex:1;color:${myWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${myWin ? '👑 ' : ''}${myLabel}</span>
+          <span style="color:rgba(255,255,255,0.15);font-size:0.65rem;align-self:center;">VS</span>
+          <span style="flex:1;text-align:right;color:${oppWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${oppLabel}${oppWin ? ' 👑' : ''}</span>
+        </div>
+        <div style="display:flex;font-size:0.58rem;">
+          <span style="flex:1;opacity:0.6;">${ndCardDisplay(my?.cards)}</span>
+          <span style="flex:1;text-align:right;opacity:0.6;">${ndCardDisplay(opp?.cards)}</span>
+        </div>
+      </div>`;
+    }
+    tableHTML += `<div style="display:flex;justify-content:center;gap:24px;font-size:0.78rem;margin-top:8px;"><span style="color:var(--gold);">내 승: ${data.myWins || 0}</span><span style="color:rgba(255,255,255,0.4);">NPC 승: ${data.oppWins || 0}</span></div>`;
+    tableHTML += '</div>';
+  }
+
+  const sign = myDelta >= 0 ? '+' : '';
+  const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+  let chipHTML;
+  if (data.isDraw) {
+    chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">무승부! 베팅금 반환</div>`;
+  } else if (data.reason === 'fold') {
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">FOLD 처리</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
+  } else {
+    chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">POT ${data.pot}${data.tableFee > 0 ? ` <span style="font-size:0.65rem;color:rgba(255,255,255,0.3);">(테이블피 ${data.tableFee})</span>` : ''}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
+  }
+
+  const buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" onclick="restartNPCDuel()" style="flex:1;">재대결</button></div><div style="color:rgba(255,255,255,0.35);font-size:0.68rem;margin-top:10px;">현재 칩: ME ${myChip} / NPC ${npcChip}</div>`;
+
+  modal.innerHTML = `<h2 style="font-size:1.3rem;color:${titleColor};">${titleText}</h2>${tableHTML}${chipHTML}${buttonsHTML}`;
+  overlay.classList.add('active');
+}
+
+function restartNPCDuel() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  clearInterval(ndState.betTimerInterval);
+  clearInterval(ndState.gameTimerInterval);
+  clearTimeout(localBet.turnTimer);
+  npcState.handTimers.forEach(t => clearTimeout(t));
+  npcState.handTimers = [];
+  if (npcState.doneTimer) { clearTimeout(npcState.doneTimer); npcState.doneTimer = null; }
+  if (state && state.timerInterval) clearInterval(state.timerInterval);
+
+  if (window._origIsValidHandND) { window.isValidHand = window._origIsValidHandND; window._origIsValidHandND = null; }
+  if (window._origFinalizePathND) { window.finalizePath = window._origFinalizePathND; window._origFinalizePathND = null; }
+
+  document.getElementById('npcDebugContent').innerHTML = '';
+
+  if (myChip < 2 || npcChip < 2) {
+    myChip = MY_CHIP_START;
+    npcChip = NPC_CHIP_START;
+    showToast('칩 리셋: 300 vs 300');
+  }
+  if (state) state.phase = 'idle';
+  ndSetGridOverlay('none');
+  setTimeout(startNPCDuel, 300);
+}
+
+// ============================================================
+// Debug panel
+// ============================================================
+const debugLog = [];
+function updateDebug(type, data) {
+  debugLog.push({ t: new Date(), type, data });
+  if (debugLog.length > 15) debugLog.shift();
+  const el = document.getElementById('npcDebugContent');
+  if (!el) return;
+  el.innerHTML = debugLog.map(e => {
+    const ts = e.t.toTimeString().slice(0,8);
+    return `<div><span style="color:rgba(0,212,255,0.4);">[${ts}]</span> <span style="color:#FFC107;">[${e.type}]</span> ${e.data}</div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+function toggleDebugPanel() {
+  const p = document.getElementById('npcDebugPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+window.toggleDebugPanel = toggleDebugPanel;
+window.sendBet = sendBet;
+window.restartNPCDuel = restartNPCDuel;
+</script>
+
+<div id="npcDebugPanel" style="position:fixed;bottom:0;left:0;right:0;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.92);border-top:1px solid rgba(0,212,255,0.3);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:rgba(0,212,255,0.7);padding:6px 10px;z-index:50;display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="color:#00D4FF;font-weight:700;">NPC AI DEBUG</span><button onclick="toggleDebugPanel()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.7rem;cursor:pointer;">▼</button></div>
+  <div id="npcDebugContent"></div>
+</div>
+<button id="debugToggleBtn" onclick="toggleDebugPanel()" style="position:fixed;bottom:8px;right:8px;z-index:51;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.3);border-radius:6px;color:rgba(0,212,255,0.6);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;padding:4px 8px;cursor:pointer;">🔧 AI</button>
+
+</body>
+</html>
