@@ -713,6 +713,62 @@
     "initialDeck": [
       "","","","","","","","9h","","","","","","","Qd","","","","","","","7h","6d","Kd","","7c","","8h","8d","3d","8s","","10c","","2c","5s","2h","9c","2s","Jh","5d","Qc","4h","10s","10h","Ad","Ah","Jc","Jd"
     ]
-  }	
+  },
+  {
+    "id": 13,
+    "title": {
+      "ko": "두개의 탑"
+    },
+    "description": {
+      "ko": "그리드의 모든 카드를 없애세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "grid_empty",
+          "description": "그리드의 모든 카드를 없애세요"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 12
+    },
+    "hint": {
+      "level1": {
+        "ko": "스트레이트 세 쌍으로 클리어하세요."
+      },
+      "level2": {
+        "ko": "첫 턴 8♥ → 10♠ → 7♦ → 9♣ → 10♠"
+      },
+      "level3": {
+        "ko": "두번째 턴 A♠ → 4♣ → 5♠ → 3♥ → 2♦"
+      }
+    },
+    "initialDeck": [
+      "","","Ac","","Kc","","","","","As","","Qh","","","","","Jd","","8h","","","","","2d","","4c","","","","","10s","","7d","","","","","3h","","5s","","","","","9c","","6s","10h",""
+    ]
+  }		
 ]
 
