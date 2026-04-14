@@ -328,6 +328,8 @@ const PLAYER='player', NPC='npc';
 const persistChip = { player: MY_CHIP_START, npc: NPC_CHIP_START };
 let myChip = persistChip.player;
 let npcChip = persistChip.npc;
+let playerDone = false;
+let npcDone = false;
 
 const ndState = {
   outCards: [], firstPlayer: null, isFirst: false,
@@ -897,6 +899,8 @@ async function startNPCDuel() {
   npcState.handTimers = [];
   if (npcState.doneTimer) { clearTimeout(npcState.doneTimer); npcState.doneTimer = null; }
   playerState.completedHands = [];
+  playerDone = false;
+  npcDone = false;
 
   ndDealCards();
 
@@ -1270,14 +1274,14 @@ function setupGameUI() {
     if (state.phase === 'result') return;
     if (reason === 'complete' || reason === 'nomoves') {
       state.phase = 'done';
-      ndSetGridOverlay('done');
-      ndSetStatus('completed');
-      checkEndCondition('complete');
+      localPlayerDone(reason);
     } else if (reason === 'timeout') {
       state.phase = 'done';
       ndSetGridOverlay('done');
       ndSetStatus('timelimit');
-      checkEndCondition('timeout');
+      playerDone = true;
+      npcDone = true;
+      localEndGame('timeout');
     }
   };
 
@@ -1317,6 +1321,8 @@ function startNPCGamePlay() {
   updateDebug('SIM', `totalTime=${sim.totalTime.toFixed(1)}s hands=${sim.hands.length}`);
   sim.hands.forEach((h, i) => {
     const t = setTimeout(() => {
+      if (state && state.phase === 'result') return;
+      if (npcDone) return;
       npcState.completedHands.push(h);
       ndState.opponentHands = npcState.completedHands.map(ch => {
         const ev = { rank: ch.hand.rank, label: ch.hand.label };
@@ -1330,16 +1336,33 @@ function startNPCGamePlay() {
     npcState.handTimers.push(t);
   });
   npcState.doneTimer = setTimeout(() => {
-    showToast('NPC DONE');
-    ndSetStatus('oppdone');
-    if (ndState.gameTimeRemaining > 30) ndStartTimer(30);
-    updateDebug('SIM', `NPC DONE @ ${sim.totalTime.toFixed(1)}s`);
+    if (state && state.phase === 'result') return;
+    localNpcDone(sim.totalTime);
   }, sim.totalTime * 1000);
 }
 
-function checkEndCondition(reason) {
-  // Player finished — end the game now
-  localEndGame(reason);
+function localPlayerDone(reason) {
+  if (playerDone) return;
+  playerDone = true;
+  ndSetGridOverlay('done');
+  ndSetStatus('completed');
+  updateDebug('SIM', `player DONE (${reason})`);
+  if (npcDone) {
+    localEndGame('complete');
+  }
+}
+
+function localNpcDone(totalTime) {
+  if (npcDone) return;
+  npcDone = true;
+  showToast('NPC Dragon이 게임을 완료했습니다');
+  ndSetStatus('oppdone');
+  updateDebug('SIM', `NPC DONE @ ${totalTime.toFixed(1)}s`);
+  if (playerDone) {
+    localEndGame('complete');
+  } else if (ndState.gameTimeRemaining > 30) {
+    ndStartTimer(30);
+  }
 }
 
 // ============================================================
@@ -1466,7 +1489,7 @@ function showNewDuelResult(data) {
   let buttonsHTML;
   if (lowChip) {
     const who = myChip < 2 ? '내 칩' : 'NPC 칩';
-    buttonsHTML = `<div style="color:#ff5252;font-size:0.7rem;margin-top:10px;text-align:center;">${who} 부족 — 재대결 불가</div><div style="display:flex;gap:8px;margin-top:8px;"><button class="pvp-popup-btn" onclick="resetNPCDuel()" style="flex:1;">RESET (300 vs 300)</button></div>`;
+    buttonsHTML = `<div style="color:#ff5252;font-size:0.7rem;margin-top:10px;text-align:center;">${who} 부족</div><div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;"><button class="pvp-popup-btn" onclick="location.href='mode_select.html'">게임 종료</button><button class="pvp-popup-btn" onclick="resetAndRestart()">재대결 (300 vs 300)</button></div>`;
   } else {
     buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" onclick="restartNPCDuel()" style="flex:1;">재대결</button></div>`;
   }
@@ -1502,6 +1525,11 @@ function resetNPCDuel() {
   showToast('칩 리셋: 300 vs 300');
   restartNPCDuel();
 }
+function resetAndRestart() {
+  persistChip.player = MY_CHIP_START;
+  persistChip.npc = NPC_CHIP_START;
+  restartNPCDuel();
+}
 
 // ============================================================
 // Debug panel
@@ -1526,6 +1554,7 @@ window.toggleDebugPanel = toggleDebugPanel;
 window.sendBet = sendBet;
 window.restartNPCDuel = restartNPCDuel;
 window.resetNPCDuel = resetNPCDuel;
+window.resetAndRestart = resetAndRestart;
 </script>
 
 <div id="npcDebugPanel" style="position:fixed;bottom:0;left:0;right:0;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.92);border-top:1px solid rgba(0,212,255,0.3);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:rgba(0,212,255,0.7);padding:6px 10px;z-index:50;display:none;">
