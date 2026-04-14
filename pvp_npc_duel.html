@@ -325,8 +325,9 @@ const NEWDUEL_RAISE_SIZES = { raise_small:'small', raise_medium:'medium', raise_
 const PLAYER='player', NPC='npc';
 
 // Local chip state (page-scoped; never synced to localStorage.userChip)
-let myChip = MY_CHIP_START;
-let npcChip = NPC_CHIP_START;
+const persistChip = { player: MY_CHIP_START, npc: NPC_CHIP_START };
+let myChip = persistChip.player;
+let npcChip = persistChip.npc;
 
 const ndState = {
   outCards: [], firstPlayer: null, isFirst: false,
@@ -868,9 +869,9 @@ async function advanceAfterBetting(phase) {
 }
 
 async function startNPCDuel() {
-  // reset state
-  myChip = MY_CHIP_START;
-  npcChip = NPC_CHIP_START;
+  // reset state — chips carry over from persistChip (set by previous round or RESET)
+  myChip = persistChip.player;
+  npcChip = persistChip.npc;
   ndState.myChipStart = myChip;
   ndState.oppChipStart = npcChip;
   ndState.myTotalBet = 1;
@@ -1390,6 +1391,8 @@ function localEndGame(reason, foldedBy) {
   const prevMy = myChip, prevNpc = npcChip;
   myChip = Math.max(0, myChip + myDelta);
   npcChip = Math.max(0, npcChip + oppDelta);
+  persistChip.player = myChip;
+  persistChip.npc = npcChip;
 
   const isDraw = winner === 'draw';
   const iWin = winner === PLAYER;
@@ -1459,9 +1462,17 @@ function showNewDuelResult(data) {
     chipHTML = `<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:8px;">POT ${data.pot}${data.tableFee > 0 ? ` <span style="font-size:0.65rem;color:rgba(255,255,255,0.3);">(테이블피 ${data.tableFee})</span>` : ''}</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${prevChip} → ${myNewChip}</div>`;
   }
 
-  const buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" onclick="restartNPCDuel()" style="flex:1;">재대결</button></div><div style="color:rgba(255,255,255,0.35);font-size:0.68rem;margin-top:10px;">현재 칩: ME ${myChip} / NPC ${npcChip}</div>`;
+  const lowChip = myChip < 2 || npcChip < 2;
+  let buttonsHTML;
+  if (lowChip) {
+    const who = myChip < 2 ? '내 칩' : 'NPC 칩';
+    buttonsHTML = `<div style="color:#ff5252;font-size:0.7rem;margin-top:10px;text-align:center;">${who} 부족 — 재대결 불가</div><div style="display:flex;gap:8px;margin-top:8px;"><button class="pvp-popup-btn" onclick="resetNPCDuel()" style="flex:1;">RESET (300 vs 300)</button></div>`;
+  } else {
+    buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" onclick="restartNPCDuel()" style="flex:1;">재대결</button></div>`;
+  }
+  const chipStatusHTML = `<div style="color:rgba(255,255,255,0.45);font-size:0.7rem;margin-top:10px;text-align:center;">내 칩: <span style="color:var(--gold);font-weight:700;">${myChip}</span> / NPC: <span style="color:rgba(255,255,255,0.7);font-weight:700;">${npcChip}</span></div>`;
 
-  modal.innerHTML = `<h2 style="font-size:1.3rem;color:${titleColor};">${titleText}</h2>${tableHTML}${chipHTML}${buttonsHTML}`;
+  modal.innerHTML = `<h2 style="font-size:1.3rem;color:${titleColor};">${titleText}</h2>${tableHTML}${chipHTML}${chipStatusHTML}${buttonsHTML}`;
   overlay.classList.add('active');
 }
 
@@ -1480,14 +1491,16 @@ function restartNPCDuel() {
 
   document.getElementById('npcDebugContent').innerHTML = '';
 
-  if (myChip < 2 || npcChip < 2) {
-    myChip = MY_CHIP_START;
-    npcChip = NPC_CHIP_START;
-    showToast('칩 리셋: 300 vs 300');
-  }
   if (state) state.phase = 'idle';
   ndSetGridOverlay('none');
   setTimeout(startNPCDuel, 300);
+}
+
+function resetNPCDuel() {
+  persistChip.player = MY_CHIP_START;
+  persistChip.npc = NPC_CHIP_START;
+  showToast('칩 리셋: 300 vs 300');
+  restartNPCDuel();
 }
 
 // ============================================================
@@ -1512,6 +1525,7 @@ function toggleDebugPanel() {
 window.toggleDebugPanel = toggleDebugPanel;
 window.sendBet = sendBet;
 window.restartNPCDuel = restartNPCDuel;
+window.resetNPCDuel = resetNPCDuel;
 </script>
 
 <div id="npcDebugPanel" style="position:fixed;bottom:0;left:0;right:0;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.92);border-top:1px solid rgba(0,212,255,0.3);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:rgba(0,212,255,0.7);padding:6px 10px;z-index:50;display:none;">
