@@ -894,6 +894,72 @@
     "initialDeck": [
       "","","Ac","","Kc","","","","","As","","Qh","","","","","Jd","","8h","","","","","2d","","4c","","","","","10s","","7d","","","","","3h","","5s","","","","","9c","","6s","10h",""
     ]
-  }  		
+  },
+  {
+    "id": 16,
+    "title": {
+      "ko": "상위패 제패"
+    },
+    "description": {
+      "ko": "로열플러시+ 2개를 포함해서,포카드 이상의 패 9개를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "ROYAL_FLUSH_PLUS",
+          "count_gte": 2,
+          "description": "로열플러시+ 2개"
+        },
+        {
+          "id": "c2",
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 9,
+          "description": "포카드 이상 패 9개"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 15
+    },
+    "hint": {
+      "level1": {
+        "ko": ""
+      },
+      "level2": {
+        "ko": ""
+      },
+      "level3": {
+        "ko": ""
+      }
+    },
+    "initialDeck": [
+      "4s","5s","6s","7s","Jc","Kc","Js","3s","4c","5c","10c","9c","As","Ks","3c","Jd","6c","8c","Ah","Qc","Qs","2c","Ad","7c","8h","10h","3d","10s","2d","8d","10d","7h","Jh","4d","Ac","Kd","2s","4h","6h","Qh","5d","9d","Qd","2h","3h","5h","Kh","6d","7d"
+    ]
+  }
+  
 ]
 
