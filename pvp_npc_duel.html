@@ -739,10 +739,12 @@ function localHandleBet(who, action) {
       action = 'call';
     } else {
       const tableRaise = (NEWDUEL_RAISE_TABLE[phase] || {})[raiseSize];
-      if (!tableRaise) return;
-      if (localBet._lastRaiseAmount && tableRaise < localBet._lastRaiseAmount) return;
+      if (!tableRaise) { action = 'call'; }
+      else if (localBet._lastRaiseAmount && tableRaise < localBet._lastRaiseAmount) { action = 'call'; }
+      else {
       const raiseAmount = Math.min(tableRaise, oppRem);
-      if (raiseAmount <= 0) return;
+      if (raiseAmount <= 0) { action = 'call'; }
+      else {
       const matchAmount = localBet._callAmount || 0;
       const totalCost = matchAmount + raiseAmount;
       let actualTotal = totalCost;
@@ -769,8 +771,10 @@ function localHandleBet(who, action) {
       if (opp === NPC) scheduleNpcBet();
       else startLocalTurnTimer();
       return;
-    }
-  }
+      } // else raiseAmount > 0
+      } // else tableRaise valid
+    } // else myRaises < 1
+  } // if raiseSize
 
   // CALL after a raise
   if (localBet._lastRaiser && localBet._lastRaiser !== who) {
@@ -853,9 +857,10 @@ function npcDoBet() {
   };
   const decision = NpcAI.decideBet(ctx);
   updateDebug('BET', `strength=${decision.strength.toFixed(2)} conf=${decision.confidence.toFixed(2)} -> ${decision.action}`);
-  // if NPC picked a raise but cannot, fall back to call
+  // if NPC picked a raise but the specific size isn't available, fall back to call
   let action = decision.action;
-  if ((action === 'raise_small' || action === 'raise_medium' || action === 'raise_large') && !opts.canRaise) {
+  const raiseSizePicked = NEWDUEL_RAISE_SIZES[action];
+  if (raiseSizePicked && (!opts.canRaise || !opts.options[raiseSizePicked])) {
     action = 'call';
   }
   localHandleBet(NPC, action);
