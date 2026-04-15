@@ -64,6 +64,9 @@
   .nd-first-mark { color:#FFD740; font-size:0.7rem; }
   .nd-divider { height:1px; background:rgba(255,255,255,0.06); margin:4px 12px; }
   .nd-chip-info { display:flex; align-items:center; justify-content:center; gap:4px; padding:2px 12px; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.5); }
+  .nd-chip-info.my { font-size:0.82rem; padding:6px 14px; margin:4px 12px; background:rgba(201,168,76,0.12); border:1px solid rgba(201,168,76,0.5); border-radius:8px; color:rgba(255,255,255,0.85); box-shadow:0 0 8px rgba(201,168,76,0.15); }
+  .nd-chip-info.my .nd-chip-ico { width:13px; height:13px; }
+  .nd-chip-info.my .nd-chip-remain { color:var(--gold); font-weight:700; }
   .nd-chip-ico { width:10px; height:10px; vertical-align:-1px; margin-right:1px; }
   .nd-chip-bet { color:#ff5252; }
   .nd-chip-sep { color:rgba(255,255,255,0.2); }
@@ -156,7 +159,6 @@
 
 <div class="back-fixed"><a href="mode_select.html" id="backLink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
 
-<div class="header"><div id="global-header"></div></div>
 
 <!-- VIEW: DEALING -->
 <div id="view-dealing" style="display:none">
@@ -200,7 +202,7 @@
       </div>
     </div>
 
-    <div class="nd-chip-info" id="ndMyChipInfo">
+    <div class="nd-chip-info my" id="ndMyChipInfo">
       <span class="nd-chip-initial"><img src="./images/chip.png" class="nd-chip-ico"><span id="ndMyChipStart">0</span></span>
       <span class="nd-chip-sep">-</span>
       <span class="nd-chip-bet">BET <span id="ndMyTotalBet">1</span></span>
@@ -382,7 +384,6 @@ const playerState = {
 (async () => {
   if (typeof requireRegistration === 'function' && !requireRegistration()) return;
   if (typeof i18n !== 'undefined' && i18n.init) await i18n.init();
-  if (typeof initHeader === 'function') initHeader();
   if (typeof Sound !== 'undefined' && Sound.loadSettings) Sound.loadSettings();
   if (typeof BGM !== 'undefined' && BGM.loadSettings) BGM.loadSettings();
   if (typeof ScorePolicy !== 'undefined' && ScorePolicy.load) await ScorePolicy.load();
