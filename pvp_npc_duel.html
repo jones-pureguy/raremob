@@ -370,7 +370,8 @@ const npcState = {
   simulation: null,
   completedHands: [],
   handTimers: [],
-  doneTimer: null
+  doneTimer: null,
+  gameStartAt: 0
 };
 
 // Player state
@@ -1402,6 +1403,7 @@ function setupGameUI() {
 
 // NPC simulation
 function startNPCGamePlay() {
+  npcState.gameStartAt = Date.now();
   const sim = NpcAI.simulateNPCGame(deckState.gridCards_npc, NpcAI.DEFAULT_PERSONALITY);
   npcState.simulation = sim;
   updateDebug('SIM', `totalTime=${sim.totalTime.toFixed(1)}s hands=${sim.hands.length}`);
@@ -1427,6 +1429,42 @@ function startNPCGamePlay() {
   }, sim.totalTime * 1000);
 }
 
+// 플레이어 완료 후 NPC 남은 타이머를 1/4 속도로 재예약
+function npcAccelerateTimers() {
+  const sim = npcState.simulation;
+  if (!sim) return;
+  const elapsed = (Date.now() - npcState.gameStartAt) / 1000;
+
+  npcState.handTimers.forEach(t => clearTimeout(t));
+  npcState.handTimers = [];
+  if (npcState.doneTimer) { clearTimeout(npcState.doneTimer); npcState.doneTimer = null; }
+
+  sim.hands.forEach((h, i) => {
+    if (h.completedAt <= elapsed) return; // 이미 완료된 손패
+    const remaining = (h.completedAt - elapsed) * 0.25;
+    const t = setTimeout(() => {
+      if (state && state.phase === 'result') return;
+      if (npcDone) return;
+      npcState.completedHands.push(h);
+      ndState.opponentHands = npcState.completedHands.map(ch => {
+        const ev = { rank: ch.hand.rank, label: ch.hand.label };
+        const sc = [...ch.cards].sort((a,b) => b.value - a.value);
+        return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: ch.cards };
+      }).sort(ndHandSort);
+      ndUpdateOppMiniGrid(h.path);
+      ndRenderScoreboard();
+      updateDebug('HAND', `npc ${i+1}(acc): ${h.hand.label}`);
+    }, remaining * 1000);
+    npcState.handTimers.push(t);
+  });
+
+  const totalRemaining = (sim.totalTime - elapsed) * 0.25;
+  npcState.doneTimer = setTimeout(() => {
+    if (state && state.phase === 'result') return;
+    localNpcDone(sim.totalTime);
+  }, totalRemaining * 1000);
+}
+
 function localPlayerDone(reason) {
   if (playerDone) return;
   playerDone = true;
@@ -1435,6 +1473,8 @@ function localPlayerDone(reason) {
   updateDebug('SIM', `player DONE (${reason})`);
   if (npcDone) {
     localEndGame('complete');
+  } else {
+    npcAccelerateTimers();
   }
 }
 
