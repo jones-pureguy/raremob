@@ -432,53 +432,85 @@
 
   function scoreCards(cards) {
     if (!cards || cards.length === 0) return 0.3;
-    let score = 0.5;
 
-    // 수트 분포
-    const suitCount = {};
-    cards.forEach(c => { suitCount[c.suit] = (suitCount[c.suit] || 0) + 1; });
-    const maxSuit = Math.max.apply(null, Object.values(suitCount));
-    if (maxSuit >= 5) score += 0.20;
-    else if (maxSuit === 4) score += 0.10;
+    var base;
+    if (cards.length <= 15) base = 0.20;
+    else if (cards.length <= 18) base = 0.23;
+    else if (cards.length <= 20) base = 0.25;
+    else base = 0.28;
 
-    // 연속 숫자
-    const values = cards.map(c => c.value).slice().sort((a, b) => a - b);
-    const uniq = Array.from(new Set(values));
-    let bestRun = 1, run = 1;
-    for (let i = 1; i < uniq.length; i++) {
-      if (uniq[i] === uniq[i - 1] + 1) {
-        run++;
-        if (run > bestRun) bestRun = run;
-      } else {
-        run = 1;
-      }
+    var score = base;
+
+    var suitCount = {};
+    cards.forEach(function(c) { suitCount[c.suit] = (suitCount[c.suit] || 0) + 1; });
+    var maxSuit = Math.max.apply(null, Object.values(suitCount));
+    var suitRatio = maxSuit / cards.length;
+    if (suitRatio >= 0.6 && maxSuit >= 7) score += 0.08;
+    else if (suitRatio >= 0.4 && maxSuit >= 6) score += 0.04;
+
+    var values = cards.map(function(c) { return c.value; }).slice().sort(function(a, b) { return a - b; });
+    var uniq = [];
+    for (var i = 0; i < values.length; i++) {
+      if (i === 0 || values[i] !== values[i - 1]) uniq.push(values[i]);
     }
-    if (bestRun >= 4) score += 0.15;
-    else if (bestRun === 3) score += 0.07;
+    var bestRun = 1, run = 1;
+    for (var i = 1; i < uniq.length; i++) {
+      if (uniq[i] === uniq[i - 1] + 1) { run++; if (run > bestRun) bestRun = run; }
+      else { run = 1; }
+    }
+    if (bestRun >= 5) score += 0.10;
+    else if (bestRun === 4) score += 0.04;
 
-    // 페어/트리플/쿼드
-    const valueCount = {};
-    values.forEach(v => { valueCount[v] = (valueCount[v] || 0) + 1; });
-    const counts = Object.values(valueCount);
-    const max = Math.max.apply(null, counts);
-    const pairs = counts.filter(c => c === 2).length;
-    if (max >= 4) score += 0.20;
-    else if (max === 3) score += 0.12;
-    if (pairs >= 3) score += 0.10;
-
-    // 고카드
-    const highs = cards.filter(c => c.value >= 12).length;
-    score += 0.02 * highs;
-
-    // 로열 재료
-    const royalSuits = {};
-    cards.forEach(c => {
-      if (c.value >= 10) {
-        royalSuits[c.suit] = (royalSuits[c.suit] || 0) + 1;
-      }
+    var sfScore = 0;
+    var suitCards = {};
+    cards.forEach(function(c) {
+      if (!suitCards[c.suit]) suitCards[c.suit] = [];
+      suitCards[c.suit].push(c.value);
     });
-    const maxRoyal = Object.keys(royalSuits).length ? Math.max.apply(null, Object.values(royalSuits)) : 0;
-    if (maxRoyal >= 3) score += 0.15;
+    Object.keys(suitCards).forEach(function(suit) {
+      var sv = suitCards[suit].slice().sort(function(a, b) { return a - b; });
+      var svUniq = [];
+      for (var i = 0; i < sv.length; i++) {
+        if (i === 0 || sv[i] !== sv[i - 1]) svUniq.push(sv[i]);
+      }
+      var sRun = 1, sBest = 1;
+      for (var i = 1; i < svUniq.length; i++) {
+        if (svUniq[i] === svUniq[i - 1] + 1) { sRun++; if (sRun > sBest) sBest = sRun; }
+        else { sRun = 1; }
+      }
+      if (sBest >= 5) sfScore = Math.max(sfScore, 0.25);
+      else if (sBest === 4) sfScore = Math.max(sfScore, 0.12);
+      else if (sBest === 3 && sv.length >= 5) sfScore = Math.max(sfScore, 0.05);
+
+      var royals = sv.filter(function(v) { return v >= 10; }).length;
+      if (royals >= 4) sfScore = Math.max(sfScore, 0.20);
+      else if (royals === 3) sfScore = Math.max(sfScore, 0.06);
+    });
+    score += sfScore;
+
+    var valueCount = {};
+    values.forEach(function(v) { valueCount[v] = (valueCount[v] || 0) + 1; });
+    var counts = Object.values(valueCount);
+    var quads = counts.filter(function(c) { return c >= 4; }).length;
+    var triples = counts.filter(function(c) { return c === 3; }).length;
+    var pairs = counts.filter(function(c) { return c === 2; }).length;
+
+    if (quads >= 2) score += 0.30;
+    else if (quads === 1) score += 0.18;
+
+    if (quads === 0) {
+      if (triples >= 2) score += 0.15;
+      else if (triples === 1 && pairs >= 2) score += 0.12;
+      else if (triples === 1) score += 0.07;
+    }
+
+    if (quads === 0 && triples === 0) {
+      if (pairs >= 4) score += 0.05;
+      else if (pairs >= 2) score += 0.02;
+    }
+
+    var aces = cards.filter(function(c) { return c.value === 14; }).length;
+    if (aces >= 3) score += 0.03;
 
     return clamp01(score);
   }
