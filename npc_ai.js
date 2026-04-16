@@ -434,10 +434,10 @@
     if (!cards || cards.length === 0) return 0.3;
 
     var base;
-    if (cards.length <= 15) base = 0.20;
-    else if (cards.length <= 18) base = 0.23;
+    if (cards.length <= 15) base = 0.35;
+    else if (cards.length <= 18) base = 0.30;
     else if (cards.length <= 20) base = 0.25;
-    else base = 0.28;
+    else base = 0.20;
 
     var score = base;
 
