@@ -322,14 +322,16 @@
       return null;
     }
 
-    // searchDepth: 1~2 → 다음 패 합산 평가
+    // searchDepth: 1~2 → 다음 패 합산 평가 (상위 5개만 lookahead, 나머지는 rank 점수)
     let scored = candidates.map(c => ({ cand: c, score: c.hand.rank }));
     if (p.searchDepth >= 1) {
       const depthLimit = Math.min(2, p.searchDepth);
-      scored = candidates.slice(0, 5).map(c => {
+      const topScored = candidates.slice(0, 5).map(c => {
         const score = c.hand.rank + lookahead(grid, size, c, depthLimit - 1, minPairValue);
         return { cand: c, score };
       });
+      const restScored = candidates.slice(5).map(c => ({ cand: c, score: c.hand.rank }));
+      scored = topScored.concat(restScored);
       scored.sort((a, b) => b.score - a.score);
     }
 
@@ -413,7 +415,7 @@
     var size = opts.gridSize || GRID_SIZE_DEFAULT;
     var maxHands = opts.maxHands || 5;
     var minPairValue = opts.minPairValue || 0;
-    var pathTopN = size >= 7 ? 10 : 20;
+    var pathTopN = size >= 7 ? 25 : 20;
 
     const p = mergePersonality(personality);
     const grid = makeGridFromCards(gridCards, size);
