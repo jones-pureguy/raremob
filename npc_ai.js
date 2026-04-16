@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  const NPC_DEBUG = false;
+  const NPC_DEBUG = true;
   function npcLog() {
     if (!NPC_DEBUG) return;
     if (typeof console !== 'undefined') {
