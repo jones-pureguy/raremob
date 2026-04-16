@@ -9,7 +9,7 @@
 
   const NPC_DEBUG = true;
   function npcLog() {
-    if (!NPC_DEBUG) return;
+    if (!NPC_DEBUG) false;
     if (typeof console !== 'undefined') {
       const args = Array.prototype.slice.call(arguments);
       args.unshift('[NPC_AI]');
