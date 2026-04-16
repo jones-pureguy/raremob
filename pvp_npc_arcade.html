@@ -110,6 +110,10 @@
     </div>
 
     <div class="hand-preview" id="handPreview"></div>
+    <!-- 제거된 카드 3장 -->
+    <div id="removedCardsArea" style="padding:3px 12px 2px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.28);text-align:center;letter-spacing:0.06em;">
+      REMOVED:&nbsp;<span id="removedCardsList">—</span>
+    </div>
   </div>
 
   <!-- script.js 호환 더미 -->
@@ -507,6 +511,16 @@ function startNPCArcade() {
   const npcDeck = shuffle(createDeck());
   const playerGridCards = playerDeck.slice(0, NA_GRID_SIZE * NA_GRID_SIZE);
   const npcGridCards = npcDeck.slice(0, NA_GRID_SIZE * NA_GRID_SIZE);
+  const removedCards = playerDeck.slice(NA_GRID_SIZE * NA_GRID_SIZE);  // 3장
+
+  // REMOVED 카드 표시
+  const removedEl = document.getElementById('removedCardsList');
+  if (removedEl) {
+    removedEl.innerHTML = removedCards.map(c => {
+      const col = (c.suit === '♥' || c.suit === '♦') ? '#ff6b6b' : '#e0e0e0';
+      return `<span style="color:${col};font-weight:700;">${VN_ARCADE[c.value]}${c.suit}</span>`;
+    }).join('&nbsp;&nbsp;');
+  }
 
   setupArcadeGameUI(playerGridCards, npcGridCards);
   naRenderHandsComparison();
@@ -602,7 +616,7 @@ function setupArcadeGameUI(playerGridCards, npcGridCards) {
 // ============================================================
 function startNPCArcadePlay(npcGridCards) {
   npcArcadeState.gameStartAt = Date.now();
-  const sim = NpcAI.simulateNPCGame(npcGridCards, NpcAI.DEFAULT_PERSONALITY, {
+  const sim = NpcAI.simulateNPCGame(npcGridCards, NpcAI.ARCADE_PERSONALITY, {
     gridSize: NA_GRID_SIZE,
     maxHands: NA_MAX_HANDS,
     minPairValue: NA_MIN_PAIR

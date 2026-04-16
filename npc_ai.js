@@ -605,6 +605,21 @@
     preferredHands: [],
   };
 
+  // [REUSE] Arcade용 NPC 성격 — Duel보다 약하게 (7×7, 9패)
+  // searchDepth 1 + accuracy 0.55 → 절반 확률로 차선 패 선택
+  // speed 0.35 → 패당 약 16~30초, 9패 완성에 240초 내외
+  const ARCADE_PERSONALITY = {
+    name: 'NPC Dragon',
+    searchDepth: 1,
+    accuracy: 0.55,
+    speed: 0.35,
+    rfPlusChance: 0.15,
+    bluffRate: 0.08,
+    foldThreshold: 0.3,
+    raiseThreshold: 0.72,
+    preferredHands: [],
+  };
+
   function mergePersonality(p) {
     const out = {};
     for (const k in DEFAULT_PERSONALITY) out[k] = DEFAULT_PERSONALITY[k];
@@ -619,6 +634,7 @@
     RANK,
     HAND_SIZE,
     DEFAULT_PERSONALITY,
+    ARCADE_PERSONALITY,
     evaluateHandNPC,
     findAllValidPaths,
     findBestHand,
