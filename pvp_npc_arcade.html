@@ -51,16 +51,6 @@
   .na-my-grid-wrap { position:relative; padding:0 4px; }
   .na-grid-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:700; color:var(--gold); border-radius:8px; z-index:10; }
 
-  /* ── 스코어보드 ── */
-  .na-scoreboard { max-width:480px; width:100%; margin:4px auto; padding:0 10px; font-family:'IBM Plex Mono',monospace; font-size:0.63rem; box-sizing:border-box; }
-  .na-sb-header { display:flex; justify-content:space-between; color:rgba(255,255,255,0.35); padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:0.58rem; letter-spacing:0.05em; }
-  .na-sb-row { display:flex; align-items:center; padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.03); min-height:16px; }
-  .na-sb-cell { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .na-sb-cell.left { text-align:left; color:rgba(255,255,255,0.6); }
-  .na-sb-cell.right { text-align:right; color:rgba(255,255,255,0.6); }
-  .na-sb-cell.vs { flex:0; width:18px; text-align:center; color:rgba(255,255,255,0.2); font-size:0.52rem; }
-  .na-sb-cell .win { color:var(--gold); }
-
   /* ── START 오버레이 ── */
   #naStartOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; font-family:'IBM Plex Mono',monospace; }
   #naStartOverlay .so-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--gold); letter-spacing:0.1em; }
@@ -120,7 +110,6 @@
     </div>
 
     <div class="hand-preview" id="handPreview"></div>
-    <div class="na-scoreboard" id="naScoreboard"></div>
   </div>
 
   <!-- script.js 호환 더미 -->
@@ -298,7 +287,7 @@ function localCompareArcade(myHands, npcHands) {
     }
   }
   const winner = winsA > winsB ? 'player' : winsB > winsA ? 'npc' : 'draw';
-  return { results, winsA, winsB, winner };
+  return { results, myWins: winsA, npcWins: winsB, winner };
 }
 
 // ── 칩 정산 ──
@@ -366,35 +355,59 @@ function naUpdateOppMiniGrid(removedPositions) {
   });
 }
 
-// ── 스코어보드 (9패) ──
-function naRenderScoreboard() {
-  const container = document.getElementById('naScoreboard');
-  if (!container) return;
-  const myName = localStorage.getItem('poker_username') || 'ME';
+// ── 패 이름 약어 ──
+function shortHandLabel(label) {
+  if (!label) return '—';
+  const exact = {
+    'Royal Flush Plus': 'RF+', 'Royal Flush+': 'RF+',
+    'Royal Flush': 'RF',
+    'Straight Flush': 'SF',
+    'Four of a Kind': '4K', 'Quads': '4K',
+    'Full House': 'FH',
+    'Flush': 'FL',
+    'Straight': 'ST',
+    'Three of a Kind': '3K',
+    'Two Pair': '2P',
+    'One Pair': '1P'
+  };
+  if (exact[label]) return exact[label];
+  for (const [k, v] of Object.entries(exact)) {
+    if (label.includes(k)) return v;
+  }
+  return label.slice(0, 4);
+}
+
+// ── ME vs NPC 사이드바 비교 (미니그리드 옆, #naOppHandsList) ──
+function naRenderHandsComparison() {
+  const el = document.getElementById('naOppHandsList');
+  if (!el) return;
   const mySorted = [...naState.myHands].sort(naHandSort);
   const oppSorted = [...naState.opponentHands].sort(naHandSort);
-  const myCount = mySorted.length, oppCount = oppSorted.length;
-  let html = `<div class="na-sb-header"><span class="na-sb-cell left">${myName} (${myCount}/${NA_MAX_HANDS})</span><span class="na-sb-cell vs"></span><span class="na-sb-cell right">NPC (${oppCount}/${NA_MAX_HANDS})</span></div>`;
   const maxRows = Math.max(NA_MAX_HANDS, mySorted.length, oppSorted.length);
+  const cmp = localCompareArcade(mySorted, oppSorted);
+
+  let html = `<div style="display:flex;font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.28);padding:1px 2px 2px;border-bottom:1px solid rgba(255,255,255,0.08);letter-spacing:0.04em;">
+    <span style="flex:1;text-align:left;">ME</span>
+    <span style="flex:0;width:12px;text-align:center;"></span>
+    <span style="flex:1;text-align:right;">NPC</span>
+  </div>`;
+
   for (let i = 0; i < maxRows; i++) {
     const my = mySorted[i], opp = oppSorted[i];
-    const myText = my ? my.label : '—', oppText = opp ? opp.label : '—';
-    let myClass = '', oppClass = '';
-    if (my && opp) {
-      const cmp = my.rank !== opp.rank ? (my.rank > opp.rank ? 1 : -1) : compareHandsByCards(my, opp);
-      if (cmp > 0) myClass = 'win'; else if (cmp < 0) oppClass = 'win';
-    } else if (my && !opp) myClass = 'win';
-    else if (!my && opp) oppClass = 'win';
-    html += `<div class="na-sb-row"><span class="na-sb-cell left"><span class="${myClass}">${myClass === 'win' ? '👑 ' : ''}${myText}</span></span><span class="na-sb-cell vs">${i + 1}</span><span class="na-sb-cell right"><span class="${oppClass}">${oppText}${oppClass === 'win' ? ' 👑' : ''}</span></span></div>`;
+    const r = cmp.results[i] || 0;
+    const myWin = r === 1, oppWin = r === -1;
+    const myLabel = shortHandLabel(my ? my.label : null);
+    const oppLabel = shortHandLabel(opp ? opp.label : null);
+    const myColor = myWin ? 'var(--gold)' : my ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)';
+    const oppColor = oppWin ? 'rgba(0,212,255,0.85)' : opp ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)';
+    html += `<div style="display:flex;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:0.54rem;padding:1px 2px;">
+      <span style="flex:1;text-align:left;color:${myColor};white-space:nowrap;">${myWin ? '👑' : ''}${myLabel}</span>
+      <span style="flex:0;width:12px;text-align:center;color:rgba(255,255,255,0.15);font-size:0.44rem;">${i + 1}</span>
+      <span style="flex:1;text-align:right;color:${oppColor};white-space:nowrap;">${oppLabel}${oppWin ? '👑' : ''}</span>
+    </div>`;
   }
-  container.innerHTML = html;
-  // 상대 손패 리스트 업데이트
-  const oppEl = document.getElementById('naOppHandsList');
-  if (oppEl) {
-    oppEl.innerHTML = oppSorted.map((h, i) =>
-      `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:rgba(0,212,255,0.6);padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i + 1}. ${h.label}</div>`
-    ).join('') || '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.55rem;color:rgba(255,255,255,0.2);">—</div>';
-  }
+
+  el.innerHTML = html;
 }
 
 // ── 타이머 ──
@@ -496,7 +509,7 @@ function startNPCArcade() {
   const npcGridCards = npcDeck.slice(0, NA_GRID_SIZE * NA_GRID_SIZE);
 
   setupArcadeGameUI(playerGridCards, npcGridCards);
-  naRenderScoreboard();
+  naRenderHandsComparison();
   naSetStatus('playing');
   naStartTimer(NA_TIMER_SEC);
   naState.gameStarted = true;
@@ -574,7 +587,7 @@ function setupArcadeGameUI(playerGridCards, npcGridCards) {
         }).sort(naHandSort);
         playerState.completedHands = naState.myHands;
         updateDebug('HAND', `player ${prevCount + 1}: ${evalResult.label}`);
-        naRenderScoreboard();
+        naRenderHandsComparison();
       }
     } catch (e) {
       console.error('[npc-arcade] finalizePath error', e);
@@ -607,7 +620,7 @@ function startNPCArcadePlay(npcGridCards) {
         return { rank: ch.hand.rank, label: ch.hand.label, suit: sc[0].suit, cards: ch.cards };
       }).sort(naHandSort);
       naUpdateOppMiniGrid(h.path);
-      naRenderScoreboard();
+      naRenderHandsComparison();
       updateDebug('HAND', `npc ${i + 1}: ${h.hand.label} @ ${h.completedAt.toFixed(1)}s`);
     }, h.completedAt * 1000);
     npcArcadeState.handTimers.push(t);
@@ -641,7 +654,7 @@ function npcArcadeAccelerateTimers() {
         return { rank: ch.hand.rank, label: ch.hand.label, suit: sc[0].suit, cards: ch.cards };
       }).sort(naHandSort);
       naUpdateOppMiniGrid(h.path);
-      naRenderScoreboard();
+      naRenderHandsComparison();
       updateDebug('HAND', `npc ${i + 1}(acc): ${h.hand.label}`);
     }, remaining * 1000);
     npcArcadeState.handTimers.push(t);
