@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DragON POKER - NPC ARCADE</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── 공통 팝업 ── */
+  .pvp-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; justify-content:center; align-items:center; }
+  .pvp-overlay.active { display:flex; }
+  .pvp-popup { background:linear-gradient(145deg,#1a3a22,#0d2818); border:2px solid var(--gold); border-radius:16px; padding:24px 20px; max-width:360px; width:92%; text-align:center; box-shadow:0 0 40px rgba(201,168,76,0.2); }
+  .pvp-popup-btn { width:100%; padding:12px; margin-top:6px; border-radius:8px; border:1px solid rgba(201,168,76,0.3); background:rgba(255,255,255,0.08); color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .pvp-popup-btn:hover { background:rgba(201,168,76,0.15); }
+
+  /* ── 게임 뷰 ── */
+  .na-game-view { width:100%; max-width:480px; margin:0 auto; padding:4px 0; }
+
+  /* ── 상태 바 ── */
+  .na-game-status { display:flex; align-items:center; justify-content:space-between; padding:4px 10px; margin-bottom:2px; }
+  .na-game-status .timer-wrap { width:36px; height:36px; position:relative; flex-shrink:0; }
+  .na-game-status .timer-ring { width:36px; height:36px; }
+  .na-game-status .timer-ring-bg { fill:none; stroke:rgba(255,255,255,0.08); stroke-width:2; }
+  .na-game-status .timer-ring-fg { fill:none; stroke:var(--gold); stroke-width:2.5; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .na-game-status .timer-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:700; color:var(--gold); }
+  .na-game-status .timer-num.time-attack { color:#ff3333 !important; }
+  .na-game-status .timer-ring-fg.time-attack { stroke:#ff3333 !important; }
+  .na-status-msg { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.08em; color:rgba(201,168,76,0.3); }
+  .na-status-msg.blink { animation:naBlink 1s ease-in-out infinite; }
+  @keyframes naBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .na-chip-bar { display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; }
+  .na-chip-me { color:var(--gold); font-weight:700; display:flex; align-items:center; gap:2px; }
+  .na-chip-npc { color:rgba(0,212,255,0.7); font-weight:700; display:flex; align-items:center; gap:2px; }
+  .na-chip-bar img { width:12px; height:12px; }
+  .na-chip-sep { color:rgba(255,255,255,0.15); }
+
+  /* ── 상대 섹션 ── */
+  .na-opp-section { padding:0 4px; margin-bottom:4px; }
+  .na-opp-label { font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:rgba(255,255,255,0.35); letter-spacing:0.08em; margin-bottom:2px; }
+  .na-opp-grid-wrap { display:flex; align-items:flex-start; gap:4px; }
+  .na-opp-mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; width:min(40vw, 182px); flex-shrink:0; }
+  .na-opp-mini-cell { aspect-ratio:1; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; overflow:hidden; padding:0; }
+  .na-opp-mini-cell.has-card { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.08); }
+  .na-opp-mini-cell.empty { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.03); }
+  .na-opp-hands { flex:1; min-width:0; }
+
+  /* ── 내 그리드 래퍼 ── */
+  .na-my-grid-wrap { position:relative; padding:0 4px; }
+  .na-grid-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:700; color:var(--gold); border-radius:8px; z-index:10; }
+
+  /* ── 스코어보드 ── */
+  .na-scoreboard { max-width:480px; width:100%; margin:4px auto; padding:0 10px; font-family:'IBM Plex Mono',monospace; font-size:0.63rem; box-sizing:border-box; }
+  .na-sb-header { display:flex; justify-content:space-between; color:rgba(255,255,255,0.35); padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:0.58rem; letter-spacing:0.05em; }
+  .na-sb-row { display:flex; align-items:center; padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.03); min-height:16px; }
+  .na-sb-cell { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .na-sb-cell.left { text-align:left; color:rgba(255,255,255,0.6); }
+  .na-sb-cell.right { text-align:right; color:rgba(255,255,255,0.6); }
+  .na-sb-cell.vs { flex:0; width:18px; text-align:center; color:rgba(255,255,255,0.2); font-size:0.52rem; }
+  .na-sb-cell .win { color:var(--gold); }
+
+  /* ── START 오버레이 ── */
+  #naStartOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; font-family:'IBM Plex Mono',monospace; }
+  #naStartOverlay .so-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--gold); letter-spacing:0.1em; }
+  #naStartOverlay .so-opp { font-size:0.9rem; color:rgba(0,212,255,0.8); letter-spacing:0.08em; }
+  #naStartOverlay .so-chip { font-size:1.0rem; color:#e0e0e0; }
+  #naStartOverlay .so-rule { font-size:0.62rem; color:rgba(255,255,255,0.3); line-height:1.6; text-align:center; max-width:280px; }
+  #naStartOverlay .so-btn { margin-top:8px; padding:14px 48px; background:rgba(201,168,76,0.15); border:2px solid var(--gold); border-radius:12px; color:var(--gold); font-weight:700; font-size:1.1rem; letter-spacing:0.1em; cursor:pointer; }
+  #naStartOverlay .so-btn:active { transform:scale(0.97); }
+</style>
+</head>
+<body class="game-page">
+<div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
+
+<div class="back-fixed"><a href="pvp_arcade_lobby.html" id="backLink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
+
+<!-- ==================== VIEW: GAME ==================== -->
+<div id="view-game">
+  <div class="na-game-view">
+    <!-- 상태 바: 타이머 + 상태 + 칩 정보 -->
+    <div class="na-game-status">
+      <div class="timer-wrap">
+        <svg class="timer-ring" viewBox="0 0 40 40">
+          <circle class="timer-ring-bg" cx="20" cy="20" r="16"/>
+          <circle class="timer-ring-fg" id="naTimerRing" cx="20" cy="20" r="16"
+            stroke-dasharray="100.53" stroke-dashoffset="0"
+            transform="rotate(-90 20 20)"/>
+        </svg>
+        <div class="timer-num" id="naTimerNum">240</div>
+      </div>
+      <div class="na-status-msg" id="naStatusMsg">ARCADE</div>
+      <div class="na-chip-bar">
+        <div class="na-chip-me"><img src="./images/chip.png" alt="chip"><span id="naMyChip">300</span></div>
+        <span class="na-chip-sep">│</span>
+        <div class="na-chip-npc"><img src="./images/chip.png" alt="chip"><span id="naNpcChip">300</span></div>
+      </div>
+    </div>
+
+    <!-- 상대 섹션 -->
+    <div class="na-opp-section">
+      <div class="na-opp-label">OPPONENT — NPC Dragon</div>
+      <div class="na-opp-grid-wrap">
+        <div class="na-opp-mini-grid" id="naOppMiniGrid"></div>
+        <div class="na-opp-hands" id="naOppHandsList"></div>
+      </div>
+    </div>
+
+    <!-- 내 그리드 -->
+    <div class="na-my-grid-wrap">
+      <div class="grid-container" id="gridContainer">
+        <div class="grid" id="grid"></div>
+        <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points=""/></svg>
+        <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+      </div>
+      <div class="na-grid-overlay" id="naGridOverlay" style="display:none">
+        <span id="naGridOverlayText"></span>
+      </div>
+    </div>
+
+    <div class="hand-preview" id="handPreview"></div>
+    <div class="na-scoreboard" id="naScoreboard"></div>
+  </div>
+
+  <!-- script.js 호환 더미 -->
+  <div style="display:none">
+    <button id="restartBtn"></button>
+    <div id="currentScore"></div>
+    <div id="highScoreDisplay"></div>
+    <div id="retryLabel"></div>
+    <div id="leaderboardOverlay"><div id="leaderboardModal"></div></div>
+    <button id="btnSaveReplay"></button>
+    <div id="allUserTopScoreRow"></div>
+    <div id="usernameDisplay"></div>
+    <div class="removed-cards" id="removedCards"></div>
+    <div class="hand-slots" id="handSlots"></div>
+    <div id="handCount"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 결과 모달 -->
+<div id="modalOverlay" class="pvp-overlay">
+  <div class="pvp-popup" id="modal" style="max-width:380px; max-height:85vh; overflow-y:auto;"></div>
+</div>
+
+<!-- START 오버레이 -->
+<div id="naStartOverlay">
+  <div class="so-title">NPC ARCADE</div>
+  <div class="so-opp">vs NPC Dragon</div>
+  <div class="so-chip" id="naStartChipInfo">300 vs 300</div>
+  <div class="so-rule">7×7 그리드 · 최대 9패 · 240초<br>승수 차이 × 10칩 (테이블피 1칩)</div>
+  <button class="so-btn" id="naStartBtn">START</button>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script src="sound.js"></script>
+<script src="scorepolicy.js"></script>
+<script src="pvp_utils.js"></script>
+<script src="npc_ai.js"></script>
+<script src="header.js"></script>
+<script>
+  // Arcade는 7×7 — _duelGridSize 설정 없음 (script.js 기본값 7 사용)
+  window._pvpMode = true;
+  function renderCurrencyBar() {}
+  function deductGoldLocal() { return true; }
+  function updateRestartButtonState() {}
+  async function syncGoldToDB() {}
+</script>
+<script src="script.js"></script>
+
+<script>
+// ============================================================
+// NPC ARCADE — client-only, no server
+// NOTE: localStorage.userChip / poker_gold 불간섭
+// ============================================================
+
+const NA_CHIP_START = 300;
+const NA_GRID_SIZE = 7;
+const NA_MAX_HANDS = 9;
+const NA_MIN_PAIR = 10;   // 10 이상 원페어만 유효 (default isValidHand와 동일)
+const NA_TIMER_SEC = 240;
+const NA_SUIT_RANK = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 };
+
+const SUIT_COLORS_ARCADE = { '♠': '#e0e0e0', '♣': '#1a6bc4', '♥': '#2d8a4e', '♦': '#d63031' };
+const VN_ARCADE = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
+
+// ── 칩 (persistChip로 게임 간 이어짐) ──
+const persistChip = { player: NA_CHIP_START, npc: NA_CHIP_START };
+let myChip = persistChip.player;
+let npcChip = persistChip.npc;
+
+let playerDone = false;
+let npcDone = false;
+
+// ── 게임 상태 ──
+const naState = {
+  myHands: [],
+  opponentHands: [],
+  gameStarted: false,
+  gameTimeRemaining: NA_TIMER_SEC,
+  gameTimerInterval: null,
+  oppMiniGridCards: []
+};
+
+// ── NPC 시뮬레이션 상태 ──
+const npcArcadeState = {
+  simulation: null,
+  completedHands: [],
+  handTimers: [],
+  doneTimer: null,
+  gameStartAt: 0
+};
+
+// Player state (finalizePath에서 업데이트)
+const playerState = { completedHands: [] };
+
+// ── 카드 헬퍼 ──
+function naCardDisplay(cards) {
+  if (!cards || !cards.length) return '';
+  return cards.slice().sort((a, b) => b.value - a.value).map(c => {
+    const col = (c.suit === '♥' || c.suit === '♦') ? '#ff6b6b' : '#e0e0e0';
+    return `<span style="color:${col}">${VN_ARCADE[c.value]}${c.suit}</span>`;
+  }).join(' ');
+}
+
+// ── 패 비교 헬퍼 (pvp_npc_duel.html에서 이식) ──
+function compareHandsByCards(handA, handB) {
+  if (!handA.cards || !handB.cards) {
+    const sA = NA_SUIT_RANK[handA.suit] || 0;
+    const sB = NA_SUIT_RANK[handB.suit] || 0;
+    return sA > sB ? 1 : sB > sA ? -1 : 0;
+  }
+  const getKeys = (hand) => {
+    const cards = hand.cards.slice().sort((a, b) => b.value - a.value);
+    const counts = {};
+    cards.forEach(c => counts[c.value] = (counts[c.value] || 0) + 1);
+    const byCount = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1] || parseInt(b[0]) - parseInt(a[0]))
+      .map(e => parseInt(e[0]));
+    switch (hand.rank) {
+      case 1: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 2: return [byCount[0], byCount[1], ...cards.filter(c => c.value !== byCount[0] && c.value !== byCount[1]).map(c => c.value)];
+      case 3: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 4: case 8: return (cards[0].value === 14 && cards[1].value === 5) ? [5] : [cards[0].value];
+      case 5: return cards.map(c => c.value);
+      case 6: return [byCount[0], byCount[1]];
+      case 7: return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)];
+      case 9: case 10: return [];
+      default: return cards.map(c => c.value);
+    }
+  };
+  const kA = getKeys(handA), kB = getKeys(handB);
+  for (let i = 0; i < Math.max(kA.length, kB.length); i++) {
+    const a = kA[i] || 0, b = kB[i] || 0;
+    if (a > b) return 1; if (b > a) return -1;
+  }
+  const topA = handA.cards.slice().sort((a, b) => b.value - a.value);
+  const topB = handB.cards.slice().sort((a, b) => b.value - a.value);
+  const sA = NA_SUIT_RANK[topA[0].suit] || 0;
+  const sB = NA_SUIT_RANK[topB[0].suit] || 0;
+  return sA > sB ? 1 : sB > sA ? -1 : 0;
+}
+
+function handSortComparator(a, b) {
+  if (b.rank !== a.rank) return b.rank - a.rank;
+  return -compareHandsByCards(a, b);
+}
+function naHandSort(a, b) { return handSortComparator(a, b); }
+
+// ── 승부 비교 (최대 9패) ──
+function localCompareArcade(myHands, npcHands) {
+  const sortedMy = (myHands || []).slice().sort(handSortComparator);
+  const sortedNpc = (npcHands || []).slice().sort(handSortComparator);
+  const maxLen = Math.max(sortedMy.length, sortedNpc.length, 1);
+  let winsA = 0, winsB = 0;
+  const results = [];
+  for (let i = 0; i < maxLen; i++) {
+    const a = sortedMy[i], b = sortedNpc[i];
+    if (a && !b) { winsA++; results.push(1); }
+    else if (!a && b) { winsB++; results.push(-1); }
+    else if (!a && !b) { results.push(0); }
+    else {
+      let cmp = a.rank !== b.rank ? (a.rank > b.rank ? 1 : -1) : compareHandsByCards(a, b);
+      if (cmp > 0) { winsA++; results.push(1); }
+      else if (cmp < 0) { winsB++; results.push(-1); }
+      else results.push(0);
+    }
+  }
+  const winner = winsA > winsB ? 'player' : winsB > winsA ? 'npc' : 'draw';
+  return { results, winsA, winsB, winner };
+}
+
+// ── 칩 정산 ──
+function localCalcArcadeChips(myWins, npcWins) {
+  if (myWins === npcWins) return { myDelta: 0, npcDelta: 0 };
+  const diff = Math.abs(myWins - npcWins);
+  const grossWin = diff * 10;
+  const tableFee = 1;
+  const netWin = grossWin - tableFee;
+  const iWin = myWins > npcWins;
+  const loserChip = iWin ? npcChip : myChip;
+  const actualLoss = Math.min(grossWin, loserChip);
+  const actualGain = netWin > 0 ? Math.min(netWin, Math.max(0, actualLoss - tableFee)) : 0;
+  return {
+    myDelta: iWin ? actualGain : -actualLoss,
+    npcDelta: iWin ? -actualLoss : actualGain
+  };
+}
+
+// ── 7×7 미니그리드 ──
+function naInitOppMiniGrid(cards) {
+  const grid = document.getElementById('naOppMiniGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  naState.oppMiniGridCards = cards.map(c => c ? { ...c } : null);
+  for (let i = 0; i < NA_GRID_SIZE * NA_GRID_SIZE; i++) {
+    const cell = document.createElement('div');
+    const c = cards[i];
+    cell.id = `na-mini-${i}`;
+    if (c) {
+      cell.className = 'na-opp-mini-cell has-card';
+      const col = SUIT_COLORS_ARCADE[c.suit] || '#e0e0e0';
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_ARCADE[c.value]}</span>`;
+    } else {
+      cell.className = 'na-opp-mini-cell empty';
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function naUpdateOppMiniGrid(removedPositions) {
+  if (!removedPositions || !removedPositions.length) return;
+  removedPositions.forEach(([r, c]) => { naState.oppMiniGridCards[r * NA_GRID_SIZE + c] = null; });
+  // gravity per column
+  for (let c = 0; c < NA_GRID_SIZE; c++) {
+    const colCards = [];
+    for (let r = NA_GRID_SIZE - 1; r >= 0; r--) {
+      if (naState.oppMiniGridCards[r * NA_GRID_SIZE + c]) colCards.push(naState.oppMiniGridCards[r * NA_GRID_SIZE + c]);
+    }
+    for (let r = NA_GRID_SIZE - 1; r >= 0; r--) {
+      naState.oppMiniGridCards[r * NA_GRID_SIZE + c] = colCards.length > 0 ? colCards.shift() : null;
+    }
+  }
+  naState.oppMiniGridCards.forEach((card, idx) => {
+    const cell = document.getElementById(`na-mini-${idx}`);
+    if (!cell) return;
+    if (card) {
+      cell.className = 'na-opp-mini-cell has-card';
+      const col = SUIT_COLORS_ARCADE[card.suit] || '#e0e0e0';
+      cell.innerHTML = `<span style="color:${col};font-weight:700;">${VN_ARCADE[card.value]}</span>`;
+    } else {
+      cell.className = 'na-opp-mini-cell empty';
+      cell.innerHTML = '';
+    }
+  });
+}
+
+// ── 스코어보드 (9패) ──
+function naRenderScoreboard() {
+  const container = document.getElementById('naScoreboard');
+  if (!container) return;
+  const myName = localStorage.getItem('poker_username') || 'ME';
+  const mySorted = [...naState.myHands].sort(naHandSort);
+  const oppSorted = [...naState.opponentHands].sort(naHandSort);
+  const myCount = mySorted.length, oppCount = oppSorted.length;
+  let html = `<div class="na-sb-header"><span class="na-sb-cell left">${myName} (${myCount}/${NA_MAX_HANDS})</span><span class="na-sb-cell vs"></span><span class="na-sb-cell right">NPC (${oppCount}/${NA_MAX_HANDS})</span></div>`;
+  const maxRows = Math.max(NA_MAX_HANDS, mySorted.length, oppSorted.length);
+  for (let i = 0; i < maxRows; i++) {
+    const my = mySorted[i], opp = oppSorted[i];
+    const myText = my ? my.label : '—', oppText = opp ? opp.label : '—';
+    let myClass = '', oppClass = '';
+    if (my && opp) {
+      const cmp = my.rank !== opp.rank ? (my.rank > opp.rank ? 1 : -1) : compareHandsByCards(my, opp);
+      if (cmp > 0) myClass = 'win'; else if (cmp < 0) oppClass = 'win';
+    } else if (my && !opp) myClass = 'win';
+    else if (!my && opp) oppClass = 'win';
+    html += `<div class="na-sb-row"><span class="na-sb-cell left"><span class="${myClass}">${myClass === 'win' ? '👑 ' : ''}${myText}</span></span><span class="na-sb-cell vs">${i + 1}</span><span class="na-sb-cell right"><span class="${oppClass}">${oppText}${oppClass === 'win' ? ' 👑' : ''}</span></span></div>`;
+  }
+  container.innerHTML = html;
+  // 상대 손패 리스트 업데이트
+  const oppEl = document.getElementById('naOppHandsList');
+  if (oppEl) {
+    oppEl.innerHTML = oppSorted.map((h, i) =>
+      `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:rgba(0,212,255,0.6);padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i + 1}. ${h.label}</div>`
+    ).join('') || '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.55rem;color:rgba(255,255,255,0.2);">—</div>';
+  }
+}
+
+// ── 타이머 ──
+function naStartTimer(seconds) {
+  naState.gameTimeRemaining = seconds;
+  const timerNum = document.getElementById('naTimerNum');
+  const timerRing = document.getElementById('naTimerRing');
+  const totalTime = seconds;
+  const circumference = 100.53;
+  clearInterval(naState.gameTimerInterval);
+  if (timerNum) { timerNum.textContent = seconds; timerNum.classList.remove('time-attack'); }
+  if (timerRing) { timerRing.classList.remove('time-attack'); timerRing.style.strokeDashoffset = '0'; }
+  naState.gameTimerInterval = setInterval(() => {
+    naState.gameTimeRemaining--;
+    const t = naState.gameTimeRemaining;
+    if (t <= 0) {
+      clearInterval(naState.gameTimerInterval);
+      if (timerNum) timerNum.textContent = '0';
+      if (state && state.phase === 'playing') window.endGame('timeout');
+      return;
+    }
+    if (timerNum) timerNum.textContent = t;
+    if (timerRing) timerRing.style.strokeDashoffset = circumference * (1 - t / totalTime);
+    if (t <= 20) {
+      if (timerNum) timerNum.classList.add('time-attack');
+      if (timerRing) timerRing.classList.add('time-attack');
+    }
+  }, 1000);
+}
+
+// ── 상태 메시지 ──
+function naSetStatus(type) {
+  const el = document.getElementById('naStatusMsg');
+  if (!el) return;
+  el.classList.remove('blink');
+  switch (type) {
+    case 'playing':   el.textContent = 'PLAYING';   el.style.color = 'rgba(201,168,76,0.5)'; break;
+    case 'completed': el.textContent = 'COMPLETED'; el.style.color = '#4CAF50'; el.classList.add('blink'); break;
+    case 'oppdone':   el.textContent = 'NPC DONE';  el.style.color = '#FFC107'; el.classList.add('blink'); break;
+    case 'timelimit': el.textContent = 'TIME LIMIT'; el.style.color = '#ff3333'; el.classList.add('blink'); break;
+  }
+}
+
+// ── 그리드 오버레이 ──
+function naSetGridOverlay(type) {
+  const overlay = document.getElementById('naGridOverlay');
+  const text = document.getElementById('naGridOverlayText');
+  if (!overlay) return;
+  if (type === 'none') { overlay.style.display = 'none'; return; }
+  overlay.style.display = 'flex';
+  if (type === 'done') text.textContent = '✓ COMPLETED';
+}
+
+// ── 칩 표시 업데이트 ──
+function naUpdateChipDisplay() {
+  const mEl = document.getElementById('naMyChip');
+  const nEl = document.getElementById('naNpcChip');
+  if (mEl) mEl.textContent = myChip;
+  if (nEl) nEl.textContent = npcChip;
+  const info = document.getElementById('naStartChipInfo');
+  if (info) info.textContent = `${myChip} vs ${npcChip}`;
+}
+
+// ── Toast ──
+function naShowToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// 게임 시작 — 카드 배분 + UI 설정
+// ============================================================
+function startNPCArcade() {
+  // 칩 상태 복원
+  myChip = persistChip.player;
+  npcChip = persistChip.npc;
+  naUpdateChipDisplay();
+
+  // 상태 초기화
+  naState.myHands = [];
+  naState.opponentHands = [];
+  naState.gameStarted = false;
+  naState.gameTimeRemaining = NA_TIMER_SEC;
+  playerDone = false;
+  npcDone = false;
+  playerState.completedHands = [];
+  npcArcadeState.completedHands = [];
+  npcArcadeState.handTimers.forEach(t => clearTimeout(t));
+  npcArcadeState.handTimers = [];
+  if (npcArcadeState.doneTimer) { clearTimeout(npcArcadeState.doneTimer); npcArcadeState.doneTimer = null; }
+
+  // 각자 독립 52장 → 49장 배치
+  const playerDeck = shuffle(createDeck());
+  const npcDeck = shuffle(createDeck());
+  const playerGridCards = playerDeck.slice(0, NA_GRID_SIZE * NA_GRID_SIZE);
+  const npcGridCards = npcDeck.slice(0, NA_GRID_SIZE * NA_GRID_SIZE);
+
+  setupArcadeGameUI(playerGridCards, npcGridCards);
+  naRenderScoreboard();
+  naSetStatus('playing');
+  naStartTimer(NA_TIMER_SEC);
+  naState.gameStarted = true;
+
+  startNPCArcadePlay(npcGridCards);
+  updateDebug('START', `player ${playerGridCards.length}장, npc ${npcGridCards.length}장`);
+}
+
+// ── 게임 UI 설정 ──
+function setupArcadeGameUI(playerGridCards, npcGridCards) {
+  // 그리드 오버레이 초기화
+  naSetGridOverlay('none');
+  document.getElementById('modalOverlay').classList.remove('active');
+
+  // 플레이어 그리드: initGrid 오버라이드로 playerGridCards 주입
+  const origInitGrid = window.initGrid;
+  window.initGrid = function () {
+    const cards = playerGridCards.map(c => ({ suit: c.suit, value: c.value, id: String(c.value) + c.suit }));
+    state.removedCards = [];
+    state.grid = [];
+    let idx = 0;
+    for (let r = 0; r < GRID_SIZE; r++) {
+      const row = [];
+      for (let c = 0; c < GRID_SIZE; c++) {
+        row.push({ card: idx < cards.length ? cards[idx++] : null, row: r, col: c });
+      }
+      state.grid.push(row);
+    }
+  };
+
+  initState();
+  initGrid();
+  renderGrid();
+  window.initGrid = origInitGrid;
+
+  // 그리드 터치 활성화
+  const gc = document.getElementById('gridContainer');
+  if (gc) gc.style.pointerEvents = '';
+
+  // NPC 미니그리드
+  naInitOppMiniGrid(npcGridCards);
+  naState.oppMiniGridCards = npcGridCards.map(c => c ? { ...c } : null);
+
+  // endGame 오버라이드
+  window.endGame = function (reason) {
+    if (!naState.gameStarted) return;
+    if (state && state.phase === 'result') return;
+    if (reason === 'complete' || reason === 'nomoves') {
+      if (state) state.phase = 'done';
+      localPlayerDoneArcade(reason);
+    } else if (reason === 'timeout') {
+      if (state) state.phase = 'done';
+      naSetGridOverlay('done');
+      naSetStatus('timelimit');
+      playerDone = true;
+      npcDone = true;
+      localEndArcade('timeout');
+    }
+  };
+
+  // finalizePath 오버라이드 (패 완성 캡처)
+  if (!window._origFinalizePathNA) window._origFinalizePathNA = window.finalizePath;
+  window.finalizePath = function () {
+    try {
+      const prevCount = state.hands.length;
+      window._origFinalizePathNA.call(this);
+      const newCount = state.hands.length;
+      if (newCount > prevCount) {
+        const newHand = state.hands[state.hands.length - 1];
+        const evalResult = evaluateHand(newHand.cards);
+        naState.myHands = state.hands.map(h => {
+          const ev = evaluateHand(h.cards);
+          const sc = [...h.cards].sort((a, b) => b.value - a.value);
+          return { rank: ev.rank, label: ev.label, suit: sc[0].suit, cards: h.cards, values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal, secondaryVal: ev.secondaryVal, kickers: ev.kickers };
+        }).sort(naHandSort);
+        playerState.completedHands = naState.myHands;
+        updateDebug('HAND', `player ${prevCount + 1}: ${evalResult.label}`);
+        naRenderScoreboard();
+      }
+    } catch (e) {
+      console.error('[npc-arcade] finalizePath error', e);
+      if (state) state.isDragging = false;
+      if (typeof clearSelection === 'function') clearSelection();
+    }
+  };
+}
+
+// ============================================================
+// NPC 시뮬레이션
+// ============================================================
+function startNPCArcadePlay(npcGridCards) {
+  npcArcadeState.gameStartAt = Date.now();
+  const sim = NpcAI.simulateNPCGame(npcGridCards, NpcAI.DEFAULT_PERSONALITY, {
+    gridSize: NA_GRID_SIZE,
+    maxHands: NA_MAX_HANDS,
+    minPairValue: NA_MIN_PAIR
+  });
+  npcArcadeState.simulation = sim;
+  updateDebug('SIM', `totalTime=${sim.totalTime.toFixed(1)}s hands=${sim.hands.length}`);
+
+  sim.hands.forEach((h, i) => {
+    const t = setTimeout(() => {
+      if (state && state.phase === 'result') return;
+      if (npcDone) return;
+      npcArcadeState.completedHands.push(h);
+      naState.opponentHands = npcArcadeState.completedHands.map(ch => {
+        const sc = [...ch.cards].sort((a, b) => b.value - a.value);
+        return { rank: ch.hand.rank, label: ch.hand.label, suit: sc[0].suit, cards: ch.cards };
+      }).sort(naHandSort);
+      naUpdateOppMiniGrid(h.path);
+      naRenderScoreboard();
+      updateDebug('HAND', `npc ${i + 1}: ${h.hand.label} @ ${h.completedAt.toFixed(1)}s`);
+    }, h.completedAt * 1000);
+    npcArcadeState.handTimers.push(t);
+  });
+
+  npcArcadeState.doneTimer = setTimeout(() => {
+    if (state && state.phase === 'result') return;
+    localNpcDoneArcade(sim.totalTime);
+  }, sim.totalTime * 1000);
+}
+
+// 플레이어 완료 후 NPC 타이머 1/4 속도로 재예약
+function npcArcadeAccelerateTimers() {
+  const sim = npcArcadeState.simulation;
+  if (!sim) return;
+  const elapsed = (Date.now() - npcArcadeState.gameStartAt) / 1000;
+
+  npcArcadeState.handTimers.forEach(t => clearTimeout(t));
+  npcArcadeState.handTimers = [];
+  if (npcArcadeState.doneTimer) { clearTimeout(npcArcadeState.doneTimer); npcArcadeState.doneTimer = null; }
+
+  sim.hands.forEach((h, i) => {
+    if (h.completedAt <= elapsed) return;
+    const remaining = (h.completedAt - elapsed) * 0.25;
+    const t = setTimeout(() => {
+      if (state && state.phase === 'result') return;
+      if (npcDone) return;
+      npcArcadeState.completedHands.push(h);
+      naState.opponentHands = npcArcadeState.completedHands.map(ch => {
+        const sc = [...ch.cards].sort((a, b) => b.value - a.value);
+        return { rank: ch.hand.rank, label: ch.hand.label, suit: sc[0].suit, cards: ch.cards };
+      }).sort(naHandSort);
+      naUpdateOppMiniGrid(h.path);
+      naRenderScoreboard();
+      updateDebug('HAND', `npc ${i + 1}(acc): ${h.hand.label}`);
+    }, remaining * 1000);
+    npcArcadeState.handTimers.push(t);
+  });
+
+  const totalRemaining = (sim.totalTime - elapsed) * 0.25;
+  npcArcadeState.doneTimer = setTimeout(() => {
+    if (state && state.phase === 'result') return;
+    localNpcDoneArcade(sim.totalTime);
+  }, totalRemaining * 1000);
+}
+
+function localPlayerDoneArcade(reason) {
+  if (playerDone) return;
+  playerDone = true;
+  naSetGridOverlay('done');
+  naSetStatus('completed');
+  updateDebug('SIM', `player DONE (${reason})`);
+  if (npcDone) {
+    localEndArcade('complete');
+  } else {
+    npcArcadeAccelerateTimers();
+  }
+}
+
+function localNpcDoneArcade(totalTime) {
+  if (npcDone) return;
+  npcDone = true;
+  naShowToast('NPC Dragon이 게임을 완료했습니다');
+  naSetStatus('oppdone');
+  updateDebug('SIM', `NPC DONE @ ${totalTime.toFixed(1)}s`);
+  if (playerDone) {
+    localEndArcade('complete');
+  } else if (naState.gameTimeRemaining > 50) {
+    naStartTimer(50);
+  }
+}
+
+// ============================================================
+// 결과 처리
+// ============================================================
+function localEndArcade(reason) {
+  if (state && state.phase === 'result') return;
+  if (state) state.phase = 'result';
+  clearInterval(naState.gameTimerInterval);
+  npcArcadeState.handTimers.forEach(t => clearTimeout(t));
+  if (npcArcadeState.doneTimer) clearTimeout(npcArcadeState.doneTimer);
+
+  const myHandsForCmp = playerState.completedHands.map(h => {
+    const ev = evaluateHand(h.cards);
+    return { rank: ev.rank, label: ev.label, values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal, secondaryVal: ev.secondaryVal, kickers: ev.kickers, cards: h.cards };
+  });
+  const npcHandsForCmp = npcArcadeState.completedHands.map(ch => {
+    const ev = evaluateHand(ch.cards);
+    return { rank: ev.rank, label: ev.label, values: ev.values, suits: ev.suits, primaryVal: ev.primaryVal, secondaryVal: ev.secondaryVal, kickers: ev.kickers, cards: ch.cards };
+  });
+
+  const cmp = localCompareArcade(myHandsForCmp, npcHandsForCmp);
+  const { myWins, npcWins, winner, results } = cmp;
+
+  const chipDelta = localCalcArcadeChips(myWins, npcWins);
+  const prevMy = myChip, prevNpc = npcChip;
+  myChip = Math.max(0, myChip + chipDelta.myDelta);
+  npcChip = Math.max(0, npcChip + chipDelta.npcDelta);
+  persistChip.player = myChip;
+  persistChip.npc = npcChip;
+  naUpdateChipDisplay();
+
+  const myHandsDisplay = (myHandsForCmp || []).slice().sort(naHandSort);
+  const npcHandsDisplay = (npcHandsForCmp || []).slice().sort(naHandSort);
+
+  showArcadeResult({ reason, winner, myWins, npcWins, results, myDelta: chipDelta.myDelta, prevChip: prevMy, newChip: myChip, myHands: myHandsDisplay, npcHands: npcHandsDisplay });
+}
+
+function showArcadeResult(data) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const iWin = data.winner === 'player';
+  const isDraw = data.winner === 'draw';
+  const myDelta = data.myDelta || 0;
+
+  let titleText = isDraw ? 'DRAW' : iWin ? 'WIN!' : 'LOSE';
+  let titleColor = isDraw ? 'rgba(255,255,255,0.5)' : iWin ? '#4CAF50' : '#ff5252';
+  if (data.reason === 'timeout') titleText += ' (TIME)';
+
+  // 9패 비교 테이블
+  const mySorted = (data.myHands || []).slice().sort(naHandSort);
+  const npcSorted = (data.npcHands || []).slice().sort(naHandSort);
+  const maxDisplay = Math.max(mySorted.length, npcSorted.length, 1);
+  let tableHTML = '<div style="margin:10px 0;font-size:0.68rem;">';
+  for (let i = 0; i < maxDisplay; i++) {
+    const r = data.results ? data.results[i] : 0;
+    const my = mySorted[i], opp = npcSorted[i];
+    const myLabel = my ? my.label : '—', oppLabel = opp ? opp.label : '—';
+    const myWin = r === 1, oppWin = r === -1;
+    tableHTML += `<div style="display:flex;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="flex:1;text-align:left;color:${myWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${myWin ? '👑 ' : ''}${myLabel}</span>
+      <span style="flex:0;width:16px;text-align:center;color:rgba(255,255,255,0.2);font-size:0.58rem;">${i + 1}</span>
+      <span style="flex:1;text-align:right;color:${oppWin ? 'var(--gold)' : 'rgba(255,255,255,0.4)'};">${oppLabel}${oppWin ? ' 👑' : ''}</span>
+    </div>`;
+  }
+  tableHTML += `<div style="display:flex;justify-content:center;gap:20px;font-size:0.75rem;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);">
+    <span style="color:var(--gold);">내 승: ${data.myWins || 0}</span>
+    <span style="color:rgba(255,255,255,0.4);">NPC 승: ${data.npcWins || 0}</span>
+  </div></div>`;
+
+  const sign = myDelta >= 0 ? '+' : '';
+  const dc = myDelta >= 0 ? '#4CAF50' : '#ff5252';
+  let chipHTML;
+  if (isDraw) {
+    chipHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:8px 0;">무승부! 칩 변동 없음</div>`;
+  } else {
+    const diff = Math.abs(data.myWins - data.npcWins);
+    chipHTML = `<div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:8px;">승수 차이 ${diff} × 10 = ${diff * 10} (테이블피 1)</div><div style="font-size:1.1rem;font-weight:700;color:${dc};">${sign}${myDelta} chip</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4);"><img src="./images/chip.png" style="width:14px;height:14px;vertical-align:-2px;"> ${data.prevChip} → ${data.newChip}</div>`;
+  }
+
+  const chipStatusHTML = `<div style="color:rgba(255,255,255,0.45);font-size:0.7rem;margin-top:10px;text-align:center;">내 칩: <span style="color:var(--gold);font-weight:700;">${myChip}</span> / NPC: <span style="color:rgba(255,255,255,0.7);font-weight:700;">${npcChip}</span></div>`;
+
+  const lowChip = myChip < 2 || npcChip < 2;
+  let buttonsHTML;
+  if (lowChip) {
+    const who = myChip < 2 ? '내 칩' : 'NPC 칩';
+    buttonsHTML = `<div style="color:#ff5252;font-size:0.7rem;margin-top:10px;text-align:center;">${who} 부족</div><div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;"><button class="pvp-popup-btn" onclick="location.href='pvp_arcade_lobby.html'">게임 종료</button><button class="pvp-popup-btn" onclick="resetAndRestartArcade()">재대결 (300 vs 300)</button></div>`;
+  } else {
+    buttonsHTML = `<div style="display:flex;gap:8px;margin-top:12px;"><button class="pvp-popup-btn" onclick="restartArcade()" style="flex:1;">재대결</button></div>`;
+  }
+
+  modal.innerHTML = `<h2 style="font-size:1.3rem;color:${titleColor};">${titleText}</h2>${tableHTML}${chipHTML}${chipStatusHTML}${buttonsHTML}`;
+  overlay.classList.add('active');
+}
+
+// ── 재대결 ──
+function restartArcade() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  clearInterval(naState.gameTimerInterval);
+  npcArcadeState.handTimers.forEach(t => clearTimeout(t));
+  npcArcadeState.handTimers = [];
+  if (npcArcadeState.doneTimer) { clearTimeout(npcArcadeState.doneTimer); npcArcadeState.doneTimer = null; }
+  if (state && state.timerInterval) clearInterval(state.timerInterval);
+  if (window._origFinalizePathNA) { window.finalizePath = window._origFinalizePathNA; window._origFinalizePathNA = null; }
+  document.getElementById('npcDebugContent').innerHTML = '';
+  if (state) state.phase = 'idle';
+  naSetGridOverlay('none');
+  document.getElementById('naStartOverlay').style.display = 'flex';
+}
+
+function resetAndRestartArcade() {
+  persistChip.player = NA_CHIP_START;
+  persistChip.npc = NA_CHIP_START;
+  restartArcade();
+}
+
+window.restartArcade = restartArcade;
+window.resetAndRestartArcade = resetAndRestartArcade;
+
+// ============================================================
+// 디버그 패널
+// ============================================================
+const debugLog = [];
+function updateDebug(type, data) {
+  debugLog.push({ t: new Date(), type, data });
+  if (debugLog.length > 20) debugLog.shift();
+  const el = document.getElementById('npcDebugContent');
+  if (!el) return;
+  el.innerHTML = debugLog.map(e => {
+    const ts = e.t.toTimeString().slice(0, 8);
+    return `<div><span style="color:rgba(0,212,255,0.4);">[${ts}]</span> <span style="color:#FFC107;">[${e.type}]</span> ${e.data}</div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+function toggleDebugPanel() {
+  const p = document.getElementById('npcDebugPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+window.toggleDebugPanel = toggleDebugPanel;
+
+// ============================================================
+// 초기화
+// ============================================================
+(async () => {
+  if (typeof requireRegistration === 'function' && !requireRegistration()) return;
+  if (typeof i18n !== 'undefined' && i18n.init) await i18n.init();
+  if (typeof Sound !== 'undefined' && Sound.loadSettings) Sound.loadSettings();
+  if (typeof BGM !== 'undefined' && BGM.loadSettings) BGM.loadSettings();
+  if (typeof ScorePolicy !== 'undefined' && ScorePolicy.load) await ScorePolicy.load();
+
+  naUpdateChipDisplay();
+
+  document.getElementById('naStartBtn').addEventListener('click', () => {
+    if (typeof Sound !== 'undefined' && Sound.warmup) Sound.warmup();
+    try { if (typeof BGM !== 'undefined') { BGM.init('./audio/Main_Theme.mp3'); BGM.start(); } } catch (e) {}
+    document.getElementById('naStartOverlay').style.display = 'none';
+    startNPCArcade();
+  });
+})();
+</script>
+
+<div id="npcDebugPanel" style="position:fixed;bottom:0;left:0;right:0;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.92);border-top:1px solid rgba(0,212,255,0.3);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:rgba(0,212,255,0.7);padding:6px 10px;z-index:50;display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="color:#00D4FF;font-weight:700;">NPC AI DEBUG (ARCADE)</span><button onclick="toggleDebugPanel()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.7rem;cursor:pointer;">▼</button></div>
+  <div id="npcDebugContent"></div>
+</div>
+<button id="debugToggleBtn" onclick="toggleDebugPanel()" style="position:fixed;bottom:8px;right:8px;z-index:51;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.3);border-radius:6px;color:rgba(0,212,255,0.6);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;padding:4px 8px;cursor:pointer;">🔧 AI</button>
+
+</body>
+</html>

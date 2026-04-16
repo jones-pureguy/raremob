@@ -182,13 +182,14 @@
   }
 
   // [REUSE] NMM 체크
-  function hasValidMoves(grid, gridSize) {
+  function hasValidMoves(grid, gridSize, minPairValue) {
     const size = gridSize || grid.length;
+    const mpv = minPairValue || 0;
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
         if (!grid[r][c].card) continue;
         const visited = makeVisited(size);
-        if (dfsAnyValid(grid, size, r, c, [grid[r][c].card], visited)) return true;
+        if (dfsAnyValid(grid, size, r, c, [grid[r][c].card], visited, mpv)) return true;
       }
     }
     return false;
@@ -202,18 +203,19 @@
     return v;
   }
 
-  function dfsAnyValid(grid, size, r, c, cards, visited) {
+  function dfsAnyValid(grid, size, r, c, cards, visited, minPairValue) {
     visited[r][c] = true;
     if (cards.length === HAND_SIZE) {
       const hand = evaluateHandNPC(cards);
       visited[r][c] = false;
+      if (hand.rank === RANK.ONE_PAIR && minPairValue > 0 && hand.pairValue < minPairValue) return false;
       return hand.rank > RANK.HIGH_CARD;
     }
     const next = getReachableCardsNPC(grid, size, r, c, visited);
     for (let i = 0; i < next.length; i++) {
       const nr = next[i][0], nc = next[i][1];
       cards.push(grid[nr][nc].card);
-      if (dfsAnyValid(grid, size, nr, nc, cards, visited)) return true;
+      if (dfsAnyValid(grid, size, nr, nc, cards, visited, minPairValue)) return true;
       cards.pop();
     }
     visited[r][c] = false;
@@ -227,6 +229,7 @@
     const opts = options || {};
     const topN = opts.topN || 30;
     const earlyStopRank = opts.earlyStopRank != null ? opts.earlyStopRank : RANK.ROYAL_FLUSH_PLUS;
+    const minPV = opts.minPairValue || 0;
 
     const results = [];
     const seen = Object.create(null);
@@ -256,8 +259,12 @@
           hand = { rank: RANK.ROYAL_FLUSH_PLUS, label: 'Royal Flush Plus', pairValue: 0 };
         }
         if (hand.rank > RANK.HIGH_CARD) {
-          pushCandidate(hand, path, cards);
-          if (hand.rank >= earlyStopRank) stop = true;
+          if (hand.rank === RANK.ONE_PAIR && minPV > 0 && hand.pairValue < minPV) {
+            // minPairValue 미달 원페어 — 무효
+          } else {
+            pushCandidate(hand, path, cards);
+            if (hand.rank >= earlyStopRank) stop = true;
+          }
         }
         path.pop();
         visited[r][c] = false;
@@ -302,11 +309,14 @@
 
   // ─── 최적 패 선택 (searchDepth 지원) ───
   // [REUSE] NPC가 만들 최적의 패 1개 선택
-  function findBestHand(grid, gridSize, personality) {
+  function findBestHand(grid, gridSize, personality, options) {
     const size = gridSize || grid.length;
     const p = mergePersonality(personality);
+    const extraOpts = options || {};
+    const minPairValue = extraOpts.minPairValue || 0;
+    const topN = extraOpts.topN || 20;
 
-    const candidates = findAllValidPaths(grid, size, { topN: 20 });
+    const candidates = findAllValidPaths(grid, size, { topN: topN, minPairValue: minPairValue });
     if (candidates.length === 0) {
       npcLog('findBestHand: no valid paths (NMM)');
       return null;
@@ -317,7 +327,7 @@
     if (p.searchDepth >= 1) {
       const depthLimit = Math.min(2, p.searchDepth);
       scored = candidates.slice(0, 5).map(c => {
-        const score = c.hand.rank + lookahead(grid, size, c, depthLimit - 1);
+        const score = c.hand.rank + lookahead(grid, size, c, depthLimit - 1, minPairValue);
         return { cand: c, score };
       });
       scored.sort((a, b) => b.score - a.score);
@@ -355,37 +365,41 @@
     return chosen;
   }
 
-  function lookahead(grid, size, candidate, depthLeft) {
+  function lookahead(grid, size, candidate, depthLeft, minPairValue) {
     if (depthLeft < 0) return 0;
     const next = cloneGrid(grid);
     candidate.path.forEach(p => { next[p[0]][p[1]].card = null; });
     applyGravityNPC(next, size);
-    const cands = findAllValidPaths(next, size, { topN: 5 });
+    const cands = findAllValidPaths(next, size, { topN: 5, minPairValue: minPairValue || 0 });
     if (cands.length === 0) return 0;
     const best = cands[0];
-    return best.hand.rank + (depthLeft > 0 ? lookahead(next, size, best, depthLeft - 1) : 0);
+    return best.hand.rank + (depthLeft > 0 ? lookahead(next, size, best, depthLeft - 1, minPairValue) : 0);
   }
 
   // ─── 게임 시뮬레이션 ───
   // [REUSE] NPC 전체 게임 시뮬레이션
-  function simulateNPCGame(gridCards, personality) {
+  function simulateNPCGame(gridCards, personality, options) {
+    var opts = options || {};
+    var size = opts.gridSize || GRID_SIZE_DEFAULT;
+    var maxHands = opts.maxHands || 5;
+    var minPairValue = opts.minPairValue || 0;
+    var pathTopN = size >= 7 ? 10 : 20;
+
     const p = mergePersonality(personality);
-    const size = GRID_SIZE_DEFAULT;
     const grid = makeGridFromCards(gridCards, size);
 
     const hands = [];
     const timeline = [];
     let totalTime = 0;
-    const MAX_HANDS = 5;
 
     timeline.push({ action: 'start', time: 0, data: { personality: p.name } });
 
-    for (let i = 0; i < MAX_HANDS; i++) {
-      if (!hasValidMoves(grid, size)) {
+    for (let i = 0; i < maxHands; i++) {
+      if (!hasValidMoves(grid, size, minPairValue)) {
         timeline.push({ action: 'nmm', time: totalTime, data: { handsMade: hands.length } });
         break;
       }
-      const best = findBestHand(grid, size, p);
+      const best = findBestHand(grid, size, p, { topN: pathTopN, minPairValue: minPairValue });
       if (!best) {
         timeline.push({ action: 'nmm', time: totalTime, data: { handsMade: hands.length } });
         break;
