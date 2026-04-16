@@ -343,12 +343,42 @@
 
     let chosen = scored[0].cand;
 
-    // accuracy: 확률로 차선 선택
-    if (Math.random() > p.accuracy && scored.length > 1) {
+    // ─── 패 선택: handSelection 3구간 또는 accuracy fallback ───
+    const hs = p.handSelection;
+    if (hs && scored.length > 1) {
+      const roll = Math.random();
+      const bestRate   = hs.best   != null ? hs.best   : 0.70;
+      const decentRate = hs.decent != null ? hs.decent : 0.25;
+
+      if (roll < bestRate) {
+        // 최선패: 상위 20% (최소 1개)
+        const topEnd = Math.max(1, Math.ceil(scored.length * 0.2));
+        const idx = Math.floor(Math.random() * topEnd);
+        chosen = scored[idx].cand;
+        npcLog('findBestHand: BEST pick', chosen.hand.label, 'idx=' + idx + '/' + scored.length);
+      } else if (roll < bestRate + decentRate) {
+        // 차선패: 20%~60% 구간
+        let midStart = Math.max(1, Math.ceil(scored.length * 0.2));
+        let midEnd   = Math.max(midStart + 1, Math.ceil(scored.length * 0.6));
+        if (midStart >= scored.length) midStart = Math.max(0, scored.length - 2);
+        if (midEnd   >  scored.length) midEnd   = scored.length;
+        const idx = midStart + Math.floor(Math.random() * (midEnd - midStart));
+        chosen = scored[Math.min(idx, scored.length - 1)].cand;
+        npcLog('findBestHand: DECENT pick', chosen.hand.label, 'idx=' + idx + '/' + scored.length);
+      } else {
+        // 하위패: 60%~100% 구간
+        let lowStart = Math.max(1, Math.ceil(scored.length * 0.6));
+        if (lowStart >= scored.length) lowStart = Math.max(0, scored.length - 1);
+        const idx = lowStart + Math.floor(Math.random() * (scored.length - lowStart));
+        chosen = scored[Math.min(idx, scored.length - 1)].cand;
+        npcLog('findBestHand: WEAK pick', chosen.hand.label, 'idx=' + idx + '/' + scored.length);
+      }
+    } else if (scored.length > 1 && Math.random() > (p.accuracy || 0.75)) {
+      // handSelection 없으면 기존 accuracy 방식 fallback
       const altMax = Math.min(scored.length - 1, 3);
       const idx = 1 + Math.floor(Math.random() * altMax);
       chosen = scored[Math.min(idx, scored.length - 1)].cand;
-      npcLog('findBestHand: accuracy miss → 차선 선택', chosen.hand.label);
+      npcLog('findBestHand: accuracy miss → fallback pick', chosen.hand.label);
     }
 
     // RF+ 적용 여부 (이미 evaluateHandNPC에서 RF만 판정. RF+는 findAllValidPaths에서 처리)
@@ -596,7 +626,7 @@
   const DEFAULT_PERSONALITY = {
     name: 'NPC Dragon',
     searchDepth: 2,
-    accuracy: 0.75,
+    handSelection: { best: 0.70, decent: 0.25, weak: 0.05 },
     speed: 0.65,
     rfPlusChance: 0.3,
     bluffRate: 0.08,
@@ -606,12 +636,12 @@
   };
 
   // [REUSE] Arcade용 NPC 성격 — Duel보다 약하게 (7×7, 9패)
-  // searchDepth 1 + accuracy 0.55 → 절반 확률로 차선 패 선택
+  // searchDepth 1 + handSelection 35/35/30 → 패가 고르게 섞임
   // speed 0.35 → 패당 약 16~30초, 9패 완성에 240초 내외
   const ARCADE_PERSONALITY = {
     name: 'NPC Dragon',
     searchDepth: 1,
-    accuracy: 0.55,
+    handSelection: { best: 0.35, decent: 0.35, weak: 0.30 },
     speed: 0.35,
     rfPlusChance: 0.15,
     bluffRate: 0.08,
