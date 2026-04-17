@@ -955,7 +955,7 @@ function showHintDisplayModal(level, text) { // [REWRITE]
   const modal = document.getElementById('modal');
   modal.innerHTML = `
     <h2 style="color:var(--gold);">${i18n.t('modal.hintTitle', { n: level })}</h2>
-    <div style="margin:16px 0;padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;color:rgba(255,255,255,0.8);font-size:0.9rem;line-height:1.5;">
+    <div style="margin:16px 0;padding:14px;background:rgba(255,255,255,0.05);border-radius:8px;color:rgba(255,255,255,0.8);font-size:0.9rem;line-height:1.5;white-space:pre-line;">
       ${text}
     </div>
     <div style="display:flex;justify-content:center;">
