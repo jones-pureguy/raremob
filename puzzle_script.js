@@ -914,8 +914,13 @@ function onHintButtonClick() { // [REWRITE]
   const nextLevel = Math.min(hintLevel + 1, 3);
 
   if (hintLevel >= nextLevel) {
-    // Already seen all hints, show last one for free
-    showHintDisplayModal(hintLevel, hint['level' + hintLevel]);
+    // Already seen all hints, show all levels together for free
+    const parts = [];
+    for (let i = 1; i <= hintLevel; i++) {
+      const t = i18n.tField(hint['level' + i]);
+      if (t) parts.push(`<div style="margin-bottom:10px;"><b style="color:var(--gold);">${i18n.t('modal.hintTitle', { n: i })}</b><br>${t}</div>`);
+    }
+    showHintDisplayModal(hintLevel, parts.join(''));
     return;
   }
 
