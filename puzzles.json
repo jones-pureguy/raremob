@@ -959,7 +959,69 @@
     "initialDeck": [
       "4s","5s","6s","7s","Jc","Kc","Js","3s","4c","5c","10c","9c","As","Ks","3c","Jd","6c","8c","Ah","Qc","Qs","2c","Ad","7c","8h","10h","3d","10s","2d","8d","10d","7h","Jh","4d","Ac","Kd","2s","4h","6h","Qh","5d","9d","Qd","2h","3h","5h","Kh","6d","7d"
     ]
+  },
+  {
+    "id": 17,
+    "title": {
+      "ko": "하이 클리어"
+    },
+    "description": {
+      "ko": "포카드 이상의 패를 5개 이상 만들고 그리드의 모든 카드를 없애세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "grid_empty",
+          "description": "그리드의 모든 카드를 없애세요"
+        },
+        {
+          "id": "c2",
+          "type": "specific_hand",
+          "hand": "FOUR_KIND",
+          "count_gte": 5,
+          "description": "포카드 이상의 패 5개 이상"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 16
+    },
+    "hint": {
+      "level1": {
+        "ko": "2,3,4,5,6 각각의 숫자로 포카드를 만드세요."
+      },
+      "level2": {
+        "ko": ""
+      },
+      "level3": {
+        "ko": ""
+      }
+    },
+    "initialDeck": [
+      "","","Ac","","Kc","","","","","As","","Qh","","","","","Jd","","8h","","","","","2d","","4c","","","","","10s","","7d","","","","","3h","","5s","","","","","9c","","6s","10h",""
+    ]
   }
-  
 ]
 
