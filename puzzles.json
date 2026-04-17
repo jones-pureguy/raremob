@@ -1081,6 +1081,70 @@
     "initialDeck": [
       "","","","","","","","","","","","","","","","2s","3s","4s","5s","6s","","","2h","Qd","6c","7h","9d","Jc","","5c","4d","3c","2c","8d","10s","","5h","4c","5d","As","3d","9c","6d","4h","Js","2d","3h","Kc","6h"
     ]
+  },
+  {
+    "id": 19,
+    "title": {
+      "ko": "스트레이트플러시 건지기"
+    },
+    "description": {
+      "ko": "스트레이트플러시를 만들고 그리드의 모든 카드를 제거하세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "end_of_game",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "grid_empty",
+          "description": "그리드의 모든 카드를 없애세요"
+        },
+        {
+          "id": "c2",
+          "type": "specific_hand",
+          "hand": "STRAIGHT_FLUSH",
+          "count_gte": 1,
+          "exact" : true,
+          "description": "스트레이트플러시 1개"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 18
+    },
+    "hint": {
+      "level1": {
+        "ko": "2,3,4,5,6 각각의 숫자로 포카드를 만드세요."
+      },
+      "level2": {
+        "ko": "1~3턴 : 4-Q-4-4-4, 3-3-A-3-3, 5-5-J-5-5"
+      },
+      "level3": {
+        "ko": "4~6턴 : 2-2-2-2-K, 6-6-6-9-6, 7-8-9-10-J" 
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","","","","","8h","2d","Ks","2h","10c","","","Ad","Qs","5c","2s","6s","","","3s","Qc","5s","Jc","4d","","","3h","7s","7c","9s","9d","","","6h","2c","8s","4c","7h",""
+    ]
   }
 ]
 
