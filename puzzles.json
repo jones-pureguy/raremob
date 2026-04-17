@@ -1013,14 +1013,73 @@
         "ko": "2,3,4,5,6 각각의 숫자로 포카드를 만드세요."
       },
       "level2": {
-        "ko": ""
+        "ko": "1~3턴 : 4-Q-4-4-4, 3-3-A-3-3, 5-5-J-5-5"
       },
       "level3": {
-        "ko": ""
+        "ko": "4~6턴 : 2-2-2-2-K, 6-6-6-9-6, 7-8-9-10-J" 
       }
     },
     "initialDeck": [
       "","","","","","","","","","","","","","","","2s","3s","4s","5s","6s","","","2h","Qd","6c","7h","9d","Jc","","5c","4d","3c","2c","8d","10s","","5h","4c","5d","As","3d","9c","6d","4h","Js","2d","3h","Kc","6h"
+    ]
+  },
+  {
+    "id": 18,
+    "title": {
+      "ko": "6연속 스트레이트"
+    },
+    "description": {
+      "ko": "스트레이트 6개를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT",
+          "count_gte": 6,
+          "exact" : true,
+          "description": "스트레이트 6개"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 17
+    },
+    "hint": {
+      "level1": {
+        "ko": ""
+      },
+      "level2": {
+        "ko": ""
+      },
+      "level3": {
+        "ko": "" 
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","","","","","Kc","","","","7c","4s","Ah","10d","Qc","6d","","4h","5d","3c","5h","Jh","Ks","5s","3h","2h","9c","2s","4c","Js","10h","5c","8c","3d","Qs","9h","As","2d","6c","4d"
     ]
   }
 ]
