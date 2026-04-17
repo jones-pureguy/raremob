@@ -600,9 +600,68 @@
     "initialDeck": [
       "","","","","","","","","","","","","","","4s","","5d","","","","","3s","","5h","","Ac","4c","","5s","4d","4h","Ad","3d","Ah","","6d","2s","Ks","6c","5c","2h","","2d","As","3c","6h","3h","2c","6s"
     ]
+  },
+    {
+    "id": 11,
+    "title": {
+      "ko": "6연속 스트레이트"
+    },
+    "description": {
+      "ko": "스트레이트 6개를 만드세요."
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT",
+          "count_gte": 6,
+          "exact" : true,
+          "description": "스트레이트 6개"
+        }
+      ]
+    },   
+    "rewards": {
+      "gold": 10
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 10
+    },
+    "hint": {
+      "level1": {
+        "ko": "A♠ → 2♦ → 5♣ → 3♥ → 4♥ / 5♠ → 6♣ → 7♣ → 8♣ → 4♦"
+      },
+      "level2": {
+        "ko": "Q♠ → 9♥ → J♠ → K♠ → 10♥ / 3♦ → 5♥ → 2♠ → 4♣ → 6♦"
+      },
+      "level3": {
+        "ko": "9♣ → 10♦ → J♥ → Q♣ → K♣ / A♥ → 3♣ → 2♥ → 5♦ → 4♠" 
+      }
+    },
+    "initialDeck": [
+      "","","","","","","","","","","","","","","","Kc","","","","7c","4s","Ah","10d","Qc","6d","","4h","5d","3c","5h","Jh","Ks","5s","3h","2h","9c","2s","4c","Js","10h","5c","8c","3d","Qs","9h","As","2d","6c","4d"
+    ]
   },	
   {
-    "id": 11,
+    "id": 12,
     "title": {
       "ko": "로열플러시+ II"
     },
@@ -642,7 +701,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 10
+      "puzzleId": 11
     },
     "hint": {
       "level1": {
@@ -660,7 +719,7 @@
     ]
   },
   {
-    "id": 12,
+    "id": 13,
     "title": {
       "ko": "낮은 패 매니아"
     },
@@ -701,7 +760,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 11
+      "puzzleId": 12
     },
     "hint": {
       "level1": {
@@ -719,7 +778,7 @@
     ]
   },
   {
-    "id": 13,
+    "id": 14,
     "title": {
       "ko": "신중한 청소"
     },
@@ -764,7 +823,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 12
+      "puzzleId": 13
     },
     "hint": {
       "level1": {
@@ -782,7 +841,7 @@
     ]
   },  
   {
-    "id": 14,
+    "id": 15,
     "title": {
       "ko": "숨겨진 길"
     },
@@ -822,7 +881,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 13
+      "puzzleId": 14
     },
     "hint": {
       "level1": {
@@ -840,7 +899,7 @@
     ]
   },
   {
-    "id": 15,
+    "id": 16,
     "title": {
       "ko": "두개의 탑"
     },
@@ -878,7 +937,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 14
+      "puzzleId": 15
     },
     "hint": {
       "level1": {
@@ -896,7 +955,7 @@
     ]
   },
   {
-    "id": 16,
+    "id": 17,
     "title": {
       "ko": "상위패 제패"
     },
@@ -943,7 +1002,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 15
+      "puzzleId": 16
     },
     "hint": {
       "level1": {
@@ -961,7 +1020,7 @@
     ]
   },
   {
-    "id": 17,
+    "id": 18,
     "title": {
       "ko": "하이 클리어"
     },
@@ -1006,7 +1065,7 @@
     },
     "unlockCondition": {
       "type": "puzzle_clear",
-      "puzzleId": 16
+      "puzzleId": 17
     },
     "hint": {
       "level1": {
@@ -1021,65 +1080,6 @@
     },
     "initialDeck": [
       "","","","","","","","","","","","","","","","2s","3s","4s","5s","6s","","","2h","Qd","6c","7h","9d","Jc","","5c","4d","3c","2c","8d","10s","","5h","4c","5d","As","3d","9c","6d","4h","Js","2d","3h","Kc","6h"
-    ]
-  },
-  {
-    "id": 18,
-    "title": {
-      "ko": "6연속 스트레이트"
-    },
-    "description": {
-      "ko": "스트레이트 6개를 만드세요."
-    },
-    "theme": {
-      "bgColor": "#0a1f14",
-      "accentColor": "#C9A84C",
-      "cardBack": "default"
-    },
-    "constraints": {
-      "resetLimit": 0,
-      "moveMode": "freehand",
-      "jumpAllowed": true,
-      "diagonalAllowed": true,
-      "diagonalOnly": false,
-      "forbiddenHands": [],
-      "forbiddenValues": []
-    },
-    "mission": {
-      "type": "real_time",
-      "failTrigger": null,
-      "completionMode": "all",
-      "conditions": [
-        {
-          "id": "c1",
-          "type": "specific_hand",
-          "hand": "STRAIGHT",
-          "count_gte": 6,
-          "exact" : true,
-          "description": "스트레이트 6개"
-        }
-      ]
-    },   
-    "rewards": {
-      "gold": 10
-    },
-    "unlockCondition": {
-      "type": "puzzle_clear",
-      "puzzleId": 17
-    },
-    "hint": {
-      "level1": {
-        "ko": ""
-      },
-      "level2": {
-        "ko": ""
-      },
-      "level3": {
-        "ko": "" 
-      }
-    },
-    "initialDeck": [
-      "","","","","","","","","","","","","","","","Kc","","","","7c","4s","Ah","10d","Qc","6d","","4h","5d","3c","5h","Jh","Ks","5s","3h","2h","9c","2s","4c","Js","10h","5c","8c","3d","Qs","9h","As","2d","6c","4d"
     ]
   }
 ]
