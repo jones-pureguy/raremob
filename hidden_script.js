@@ -20,18 +20,15 @@ let hgBasicScore = 0;
 (function loadEntry() {
   try {
     const raw = localStorage.getItem('hidden_entry');
-    if (!raw) { alert('잘못된 접근입니다.'); location.href = 'index.html'; return; }
+    if (!raw) { location.href = 'index.html'; return; }
     const entry = JSON.parse(raw);
     hgBasicScore = entry.basicFinalScore || 0;
-    if (hgBasicScore < 500) { alert('잘못된 접근입니다.'); location.href = 'index.html'; return; }
+    if (hgBasicScore < 500) { location.href = 'index.html'; return; }
     // 유효 시간 10분 체크
     if (Date.now() - (entry.timestamp || 0) > 10 * 60 * 1000) {
-      alert('진입 유효 시간이 초과되었습니다. 다시 시도해주세요.');
       location.href = 'game.html'; return;
     }
     localStorage.removeItem('hidden_entry');
-    const el = document.getElementById('hgScoreFrom');
-    if (el) el.textContent = `베이직 최종 점수: ${hgBasicScore}점`;
   } catch (e) {
     console.error('[HiddenGame] entry load error', e);
     location.href = 'index.html';
@@ -87,9 +84,9 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
   if (!modal || !overlay) return;
 
   let title;
-  if (reason === 'complete') title = '🎴 COMPLETE!';
-  else if (reason === 'nomoves') title = 'NO MORE MOVES';
-  else title = 'HIDDEN GAME END';
+  if (reason === 'complete') title = `🎴 ${i18n.t('modal.complete')}`;
+  else if (reason === 'nomoves') title = i18n.t('modal.noMoreMoves');
+  else title = i18n.t('hidden.gameOver');
 
   let handListHTML = '';
   sorted.forEach((h, i) => {
@@ -102,7 +99,7 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
   });
 
   const recordHTML = isNewRecord
-    ? `<div style="color:#ff4d8f;font-size:1rem;font-weight:700;margin-bottom:4px;">🏅 NEW RECORD!</div>`
+    ? `<div style="color:#ff4d8f;font-size:1rem;font-weight:700;margin-bottom:4px;">🏅 ${i18n.t('hidden.newRecord')}</div>`
     : '';
   const hiHTML = `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;">HI: ${highScore}</div>`;
   const penaltyHTML = penalty > 0
@@ -111,7 +108,7 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
 
   modal.innerHTML = `
     <h2 style="color:#ff4d8f;">${title}</h2>
-    <div class="subtitle">${state.hands.length}개의 패를 완성했습니다</div>
+    <div class="subtitle">${i18n.t('modal.handsCompleted', { n: state.hands.length })}</div>
     ${best ? `<div class="best-hand">${i18n.t('modal.best', { hand: best.label })}</div>` : ''}
     <div class="score">${i18n.t('modal.score', { score })}</div>
     ${penaltyHTML}
@@ -119,8 +116,8 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
     ${hiHTML}
     <div class="hand-list">${handListHTML}</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-      <a href="mode_select.html" class="btn-play-again" style="text-decoration:none;text-align:center;">메인으로</a>
-      <button class="btn-play-again" style="background:rgba(255,77,143,0.12);border-color:rgba(255,77,143,0.4);color:#ff6ba3;" onclick="hgViewLeaderboard()">히든 랭킹 보기</button>
+      <a href="mode_select.html" class="btn-play-again" style="text-decoration:none;text-align:center;">${i18n.t('ui.gameEnd')}</a>
+      <button class="btn-play-again" style="background:rgba(255,77,143,0.12);border-color:rgba(255,77,143,0.4);color:#ff6ba3;" onclick="hgViewLeaderboard()">${i18n.t('hidden.leaderboardTitle')}</button>
     </div>
   `;
   overlay.classList.add('active');
@@ -130,9 +127,10 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
 function doHiddenShuffle() {
   if (state.phase !== 'playing') return;
   if (!deductGoldLocal(SHUFFLE_COST, 'hidden_shuffle')) {
-    showToast(i18n.t('hidden.notEnoughGold') || '골드가 부족합니다');
+    showToast(i18n.t('hidden.notEnoughGold'));
     return;
   }
+  syncGoldToDB('hidden_shuffle').catch(e => console.warn('[Hidden] 골드 싱크 실패:', e));
   hgShuffleCount++;
 
   // in-place 셔플 (빈 칸 위치 유지)
@@ -153,9 +151,10 @@ function doHiddenShuffle() {
 // ─── 리스타트 ───
 function doHiddenRestart() {
   if (!deductGoldLocal(RESTART_COST, 'hidden_restart')) {
-    showToast(i18n.t('hidden.notEnoughGold') || '골드가 부족합니다');
+    showToast(i18n.t('hidden.notEnoughGold'));
     return;
   }
+  syncGoldToDB('hidden_restart').catch(e => console.warn('[Hidden] 골드 싱크 실패:', e));
   hgResetCount++;
 
   document.getElementById('modalOverlay').classList.remove('active');

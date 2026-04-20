@@ -64,10 +64,7 @@
     color: rgba(255,255,255,0.4);
     letter-spacing: 0.12em;
   }
-  #hgStartOverlay .hg-score-from {
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.6);
-  }
+
   #hgStartOverlay .hg-rule {
     font-size: 0.6rem;
     color: rgba(255,255,255,0.3);
@@ -175,6 +172,8 @@
 <script src="sound.js"></script>
 <script src="scorepolicy.js"></script>
 <script src="shuffleGrid.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
 <script>
   // _pvpMode = true: script.js의 BGM/타이머/스타트오버레이 자동 시작 방지
   window._pvpMode = true;
@@ -191,7 +190,14 @@
     if (typeof _updateHeaderValues === 'function') _updateHeaderValues(true);
   }
   function updateRestartButtonState() {}
-  async function syncGoldToDB() {}
+  // [ADAPTER] 골드 DB 싱크 — Render 서버 경유 (전역 스코프)
+  // server_client.js 로드 후 정의해야 syncGoldToServer 참조 가능
+  async function syncGoldToDB(reason) {
+    const playerId = localStorage.getItem('poker_player_id');
+    if (!playerId) return;
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    await syncGoldToServer(playerId, gold);
+  }
 </script>
 <script>
 (async () => {
@@ -215,7 +221,7 @@
 <div id="hgStartOverlay">
   <div class="hg-title">HIDDEN GAME</div>
   <div class="hg-subtitle">500+ BONUS STAGE</div>
-  <div class="hg-score-from" id="hgScoreFrom"></div>
+
   <div class="hg-rule">
     타이머 없음 · 7×7 그리드 · 최대 9패<br>
     셔플 100G · 리스타트 20G<br>
