@@ -1212,14 +1212,58 @@ function onHiddenEnter(finalScore) {
 }
 
 // ─── Game Reset ───
-function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
+// [ADAPTER] Phase 1-7.4: 리스타트 — 서버 세션 재발급 통합
+async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
   const currentGold = parseInt(loadLocal('poker_gold') || '0');
   if (currentGold < 1) {
     showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
     return;
   }
+
+  // PvP / 오프라인 / RETRY 모드: 기존 레거시 경로
+  if (window._pvpMode || window._offlineMode || isRetryMode) {
+    _resetGameLegacy();
+    return;
+  }
+
+  // 온라인 싱글플레이: 새 서버 세션 발급 후 리스타트
+  const prevSessionId = window._serverSession?.sessionId;
+  try {
+    const sessionData = await requestServerSession('basic');
+    console.log('[restart] new session:', sessionData.sessionId.slice(0, 8), 'seed:', sessionData.seed, '(was:', prevSessionId?.slice(0, 8) || 'none', ')');
+
+    // 세션 발급 성공 후 골드 차감
+    deductGoldLocal(1, 'restart');
+    syncGoldToDB('restart').catch(e => console.warn('골드 싱크 실패:', e));
+
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.getElementById('gridContainer').classList.remove('no-moves-dim');
+    document.getElementById('noMovesOverlay').classList.remove('active');
+    clearInterval(state.timerInterval);
+    initState();
+    initGrid(sessionData.seed);
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+    updateScoreDisplay();
+    renderRemovedCards();
+    startTimerNormal();
+  } catch (err) {
+    console.error('[restart] session request failed:', err);
+    showSessionStartErrorModal(
+      err.message || 'NETWORK',
+      () => resetGame(),
+      () => {
+        window._offlineMode = true;
+        _resetGameLegacy();
+      }
+    );
+  }
+}
+
+// [REUSE] 레거시 리스타트 (PvP / 오프라인 / RETRY 전용)
+function _resetGameLegacy() {
   deductGoldLocal(1, 'restart');
-  // [ADAPTER] 리스타트 즉시 골드 싱크 — 중간 이탈 시 유실 방지
   syncGoldToDB('restart').catch(e => console.warn('골드 싱크 실패:', e));
 
   document.getElementById('modalOverlay').classList.remove('active');
