@@ -183,6 +183,7 @@
     "tabInfinite": "INFINITE",
     "tabHidden": "HIDDEN",
     "retryDesc": "If you saved a replay, you can retry the same deck for a higher score. Scores are tracked separately.",
+    "hiddenDesc": "Hidden Stage is a time-unlimited game unlocked by scoring 500 or more in Normal Mode.",
     "rank": "#",
     "name": "NAME",
     "score": "SCORE",

@@ -121,7 +121,8 @@
       "leaderboard.tabRetry",
       "leaderboard.tabInfinite",
       "leaderboard.tabHidden",
-      "leaderboard.retryDesc"
+      "leaderboard.retryDesc",
+      "leaderboard.hiddenDesc"
     ]
   },
   "id.html": {
