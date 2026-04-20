@@ -809,32 +809,10 @@ function doShuffle() {
   shuffleRemaining--;
   updateShuffleUI();
 
-  // Collect all cards (grid + outside)
-  const allCards = [];
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      const card = state.grid[r][c].card;
-      if (card) {
-        allCards.push(card);
-        state.grid[r][c].card = null;
-      }
-    }
-  }
-  allCards.push(...outsideCards);
-
-  // Shuffle all
-  allCards.sort(() => Math.random() - 0.5);
-
-  // 36 → grid
-  let idx = 0;
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      state.grid[r][c].card = allCards[idx++] || null;
-    }
-  }
-
-  // Remaining 16 → outsideCards
-  outsideCards = allCards.slice(GRID_SIZE * GRID_SIZE);
+  // shuffleGridCards 모듈로 카드 재배치 (shuffleGrid.js)
+  const shuffled = shuffleGridCards({ grid: state.grid, gridSize: GRID_SIZE, outsideCards });
+  state.grid = shuffled.newGrid;
+  outsideCards = shuffled.newOutsideCards;
 
   // Apply gravity & render
   for (let col = 0; col < GRID_SIZE; col++) applyGravityToColumn(col);

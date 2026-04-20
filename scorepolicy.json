@@ -1,6 +1,6 @@
 {
   "_comment": "DragON POKER 점수 정책 설정 파일. 이 파일을 수정하여 점수 체계를 변경할 수 있습니다.",
-  "_lastUpdated": "2026-03-29",
+  "_lastUpdated": "2026-04-20",
   "version": 1,
 
   "handScores": {
@@ -27,5 +27,14 @@
     "enabled": true,
     "perSecond": 1,
     "_comment": "게임 종료 시 남은 초당 1점 보너스 (실제 초수 기준)"
+  },
+
+  "goldCosts": {
+    "basic":    { "restart": 1 },
+    "hidden":   { "restart": 20, "shuffle": 100 },
+    "infinite": { "shuffle": 5 },
+    "puzzle":   { "hintLv1": 30, "hintLv2": 60, "hintLv3": 90 },
+    "replay":   { "save": 100 },
+    "retry":    { "game": 500 }
   }
 }

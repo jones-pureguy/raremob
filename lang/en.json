@@ -226,6 +226,18 @@
       "body": "Collect up to 9 hands before time runs out. Aim for the highest score!"
     }
   },
+  "hidden": {
+    "title": "Hidden Game",
+    "desc": "Special bonus stage for breaking 500 points",
+    "enterButton": "Enter Hidden Game",
+    "introText": "HIDDEN GAME",
+    "restart": "Restart (20 Gold)",
+    "shuffle": "Shuffle (100 Gold)",
+    "notEnoughGold": "Not enough Gold",
+    "gameOver": "Game Over",
+    "newRecord": "New Record!",
+    "leaderboardTitle": "Hidden Game Leaderboard"
+  },
   "quickRef": {
     "title": "Hand Rankings",
     "scorePolicy": "Score Policy",

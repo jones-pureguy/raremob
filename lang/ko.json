@@ -304,6 +304,18 @@
       "body": "제한 시간 내에 최대 9개의 패를 수집하세요. 최고 점수를 노려보세요!"
     }
   },
+  "hidden": {
+    "title": "히든 게임",
+    "desc": "500점 돌파 기념 특별 스테이지",
+    "enterButton": "히든 게임 시작",
+    "introText": "HIDDEN GAME",
+    "restart": "리스타트 (20골드)",
+    "shuffle": "셔플 (100골드)",
+    "notEnoughGold": "골드가 부족합니다",
+    "gameOver": "게임 종료",
+    "newRecord": "신기록!",
+    "leaderboardTitle": "히든 게임 랭킹"
+  },
   "quickRef": {
     "title": "족보 랭킹",
     "scorePolicy": "점수 정책",

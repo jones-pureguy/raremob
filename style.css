@@ -1551,3 +1551,16 @@ body.debug-mode .card .debug-info { display: block; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* ── Hidden Game 배경 테마 (2단계에서 실제 적용) ── */
+body.hidden-stage {
+  --bg-primary:   #2a0a1e;
+  --bg-secondary: #3d1229;
+  --accent:       #ff4d8f;
+  --accent-glow:  #ff6ba3;
+  transition: background 1.5s ease, color 1.5s ease;
+}
+
+body.hidden-stage .game-container {
+  background: linear-gradient(135deg, #2a0a1e 0%, #3d1229 100%);
+}

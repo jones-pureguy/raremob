@@ -15,7 +15,15 @@ const ScorePolicy = (() => {
       ROYAL_FLUSH_PLUS: 250
     },
     penalty: { freeCards: 4, perCard: 10 },
-    timeBonus: { enabled: true, perSecond: 1 }
+    timeBonus: { enabled: true, perSecond: 1 },
+    goldCosts: {
+      basic:    { restart: 1 },
+      hidden:   { restart: 20, shuffle: 100 },
+      infinite: { shuffle: 5 },
+      puzzle:   { hintLv1: 30, hintLv2: 60, hintLv3: 90 },
+      replay:   { save: 100 },
+      retry:    { game: 500 }
+    }
   };
 
   // [ADAPTER] 정책 JSON 로드 — Expo 전환 시 bundled require
@@ -57,7 +65,14 @@ const ScorePolicy = (() => {
     return secondsRemaining * tb.perSecond;
   }
 
-  return { load, get, getHandScore, getPenalty, getTimeBonus };
+  // [REUSE] 모드별 골드 비용 반환 — getGoldCost('hidden', 'shuffle') → 100
+  function getGoldCost(mode, action) {
+    const costs = ((policy || DEFAULTS).goldCosts || {})[mode];
+    if (!costs) return 0;
+    return costs[action] ?? 0;
+  }
+
+  return { load, get, getHandScore, getPenalty, getTimeBonus, getGoldCost };
 })();
 
 // =============================================
