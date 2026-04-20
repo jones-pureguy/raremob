@@ -8,6 +8,25 @@ const cors = require('cors')
 const { randomUUID } = require('crypto')
 const supabase = require('./supabase')
 
+// [REUSE] 엔진 모듈 import (Phase 1-2)
+const {
+  SUIT_RANK,
+  SUITS,
+  VALUES,
+  createDeck,
+  shuffleDeck,
+} = require('./engine/deck')
+const {
+  RANK,
+  evaluateHand,
+  compareHandsByCards,
+  handSortComparator,
+} = require('./engine/handRank')
+const {
+  compareArcadeHands,
+  calculateArcadeChips,
+} = require('./engine/arcadeRules')
+
 const app = express()
 const server = http.createServer(app)
 
@@ -94,32 +113,7 @@ setInterval(() => {
   }
 }, 3600000)
 
-// [REUSE] 수트 우선순위 (서버 판정용)
-const SUIT_RANK = { '♠': 4, '♦': 3, '♥': 2, '♣': 1 }
-
-// [REUSE] 카드 덱 생성
-const SUITS = ['♠', '♦', '♥', '♣']
-const VALUES = [2,3,4,5,6,7,8,9,10,11,12,13,14]
-// 14 = Ace
-
-function createDeck() {
-  const deck = []
-  for (const suit of SUITS) {
-    for (const value of VALUES) {
-      deck.push({ suit, value })
-    }
-  }
-  return deck
-}
-
-function shuffleDeck(deck) {
-  const arr = [...deck]
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]]
-  }
-  return arr
-}
+// SUIT_RANK / SUITS / VALUES / createDeck / shuffleDeck → ./engine/deck.js (Phase 1-2)
 
 // [REUSE] OUT 카드 비교로 선 결정
 function determineFirstPlayer(outCardA, outCardB, socketIdA, socketIdB) {
@@ -1330,159 +1324,10 @@ function handleLobbyLeave(socket) {
 }
 
 // =============================================
-// [REUSE] ARCADE BATTLE 승패 판정
+// ARCADE BATTLE 승패 판정 → ./engine/arcadeRules.js + ./engine/handRank.js (Phase 1-2)
+// compareHandsByCards / handSortComparator → ./engine/handRank.js
+// compareArcadeHands / calculateArcadeChips → ./engine/arcadeRules.js
 // =============================================
-
-// [REUSE] rank 같을 때 카드 세부 비교
-function compareHandsByCards(handA, handB) {
-  if (!handA.cards || !handB.cards) {
-    const sA = SUIT_RANK[handA.suit] || 0
-    const sB = SUIT_RANK[handB.suit] || 0
-    if (sA > sB) return 1
-    if (sB > sA) return -1
-    return 0
-  }
-
-  const getCompareKeys = (hand) => {
-    const cards = hand.cards.slice().sort((a, b) => b.value - a.value)
-    const counts = {}
-    cards.forEach(c => counts[c.value] = (counts[c.value] || 0) + 1)
-    const byCount = Object.entries(counts)
-      .sort((a, b) => b[1] - a[1] || parseInt(b[0]) - parseInt(a[0]))
-      .map(e => parseInt(e[0]))
-
-    switch (hand.rank) {
-      case 1: // ONE_PAIR
-        return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)]
-      case 2: // TWO_PAIR
-        return [byCount[0], byCount[1], ...cards.filter(c => c.value !== byCount[0] && c.value !== byCount[1]).map(c => c.value)]
-      case 3: // THREE_KIND
-        return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)]
-      case 4: // STRAIGHT
-      case 8: // STRAIGHT_FLUSH
-        // A-low: [14,5,4,3,2] → high=5
-        if (cards[0].value === 14 && cards[1].value === 5) return [5]
-        return [cards[0].value]
-      case 5: // FLUSH
-        return cards.map(c => c.value)
-      case 6: // FULL_HOUSE
-        return [byCount[0], byCount[1]]
-      case 7: // FOUR_KIND
-        return [byCount[0], ...cards.filter(c => c.value !== byCount[0]).map(c => c.value)]
-      case 9:  // ROYAL_FLUSH
-      case 10: // ROYAL_FLUSH_PLUS
-        return []
-      default: // HIGH_CARD
-        return cards.map(c => c.value)
-    }
-  }
-
-  const keysA = getCompareKeys(handA)
-  const keysB = getCompareKeys(handB)
-
-  for (let i = 0; i < Math.max(keysA.length, keysB.length); i++) {
-    const a = keysA[i] || 0
-    const b = keysB[i] || 0
-    if (a > b) return 1
-    if (b > a) return -1
-  }
-
-  // 숫자 모두 같으면 최고 카드 수트 비교
-  const topA = handA.cards.slice().sort((a, b) => b.value - a.value)
-  const topB = handB.cards.slice().sort((a, b) => b.value - a.value)
-  const sA = SUIT_RANK[topA[0].suit] || 0
-  const sB = SUIT_RANK[topB[0].suit] || 0
-  if (sA > sB) return 1
-  if (sB > sA) return -1
-  return 0
-}
-
-// [REUSE] 핸드 정렬용 comparator (rank 내림차순 → 같은 rank면 세부 비교)
-function handSortComparator(a, b) {
-  if (b.rank !== a.rank) return b.rank - a.rank
-  return -compareHandsByCards(a, b)
-}
-
-// [REUSE] 두 플레이어의 패 목록 비교 (서버용)
-function compareArcadeHands(handsA, handsB, socketIdA, socketIdB) {
-  const sortedA = handsA.slice().sort(handSortComparator)
-  const sortedB = handsB.slice().sort(handSortComparator)
-
-  const maxLen = Math.max(sortedA.length, sortedB.length, 9)
-  const results = []
-  let winsA = 0, winsB = 0
-
-  for (let i = 0; i < maxLen; i++) {
-    const a = sortedA[i]
-    const b = sortedB[i]
-
-    if (a && !b) {
-      results.push('A')
-      winsA++
-    } else if (!a && b) {
-      results.push('B')
-      winsB++
-    } else if (a && b) {
-      if (a.rank !== b.rank) {
-        if (a.rank > b.rank) { results.push('A'); winsA++ }
-        else { results.push('B'); winsB++ }
-      } else {
-        // rank 같으면 카드 세부 비교
-        const cmp = compareHandsByCards(a, b)
-        if (cmp > 0) { results.push('A'); winsA++ }
-        else if (cmp < 0) { results.push('B'); winsB++ }
-        else { results.push('draw') }
-      }
-    } else {
-      results.push('draw')
-    }
-  }
-
-  let winner = 'draw'
-  if (winsA > winsB) winner = socketIdA
-  else if (winsB > winsA) winner = socketIdB
-
-  return { results, winsA, winsB, winner }
-}
-
-// [REUSE] ARCADE BATTLE 칩 정산
-function calculateArcadeChips(winsA, winsB, chipA, chipB, socketIdA, socketIdB) {
-  if (winsA === winsB) {
-    return {
-      delta: { [socketIdA]: 0, [socketIdB]: 0 },
-      newChip: { [socketIdA]: chipA, [socketIdB]: chipB }
-    }
-  }
-
-  const diff = Math.abs(winsA - winsB)
-  const grossWin = diff * 10
-  const tableFee = 1
-  const netWin = grossWin - tableFee
-
-  let winnerId, loserId, winnerChip, loserChip
-  if (winsA > winsB) {
-    winnerId = socketIdA; loserId = socketIdB
-    winnerChip = chipA; loserChip = chipB
-  } else {
-    winnerId = socketIdB; loserId = socketIdA
-    winnerChip = chipB; loserChip = chipA
-  }
-
-  // 패자 보유칩 초과 불가
-  const actualLoss = Math.min(grossWin, loserChip)
-  const actualGain = Math.min(netWin, actualLoss - tableFee > 0 ? actualLoss - tableFee : 0)
-
-  return {
-    delta: {
-      [winnerId]: actualGain > 0 ? actualGain : 0,
-      [loserId]: -actualLoss
-    },
-    newChip: {
-      [winnerId]: winnerChip + (actualGain > 0 ? actualGain : 0),
-      [loserId]: loserChip - actualLoss
-    }
-  }
-}
 
 // [REUSE] PvP 전적 업데이트 — arcade/duel 공통
 async function updatePvpStat(playerId, column) {
