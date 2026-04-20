@@ -1,11 +1,10 @@
 {
   "hidden_game.html": {
-    "_status": "planned — 2단계 구현 예정",
-    "buttons": ["히든 게임 시작", "리스타트 (20골드)", "셔플 (100골드)", "게임 종료", "← BACK"],
-    "toasts": ["골드가 부족합니다", "신기록!"],
-    "modals": ["HIDDEN GAME", "게임 종료"],
+    "buttons": ["리스타트 (20골드)", "셔플 (100골드)", "게임종료", "← BACK", "▶ START"],
+    "toasts": [],
+    "modals": [],
     "alerts": [],
-    "labels": ["히든 게임", "500점 돌파 기념 특별 스테이지", "히든 게임 랭킹", "DragON POKER - Hidden"],
+    "labels": ["HIDDEN GAME", "500+ BONUS STAGE", "HAND X / 9", "HI", "COLLECTED", "REMOVED", "DragON POKER - Hidden"],
     "placeholders": [],
     "dynamic_text": []
   },
