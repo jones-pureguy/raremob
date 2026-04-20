@@ -27,6 +27,9 @@ const {
   calculateArcadeChips,
 } = require('./engine/arcadeRules')
 
+// [REUSE] 싱글플레이 세션 API (Phase 1-8)
+const { registerSessionRoutes } = require('./api/session')
+
 const app = express()
 const server = http.createServer(app)
 
@@ -190,6 +193,9 @@ async function ensurePlayer(userId, username = null) {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })
 })
+
+// Phase 1-8: 싱글플레이 세션 API 등록
+registerSessionRoutes(app)
 
 // =============================================
 // [ADAPTER] 골드 싱크 API
