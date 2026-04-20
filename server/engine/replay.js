@@ -6,14 +6,19 @@ const { validatePath, HAND_SIZE } = require('./pathValidator');
 const { applyGravity, countCards } = require('./gravity');
 const { calculateTotalScore } = require('./scorer');
 
-// [REUSE] seed로 초기 그리드 생성 (7x7 기본, 52장 중 49장 사용)
+// [REUSE] seed로 초기 그리드 생성 — 클라 initGrid()와 동일 로직
+//   basic/hidden (7×7): 처음 3장을 removedCards로 스킵 → 3..51 카드 49개 배치 (script.js:179 deck.splice(0,3))
+//   infinite   (6×6): 스킵 없이 0..35 카드 36개 배치 (infinite_script.js:201 deck.slice(0,36))
 function buildInitialGrid(seed, gridSize = 7) {
   const deck = createDeck();
   const shuffled = shuffleDeckWithSeed(deck, seed);
 
   const grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
 
-  let idx = 0;
+  // 7×7 은 클라가 removedCards 로 3장을 떼어냄 → 서버도 동일하게 스킵
+  const startIdx = gridSize === 7 ? 3 : 0;
+
+  let idx = startIdx;
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
       if (idx < shuffled.length) {

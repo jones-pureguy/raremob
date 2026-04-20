@@ -19,9 +19,9 @@ function testInitialGridDeterministic() {
     return false;
   }
   console.log('PASS: initial grid deterministic (seed=12345)');
-  console.log('  [0][0]:', g1[0][0]);
-  console.log('  [3][3]:', g1[3][3]);
-  console.log('  [6][6]:', g1[6][6]);
+  console.log('  [0][0]:', g1[0][0]);  // expected: {suit:'♥',value:7}  (7×7은 첫 3장 skip)
+  console.log('  [3][3]:', g1[3][3]);  // expected: {suit:'♠',value:14}
+  console.log('  [6][6]:', g1[6][6]);  // expected: {suit:'♣',value:13}
   return true;
 }
 
