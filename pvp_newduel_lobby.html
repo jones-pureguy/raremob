@@ -507,6 +507,7 @@ let challengeTimer = null;
   await ScorePolicy.load();
 
   // script.js 로드 (게임 엔진)
+  window._pvpMode = true;
   window._duelGridSize = 5;
   await new Promise((resolve) => {
     const s = document.createElement('script');
