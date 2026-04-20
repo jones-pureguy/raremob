@@ -31,6 +31,7 @@ const TIMER_SECONDS = window._arcadeTimerSeconds || 200;
 let GRID_SIZE = window._duelGridSize || 7;
 const MAX_HANDS = 9;
 const HAND_SIZE = 5;
+const HIDDEN_UNLOCK_SCORE = 500; // 히든 게임 진입 최소 점수
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const SUIT_NAMES = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
@@ -1107,7 +1108,12 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     modal.className = 'modal' + modalClass;
 
     const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
+    // Hidden Game 진입 버튼 (500점 이상일 때만)
+    const hiddenBtnHTML = score >= HIDDEN_UNLOCK_SCORE
+      ? `<button class="btn-play-again btn-hidden-enter" onclick="onHiddenEnter(${score})" style="width:100%;margin-bottom:8px;">${i18n.t('hidden.enterButton') || '🎴 Hidden Game 시작'}</button>`
+      : '';
     let buttonsHTML = `
+      ${hiddenBtnHTML}
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
         <a href="mode_select.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
@@ -1157,6 +1163,18 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScoreNone');
     });
   }
+}
+
+// ─── Hidden Game 진입 ───
+function onHiddenEnter(finalScore) {
+  // 진입 정보 임시 저장
+  saveLocal('hidden_entry', JSON.stringify({
+    basicFinalScore: finalScore,
+    timestamp: Date.now()
+  }));
+  // BGM 페이드아웃 후 페이지 이동
+  try { if (window.BGM && BGM.fadeOut) BGM.fadeOut(500); } catch (e) {}
+  setTimeout(() => { location.href = 'hidden_game.html'; }, 500);
 }
 
 // ─── Game Reset ───
