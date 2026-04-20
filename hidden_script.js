@@ -35,6 +35,11 @@ let hgBasicScore = 0;
   }
 })();
 
+// ─── 방어선: script.js의 타이머 진입점 무력화 ───
+// _pvpMode 게이팅을 우회하는 경로가 생기더라도 히든 모드에선 타이머가 절대 돌지 않도록 보장
+if (state && state.timerInterval) clearInterval(state.timerInterval);
+window.startTimer = function() {};
+
 // ─── 핵심: endGame 오버라이드 ───
 // script.js의 endGame을 히든 게임 종료 로직으로 교체
 window.endGame = function endGame(reason) {
@@ -246,6 +251,15 @@ window.finalizePath = function() {
     overlay.style.display = 'none';
     hgGameStarted = true;
     state.phase = 'playing';
+
+    // script.js가 #restartBtn에 붙여둔 resetGame() 핸들러 제거
+    // (resetGame → startTimer()로 숨겨진 200초 타이머가 돌던 버그 차단)
+    ['shuffleBtn', 'restartBtn'].forEach(id => {
+      const oldBtn = document.getElementById(id);
+      if (!oldBtn) return;
+      const newBtn = oldBtn.cloneNode(true);
+      oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    });
 
     // 셔플 버튼
     const shuffleBtn = document.getElementById('shuffleBtn');
