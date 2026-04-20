@@ -6,32 +6,31 @@
 <title>DragON POKER - Leaderboard</title>
 <link rel="stylesheet" href="style.css">
 <style>
+  /* [REWRITE] 3개→4개 탭으로 늘어남에 따라 2×2 그리드로 변경 */
   .lb-tabs {
-    display: flex;
-    gap: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
     margin-bottom: 16px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid rgba(201,168,76,0.3);
   }
   .lb-tab {
-    flex: 1;
-    padding: 10px 16px;
+    padding: 10px 8px;
     white-space: nowrap;
     background: rgba(255,255,255,0.04);
     color: rgba(255,255,255,0.5);
-    border: none;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 6px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
   }
-  .lb-tab:not(:last-child) { border-right: 1px solid rgba(201,168,76,0.3); }
   .lb-tab:hover { background: rgba(201,168,76,0.1); }
   .lb-tab.active {
     background: rgba(201,168,76,0.2);
     color: var(--gold);
+    border-color: var(--gold);
   }
 </style>
 </head>
@@ -43,18 +42,15 @@
 <div class="menu-container">
   <div class="menu-title">LEADERBOARD</div>
   <div class="lb-tabs">
-    <button class="lb-tab active" id="tabNormal" onclick="switchTab('normal')">일반 순위</button>
-    <button class="lb-tab" id="tabRetry" onclick="switchTab('retry')">RETRY 순위</button>
-    <button class="lb-tab" id="tabInfinite" onclick="switchTab('infinite')">INFINITE</button>
+    <button class="lb-tab active" id="tabNormal"   onclick="switchTab('normal')"></button>
+    <button class="lb-tab"        id="tabRetry"    onclick="switchTab('retry')"></button>
+    <button class="lb-tab"        id="tabInfinite" onclick="switchTab('infinite')"></button>
+    <button class="lb-tab"        id="tabHidden"   onclick="switchTab('hidden')"></button>
   </div>
   <div class="leaderboard-wrap" id="leaderboardWrap">
     <div class="loading">불러오는 중...</div>
   </div>
-  <p class="retry-description" id="retryDesc" style="display:none;">
-    본인이 직접 저장한 리플레이의 경우 리플레이 분석 후 RETRY할 수 있습니다.
-    별도의 순위로 집계됩니다. 정말 아쉽게 고득점을 놓친 판이 있다면
-    리플레이 저장 후 더 높은 점수에 도전해 보세요.
-  </p>
+  <p class="retry-description" id="retryDesc" style="display:none;"></p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -71,17 +67,29 @@
   let currentTab = 'normal';
   i18n.init();
 
+  // [REWRITE] 탭 레이블 / 설명문을 i18n에서 주입
+  function applyTabLabels() {
+    document.getElementById('tabNormal').textContent   = i18n.t('leaderboard.tabNormal');
+    document.getElementById('tabRetry').textContent    = i18n.t('leaderboard.tabRetry');
+    document.getElementById('tabInfinite').textContent = i18n.t('leaderboard.tabInfinite');
+    document.getElementById('tabHidden').textContent   = i18n.t('leaderboard.tabHidden');
+    document.getElementById('retryDesc').textContent   = i18n.t('leaderboard.retryDesc');
+  }
+  applyTabLabels();
+
   function escapeHTML(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
   }
 
+  // [REUSE] 탭 4개로 확장
   function switchTab(tab) {
     currentTab = tab;
-    document.getElementById('tabNormal').classList.toggle('active', tab === 'normal');
-    document.getElementById('tabRetry').classList.toggle('active', tab === 'retry');
+    document.getElementById('tabNormal').classList.toggle('active',   tab === 'normal');
+    document.getElementById('tabRetry').classList.toggle('active',    tab === 'retry');
     document.getElementById('tabInfinite').classList.toggle('active', tab === 'infinite');
+    document.getElementById('tabHidden').classList.toggle('active',   tab === 'hidden');
     document.getElementById('retryDesc').style.display = tab === 'retry' ? 'block' : 'none';
     loadLeaderboard();
   }
@@ -90,6 +98,7 @@
     const wrap = document.getElementById('leaderboardWrap');
     wrap.innerHTML = '<div class="loading">불러오는 중...</div>';
 
+    // [ADAPTER] 탭별 테이블 매핑
     let table, hasReplay;
     if (currentTab === 'infinite') {
       table = 'leaderboard_infinite';
@@ -97,6 +106,9 @@
     } else if (currentTab === 'retry') {
       table = 'leaderboard_r';
       hasReplay = true;
+    } else if (currentTab === 'hidden') {
+      table = 'leaderboard_hidden';
+      hasReplay = false;
     } else {
       table = 'leaderboard';
       hasReplay = true;
@@ -129,10 +141,14 @@
     }
   }
 
-  // Auto-select tab from URL param
+  // [REWRITE] 4개 탭 모두 URL 파라미터로 진입 가능
   const urlTab = new URLSearchParams(location.search).get('mode');
-  if (urlTab === 'infinite') switchTab('infinite');
-  else loadLeaderboard();
+  const validTabs = ['normal', 'retry', 'infinite', 'hidden'];
+  if (validTabs.includes(urlTab) && urlTab !== 'normal') {
+    switchTab(urlTab);
+  } else {
+    loadLeaderboard();
+  }
 </script>
 </body>
 </html>

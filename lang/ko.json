@@ -256,6 +256,10 @@
     "ROYAL_FLUSH_PLUS": "Royal Flush+"
   },
   "leaderboard": {
+    "tabNormal": "일반 순위",
+    "tabRetry": "RETRY 순위",
+    "tabInfinite": "INFINITE",
+    "tabHidden": "HIDDEN",
     "retryDesc": "본인이 직접 저장한 리플레이의 경우 리플레이 분석 후 RETRY할 수 있습니다. 별도의 순위로 집계됩니다. 정말 아쉽게 고득점을 놓친 판이 있다면 리플레이 저장 후 더 높은 점수에 도전해 보세요.",
     "rank": "#",
     "name": "NAME",

@@ -178,6 +178,10 @@
     "ROYAL_FLUSH_PLUS": "Royal Flush+"
   },
   "leaderboard": {
+    "tabNormal": "NORMAL",
+    "tabRetry": "RETRY",
+    "tabInfinite": "INFINITE",
+    "tabHidden": "HIDDEN",
     "retryDesc": "If you saved a replay, you can retry the same deck for a higher score. Scores are tracked separately.",
     "rank": "#",
     "name": "NAME",
