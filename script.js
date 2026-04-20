@@ -95,6 +95,16 @@ let currentPlayerId = null; // cached player uuid
 let replayLog = null; // current game replay data
 let isRetryMode = false; // true when game started via GAME RETRY
 
+// [REUSE] Phase 1-7: 서버 세션 상태 (싱글플레이만 사용, PvP는 무시)
+window._serverSession = window._serverSession || {
+  sessionId: null,
+  seed: null,
+  dragLog: [],
+  serverStartedAt: null,
+  mode: 'basic',
+  submitted: false,
+};
+
 function initState() { // [REUSE]
   state = {
     grid: [],
@@ -148,7 +158,7 @@ function cardFromId(id) { // [REUSE]
 }
 
 // ─── Grid Init ───
-function initGrid() { // [REUSE] (uses ADAPTER: saveLocal/loadLocal/removeLocal)
+function initGrid(seed = null) { // [REUSE] (uses ADAPTER: saveLocal/loadLocal/removeLocal)
   let deck;
   const retryRaw = loadLocal('poker_retry_deck');
   if (retryRaw) {
@@ -156,6 +166,10 @@ function initGrid() { // [REUSE] (uses ADAPTER: saveLocal/loadLocal/removeLocal)
     const deckIds = JSON.parse(retryRaw);
     deck = deckIds.map(id => cardFromId(id));
     isRetryMode = true;
+  } else if (seed !== null && window.PRNG) {
+    // [REUSE] Phase 1-7: 서버 seed 기반 결정론적 셔플
+    deck = window.PRNG.shuffleFromSeed(createDeck(), seed);
+    isRetryMode = false;
   } else {
     deck = shuffle(createDeck());
     isRetryMode = false;
@@ -798,6 +812,14 @@ function finalizePath() { // [REWRITE]
     });
   }
 
+  // [REUSE] Phase 1-7: 서버 세션 dragLog 수집 (싱글플레이 + 세션 있을 때만)
+  if (!window._pvpMode && window._serverSession && window._serverSession.sessionId) {
+    window._serverSession.dragLog.push({
+      cards: state.selectedPath.map(([r, c]) => [r, c]),
+      ts: Date.now(),
+    });
+  }
+
   Sound.handComplete(hand.rankValue);
   updateScoreDisplay();
   showScorePopup(hand.label, earnedScore, hand.rank);
@@ -1162,6 +1184,18 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       const topScoreEl = document.getElementById('allUserTopScoreRow');
       if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScoreNone');
     });
+
+    // [REUSE] Phase 1-7: 서버 세션 제출 (싱글플레이만, 백그라운드)
+    if (!window._pvpMode && !isRetryMode && window._serverSession && window._serverSession.sessionId && !window._offlineMode) {
+      submitSessionToServer(score).catch(err => {
+        console.error('[session/submit] background error:', err);
+      });
+    }
+    if (!window._pvpMode && isRetryMode && !window._offlineMode) {
+      submitRetryToServer(score).catch(err => {
+        console.error('[retry/submit] background error:', err);
+      });
+    }
   }
 }
 
@@ -1452,6 +1486,273 @@ function initStartOverlay(onStart) { // [REWRITE]
   overlay.addEventListener('click', handleStart);
 }
 
+// =============================================
+// [ADAPTER] Phase 1-7: 서버 세션 API 호출
+// =============================================
+const SERVER_URL = window._serverUrl || 'https://dragon-poker-server.onrender.com';
+
+// [ADAPTER] 서버에서 세션 발급 받기 (basic)
+async function requestServerSession(mode) {
+  const userId = loadLocal('poker_player_id');
+  if (!userId) throw new Error('NO_USER_ID');
+
+  const res = await fetch(`${SERVER_URL}/api/session/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, mode }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP_${res.status}`);
+  }
+
+  const data = await res.json();
+  window._serverSession = {
+    sessionId: data.sessionId,
+    seed: data.seed,
+    dragLog: [],
+    serverStartedAt: data.startedAt,
+    mode,
+    submitted: false,
+  };
+  console.log('[session/start] received:', { sessionId: data.sessionId.slice(0, 8), seed: data.seed });
+  return data;
+}
+
+// [ADAPTER] 서버에 세션 제출 (검증 포함)
+async function submitSessionToServer(claimedScore) {
+  const session = window._serverSession;
+  if (!session || !session.sessionId || session.submitted) return;
+
+  const timeRemaining = Math.max(0, state.timer || 0);
+
+  try {
+    const res = await fetch(`${SERVER_URL}/api/session/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: session.sessionId,
+        dragLog: session.dragLog,
+        claimedScore,
+        timeRemaining,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.accepted) {
+      session.submitted = true;
+      console.log('[session/submit] accepted:', data);
+      return data;
+    } else {
+      console.warn('[session/submit] rejected:', { status: res.status, data });
+      showSubmitErrorModal(data, claimedScore);
+      return null;
+    }
+  } catch (err) {
+    console.error('[session/submit] network error:', err);
+    showSubmitErrorModal({ error: 'NETWORK' }, claimedScore);
+    throw err;
+  }
+}
+
+// [ADAPTER] RETRY 서버 경유 (검증 없음 — leaderboard_r 박제용)
+async function submitRetryToServer(claimedScore) {
+  const userId = loadLocal('poker_player_id');
+  if (!userId) return;
+
+  // 최고 족보
+  let bestHand = null;
+  let bestRank = -1;
+  for (const h of state.hands) {
+    if (h.rankValue > bestRank) { bestRank = h.rankValue; bestHand = h.label; }
+  }
+
+  // 초기 덱 / 드래그 경로 — replayLog에서 추출
+  const grid = replayLog?.initialDeck || [];
+  const moves = (replayLog?.actions || []).map(a => a.path || []);
+
+  try {
+    const res = await fetch(`${SERVER_URL}/api/session/retry/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        parentSessionId: null,
+        grid,
+        moves,
+        score: claimedScore,
+        handsCollected: state.hands.length,
+        timeRemaining: Math.max(0, state.timer || 0),
+        bestHand,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.accepted) {
+      console.log('[retry/submit] recorded:', data);
+    } else {
+      console.warn('[retry/submit] failed:', { status: res.status, data });
+    }
+  } catch (err) {
+    console.error('[retry/submit] network error:', err);
+  }
+}
+
+// [REWRITE] Phase 1-7: 세션 발급 실패 시 모달
+function showSessionStartErrorModal(errorCode, onRetry, onOfflineMode) {
+  const overlay = document.getElementById('modalOverlay');
+  const modal = document.getElementById('modal');
+  if (!overlay || !modal) {
+    if (confirm(`서버 연결 실패 (${errorCode}). 재시도할까요? (취소 시 오프라인 연습 모드)`)) {
+      onRetry();
+    } else {
+      onOfflineMode();
+    }
+    return;
+  }
+
+  modal.innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <h3 style="color:#ff6b6b;margin-bottom:12px;">서버 연결 실패</h3>
+      <p style="color:rgba(255,255,255,0.7);margin-bottom:20px;font-size:0.9rem;">
+        리더보드에 기록되려면 서버 연결이 필요합니다.<br>
+        오프라인 모드는 연습용이며 기록되지 않습니다.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-play-again" id="_retrySessionStartBtn">재시도</button>
+        <button class="btn-play-again" style="background:rgba(255,255,255,0.1)" id="_enterOfflineModeBtn">오프라인 연습 모드</button>
+      </div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px;">
+        에러: ${errorCode || 'UNKNOWN'}
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
+
+  document.getElementById('_retrySessionStartBtn').onclick = () => {
+    overlay.classList.remove('active');
+    onRetry();
+  };
+  document.getElementById('_enterOfflineModeBtn').onclick = () => {
+    overlay.classList.remove('active');
+    onOfflineMode();
+  };
+}
+
+// [REWRITE] Phase 1-7: 제출 실패 시 모달 (디바운스 2초)
+let _lastSubmitRetryAt = 0;
+function showSubmitErrorModal(errorData, claimedScore) {
+  const overlay = document.getElementById('modalOverlay');
+  const modal = document.getElementById('modal');
+  if (!overlay || !modal) {
+    console.warn('[submit error]', errorData);
+    return;
+  }
+
+  const errCode = errorData.error || errorData.reason || 'UNKNOWN';
+  modal.innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <h3 style="color:#ff6b6b;margin-bottom:12px;">점수 전송 실패</h3>
+      <p style="color:rgba(255,255,255,0.7);margin-bottom:20px;font-size:0.9rem;">
+        서버에 점수를 기록하지 못했습니다.<br>
+        재시도하거나 기록 없이 종료할 수 있습니다.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-play-again" id="_retrySubmitBtn">재시도</button>
+        <button class="btn-play-again" style="background:rgba(255,255,255,0.1)" id="_abandonSessionBtn">기록 없이 종료</button>
+      </div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px;">
+        에러: ${errCode}
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
+
+  document.getElementById('_retrySubmitBtn').onclick = async () => {
+    const now = Date.now();
+    if (now - _lastSubmitRetryAt < 2000) return;
+    _lastSubmitRetryAt = now;
+    overlay.classList.remove('active');
+    await submitSessionToServer(claimedScore);
+  };
+  document.getElementById('_abandonSessionBtn').onclick = () => {
+    window._serverSession.submitted = true;
+    overlay.classList.remove('active');
+    navigateTo('./mode_select.html');
+  };
+}
+
+// [REUSE] Phase 1-7: 서버 세션 받아서 게임 시작 (싱글플레이 basic 전용)
+async function startWithServerSession() {
+  // RETRY 모드: 서버 세션 없이 기존 replay_data 복원 경로 유지
+  if (isRetryMode) {
+    console.log('[session] RETRY mode — skipping /api/session/start');
+    startTimerNormal();
+    return;
+  }
+
+  try {
+    const sessionData = await requestServerSession('basic');
+
+    // seed로 그리드 재생성
+    initState();
+    initGrid(sessionData.seed);
+    renderGrid();
+    updateHandPanel();
+    updateScoreDisplay();
+    renderRemovedCards();
+
+    startTimerNormal();
+  } catch (err) {
+    console.error('[session/start] failed:', err);
+    showSessionStartErrorModal(
+      err.message,
+      () => startWithServerSession(),
+      () => {
+        // 오프라인 모드: 기존 Math.random 방식
+        window._offlineMode = true;
+        initState();
+        initGrid();
+        renderGrid();
+        updateHandPanel();
+        updateScoreDisplay();
+        renderRemovedCards();
+        startTimerNormal();
+      }
+    );
+  }
+}
+
+// [REUSE] 타이머 시작 + 초기 NMM sanity check
+function startTimerNormal() {
+  startTimer();
+
+  // Sanity check on start (reshuffle without gold cost)
+  setTimeout(() => {
+    if (!scanForValidMoves()) {
+      console.warn('[DragON] No valid moves at game start — reshuffling');
+      document.getElementById('modalOverlay').classList.remove('active');
+      clearInterval(state.timerInterval);
+
+      // 서버 모드면 새 세션 요청, 오프라인이면 기존 방식
+      if (!window._offlineMode && !isRetryMode) {
+        startWithServerSession();
+      } else {
+        initState();
+        initGrid();
+        renderGrid();
+        updateHandPanel();
+        updateHandPreview();
+        updateScoreDisplay();
+        renderRemovedCards();
+        startTimer();
+      }
+    }
+  }, 100);
+}
+
 // ─── Init ─── // [REWRITE]
 initState();
 initGrid();
@@ -1463,24 +1764,8 @@ renderRemovedCards();
 if (!window._pvpMode) {
   BGM.init('./audio/Main_Theme.mp3');
   initStartOverlay(() => {
-    startTimer();
-
-    // Sanity check on start (reshuffle without gold cost)
-    setTimeout(() => {
-      if (!scanForValidMoves()) {
-        console.warn('[DragON] No valid moves at game start — reshuffling');
-        document.getElementById('modalOverlay').classList.remove('active');
-        clearInterval(state.timerInterval);
-        initState();
-        initGrid();
-        renderGrid();
-        updateHandPanel();
-        updateHandPreview();
-        updateScoreDisplay();
-        renderRemovedCards();
-        startTimer();
-      }
-    }, 100);
+    // Phase 1-7: START 탭 → 서버 세션 요청 → 성공 시 seed로 그리드 재생성
+    startWithServerSession();
   });
 }
 
