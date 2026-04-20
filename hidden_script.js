@@ -77,9 +77,13 @@ window.endGame = function endGame(reason) {
     showHiddenEndModal(finalScore, highScore, best, sorted, penalty, remainingCards, penaltyPerCard, isNewRecord, reason);
   }
 
-  // DB 저장 (비동기)
-  hgSaveSession(finalScore, best ? best.label : null, reason);
-  hgUpsertLeaderboard(finalScore, best ? best.label : null, isNewRecord);
+  // DB 저장 (비동기) — 0점은 가비지 데이터 방지를 위해 저장하지 않음
+  if (finalScore > 0) {
+    hgSaveSession(finalScore, best ? best.label : null, reason);
+    hgUpsertLeaderboard(finalScore, best ? best.label : null, isNewRecord);
+  } else {
+    console.log('[HiddenGame] 0점 세션 — DB 저장 건너뜀');
+  }
 };
 
 // ─── 종료 모달 ───
