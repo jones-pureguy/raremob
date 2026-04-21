@@ -193,6 +193,7 @@ function registerSessionRoutes(app) {
       const replayResult = replaySession({
         seed: session.seed,
         gridSize: session.gridSize,
+        mode: session.mode,
         dragLog,
         constraints: {},
         timeRemaining,
