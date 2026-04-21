@@ -176,7 +176,9 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="server_client.js"></script>
 <script>
-  // _pvpMode = true: script.js의 BGM/타이머/스타트오버레이 자동 시작 방지
+  // [Phase 1-7.5-B] 히든 전용 플래그 — script.js의 자동 시작(BGM + startOverlay + basic session)
+  // 진입을 비활성화. 히든 모드는 자체적으로 세션/BGM/오버레이를 관리한다 (hidden_script.js).
+  // _pvpMode 플래그 재사용 이유: script.js 수정 금지 원칙. 실제로는 PvP 아님.
   window._pvpMode = true;
   // Gold helpers (game.html과 동일)
   function getGoldLocal() { return parseInt(localStorage.getItem('poker_gold') || '0'); }

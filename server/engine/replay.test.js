@@ -5,6 +5,7 @@ const {
   buildInitialGridInfinite,
   refillInfinite,
   shuffleInfinite,
+  shuffleHiddenInPlace,
   replaySession,
   SEED_MIX,
   SHUFFLE_INDEX_OFFSET,
@@ -220,6 +221,46 @@ function testInfiniteReplayDoubleCall() {
   return true;
 }
 
+function testHiddenShuffleInPlaceDeterministic() {
+  // 7×7 베이직 초기 그리드 (스킵 3)를 히든용으로 재사용 — 구조 동일
+  const grid = buildInitialGrid(11111, 7);
+  // 일부 칸 null로 (패 완성 시뮬) — 빈 칸 위치 유지 검증
+  const gridWithHoles = grid.map(row => row.slice());
+  gridWithHoles[0][0] = null;
+  gridWithHoles[3][3] = null;
+  gridWithHoles[6][6] = null;
+
+  const rng1 = mulberry32(11111 ^ ((0 + SHUFFLE_INDEX_OFFSET) * SEED_MIX));
+  const rng2 = mulberry32(11111 ^ ((0 + SHUFFLE_INDEX_OFFSET) * SEED_MIX));
+  const s1 = shuffleHiddenInPlace({ grid: gridWithHoles, gridSize: 7, rng: rng1 });
+  const s2 = shuffleHiddenInPlace({ grid: gridWithHoles, gridSize: 7, rng: rng2 });
+  if (!gridsEqual(s1, s2)) {
+    console.error('FAIL: shuffleHiddenInPlace not deterministic');
+    return false;
+  }
+  // 빈 칸 위치 보존 검증
+  if (s1[0][0] !== null || s1[3][3] !== null || s1[6][6] !== null) {
+    console.error('FAIL: shuffleHiddenInPlace did not preserve empty positions');
+    return false;
+  }
+  console.log('PASS: shuffleHiddenInPlace deterministic + empty cells preserved');
+  return true;
+}
+
+function testHiddenShuffleAllowedInReplay() {
+  const r = replaySession({
+    seed: 22222, gridSize: 7, mode: 'hidden',
+    dragLog: [{ type: 'shuffle' }],
+    scoringOptions: { applyTimeBonus: false, applyPenalty: true, applyCombo: false },
+  });
+  if (!r.valid) {
+    console.error('FAIL: hidden mode should accept shuffle event, got:', r);
+    return false;
+  }
+  console.log('PASS: shuffle event accepted in hidden mode');
+  return true;
+}
+
 function testShuffleInBasicModeRejected() {
   const r = replaySession({
     seed: 1, gridSize: 7, mode: 'basic',
@@ -289,6 +330,8 @@ const results = [
   testRefillInfiniteDeterministic(),
   testShuffleInfiniteDeterministic(),
   testInfiniteReplayDoubleCall(),
+  testHiddenShuffleInPlaceDeterministic(),
+  testHiddenShuffleAllowedInReplay(),
   testShuffleInBasicModeRejected(),
   testComboScoring(),
   testBasicScoringUnchanged(),

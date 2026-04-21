@@ -89,6 +89,28 @@ function refillInfinite({ grid, outsideCards, removedCards, gridSize, rng }) {
   return { grid: finalGrid, outsideCards: newOutside };
 }
 
+// [REUSE] Phase 1-7.5-B: 히든 셔플 이벤트 — 클라 doHiddenShuffle + shuffleGrid.js 'in-place'와 동일
+//   카드가 있는 셀만 수집 → 셔플 → 같은 좌표에 재배치 (빈 칸 위치 유지)
+//   outsideCards는 히든에 없음 (항상 빈 배열)
+function shuffleHiddenInPlace({ grid, gridSize, rng }) {
+  const filledPositions = [];
+  const cards = [];
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      if (grid[r][c]) {
+        filledPositions.push([r, c]);
+        cards.push(grid[r][c]);
+      }
+    }
+  }
+  const shuffled = shuffleWithRng(cards, rng);
+  const newGrid = grid.map(row => row.slice());
+  filledPositions.forEach(([r, c], i) => {
+    newGrid[r][c] = shuffled[i];
+  });
+  return newGrid;
+}
+
 // [REUSE] Phase 1-7.5-A: 인피니트 셔플 이벤트 — 클라 doShuffle + shuffleGrid.js 'redistribute'와 동일
 //   그리드 카드 + outsideCards 모두 모아 셔플 → 처음 36장을 그리드에, 나머지를 outside
 //   클라도 셔플 후 중력 적용(infinite_script.js:818) → 서버도 동일
@@ -158,13 +180,18 @@ function replaySession({
     const eventType = event.type || 'hand'; // 하위 호환: 구 베이직 형식 { cards:[...] }
 
     if (eventType === 'shuffle') {
-      if (mode !== 'infinite') {
+      if (mode !== 'infinite' && mode !== 'hidden') {
         return { valid: false, reason: 'SHUFFLE_NOT_ALLOWED', step: i };
       }
       const shuffleRng = mulberry32(seed ^ ((shuffleIndex + SHUFFLE_INDEX_OFFSET) * SEED_MIX));
-      const out = shuffleInfinite({ grid, outsideCards, gridSize, rng: shuffleRng });
-      grid = out.grid;
-      outsideCards = out.outsideCards;
+      if (mode === 'infinite') {
+        const out = shuffleInfinite({ grid, outsideCards, gridSize, rng: shuffleRng });
+        grid = out.grid;
+        outsideCards = out.outsideCards;
+      } else {
+        // hidden: in-place shuffle
+        grid = shuffleHiddenInPlace({ grid, gridSize, rng: shuffleRng });
+      }
       shuffleIndex++;
       continue;
     }
@@ -267,6 +294,7 @@ module.exports = {
   buildInitialGridInfinite,
   refillInfinite,
   shuffleInfinite,
+  shuffleHiddenInPlace,
   replaySession,
   SEED_MIX,
   SHUFFLE_INDEX_OFFSET,
