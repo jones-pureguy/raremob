@@ -87,11 +87,13 @@ function calculateTotalScore(hands, remainingCards, timeRemaining, options = {})
   const bonus = applyTimeBonus ? getTimeBonus(timeRemaining) : 0;
   const penalty = applyPenalty ? getPenalty(remainingCards) : 0;
 
+  const rawTotal = handSum + bonus - penalty;
   return {
-    total: handSum + bonus - penalty,
+    total: Math.max(0, rawTotal),
     handSum,
     bonus,
     penalty,
+    rawTotal,
   };
 }
 

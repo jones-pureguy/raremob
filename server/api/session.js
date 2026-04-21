@@ -218,6 +218,20 @@ function registerSessionRoutes(app) {
         });
       }
 
+      // 0점 세션은 DB 저장 skip (무의미한 플레이 방어)
+      if (replayResult.score <= 0) {
+        session.submitted = true;
+        console.log(`[session/submit] accepted but skipping DB (score=0): user=${String(session.userId).slice(0, 8)}, mode=${session.mode}`);
+        return res.json({
+          accepted: true,
+          score: 0,
+          breakdown: replayResult.breakdown,
+          sessionRecordId: null,
+          replayId: null,
+          skipped: true,
+        });
+      }
+
       // DB 저장
       const dbResult = await saveSessionToDb(session, replayResult, extraData, dragLog);
       if (dbResult.error) {
