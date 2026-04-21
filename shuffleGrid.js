@@ -5,7 +5,7 @@
 // =============================================
 
 /**
- * shuffleGridCards({ grid, gridSize, outsideCards, mode })
+ * shuffleGridCards({ grid, gridSize, outsideCards, mode, rng })
  *
  * mode === 'redistribute' (기본, 인피니트용)
  *   그리드 + outsideCards의 카드를 모두 수집 후 셔플,
@@ -19,21 +19,23 @@
  *   outsideCards 입출력 무시 (빈 배열 반환).
  *
  * @param {object} params
- * @param {Array}  params.grid          - 2D array of { card, row, col, ... }
- * @param {number} params.gridSize      - 그리드 한 변의 크기
- * @param {Array}  [params.outsideCards] - redistribute 모드 전용 (없으면 [])
- * @param {string} [params.mode]        - 'redistribute' | 'in-place' (기본: 'redistribute')
+ * @param {Array}    params.grid          - 2D array of { card, row, col, ... }
+ * @param {number}   params.gridSize      - 그리드 한 변의 크기
+ * @param {Array}    [params.outsideCards] - redistribute 모드 전용 (없으면 [])
+ * @param {string}   [params.mode]        - 'redistribute' | 'in-place' (기본: 'redistribute')
+ * @param {function} [params.rng]         - [0,1) 난수 생성기. 없으면 Math.random. Phase 1-7.5-A.
  *
  * @returns {{ newGrid: Array, newOutsideCards: Array }}
  */
 // [REUSE]
-window.shuffleGridCards = function shuffleGridCards({ grid, gridSize, outsideCards, mode }) {
+window.shuffleGridCards = function shuffleGridCards({ grid, gridSize, outsideCards, mode, rng }) {
   const effectiveMode = mode || 'redistribute';
+  const random = typeof rng === 'function' ? rng : Math.random;
 
   // ── Fisher-Yates 셔플 (공통 헬퍼) ──
   function fisherYates(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(random() * (i + 1));
       const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
     }
     return arr;

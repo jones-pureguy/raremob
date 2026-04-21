@@ -81,13 +81,13 @@ const MODE_CONFIG = {
 function getScoringOptions(mode) {
   switch (mode) {
     case 'basic':
-      return { applyTimeBonus: true, applyPenalty: true };
+      return { applyTimeBonus: true, applyPenalty: true, applyCombo: false };
     case 'infinite':
-      return { applyTimeBonus: false, applyPenalty: false };
+      return { applyTimeBonus: false, applyPenalty: false, applyCombo: true };
     case 'hidden':
-      return { applyTimeBonus: false, applyPenalty: true };
+      return { applyTimeBonus: false, applyPenalty: true, applyCombo: false };
     default:
-      return { applyTimeBonus: true, applyPenalty: true };
+      return { applyTimeBonus: true, applyPenalty: true, applyCombo: false };
   }
 }
 
