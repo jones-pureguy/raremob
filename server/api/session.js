@@ -466,7 +466,7 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
 
       if (error) return { error };
 
-      await upsertLeaderboardInfinite(userId, score);
+      await upsertLeaderboardInfinite(userId, score, bestHandLabel);
 
       return { sessionRecordId: data?.id };
     }
@@ -566,7 +566,7 @@ async function upsertLeaderboardR(userId, score, bestHand) {
   }
 }
 
-async function upsertLeaderboardInfinite(userId, score) {
+async function upsertLeaderboardInfinite(userId, score, bestHand) {
   try {
     const { data: player } = await supabase
       .from('players')
@@ -587,6 +587,7 @@ async function upsertLeaderboardInfinite(userId, score) {
         player_id: userId,
         username,
         score,
+        best_hand: bestHand || null,
       }, { onConflict: 'player_id' });
     }
   } catch (err) {

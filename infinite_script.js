@@ -161,6 +161,16 @@ function bgmStart() {
 let state = {};
 let outsideCards = []; // 16 cards outside the grid
 
+// [REUSE] Phase 1-7.5: PRNG 파생용 카운터 (서버와 일치 필수)
+// refill: seed XOR (handIndex * 0x9E3779B9)
+// shuffle: seed XOR ((shuffleIndex + 10000) * 0x9E3779B9)
+let handIndex = 0;
+let shuffleIndex = 0;
+
+// [REUSE] Phase 1-7.5: seed 파생 상수 — 서버 replay.js SEED_MIX와 일치
+const SEED_MIX = 0x9E3779B9;
+const SHUFFLE_INDEX_OFFSET = 10000;
+
 // [REUSE]
 function initState() {
   state = {
@@ -168,6 +178,20 @@ function initState() {
     timer: TIMER_SECONDS, phase: 'playing', timerInterval: null,
     currentScore: 0, removedCards: [],
   };
+}
+
+// [REUSE] Phase 1-7.5: 세션 기반 refill RNG — 서버 refillInfinite와 동일 파생 규칙
+function _getRefillRng(handIdx) {
+  const session = window._infiniteSession;
+  if (!session || typeof session.seed !== 'number' || !window.PRNG) return null;
+  return window.PRNG.mulberry32(session.seed ^ (handIdx * SEED_MIX));
+}
+
+// [REUSE] Phase 1-7.5: 세션 기반 shuffle RNG — 서버 shuffleInfinite와 동일 파생 규칙
+function _getShuffleRng(shuffleIdx) {
+  const session = window._infiniteSession;
+  if (!session || typeof session.seed !== 'number' || !window.PRNG) return null;
+  return window.PRNG.mulberry32(session.seed ^ ((shuffleIdx + SHUFFLE_INDEX_OFFSET) * SEED_MIX));
 }
 
 // ─── Deck & Cards ───
@@ -195,9 +219,16 @@ function cardFromId(id) {
 }
 
 // ─── Grid Init ───
-// [REUSE]
-function initGrid() {
-  const deck = shuffle(createDeck()); // 52 cards
+// [REUSE] Phase 1-7.5: seed 기반 결정론적 초기화. seed 없으면 Math.random 폴백 (오프라인).
+function initGrid(seed = null) {
+  let deck;
+  if (typeof seed === 'number' && window.PRNG) {
+    const initRng = window.PRNG.mulberry32(seed);
+    deck = window.PRNG.shuffleWithRng(createDeck(), initRng);
+  } else {
+    deck = shuffle(createDeck());
+  }
+
   const gridCards = deck.slice(0, 36);  // 6×6 = 36
   outsideCards = deck.slice(36);         // remaining 16
 
@@ -208,6 +239,10 @@ function initGrid() {
     for (let c = 0; c < GRID_SIZE; c++) row.push({ card: gridCards[idx++], row: r, col: c });
     state.grid.push(row);
   }
+
+  // 카운터 리셋 (refill/shuffle seed 파생용)
+  handIndex = 0;
+  shuffleIndex = 0;
 }
 
 // ─── Hand Evaluation ───
@@ -577,7 +612,10 @@ function updateHandPreview() {
 }
 
 // ─── Card Removal + Refill (Infinite Mode core) ───
-// [REWRITE]
+// [REWRITE] — Phase 1-7.5: 서버 refillInfinite와 PRNG 호출 순서 bit-for-bit 일치 필수
+//   1) pool(outside+removed 21장) ← refillRng 1차 호출
+//   2) emptyCells ← SAME refillRng 2차 호출 (새 인스턴스 만들면 안 됨)
+//   3) handIndex++ → 다음 refill용 seed 파생
 function removeCardsAndRefill(rank) {
   const gridEl = document.getElementById('grid');
   const positions = [...state.selectedPath];
@@ -585,6 +623,16 @@ function removeCardsAndRefill(rank) {
 
   // Capture the 5 cards being removed BEFORE nullifying
   const removedCards = positions.map(([r, c]) => state.grid[r][c].card);
+
+  // [ADAPTER] Phase 1-7.5: dragLog에 'hand' 이벤트 기록 (서버 검증용)
+  const session = window._infiniteSession;
+  if (session && session.sessionId) {
+    session.dragLog.push({
+      type: 'hand',
+      cards: positions.map(([r, c]) => [r, c]),
+      ts: Date.now(),
+    });
+  }
 
   const intervals = [0, 0, 0, 50, 40, 30];
   const interval = intervals[Math.min(tier, 5)] || 0;
@@ -610,29 +658,48 @@ function removeCardsAndRefill(rank) {
     affectedCols.forEach(col => applyGravityToColumn(col));
     playCardDrop();
 
+    // [REUSE] Phase 1-7.5: seed 파생 PRNG — 서버 refillInfinite와 일치
+    const refillRng = _getRefillRng(handIndex);
+
     // Pool = 16 outside + 5 removed = 21, pick 5 for grid, 16 remain outside
     const pool = [...outsideCards, ...removedCards].filter(Boolean);
-    shuffle(pool);
-    const toGrid = pool.slice(0, 5);
-    outsideCards = pool.slice(5); // always 16
+    let shuffledPool;
+    if (refillRng) {
+      shuffledPool = window.PRNG.shuffleWithRng(pool, refillRng);
+    } else {
+      shuffle(pool);
+      shuffledPool = pool;
+    }
+    const toGrid = shuffledPool.slice(0, 5);
+    outsideCards = shuffledPool.slice(5); // always 16
 
-    // Find empty cells (after gravity)
+    // Find empty cells (after gravity) — 같은 refillRng 인스턴스 연속 호출
     const emptyCells = [];
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
         if (!state.grid[r][c].card) emptyCells.push([r, c]);
       }
     }
-    shuffle(emptyCells);
+    let shuffledEmpty;
+    if (refillRng) {
+      shuffledEmpty = window.PRNG.shuffleWithRng(emptyCells, refillRng);
+    } else {
+      shuffle(emptyCells);
+      shuffledEmpty = emptyCells;
+    }
+
     toGrid.forEach((card, i) => {
-      if (i < emptyCells.length) {
-        const [r, c] = emptyCells[i];
+      if (i < shuffledEmpty.length) {
+        const [r, c] = shuffledEmpty[i];
         state.grid[r][c].card = card;
       }
     });
 
     // Apply gravity again after refill
     for (let col = 0; col < GRID_SIZE; col++) applyGravityToColumn(col);
+
+    // [REUSE] Phase 1-7.5: 다음 refill을 위한 카운터 증가
+    handIndex++;
 
     state.selectedPath = [];
     renderGrid();
@@ -789,7 +856,7 @@ function renderOutsideCards() {
 }
 
 // ─── Shuffle ───
-// [REWRITE]
+// [REWRITE] — Phase 1-7.5: 서버 shuffleInfinite와 PRNG 파생 일치
 function doShuffle() {
   if (state.phase !== 'playing') return;
 
@@ -809,8 +876,16 @@ function doShuffle() {
   shuffleRemaining--;
   updateShuffleUI();
 
-  // shuffleGridCards 모듈로 카드 재배치 (shuffleGrid.js)
-  const shuffled = shuffleGridCards({ grid: state.grid, gridSize: GRID_SIZE, outsideCards });
+  // [REUSE] Phase 1-7.5: seed 파생 PRNG로 결정론적 셔플
+  const shuffleRng = _getShuffleRng(shuffleIndex);
+
+  // shuffleGridCards 모듈로 카드 재배치 (shuffleGrid.js) — rng 인자는 Phase 1-7.5-A 단계 1에서 추가됨
+  const shuffled = shuffleGridCards({
+    grid: state.grid,
+    gridSize: GRID_SIZE,
+    outsideCards,
+    rng: shuffleRng,
+  });
   state.grid = shuffled.newGrid;
   outsideCards = shuffled.newOutsideCards;
 
@@ -818,6 +893,15 @@ function doShuffle() {
   for (let col = 0; col < GRID_SIZE; col++) applyGravityToColumn(col);
   renderGrid();
   renderOutsideCards();
+
+  // [ADAPTER] Phase 1-7.5: dragLog에 'shuffle' 이벤트 기록
+  const session = window._infiniteSession;
+  if (session && session.sessionId) {
+    session.dragLog.push({ type: 'shuffle', ts: Date.now() });
+  }
+
+  // [REUSE] Phase 1-7.5: 다음 셔플을 위한 카운터 증가
+  shuffleIndex++;
 
   showShuffleEffect();
 }
@@ -891,74 +975,250 @@ function endGame(reason) {
   `;
   document.getElementById('modalOverlay').classList.add('active');
 
-  // Save leaderboard
-  saveInfiniteLeaderboard(finalScore);
+  // [REUSE] Phase 1-7.5: 서버 제출 (백그라운드) — 오프라인 모드는 기록 안 함
+  if (!window._offlineMode) {
+    submitInfiniteToServer(finalScore, reason).catch(err => {
+      console.error('[infinite/submit] background error:', err);
+    });
+  }
+
+  // All User High Score 표시 (SELECT는 RLS 열려있음)
+  (async () => {
+    try {
+      const { data: topRow } = await sb
+        .from('leaderboard_infinite')
+        .select('score')
+        .order('score', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const topEl = document.getElementById('infTopScoreRow');
+      if (topEl && topRow) topEl.textContent = i18n.t('modal.allUserHighScore', { score: topRow.score });
+    } catch (e) { /* ignore */ }
+  })();
 }
 
-// [ADAPTER] — Supabase network call + DOM update
-async function saveInfiniteLeaderboard(score) {
-  const username = (loadLocal('poker_username') || '').trim();
-  if (!username || score <= 0) return;
+// =============================================
+// [ADAPTER] Phase 1-7.5: 인피니트 서버 세션 API
+// =============================================
+const SERVER_URL = (typeof RENDER_SERVER === 'string') ? RENDER_SERVER : 'https://dragon-poker-server.onrender.com';
+
+// [ADAPTER] Phase 1-7.5: 서버에서 인피 세션 발급
+async function requestInfiniteServerSession() {
+  const userId = loadLocal('poker_player_id');
+  if (!userId) throw new Error('NO_USER_ID');
+
+  const res = await fetch(`${SERVER_URL}/api/session/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, mode: 'infinite' }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP_${res.status}`);
+  }
+
+  const data = await res.json();
+  window._infiniteSession = {
+    sessionId: data.sessionId,
+    seed: data.seed,
+    gameTime: data.gameTime,
+    startedAt: data.startedAt,
+    dragLog: [],
+    submitted: false,
+  };
+  console.log('[infinite/session/start] received:', { sessionId: data.sessionId.slice(0, 8), seed: data.seed });
+  return window._infiniteSession;
+}
+
+// [ADAPTER] Phase 1-7.5: 서버에 세션 제출 (검증)
+async function submitInfiniteToServer(claimedScore, reason) {
+  const session = window._infiniteSession;
+  if (!session || !session.sessionId || session.submitted) return;
+
+  const timeRemaining = Math.max(0, state.timer || 0);
+
+  // 최고 족보 (순위 기준)
+  let bestHandLabel = null;
+  let bestRank = -1;
+  for (const h of state.hands) {
+    if (h.rankValue > bestRank) {
+      bestRank = h.rankValue;
+      bestHandLabel = h.label;
+    }
+  }
 
   try {
-    // Ensure auth is initialized
-    const playerId = await initAuth();
-    if (!playerId) { console.warn('[Infinite] No auth, skipping leaderboard'); return; }
+    const res = await fetch(`${SERVER_URL}/api/session/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: session.sessionId,
+        dragLog: session.dragLog,
+        claimedScore,
+        timeRemaining,
+        extraData: {
+          reason: reason || 'gameover',
+          shuffle_count: shuffleIndex,
+          best_hand_label: bestHandLabel,
+        },
+      }),
+    });
 
-    const { data: existing, error: fetchErr } = await sb
-      .from('leaderboard_infinite')
-      .select('score')
-      .eq('player_id', playerId)
-      .maybeSingle();
-
-    if (fetchErr) console.warn('[Infinite] Fetch existing:', fetchErr.message);
-
-    if (!existing || score > existing.score) {
-      const { error: upsertErr } = await sb.from('leaderboard_infinite').upsert({
-        player_id: playerId,
-        username,
-        score,
-      }, { onConflict: 'player_id' });
-      if (upsertErr) console.error('[Infinite] Upsert error:', upsertErr.message);
-      else console.log('[Infinite] Leaderboard saved:', score);
+    const data = await res.json();
+    if (res.ok && data.accepted) {
+      session.submitted = true;
+      console.log('[infinite/submit] accepted:', data);
+    } else {
+      console.warn('[infinite/submit] rejected:', { status: res.status, data });
+      showInfiniteSubmitErrorModal(data, claimedScore, reason);
     }
-
-    // Fetch top score
-    const { data: topRow } = await sb
-      .from('leaderboard_infinite')
-      .select('score')
-      .order('score', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const topEl = document.getElementById('infTopScoreRow');
-    if (topEl && topRow) topEl.textContent = i18n.t('modal.allUserHighScore', { score: topRow.score });
-  } catch(e) {
-    console.error('[Infinite] Leaderboard error:', e);
+  } catch (err) {
+    console.error('[infinite/submit] network error:', err);
+    showInfiniteSubmitErrorModal({ error: 'NETWORK' }, claimedScore, reason);
+    throw err;
   }
 }
 
-// ─── Restart ───
-// [REWRITE]
-function restartGame() {
+// [REWRITE] Phase 1-7.5: 세션 발급 실패 모달
+function showInfiniteSessionStartErrorModal(errorCode, onRetry, onOfflineMode) {
+  const overlay = document.getElementById('modalOverlay');
+  const modal = document.getElementById('modal');
+  if (!overlay || !modal) {
+    if (confirm(`서버 연결 실패 (${errorCode}). 재시도할까요? (취소 시 오프라인 연습 모드)`)) {
+      onRetry();
+    } else {
+      onOfflineMode();
+    }
+    return;
+  }
+
+  modal.innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <h3 style="color:#ff6b6b;margin-bottom:12px;">서버 연결 실패</h3>
+      <p style="color:rgba(255,255,255,0.7);margin-bottom:20px;font-size:0.9rem;">
+        리더보드에 기록되려면 서버 연결이 필요합니다.<br>
+        오프라인 모드는 연습용이며 기록되지 않습니다.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-play-again" id="_infRetryStartBtn">재시도</button>
+        <button class="btn-play-again" style="background:rgba(255,255,255,0.1)" id="_infOfflineBtn">오프라인 연습 모드</button>
+      </div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px;">
+        에러: ${errorCode || 'UNKNOWN'}
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
+
+  document.getElementById('_infRetryStartBtn').onclick = () => {
+    overlay.classList.remove('active');
+    onRetry();
+  };
+  document.getElementById('_infOfflineBtn').onclick = () => {
+    overlay.classList.remove('active');
+    onOfflineMode();
+  };
+}
+
+// [REWRITE] Phase 1-7.5: 제출 실패 모달 (디바운스 2초)
+let _infLastSubmitRetryAt = 0;
+function showInfiniteSubmitErrorModal(errorData, claimedScore, reason) {
+  const overlay = document.getElementById('modalOverlay');
+  const modal = document.getElementById('modal');
+  if (!overlay || !modal) {
+    console.warn('[infinite submit error]', errorData);
+    return;
+  }
+
+  const errCode = errorData.error || errorData.reason || 'UNKNOWN';
+  modal.innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <h3 style="color:#ff6b6b;margin-bottom:12px;">점수 전송 실패</h3>
+      <p style="color:rgba(255,255,255,0.7);margin-bottom:20px;font-size:0.9rem;">
+        서버에 점수를 기록하지 못했습니다.<br>
+        재시도하거나 기록 없이 종료할 수 있습니다.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-play-again" id="_infRetrySubmitBtn">재시도</button>
+        <button class="btn-play-again" style="background:rgba(255,255,255,0.1)" id="_infAbandonBtn">기록 없이 종료</button>
+      </div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px;">
+        에러: ${errCode}
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
+
+  document.getElementById('_infRetrySubmitBtn').onclick = async () => {
+    const now = Date.now();
+    if (now - _infLastSubmitRetryAt < 2000) return;
+    _infLastSubmitRetryAt = now;
+    overlay.classList.remove('active');
+    await submitInfiniteToServer(claimedScore, reason);
+  };
+  document.getElementById('_infAbandonBtn').onclick = () => {
+    if (window._infiniteSession) window._infiniteSession.submitted = true;
+    overlay.classList.remove('active');
+    navigateTo('./mode_select.html');
+  };
+}
+
+// [REUSE] Phase 1-7.5: 전체 게임 상태 리셋 (신규 게임 / 리스타트 공용)
+function resetInfiniteGameState() {
   document.getElementById('modalOverlay').classList.remove('active');
   clearInterval(state.timerInterval);
-
   initState();
-  initGrid();
   comboCount = 0;
   totalHands = 0;
   infiniteScore = 0;
   HAND_DISPLAY_ORDER.forEach(r => { handCounts[r] = 0; });
-
   shuffleRemaining = SHUFFLE_MAX_COUNT;
+}
 
-  renderGrid();
-  updateHandPanel();
-  updateHandPreview();
-  updateScoreDisplay();
-  renderOutsideCards();
-  updateShuffleUI();
-  startTimer();
+// [REUSE] Phase 1-7.5: 서버 세션 경유 게임 시작 — 실패 시 재시도/오프라인 모달
+async function startWithInfiniteServerSession() {
+  if (window._offlineMode) {
+    resetInfiniteGameState();
+    initGrid();
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+    updateScoreDisplay();
+    renderOutsideCards();
+    updateShuffleUI();
+    startTimer();
+    return;
+  }
+
+  try {
+    const session = await requestInfiniteServerSession();
+    resetInfiniteGameState();
+    initGrid(session.seed);
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+    updateScoreDisplay();
+    renderOutsideCards();
+    updateShuffleUI();
+    startTimer();
+  } catch (err) {
+    console.error('[infinite/session/start] failed:', err);
+    showInfiniteSessionStartErrorModal(
+      err.message || 'NETWORK',
+      () => startWithInfiniteServerSession(),
+      () => {
+        window._offlineMode = true;
+        startWithInfiniteServerSession();
+      }
+    );
+  }
+}
+
+// ─── Restart ───
+// [REWRITE] Phase 1-7.5: 리스타트 = 새 서버 세션 발급 + 게임 리셋
+async function restartGame() {
+  await startWithInfiniteServerSession();
 }
 
 
@@ -1017,7 +1277,8 @@ setupEventListeners();
 
 bgmInit('./audio/Infinite_Theme.mp3');
 initStartOverlay(() => {
-  startTimer();
+  // [REUSE] Phase 1-7.5: START 탭 시 서버 세션 발급 + seed로 그리드 재생성
+  startWithInfiniteServerSession();
 });
 
 
@@ -1037,14 +1298,16 @@ initStartOverlay(() => {
 //    State vars: handCounts, comboCount, totalHands, infiniteScore,
 //      shuffleRemaining, state, outsideCards
 //
-//  [ADAPTER] — 플랫폼 래퍼, Expo 대체 필요   : 11개
+//  [ADAPTER] — 플랫폼 래퍼, Expo 대체 필요   : 13개
 //    Storage wrappers: saveLocal, loadLocal, removeLocal
 //    Navigation: navigateTo
 //    Sound wrappers: playCardSelect, playHandComplete, playCardDrop,
 //      playSoundWarmup
 //    BGM wrappers: bgmInit, bgmStart
 //    Consuming functions: getHighScore, saveHighScore, getGoldLocal,
-//      deductGoldLocal, saveInfiniteLeaderboard
+//      deductGoldLocal
+//    Phase 1-7.5 서버 세션 API: requestInfiniteServerSession,
+//      submitInfiniteToServer (fetch URL 동일, import 방식만 교체)
 //
 //  [REWRITE] — DOM/CSS/이벤트, RN 재작성 필요 : 27개
 //    RANK_CSS, SUIT_CONFIG
