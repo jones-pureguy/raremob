@@ -1,5 +1,7 @@
 node_modules/
 .env
 markdowns/
+docs/
 .claude/
 .DS_Store
+CLAUDE.md

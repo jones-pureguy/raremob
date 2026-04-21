@@ -483,6 +483,7 @@ async function saveSessionAndGetStatus(data) { // [REUSE]
         hands_collected: data.hands_collected || 0,
         time_remaining: data.time_remaining || 0,
         completed: true,
+        is_retry: !!isRetryMode, // [Phase 1-7.5-prep] 이슈 1 수정: RETRY 게임 식별 (서버 INSERT와 정합성 유지)
       })
       .select();
     if (sessionError) {
