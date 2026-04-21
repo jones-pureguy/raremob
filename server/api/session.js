@@ -331,6 +331,13 @@ function registerSessionRoutes(app) {
           console.error('[retry/submit] game_replays insert error:', replayErr);
         } else {
           replayRow = row;
+          // [Phase 1-7.5-prep] 신기록 row에 replay_id 연결 (leaderboard와 동일 패턴)
+          if (replayRow?.id) {
+            await supabase
+              .from('leaderboard_r')
+              .update({ replay_id: replayRow.id })
+              .eq('player_id', userId);
+          }
         }
       }
 
