@@ -483,7 +483,6 @@ async function saveSessionAndGetStatus(data) { // [REUSE]
         hands_collected: data.hands_collected || 0,
         time_remaining: data.time_remaining || 0,
         completed: true,
-        is_retry: !!isRetryMode, // [Phase 1-7.5-prep] 이슈 1 수정: RETRY 게임 식별 (서버 INSERT와 정합성 유지)
       })
       .select();
     if (sessionError) {
@@ -1188,12 +1187,12 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
 
     // [REUSE] Phase 1-7: 서버 세션 제출 (싱글플레이만, 백그라운드)
     if (!window._pvpMode && !isRetryMode && window._serverSession && window._serverSession.sessionId && !window._offlineMode) {
-      submitSessionToServer(score).catch(err => {
+      submitSessionToServer(score, reason).catch(err => {
         console.error('[session/submit] background error:', err);
       });
     }
     if (!window._pvpMode && isRetryMode && !window._offlineMode) {
-      submitRetryToServer(score).catch(err => {
+      submitRetryToServer(score, reason).catch(err => {
         console.error('[retry/submit] background error:', err);
       });
     }
@@ -1566,7 +1565,7 @@ async function requestServerSession(mode) {
 }
 
 // [ADAPTER] 서버에 세션 제출 (검증 포함)
-async function submitSessionToServer(claimedScore) {
+async function submitSessionToServer(claimedScore, reason) {
   const session = window._serverSession;
   if (!session || !session.sessionId || session.submitted) return;
 
@@ -1581,6 +1580,9 @@ async function submitSessionToServer(claimedScore) {
         dragLog: session.dragLog,
         claimedScore,
         timeRemaining,
+        extraData: {
+          reason: reason || 'complete', // [Phase 1-7.5-prep] 게임 종료 이유 → 서버 replay_data.result.reason
+        },
       }),
     });
 
@@ -1592,18 +1594,18 @@ async function submitSessionToServer(claimedScore) {
       return data;
     } else {
       console.warn('[session/submit] rejected:', { status: res.status, data });
-      showSubmitErrorModal(data, claimedScore);
+      showSubmitErrorModal(data, claimedScore, reason);
       return null;
     }
   } catch (err) {
     console.error('[session/submit] network error:', err);
-    showSubmitErrorModal({ error: 'NETWORK' }, claimedScore);
+    showSubmitErrorModal({ error: 'NETWORK' }, claimedScore, reason);
     throw err;
   }
 }
 
 // [ADAPTER] RETRY 서버 경유 (검증 없음 — leaderboard_r 박제용)
-async function submitRetryToServer(claimedScore) {
+async function submitRetryToServer(claimedScore, reason) {
   const userId = loadLocal('poker_player_id');
   if (!userId) return;
 
@@ -1617,6 +1619,8 @@ async function submitRetryToServer(claimedScore) {
   // 초기 덱 / 드래그 경로 — replayLog에서 추출
   const grid = replayLog?.initialDeck || [];
   const moves = (replayLog?.actions || []).map(a => a.path || []);
+  // [Phase 1-7.5-prep] 서버 replay_data.actions 구조 A 통일 — 클라가 가진 정확한 hand/score/t 그대로 전달
+  const actions = replayLog?.actions || [];
 
   try {
     const res = await fetch(`${SERVER_URL}/api/session/retry/submit`, {
@@ -1631,6 +1635,8 @@ async function submitRetryToServer(claimedScore) {
         handsCollected: state.hands.length,
         timeRemaining: Math.max(0, state.timer || 0),
         bestHand,
+        actions, // [Phase 1-7.5-prep] replay.html 호환을 위한 actions 정보 (서버는 그대로 저장)
+        reason: reason || 'complete', // [Phase 1-7.5-prep] 게임 종료 이유
       }),
     });
 
@@ -1688,7 +1694,7 @@ function showSessionStartErrorModal(errorCode, onRetry, onOfflineMode) {
 
 // [REWRITE] Phase 1-7: 제출 실패 시 모달 (디바운스 2초)
 let _lastSubmitRetryAt = 0;
-function showSubmitErrorModal(errorData, claimedScore) {
+function showSubmitErrorModal(errorData, claimedScore, reason) {
   const overlay = document.getElementById('modalOverlay');
   const modal = document.getElementById('modal');
   if (!overlay || !modal) {
@@ -1720,7 +1726,7 @@ function showSubmitErrorModal(errorData, claimedScore) {
     if (now - _lastSubmitRetryAt < 2000) return;
     _lastSubmitRetryAt = now;
     overlay.classList.remove('active');
-    await submitSessionToServer(claimedScore);
+    await submitSessionToServer(claimedScore, reason);
   };
   document.getElementById('_abandonSessionBtn').onclick = () => {
     window._serverSession.submitted = true;

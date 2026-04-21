@@ -269,6 +269,8 @@ function registerSessionRoutes(app) {
         handsCollected,
         timeRemaining = 0,
         bestHand,
+        actions,   // [Phase 1-7.5-prep] 클라 replayLog.actions[] = { t, path, hand, score }
+        reason,    // [Phase 1-7.5-prep] 'complete' | 'nomoves' | 'gameover'
       } = req.body || {};
 
       if (!userId || !Array.isArray(grid) || !Array.isArray(moves) || typeof score !== 'number') {
@@ -300,34 +302,45 @@ function registerSessionRoutes(app) {
         return res.status(500).json({ error: 'DB_ERROR', detail: sessErr.message });
       }
 
-      const { data: replayData, error: replayErr } = await supabase
-        .from('game_replays')
-        .insert({
-          player_id: userId,
-          score,
-          replay_data: {
-            grid,
-            moves,
-            finalScore: score,
-            isRetry: true,
-            parentSessionId: parentSessionId || null,
-          },
-        })
-        .select()
-        .single();
+      // [Phase 1-7.5-prep] 신기록 판정 후 조건부 replay INSERT (구조 A 형식)
+      const isNewRecord = await upsertLeaderboardR(userId, score, bestHand);
 
-      if (replayErr) {
-        console.error('[retry/submit] game_replays insert error:', replayErr);
+      let replayRow = null;
+      if (isNewRecord) {
+        const replayDataObj = await buildRetryReplayData({
+          userId,
+          actions,
+          score,
+          bestHand,
+          timeRemaining,
+          grid,
+          reason,
+        });
+
+        const { data: row, error: replayErr } = await supabase
+          .from('game_replays')
+          .insert({
+            player_id: userId,
+            score,
+            replay_data: replayDataObj,
+          })
+          .select()
+          .single();
+
+        if (replayErr) {
+          console.error('[retry/submit] game_replays insert error:', replayErr);
+        } else {
+          replayRow = row;
+        }
       }
 
-      await upsertLeaderboardR(userId, score, bestHand);
-
-      console.log(`[retry/submit] recorded: user=${String(userId).slice(0, 8)}, score=${score}, hands=${handsCollected}`);
+      console.log(`[retry/submit] recorded: user=${String(userId).slice(0, 8)}, score=${score}, hands=${handsCollected}, isNewRecord=${isNewRecord}`);
 
       return res.json({
         accepted: true,
         sessionRecordId: sessionData?.id,
-        replayId: replayData?.id,
+        replayId: replayRow?.id,
+        isNewRecord,
       });
     } catch (err) {
       console.error('[retry/submit] error:', err);
@@ -357,15 +370,14 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
   }
   const bestHandLabel = rankToLabel(bestRank);
 
-  // replay_data 는 기존 형식 유지 (replay.html 호환)
-  const initialGrid = buildInitialGrid(seed, gridSize);
-  const replayData = {
-    grid: initialGrid,
-    moves: dragLog.map(d => d.cards),
-    finalScore: score,
-    seed,
-    mode,
-  };
+  // [Phase 1-7.5-prep] replay_data 정책 변경:
+  //   - 신기록일 때만 INSERT (클라 saveReplayToDB와 동일 정책)
+  //   - 구조 A (initialDeck + actions) 사용 → replay.html 분기 불필요
+  //   - 100골드 명시 저장은 별도 엔드포인트 (Phase 1-11 예정)
+
+  const timeRemaining = gameTime !== null
+    ? Math.max(0, gameTime - Math.floor((Date.now() - startedAt) / 1000))
+    : 0;
 
   try {
     if (mode === 'basic') {
@@ -376,9 +388,7 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
           score,
           best_hand: bestHandLabel,
           hands_collected: hands.length,
-          time_remaining: gameTime !== null
-            ? Math.max(0, gameTime - Math.floor((Date.now() - startedAt) / 1000))
-            : 0,
+          time_remaining: timeRemaining,
           completed: true,
           is_retry: false,
         })
@@ -387,19 +397,46 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
 
       if (error) return { error };
 
-      const { data: replayRow, error: replayErr } = await supabase
-        .from('game_replays')
-        .insert({
-          player_id: userId,
+      // [Phase 1-7.5-prep] 신기록 판정 후 조건부 replay INSERT
+      const isNewRecord = await upsertLeaderboard(userId, score, bestHandLabel, null);
+
+      let replayRow = null;
+      if (isNewRecord) {
+        const replayData = await buildLegacyReplayData({
+          userId,
+          hands,
           score,
-          replay_data: replayData,
-        })
-        .select()
-        .single();
+          bestHandLabel,
+          timeRemaining,
+          seed,
+          reason: extraData?.reason,
+          gameTime,
+          startedAt,
+        });
 
-      if (replayErr) console.warn('[replay insert] warning:', replayErr.message);
+        const { data: row, error: replayErr } = await supabase
+          .from('game_replays')
+          .insert({
+            player_id: userId,
+            score,
+            replay_data: replayData,
+          })
+          .select()
+          .single();
 
-      await upsertLeaderboard(userId, score, bestHandLabel, replayRow?.id);
+        if (replayErr) {
+          console.warn('[replay insert] warning:', replayErr.message);
+        } else {
+          replayRow = row;
+          // 신기록 row에 replay_id 연결
+          if (replayRow?.id) {
+            await supabase
+              .from('leaderboard')
+              .update({ replay_id: replayRow.id })
+              .eq('player_id', userId);
+          }
+        }
+      }
 
       return { sessionRecordId: data?.id, replayId: replayRow?.id };
     }
@@ -481,9 +518,12 @@ async function upsertLeaderboard(userId, score, bestHand, replayId) {
         best_hand: bestHand,
         replay_id: replayId,
       }, { onConflict: 'player_id' });
+      return true; // [Phase 1-7.5-prep] 신기록
     }
+    return false; // [Phase 1-7.5-prep] 비신기록
   } catch (err) {
     console.warn('[leaderboard upsert] error:', err.message);
+    return false;
   }
 }
 
@@ -510,9 +550,12 @@ async function upsertLeaderboardR(userId, score, bestHand) {
         score,
         best_hand: bestHand,
       }, { onConflict: 'player_id' });
+      return true; // [Phase 1-7.5-prep] 신기록
     }
+    return false; // [Phase 1-7.5-prep] 비신기록
   } catch (err) {
     console.warn('[leaderboard_r upsert] error:', err.message);
+    return false;
   }
 }
 
@@ -583,6 +626,118 @@ function rankToLabel(rank) {
     'Straight Flush', 'Royal Flush', 'Royal Flush Plus',
   ];
   return labels[rank] || 'Unknown';
+}
+
+// =============================================
+// [REUSE] Phase 1-7.5-prep: replay_data 구조 A 변환 헬퍼 (replay.html 호환)
+// 클라가 saveReplayToDB로 넣는 형식과 동일 구조 생성 → replay.html 분기 불필요
+// =============================================
+
+// [REUSE] 카드 객체 → 클라식 ID 문자열 (예: {suit:'♠',value:14} → "As", value:10 → "10h")
+function cardToId(card) {
+  let valueName;
+  if (card.value === 14) valueName = 'A';
+  else if (card.value === 13) valueName = 'K';
+  else if (card.value === 12) valueName = 'Q';
+  else if (card.value === 11) valueName = 'J';
+  else valueName = String(card.value);
+
+  let suitCode;
+  if (card.suit === '♠') suitCode = 's';
+  else if (card.suit === '♥') suitCode = 'h';
+  else if (card.suit === '♦') suitCode = 'd';
+  else suitCode = 'c';
+
+  return valueName + suitCode;
+}
+
+// [REUSE] seed → 클라식 1D 문자열 덱 ("As", "10h", ...) — 셔플된 52장 전체
+function buildInitialDeckString(seed) {
+  const { createDeck, shuffleDeckWithSeed } = require('../engine/deck');
+  const shuffled = shuffleDeckWithSeed(createDeck(), seed);
+  return shuffled.map(cardToId);
+}
+
+// [REUSE] hands → actions[] (구조 A 형식, replay.html 재생 호환)
+// dragLog의 timestamp는 ms단위라 정확한 t값 추출이 어려움 → 균등 분포 추정 사용
+function buildActionsFromHands(hands, gameTime, startedAt) {
+  const { getHandScore } = require('../engine/scorer');
+  // t = 패 완성 시점의 남은 시간(초). 정확히 알기 어려우므로 게임 시작 시점부터 균등 분포 가정
+  // (재생 시 액션 순서와 점수 누적은 정확하므로 표시용으로만 사용됨)
+  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  const totalElapsed = gameTime !== null ? Math.min(elapsed, gameTime) : elapsed;
+  const handCount = hands.length;
+
+  return hands.map((h, i) => {
+    // i번째 패는 게임 시작 후 (i+1)/handCount 비율 시점에 완성됐다고 추정
+    const elapsedAtHand = handCount > 0 ? Math.floor((totalElapsed * (i + 1)) / handCount) : 0;
+    const t = gameTime !== null ? Math.max(0, gameTime - elapsedAtHand) : 0;
+    return {
+      t,
+      hand: rankToLabel(h.rank),
+      path: h.pathCells,
+      score: getHandScore(h.rank),
+    };
+  });
+}
+
+// [REUSE] hands → 구조 A replay_data 객체 (game_replays.replay_data에 들어갈 JSON)
+// userId로 username 조회까지 포함
+async function buildLegacyReplayData({
+  userId, hands, score, bestHandLabel,
+  timeRemaining, seed, reason,
+  gameTime, startedAt,
+}) {
+  const { data: player } = await supabase
+    .from('players')
+    .select('username')
+    .eq('id', userId)
+    .single();
+  const username = player?.username || 'Unknown';
+
+  return {
+    result: {
+      reason: reason || 'complete',
+      bestHand: bestHandLabel,
+      finalScore: score,
+      timeRemaining,
+      handsCollected: hands.length,
+    },
+    actions: buildActionsFromHands(hands, gameTime, startedAt),
+    version: 1,
+    username,
+    timestamp: new Date().toISOString(),
+    initialDeck: buildInitialDeckString(seed),
+  };
+}
+
+// [REUSE] RETRY 전용: 클라가 보낸 actions 그대로 사용 (검증 없음)
+// 클라 replayLog.actions[] = { t, path, hand, score } 형식 그대로 들어옴
+async function buildRetryReplayData({
+  userId, actions, score, bestHand,
+  timeRemaining, grid, reason,
+}) {
+  const { data: player } = await supabase
+    .from('players')
+    .select('username')
+    .eq('id', userId)
+    .single();
+  const username = player?.username || 'Unknown';
+
+  return {
+    result: {
+      reason: reason || 'complete',
+      bestHand: bestHand || null,
+      finalScore: score,
+      timeRemaining,
+      handsCollected: Array.isArray(actions) ? actions.length : 0,
+    },
+    actions: Array.isArray(actions) ? actions : [],
+    version: 1,
+    username,
+    timestamp: new Date().toISOString(),
+    initialDeck: Array.isArray(grid) ? grid : [],
+  };
 }
 
 module.exports = {
