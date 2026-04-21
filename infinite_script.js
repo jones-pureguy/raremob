@@ -1070,7 +1070,18 @@ async function submitInfiniteToServer(claimedScore, reason) {
       session.submitted = true;
       console.log('[infinite/submit] accepted:', data);
     } else {
+      // Phase 1-7.5 진단: 실패 시 dragLog 전체 + seed 덤프
       console.warn('[infinite/submit] rejected:', { status: res.status, data });
+      console.warn('[infinite/submit] diagnosis:', {
+        seed: session.seed,
+        sessionId: session.sessionId,
+        dragLog: session.dragLog,
+        handCount: session.dragLog.filter(e => (e.type || 'hand') === 'hand').length,
+        shuffleCount: session.dragLog.filter(e => e.type === 'shuffle').length,
+        finalHandIndex: handIndex,
+        finalShuffleIndex: shuffleIndex,
+        claimedScore,
+      });
       showInfiniteSubmitErrorModal(data, claimedScore, reason);
     }
   } catch (err) {
