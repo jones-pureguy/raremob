@@ -171,7 +171,7 @@ function cardFromId(id) {
   return { suit: SUIT_BY_CODE[suitCode], value: VALUE_BY_NAME[valueName], id };
 }
 
-function loadReplay(data) {
+function loadReplay(data, opts = {}) {
   replay = data;
   const userEl = document.getElementById('replayUser');
   if (userEl) userEl.textContent = data.username || '';
@@ -181,11 +181,14 @@ function loadReplay(data) {
   const removedPanel = document.getElementById('removedPanel');
   if (removedPanel) removedPanel.style.display = '';
 
-  // Show GAME RETRY only if replay belongs to current user
+  // [Phase 1-8-prep] GAME RETRY:
+  //   · 본인 리플레이 AND localStorage 경로로 진입한 경우에만 노출
+  //   · 리더보드 경유(?id=xxx)는 본인 리플레이라도 RETRY 숨김 — 시드 재사용 치팅 방지
   const myUsername = (localStorage.getItem('poker_username') || '').trim().toLowerCase();
   const replayUsername = (data.username || '').trim().toLowerCase();
+  const isFromUrl = !!opts.fromUrl;
   const btnRetry = document.getElementById('btnRetry');
-  btnRetry.style.display = (myUsername && myUsername === replayUsername) ? 'inline-block' : 'none';
+  btnRetry.style.display = (!isFromUrl && myUsername && myUsername === replayUsername) ? 'inline-block' : 'none';
   resetToInitial();
   renderActionLog();
   updateInfo();
@@ -572,27 +575,8 @@ function gameRetry() {
     if (raw) {
       try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
     } else {
-      // localStorage 없으면 DB에서 최근 리플레이 조회
-      const playerId = localStorage.getItem('poker_player_id');
-      let found = false;
-      if (playerId) {
-        try {
-          const { data: latest, error } = await sb
-            .from('game_replays')
-            .select('replay_data')
-            .eq('player_id', playerId)
-            .order('id', { ascending: false })
-            .limit(1)
-            .single();
-          if (!error && latest) {
-            loadReplay(latest.replay_data);
-            found = true;
-          }
-        } catch(e) { console.warn('[Replay] DB fallback failed:', e); }
-      }
-      if (!found) {
-        document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
-      }
+      // [Phase 1-8-prep] DB fallback 제거 — localStorage 전용. 없으면 "리플레이 없음" 안내.
+      document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
     }
   } else if (replayId) {
     document.getElementById('replayInfo').textContent = i18n.t('ui.loading');
@@ -609,7 +593,7 @@ function gameRetry() {
         document.getElementById('replayInfo').textContent = i18n.t('toast.replayNotFound');
         return;
       }
-      loadReplay(data.replay_data);
+      loadReplay(data.replay_data, { fromUrl: true });
     } catch(e) {
       console.error('[Replay] Load error:', e);
       document.getElementById('replayInfo').textContent = i18n.t('toast.errorOccurred');

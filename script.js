@@ -549,58 +549,9 @@ async function fetchTopScore() { // [REUSE]
   } catch (err) { return 0; }
 }
 
-// ─── Replay Save to DB ───
-// Returns replay id on success, null on failure
-async function saveReplayToDB(linkToLeaderboard) { // [REUSE] (uses ADAPTER: loadLocal)
-  const raw = loadLocal('poker_last_replay');
-  if (!raw) { console.warn('[DragON] No replay data to save'); return null; }
-
-  try {
-    const data = JSON.parse(raw);
-    const username = data.username || (loadLocal('poker_username') || '').trim();
-    if (!username) return null;
-
-    const playerId = await getOrCreatePlayer(username);
-    if (!playerId) return null;
-
-    const { data: inserted, error } = await sb
-      .from('game_replays')
-      .insert({
-        player_id: playerId,
-        replay_data: data,
-        score: data.result ? data.result.finalScore : 0,
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('[DragON] Replay save error:', error);
-      return null;
-    }
-
-    const replayId = inserted.id;
-    console.log('[DragON] Replay saved to DB:', replayId);
-
-    // Link replay to leaderboard entry
-    if (linkToLeaderboard) {
-      const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
-      const { error: linkErr } = await sb
-        .from(lbTable)
-        .update({ replay_id: replayId })
-        .eq('player_id', playerId);
-      if (linkErr) {
-        console.error('[DragON] Replay link error:', linkErr);
-      } else {
-        console.log('[DragON] Replay linked to leaderboard');
-      }
-    }
-
-    return replayId;
-  } catch (err) {
-    console.error('[DragON] Replay save error:', err);
-    return null;
-  }
-}
+// [Phase 1-8-prep] saveReplayToDB 함수 제거 — 클라 game_replays INSERT 경로 차단.
+//   · 신기록 자동 저장: 서버 saveSessionToDb / retry/submit이 처리
+//   · 100골드 박제: localStorage 전용 (saveReplayFromButton 참조)
 
 // =============================================
 // [UI] DOM / 렌더링 — Expo 전환 시 재작성
@@ -1068,8 +1019,7 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       bestHand: best ? best.label : null,
       timeRemaining: Math.max(0, state.timer),
     };
-    saveLocal('poker_last_replay', JSON.stringify(replayLog));
-    console.log('[DragON] Replay saved to localStorage');
+    // [Phase 1-8-prep] 자동 localStorage 저장 제거 — 100골드 박제 버튼 클릭 시에만 저장
   }
 
   const modal = document.getElementById('modal');
@@ -1171,15 +1121,8 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     dbPromise.then(result => {
       const topScoreEl = document.getElementById('allUserTopScoreRow');
       if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScore', { score: result.topScore });
-
-      if (result.leaderboardUpdated) {
-        saveReplayToDB(true).then(id => {
-          if (id) console.log('[DragON] Auto-replay saved:', id);
-          else console.warn('[DragON] Auto-replay save failed');
-        }).catch(err => console.error('[DragON] Auto-replay error:', err));
-        const btnReplay = document.getElementById('btnSaveReplay');
-        if (btnReplay) btnReplay.remove();
-      }
+      // [Phase 1-8-prep] 신기록 여부와 무관하게 100골드 박제 버튼 유지 — 플레이어가 직접 localStorage 저장 선택.
+      //   신기록 DB 저장은 서버가 처리, 박제(localStorage)는 플레이어 선택.
     }).catch(err => {
       console.error('Session save failed:', err);
       const topScoreEl = document.getElementById('allUserTopScoreRow');
@@ -1429,28 +1372,17 @@ async function saveReplayFromButton() { // [REWRITE]
     // DB 즉시 싱크
     await syncGoldToDB('replay_save');
 
-    const replayId = await saveReplayToDB(false);
-    if (replayId) {
-      // 저장 검증: DB에서 다시 읽어서 확인
-      const { data: verify, error: verifyErr } = await sb
-        .from('game_replays')
-        .select('id')
-        .eq('id', replayId)
-        .single();
-
-      if (verifyErr || !verify) {
-        console.error('[DragON] Replay verify failed:', verifyErr);
-        btn.textContent = i18n.t('ui.saveFailed');
-        btn.style.color = '#ff5252';
-        btn.disabled = false;
-        return;
-      }
-
+    // [Phase 1-8-prep] 100골드 박제 시 localStorage에 저장 (기존 박제 덮어쓰기)
+    // DB INSERT는 제거 — localStorage 전용 박제.
+    // replayLog.result 는 endGame에서 설정됨. 없으면 박제 불가 (방어).
+    if (replayLog && replayLog.result) {
+      saveLocal('poker_last_replay', JSON.stringify(replayLog));
+      console.log('[DragON] Replay saved to localStorage (100-gold paid)');
       btn.textContent = i18n.t('ui.saved');
       btn.style.color = '#4CAF50';
       btn.style.borderColor = '#4CAF50';
-      console.log('[DragON] Replay verified in DB:', replayId);
     } else {
+      console.warn('[DragON] No replayLog.result to save');
       btn.textContent = i18n.t('ui.saveFailed');
       btn.style.color = '#ff5252';
       btn.disabled = false;
@@ -1838,7 +1770,7 @@ if (!window._pvpMode) {
 //     partialEval, isValidHand, applyGravityToColumn, scanForValidMoves,
 //     getReachableCards, dfsScan, countRemainingCards, getHandTier,
 //     saveHighScore, getHighScore, escapeHTML, getOrCreatePlayer,
-//     saveSessionAndGetStatus, fetchTopScore, saveReplayToDB
+//     saveSessionAndGetStatus, fetchTopScore
 // ADAPTER : 4개 함수 (내부 구현 교체 필요)
 //   - saveLocal(key, value)  → AsyncStorage.setItem / SecureStore.setItemAsync
 //   - loadLocal(key)         → AsyncStorage.getItem / SecureStore.getItemAsync
