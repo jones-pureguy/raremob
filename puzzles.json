@@ -1204,7 +1204,7 @@
       ]
     },
     "rewards": {
-      "gold": 10000
+      "gold": 10
     },
     "unlockCondition": {
       "type": "puzzle_clear",
