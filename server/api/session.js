@@ -118,6 +118,48 @@ function createSession({ userId, mode, seed }) {
   return session;
 }
 
+// [REUSE] Phase 1-7.5-C: 히든 진입 자격 검증
+// 체크: basic_session_id 존재 / 본인 소유 / !is_retry / score>=500 / 미사용(UNIQUE)
+async function verifyHiddenEntry(userId, basicSessionId) {
+  if (!basicSessionId) {
+    return { ok: false, reason: 'basic_session_id_missing' };
+  }
+
+  const { data: basicSession, error } = await supabase
+    .from('game_sessions')
+    .select('id, player_id, score, is_retry')
+    .eq('id', basicSessionId)
+    .single();
+
+  if (error || !basicSession) {
+    return { ok: false, reason: 'basic_session_not_found' };
+  }
+
+  if (basicSession.player_id !== userId) {
+    return { ok: false, reason: 'basic_session_not_owned' };
+  }
+
+  if (basicSession.is_retry === true) {
+    return { ok: false, reason: 'basic_session_is_retry' };
+  }
+
+  if ((basicSession.score || 0) < 500) {
+    return { ok: false, reason: 'basic_score_too_low' };
+  }
+
+  const { data: existingHidden } = await supabase
+    .from('hidden_sessions')
+    .select('id')
+    .eq('basic_session_id', basicSessionId)
+    .maybeSingle();
+
+  if (existingHidden) {
+    return { ok: false, reason: 'basic_session_already_used' };
+  }
+
+  return { ok: true, basicScore: basicSession.score || 0 };
+}
+
 // =============================================
 // 엔드포인트 등록
 // =============================================
@@ -125,7 +167,7 @@ function registerSessionRoutes(app) {
   // ─── POST /api/session/start ───
   app.post('/api/session/start', async (req, res) => {
     try {
-      const { userId, mode } = req.body || {};
+      const { userId, mode, basicSessionId } = req.body || {};
 
       if (!userId || !mode) {
         return res.status(400).json({ error: 'MISSING_PARAMS' });
@@ -139,8 +181,25 @@ function registerSessionRoutes(app) {
         return res.status(429).json({ error: rl.reason });
       }
 
+      // [Phase 1-7.5-C] 히든 진입 자격 검증
+      if (mode === 'hidden') {
+        const guardResult = await verifyHiddenEntry(userId, basicSessionId);
+        if (!guardResult.ok) {
+          console.warn(`[hidden-guard] denied user=${String(userId).slice(0, 8)}, reason=${guardResult.reason}, basicSessionId=${String(basicSessionId || '').slice(0, 8)}`);
+          return res.status(403).json({
+            error: 'HIDDEN_ENTRY_DENIED',
+            reason: guardResult.reason,
+          });
+        }
+      }
+
       const seed = generateSeed();
       const session = createSession({ userId, mode, seed });
+
+      // [Phase 1-7.5-C] 히든 세션에 basic_session_id 연결 (submit 시 저장용)
+      if (mode === 'hidden') {
+        session.basicSessionId = basicSessionId;
+      }
 
       console.log(`[session] start: user=${String(userId).slice(0, 8)}, mode=${mode}, sessionId=${session.sessionId.slice(0, 8)}, seed=${seed}`);
 
@@ -473,11 +532,31 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
     }
 
     if (mode === 'hidden') {
+      // [Phase 1-7.5-C] basic_session_id로 DB에서 직접 basic_final_score 조회 (위조 방지)
+      const basicSessionId = session.basicSessionId || null;
+      let verifiedBasicScore = 0;
+      if (basicSessionId) {
+        const { data: basicData } = await supabase
+          .from('game_sessions')
+          .select('score')
+          .eq('id', basicSessionId)
+          .maybeSingle();
+        verifiedBasicScore = basicData?.score || 0;
+      }
+
+      if (extraData.basic_final_score !== undefined &&
+          extraData.basic_final_score !== verifiedBasicScore) {
+        console.warn(
+          `[hidden-guard] basic_final_score mismatch: claimed=${extraData.basic_final_score}, actual=${verifiedBasicScore}, user=${String(userId).slice(0, 8)}`
+        );
+      }
+
       const { data, error } = await supabase
         .from('hidden_sessions')
         .insert({
           player_id: userId,
-          basic_final_score: extraData.basic_final_score || 0,
+          basic_session_id: basicSessionId,
+          basic_final_score: verifiedBasicScore,
           hidden_score: score,
           best_hand: bestHandLabel,
           reset_count: extraData.reset_count || 0,

@@ -1131,8 +1131,8 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     modal.className = 'modal' + modalClass;
 
     const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
-    // Hidden Game 진입 버튼 (500점 이상일 때만)
-    const hiddenBtnHTML = score >= HIDDEN_UNLOCK_SCORE
+    // [Phase 1-7.5-C] Hidden Game 진입 버튼 — NORMAL 500+ 만. RETRY는 시드 재사용 치팅 방지로 제외.
+    const hiddenBtnHTML = (score >= HIDDEN_UNLOCK_SCORE && !isRetryMode)
       ? `<button class="btn-play-again btn-hidden-enter" onclick="onHiddenEnter(${score})" style="width:100%;margin-bottom:8px;">${i18n.t('hidden.enterButton') || '🎴 Hidden Game 시작'}</button>`
       : '';
     let buttonsHTML = `
@@ -1201,13 +1201,20 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
 }
 
 // ─── Hidden Game 진입 ───
+// [Phase 1-7.5-C] basicSessionId (game_sessions.id)를 localStorage로 전달 — 서버가 히든 진입 자격 검증용
 function onHiddenEnter(finalScore) {
-  // 진입 정보 임시 저장
+  const basicSessionId = window._serverSession?.sessionRecordId || null;
+  if (!basicSessionId) {
+    // submit이 아직 완료 안 됐거나 실패 — 잠깐 기다리거나 재시도
+    showToast(i18n.t('hidden.waitForSubmit') || '점수 저장 완료 후 다시 눌러주세요');
+    return;
+  }
+
   saveLocal('hidden_entry', JSON.stringify({
     basicFinalScore: finalScore,
+    basicSessionId,
     timestamp: Date.now()
   }));
-  // BGM 페이드아웃 후 페이지 이동
   try { if (window.BGM && BGM.fadeOut) BGM.fadeOut(500); } catch (e) {}
   setTimeout(() => { location.href = 'hidden_game.html'; }, 500);
 }
@@ -1591,6 +1598,8 @@ async function submitSessionToServer(claimedScore, reason) {
 
     if (res.ok && data.accepted) {
       session.submitted = true;
+      // [Phase 1-7.5-C] 히든 진입 시 DB row id 전달용 (game_sessions.id)
+      session.sessionRecordId = data.sessionRecordId || null;
       console.log('[session/submit] accepted:', data);
       return data;
     } else {

@@ -23,13 +23,16 @@ let hgGameStarted  = false;
 
 // ─── 진입 정보 로드 + 안전장치 ───
 let hgBasicScore = 0;
+let hgBasicSessionId = null; // [Phase 1-7.5-C] 서버 진입 검증용 game_sessions.id
 (function loadEntry() {
   try {
     const raw = localStorage.getItem('hidden_entry');
     if (!raw) { location.href = 'index.html'; return; }
     const entry = JSON.parse(raw);
     hgBasicScore = entry.basicFinalScore || 0;
+    hgBasicSessionId = entry.basicSessionId || null;
     if (hgBasicScore < 500) { location.href = 'index.html'; return; }
+    if (!hgBasicSessionId) { location.href = 'index.html'; return; } // [Phase 1-7.5-C]
     // 유효 시간 10분 체크
     if (Date.now() - (entry.timestamp || 0) > 10 * 60 * 1000) {
       location.href = 'game.html'; return;
@@ -264,8 +267,22 @@ async function requestHiddenServerSession() {
   const res = await fetch(`${HG_SERVER_URL}/api/session/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, mode: 'hidden' }),
+    // [Phase 1-7.5-C] basicSessionId 전달 — 서버 진입 가드 통과용
+    body: JSON.stringify({ userId, mode: 'hidden', basicSessionId: hgBasicSessionId }),
   });
+
+  // [Phase 1-7.5-C] 서버가 진입 자격 거부 (403 HIDDEN_ENTRY_DENIED)
+  if (res.status === 403) {
+    const err = await res.json().catch(() => ({}));
+    if (err.error === 'HIDDEN_ENTRY_DENIED') {
+      const reasonText = i18n.t && i18n.t('hidden.entryDenied')
+        ? i18n.t('hidden.entryDenied')
+        : '히든 게임 진입 자격이 없습니다.';
+      alert(`${reasonText}\n(${err.reason || 'unknown'})`);
+      location.href = 'index.html';
+      throw new Error(`HIDDEN_ENTRY_DENIED:${err.reason || 'unknown'}`);
+    }
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
