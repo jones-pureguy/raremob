@@ -1145,6 +1145,71 @@
     "initialDeck": [
       "","","","","","","","","","","","","10c","","","8h","2d","10s","2h","7d","","","Ad","Qs","5c","2s","6s","","","3s","Qc","5s","Jc","4h","","Jd","3h","7s","7c","9s","9c","Kd","8d","6h","2c","8s","4c","7h","5d"
     ]
+  },
+{
+    "id": 20,
+    "title": {
+      "ko": "첫 번째 퍼즐"
+    },
+    "description": {
+      "ko": "스트레이트를 1개 만드세요."
+    },
+    "hint": {
+      "level1": {
+        "ko": "숫자가 연속된 카드 5장을 찾아보세요.\n순서는 상관없어요"
+      },
+      "level2": {
+        "ko": "10, J, Q, K, A 다섯 카드를\n 한번에 모을 수 있나요?"
+      },
+      "level3": {
+        "ko": "Q♦ → K♦ → A♥ → 10♥ → J♦"
+      }
+    },
+    "theme": {
+      "bgColor": "#0a1f14",
+      "accentColor": "#C9A84C",
+      "cardBack": "default"
+    },
+    "initialDeck": [
+      "","","","","","","",
+      "","","","","","","",
+      "","","","","","","",
+      "","","","","","","",
+      "2s","Kh","Qd","Ah","3c","Jh","4d",
+      "6h","9s","8d","Kd","10h","Qc","As",
+      "7c","3h","8h","9h","Ks","Jd","5s"
+    ],
+    "constraints": {
+      "resetLimit": 0,
+      "moveMode": "freehand",
+      "jumpAllowed": true,
+      "diagonalAllowed": true,
+      "diagonalOnly": false,
+      "forbiddenHands": [],
+      "forbiddenValues": []
+    },
+    "mission": {
+      "type": "real_time",
+      "failTrigger": null,
+      "completionMode": "all",
+      "conditions": [
+        {
+          "id": "c1",
+          "type": "specific_hand",
+          "hand": "STRAIGHT",
+          "count_gte": 1,
+          "exact": true,
+          "description": "스트레이트 1개"
+        }
+      ]
+    },
+    "rewards": {
+      "gold": 10000
+    },
+    "unlockCondition": {
+      "type": "puzzle_clear",
+      "puzzleId": 19
+    }
   }
 ]
 
