@@ -2,7 +2,10 @@
 
 const { shuffleWithRng, mulberry32 } = require('./prng');
 
-const SUITS = ['♠', '♦', '♥', '♣'];
+// [Phase 1-8-prep] 클라/서버 SUITS 순서 통일 — bit-for-bit 일치
+//   클라 script.js / infinite_script.js / stage_script.js 등과 동일 (♠♥♦♣).
+//   SUIT_RANK (포커 우선순위)는 별도 매핑이라 이 배열 순서와 독립.
+const SUITS = ['♠', '♥', '♦', '♣'];
 const VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; // 14 = Ace
 
 // [REUSE] 수트 우선순위: 스페이드 > 다이아 > 하트 > 클로버
