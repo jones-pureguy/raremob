@@ -711,7 +711,7 @@ function rankToLabel(rank) {
   const labels = [
     'High Card', 'One Pair', 'Two Pair', 'Three of a Kind',
     'Straight', 'Flush', 'Full House', 'Four of a Kind',
-    'Straight Flush', 'Royal Flush', 'Royal Flush Plus',
+    'Straight Flush', 'Royal Flush', 'Royal Flush+',
   ];
   return labels[rank] || 'Unknown';
 }

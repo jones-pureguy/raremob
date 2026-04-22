@@ -28,7 +28,7 @@ const RANK_LABELS = {
   7: 'Four of a Kind',
   8: 'Straight Flush',
   9: 'Royal Flush',
-  10: 'Royal Flush Plus',
+  10: 'Royal Flush+',
 };
 
 // [REUSE] 5장 카드로 족보 판정 (RF+ 판정 제외 — 경로 순서가 필요함)
