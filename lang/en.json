@@ -194,7 +194,7 @@
       "monthly": "Monthly"
     },
     "board": {
-      "basic": "Normal",
+      "basic": "BASIC",
       "infinite": "Infinite",
       "hidden": "Hidden",
       "retry": "RETRY"
