@@ -8,6 +8,19 @@ const { randomUUID } = require('crypto');
 const { generateSeed } = require('../engine/prng');
 const { replaySession, buildInitialGrid } = require('../engine/replay');
 const supabase = require('../supabase');
+const { upsertPlayerPeriodStats } = require('../lib/playerPeriodStats');
+
+// [REUSE] Phase 1-8: submit mode → player_period_stats.board 매핑
+function mapModeToBoard(mode) {
+  switch (mode) {
+    case 'basic':       return 'basic';
+    case 'basic_retry': return 'basic_retry';
+    case 'infinite':    return 'infinite';
+    case 'hidden':      return 'hidden';
+    default:
+      throw new Error(`Unknown mode for board mapping: ${mode}`);
+  }
+}
 
 // =============================================
 // 세션 메모리 저장소 (24시간 자동 만료)
@@ -302,6 +315,27 @@ function registerSessionRoutes(app) {
       // DB 성공 후 중복 제출 방지 플래그 — 실패 시 클라 재시도 가능
       session.submitted = true;
 
+      // [Phase 1-8] player_period_stats UPSERT (UTC 기준 period_key)
+      //   실패해도 응답은 영향 없음 — 이미 원장 INSERT 성공. 에러 로그만 남김.
+      try {
+        const board = mapModeToBoard(session.mode);
+        const ppsResult = await upsertPlayerPeriodStats(supabase, {
+          playerId: session.userId,
+          board,
+          score: replayResult.score,
+          playedAt: new Date(),
+        });
+        if (!ppsResult.ok) {
+          console.error('[player_period_stats UPSERT partial fail]', {
+            playerId: session.userId, board, score: replayResult.score, errors: ppsResult.errors,
+          });
+        }
+      } catch (e) {
+        console.error('[player_period_stats UPSERT exception]', {
+          playerId: session.userId, mode: session.mode, error: e.message,
+        });
+      }
+
       console.log(`[session/submit] accepted: user=${String(session.userId).slice(0, 8)}, mode=${session.mode}, score=${replayResult.score}, hands=${replayResult.hands.length}`);
 
       return res.json({
@@ -399,6 +433,25 @@ function registerSessionRoutes(app) {
               .eq('player_id', userId);
           }
         }
+      }
+
+      // [Phase 1-8] player_period_stats UPSERT — RETRY는 all_time만
+      try {
+        const ppsResult = await upsertPlayerPeriodStats(supabase, {
+          playerId: userId,
+          board: 'basic_retry',
+          score,
+          playedAt: new Date(),
+        });
+        if (!ppsResult.ok) {
+          console.error('[player_period_stats UPSERT partial fail]', {
+            playerId: userId, board: 'basic_retry', score, errors: ppsResult.errors,
+          });
+        }
+      } catch (e) {
+        console.error('[player_period_stats UPSERT exception]', {
+          playerId: userId, mode: 'basic_retry', error: e.message,
+        });
       }
 
       console.log(`[retry/submit] recorded: user=${String(userId).slice(0, 8)}, score=${score}, hands=${handsCollected}, isNewRecord=${isNewRecord}`);
