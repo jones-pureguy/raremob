@@ -2,158 +2,63 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>DragON POKER - Leaderboard</title>
 <link rel="stylesheet" href="style.css">
-<style>
-  /* [REWRITE] 3개→4개 탭으로 늘어남에 따라 2×2 그리드로 변경 */
-  .lb-tabs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    margin-bottom: 16px;
-  }
-  .lb-tab {
-    padding: 10px 8px;
-    white-space: nowrap;
-    background: rgba(255,255,255,0.04);
-    color: rgba(255,255,255,0.5);
-    border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 6px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .lb-tab:hover { background: rgba(201,168,76,0.1); }
-  .lb-tab.active {
-    background: rgba(201,168,76,0.2);
-    color: var(--gold);
-    border-color: var(--gold);
-  }
-</style>
 </head>
 <body>
 <div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
 
 <div class="back-fixed"><a href="mode_select.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
 
-<div class="menu-container">
-  <div class="menu-title">LEADERBOARD</div>
-  <div class="lb-tabs">
-    <button class="lb-tab active" id="tabNormal"   onclick="switchTab('normal')"></button>
-    <button class="lb-tab"        id="tabRetry"    onclick="switchTab('retry')"></button>
-    <button class="lb-tab"        id="tabInfinite" onclick="switchTab('infinite')"></button>
-    <button class="lb-tab"        id="tabHidden"   onclick="switchTab('hidden')"></button>
+<div id="leaderboardPage">
+  <header class="lb-header">
+    <h1 class="lb-title" data-i18n="leaderboard.title">LEADERBOARD</h1>
+  </header>
+
+  <!-- period 탭 (1depth) -->
+  <nav class="tabs-period" role="tablist">
+    <button class="tab-period active" data-period="all_time" data-i18n="leaderboard.period.all_time">누적</button>
+    <button class="tab-period"        data-period="daily"    data-i18n="leaderboard.period.daily">일간</button>
+    <button class="tab-period"        data-period="weekly"   data-i18n="leaderboard.period.weekly">주간</button>
+    <button class="tab-period"        data-period="monthly"  data-i18n="leaderboard.period.monthly">월간</button>
+  </nav>
+
+  <!-- board 탭 (2depth) -->
+  <nav class="tabs-board" role="tablist">
+    <button class="tab-board active" data-board="basic"        data-i18n="leaderboard.board.basic">일반</button>
+    <button class="tab-board"        data-board="infinite"     data-i18n="leaderboard.board.infinite">인피니트</button>
+    <button class="tab-board"        data-board="hidden"       data-i18n="leaderboard.board.hidden">히든</button>
+    <button class="tab-board"        data-board="basic_retry"  data-i18n="leaderboard.board.retry">RETRY</button>
+  </nav>
+
+  <!-- 다음 리셋 안내 -->
+  <div id="nextResetHint" class="next-reset-hint" hidden></div>
+
+  <!-- sort 토글 -->
+  <div class="sort-toggles">
+    <span class="sort-label" data-i18n="leaderboard.sort.label">정렬:</span>
+    <button class="sort-btn active" data-sort="best" data-i18n="leaderboard.sort.best">베스트</button>
+    <button class="sort-btn"        data-sort="sum"  data-i18n="leaderboard.sort.sum">누적</button>
+    <button class="sort-btn"        data-sort="avg"  data-i18n="leaderboard.sort.avg">평균</button>
   </div>
-  <div class="leaderboard-wrap" id="leaderboardWrap">
-    <div class="loading">불러오는 중...</div>
-  </div>
-  <p class="retry-description" id="retryDesc"  style="display:none;"></p>
-  <p class="retry-description" id="hiddenDesc" style="display:none;"></p>
+
+  <!-- 상단 리스트 영역 -->
+  <div id="listArea" class="list-area"></div>
+
+  <!-- 한줄 바 (현재 선택 맥락) -->
+  <div id="myRankBar" class="my-rank-bar" hidden></div>
+
+  <!-- 하단 스탯 영역 -->
+  <div id="myStatsArea" class="my-stats-area"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
-<script>
-  if (!requireRegistration()) throw new Error('redirect');
-  const currentUser = localStorage.getItem('poker_username') || '';
-  let currentTab = 'normal';
-  // [REWRITE] 탭 레이블 / 설명문을 i18n에서 주입
-  function applyTabLabels() {
-    document.getElementById('tabNormal').textContent   = i18n.t('leaderboard.tabNormal');
-    document.getElementById('tabRetry').textContent    = i18n.t('leaderboard.tabRetry');
-    document.getElementById('tabInfinite').textContent = i18n.t('leaderboard.tabInfinite');
-    document.getElementById('tabHidden').textContent   = i18n.t('leaderboard.tabHidden');
-    document.getElementById('retryDesc').textContent   = i18n.t('leaderboard.retryDesc');
-    document.getElementById('hiddenDesc').textContent  = i18n.t('leaderboard.hiddenDesc');
-  }
-
-  function escapeHTML(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  // [REUSE] 탭 4개로 확장
-  function switchTab(tab) {
-    currentTab = tab;
-    document.getElementById('tabNormal').classList.toggle('active',   tab === 'normal');
-    document.getElementById('tabRetry').classList.toggle('active',    tab === 'retry');
-    document.getElementById('tabInfinite').classList.toggle('active', tab === 'infinite');
-    document.getElementById('tabHidden').classList.toggle('active',   tab === 'hidden');
-    document.getElementById('retryDesc').style.display  = tab === 'retry'  ? 'block' : 'none';
-    document.getElementById('hiddenDesc').style.display = tab === 'hidden' ? 'block' : 'none';
-    loadLeaderboard();
-  }
-
-  async function loadLeaderboard() {
-    const wrap = document.getElementById('leaderboardWrap');
-    wrap.innerHTML = '<div class="loading">불러오는 중...</div>';
-
-    // [ADAPTER] 탭별 테이블 매핑
-    let table, hasReplay;
-    if (currentTab === 'infinite') {
-      table = 'leaderboard_infinite';
-      hasReplay = false;
-    } else if (currentTab === 'retry') {
-      table = 'leaderboard_r';
-      hasReplay = true;
-    } else if (currentTab === 'hidden') {
-      table = 'leaderboard_hidden';
-      hasReplay = false;
-    } else {
-      table = 'leaderboard';
-      hasReplay = true;
-    }
-
-    try {
-      const selectCols = currentTab === 'infinite' ? 'username, score' : (hasReplay ? 'username, score, best_hand, replay_id' : 'username, score, best_hand');
-      const { data: rows, error } = await sb
-        .from(table)
-        .select(selectCols)
-        .order('score', { ascending: false })
-        .limit(20);
-
-      if (error) { wrap.innerHTML = '<div class="loading" style="color:#ff5252;">오류: ' + error.message + '</div>'; return; }
-      if (!rows || rows.length === 0) { wrap.innerHTML = '<div class="loading">아직 기록이 없습니다</div>'; return; }
-
-      const hasBestHand = currentTab !== 'infinite';
-      let html = '<table class="leaderboard-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th>' + (hasBestHand ? '<th>BEST HAND</th>' : '') + (hasReplay ? '<th></th>' : '') + '</tr></thead><tbody>';
-      rows.forEach((row, i) => {
-        const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
-        const replayBtn = hasReplay && row.replay_id
-          ? '<a href="replay.html?id=' + row.replay_id + '" class="lb-replay-btn" title="Replay">▶</a>'
-          : '';
-        html += '<tr' + hl + '><td>' + (i + 1) + '</td><td>' + escapeHTML(row.username) + '</td><td>' + row.score + '</td>' + (hasBestHand ? '<td>' + escapeHTML(row.best_hand || '-') + '</td>' : '') + (hasReplay ? '<td>' + replayBtn + '</td>' : '') + '</tr>';
-      });
-      html += '</tbody></table>';
-      wrap.innerHTML = html;
-    } catch (err) {
-      wrap.innerHTML = '<div class="loading" style="color:#ff5252;">오류 발생</div>';
-    }
-  }
-
-  // [REWRITE] i18n 로드 완료 후 레이블 주입 및 데이터 로드
-  (async () => {
-    await i18n.init();
-    applyTabLabels();
-    // 4개 탭 모두 URL 파라미터로 진입 가능
-    const urlTab = new URLSearchParams(location.search).get('mode');
-    const validTabs = ['normal', 'retry', 'infinite', 'hidden'];
-    if (validTabs.includes(urlTab) && urlTab !== 'normal') {
-      switchTab(urlTab);
-    } else {
-      loadLeaderboard();
-    }
-  })();
-</script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
+<script src="leaderboard_script.js"></script>
 </body>
 </html>

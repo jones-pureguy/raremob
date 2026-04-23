@@ -184,12 +184,53 @@
     "tabHidden": "HIDDEN",
     "retryDesc": "If you saved a replay, you can retry the same deck for a higher score. Scores are tracked separately.",
     "hiddenDesc": "Hidden Stage is a time-unlimited game unlocked by scoring 500 or more in Basic Game.",
-    "rank": "#",
-    "name": "NAME",
-    "score": "SCORE",
-    "bestHand": "BEST HAND",
     "error": "Error: ${msg}",
-    "noRecords": "No records yet"
+    "noRecords": "No records yet",
+    "title": "LEADERBOARD",
+    "period": {
+      "all_time": "All Time",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "board": {
+      "basic": "Normal",
+      "infinite": "Infinite",
+      "hidden": "Hidden",
+      "retry": "RETRY"
+    },
+    "sort": {
+      "label": "Sort:",
+      "best": "Best",
+      "sum": "Total",
+      "avg": "Avg"
+    },
+    "metrics": {
+      "best": "BEST",
+      "total": "TOTAL",
+      "avg": "AVG"
+    },
+    "myRankBar": "📍 Your rank: ${rank}, ${score} pts",
+    "mystats": {
+      "title": "📊 My ${period} Summary",
+      "noRecord": "─ No record"
+    },
+    "nextReset": "Next reset: ${time}",
+    "list": {
+      "gameCountShort": "${n} games",
+      "avgShort": "avg ${n}",
+      "moreButton": "Load more"
+    },
+    "state": {
+      "loading": "Loading...",
+      "errorTitle": "Failed to load data",
+      "emptyList": "No records yet",
+      "retry": "Retry"
+    },
+    "rank": {
+      "exact": "#${n}",
+      "percentile": "Top ${n}%"
+    }
   },
   "stageSelect": {
     "title": "CHALLENGE MODE",

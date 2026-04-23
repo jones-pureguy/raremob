@@ -1596,3 +1596,275 @@ body.hidden-stage .game-container {
   0%   { left: -100%; }
   100% { left: 100%; }
 }
+
+/* ============================================
+   Phase 1-11 리더보드 UI
+   period-first 2단 탭 + sort + 하단 스탯
+   ============================================ */
+
+#leaderboardPage {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 0 32px 0;
+}
+
+.lb-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 16px 8px;
+}
+.lb-title {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  color: var(--gold, #C9A84C);
+}
+
+/* period 탭 (1depth) */
+.tabs-period {
+  display: flex;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.tabs-period .tab-period {
+  flex: 1;
+  padding: 12px 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255,255,255,0.55);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tabs-period .tab-period.active {
+  color: var(--gold, #C9A84C);
+  border-bottom-color: var(--gold, #C9A84C);
+}
+
+/* board 탭 (2depth) */
+.tabs-board {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  gap: 6px;
+}
+.tabs-board .tab-board {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 14px;
+  color: rgba(255,255,255,0.6);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tabs-board .tab-board.active {
+  background: rgba(201,168,76,0.2);
+  color: var(--gold, #C9A84C);
+  border-color: var(--gold, #C9A84C);
+}
+.tabs-board .tab-board[hidden] { display: none; }
+
+/* 다음 리셋 안내 */
+.next-reset-hint {
+  padding: 4px 16px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.next-reset-hint[hidden] { display: none; }
+
+/* sort 토글 */
+.sort-toggles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+}
+.sort-toggles .sort-label { margin-right: 2px; }
+.sort-toggles .sort-btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.5);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sort-toggles .sort-btn.active {
+  background: rgba(201,168,76,0.2);
+  color: var(--gold, #C9A84C);
+  border-color: var(--gold, #C9A84C);
+}
+
+/* 상단 리스트 */
+.list-area {
+  min-height: 200px;
+  padding: 0 4px;
+}
+.lb-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+}
+.lb-row.me {
+  background: rgba(0,212,255,0.08);
+}
+.lb-row .rank {
+  font-weight: 700;
+  text-align: right;
+  color: var(--gold, #C9A84C);
+}
+.lb-row .username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255,255,255,0.9);
+}
+.lb-row .score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.lb-row .meta {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.45);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-more {
+  display: block;
+  width: calc(100% - 28px);
+  margin: 14px auto;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 8px;
+  color: var(--gold, #C9A84C);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-more:hover { background: rgba(201,168,76,0.08); }
+
+/* 로딩/에러/빈 상태 */
+.state-loading, .state-error, .state-empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+}
+.state-error .err-detail {
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.35);
+}
+.state-error .btn-retry {
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 6px;
+  color: var(--gold, #C9A84C);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.state-loading .spinner {
+  width: 28px; height: 28px;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-top-color: var(--gold, #C9A84C);
+  border-radius: 50%;
+  animation: lb-spin 0.9s linear infinite;
+  margin: 0 auto 10px;
+}
+@keyframes lb-spin { to { transform: rotate(360deg); } }
+
+/* 한줄 바 */
+.my-rank-bar {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px;
+  background: rgba(14,26,53,0.95);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-top: 1px solid rgba(201,168,76,0.3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  z-index: 10;
+}
+.my-rank-bar[hidden] { display: none; }
+
+/* 하단 스탯 영역 */
+.my-stats-area {
+  padding: 16px;
+  margin-top: 10px;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.my-stats-area h2 {
+  margin: 0 0 12px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold, #C9A84C);
+  letter-spacing: 0.05em;
+}
+.stats-board {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+}
+.stats-board:last-child { margin-bottom: 0; }
+.stats-board-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 6px;
+}
+.stats-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.8);
+  font-variant-numeric: tabular-nums;
+}
+.stats-metric-label {
+  display: inline-block;
+  color: rgba(255,255,255,0.45);
+  margin-right: 4px;
+  font-size: 0.65rem;
+}
+.stats-no-record {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.72rem;
+  font-family: 'IBM Plex Mono', monospace;
+}

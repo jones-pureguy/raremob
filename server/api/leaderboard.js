@@ -136,25 +136,30 @@ function registerLeaderboardRoutes(app) {
         return res.status(500).json({ error: 'DB_ERROR', message: myErr.message });
       }
 
-      // 현재 period_key에 해당하는 row만 응답에 채움
+      // 현재 period_key에 해당하는 row만 응답에 채움 (Phase 1-11: 3지표 필드 확장)
       for (const row of myStats || []) {
         const expectedKey = currentKeys[row.period_type];
         if (!expectedKey || row.period_key !== expectedKey) continue;
         if (!response[row.board] || !(row.period_type in response[row.board])) continue;
 
+        const sumNum = Number(row.sum_score);
+        const avgNum = row.game_count > 0 ? Math.round(sumNum / row.game_count) : 0;
         response[row.board][row.period_type] = {
           score: row.best_score,
-          sum: Number(row.sum_score),
+          sum: sumNum,
           game_count: row.game_count,
+          avg: avgNum,
+          // 3지표 rank/exact (Phase 1-11)
+          rank_best: null, rank_sum: null, rank_avg: null,
+          exact_best: false, exact_sum: false, exact_avg: false,
+          percentile_best: null, percentile_sum: null, percentile_avg: null,
+          // 하위 호환 alias — rank_best, exact_best와 동일
           rank: null,
           exact: false,
-          percentile_best: null,
-          percentile_sum: null,
-          percentile_avg: null,
         };
       }
 
-      // rank + percentile 계산
+      // rank + percentile 계산 — best/sum/avg 3지표 각각
       for (const board of BOARDS) {
         for (const period of getSupportedPeriods(board)) {
           const entry = response[board][period];
@@ -162,44 +167,76 @@ function registerLeaderboardRoutes(app) {
 
           const periodKey = currentKeys[period];
 
-          // total_count
-          const { count: totalCount, error: cntErr } = await supabase
+          // total_count + 3지표 rank 쿼리 병렬 실행
+          const myAvg = entry.game_count > 0 ? entry.sum / entry.game_count : 0;
+
+          const totalQ = supabase
             .from('player_period_stats')
             .select('*', { count: 'exact', head: true })
-            .eq('board', board)
-            .eq('period_type', period)
-            .eq('period_key', periodKey);
+            .eq('board', board).eq('period_type', period).eq('period_key', periodKey);
 
-          if (cntErr) {
-            console.error(`[/me] count query error for ${board}/${period}:`, cntErr);
-            continue;
-          }
-
-          // 본인보다 best_score 높은 사람 수
-          const { count: higherCount, error: rnkErr } = await supabase
+          const higherBestQ = supabase
             .from('player_period_stats')
             .select('*', { count: 'exact', head: true })
-            .eq('board', board)
-            .eq('period_type', period)
-            .eq('period_key', periodKey)
+            .eq('board', board).eq('period_type', period).eq('period_key', periodKey)
             .gt('best_score', entry.score);
 
-          if (rnkErr) {
-            console.error(`[/me] rank query error for ${board}/${period}:`, rnkErr);
+          const higherSumQ = supabase
+            .from('player_period_stats')
+            .select('*', { count: 'exact', head: true })
+            .eq('board', board).eq('period_type', period).eq('period_key', periodKey)
+            .gt('sum_score', entry.sum);
+
+          // avg 비교는 Supabase 표현식으로 불가 — game_count>0 row 전체 가져와서 메모리 필터
+          //   현재 스케일 (<수천 명) 기준 허용. Phase 1-12에서 RPC로 최적화 고려.
+          const avgRowsQ = supabase
+            .from('player_period_stats')
+            .select('sum_score, game_count')
+            .eq('board', board).eq('period_type', period).eq('period_key', periodKey)
+            .gt('game_count', 0);
+
+          const [totalR, bestR, sumR, avgR] = await Promise.all([totalQ, higherBestQ, higherSumQ, avgRowsQ]);
+
+          if (totalR.error) {
+            console.error(`[/me] count query error for ${board}/${period}:`, totalR.error);
+            continue;
+          }
+          if (bestR.error || sumR.error) {
+            console.error(`[/me] rank query error for ${board}/${period}:`, bestR.error || sumR.error);
             continue;
           }
 
-          const myRank = (higherCount || 0) + 1;
+          const totalCount = totalR.count || 0;
+          const rankBest = (bestR.count || 0) + 1;
+          const rankSum  = (sumR.count  || 0) + 1;
+          let rankAvg = null;
+          if (entry.game_count > 0 && !avgR.error && Array.isArray(avgR.data)) {
+            const higherAvg = avgR.data.filter(r => {
+              const gc = r.game_count || 0;
+              if (gc <= 0) return false;
+              return (Number(r.sum_score) / gc) > myAvg;
+            }).length;
+            rankAvg = higherAvg + 1;
+          }
 
-          if ((totalCount || 0) < 100 || myRank <= 100) {
-            // 정확 등수
-            entry.rank = myRank;
-            entry.exact = true;
-          } else {
-            // percentile 추정
-            entry.rank = null;
-            entry.exact = false;
+          // 100-rule 분기 (지표별 독립)
+          const exactBest = totalCount < 100 || rankBest <= 100;
+          const exactSum  = totalCount < 100 || rankSum  <= 100;
+          const exactAvg  = rankAvg != null && (totalCount < 100 || rankAvg <= 100);
 
+          entry.rank_best = exactBest ? rankBest : null;
+          entry.rank_sum  = exactSum  ? rankSum  : null;
+          entry.rank_avg  = exactAvg  ? rankAvg  : null;
+          entry.exact_best = exactBest;
+          entry.exact_sum  = exactSum;
+          entry.exact_avg  = exactAvg;
+
+          // alias (하위 호환)
+          entry.rank  = entry.rank_best;
+          entry.exact = entry.exact_best;
+
+          // percentile: 100위 밖인 지표만 leaderboard_stats lookup
+          if (!exactBest || !exactSum || !exactAvg) {
             const { data: stats, error: statsErr } = await supabase
               .from('leaderboard_stats')
               .select('best_at_p01, best_at_p05, best_at_p10, best_at_p25, best_at_p50, ' +
@@ -212,15 +249,11 @@ function registerLeaderboardRoutes(app) {
 
             if (statsErr) {
               console.warn(`[/me] leaderboard_stats error for ${board}/${period}/${periodKey}:`, statsErr.message);
-              continue;
+            } else if (stats) {
+              if (!exactBest) entry.percentile_best = estimatePercentile(entry.score, stats, 'best');
+              if (!exactSum)  entry.percentile_sum  = estimatePercentile(entry.sum,   stats, 'sum');
+              if (!exactAvg)  entry.percentile_avg  = estimatePercentile(myAvg,       stats, 'avg');
             }
-            if (!stats) continue;
-
-            const myAvg = entry.game_count > 0 ? entry.sum / entry.game_count : 0;
-
-            entry.percentile_best = estimatePercentile(entry.score, stats, 'best');
-            entry.percentile_sum  = estimatePercentile(entry.sum,   stats, 'sum');
-            entry.percentile_avg  = estimatePercentile(myAvg,       stats, 'avg');
           }
         }
       }

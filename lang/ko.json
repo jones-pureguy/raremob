@@ -262,12 +262,53 @@
     "tabHidden": "HIDDEN",
     "retryDesc": "본인이 직접 저장한 리플레이의 경우 리플레이 분석 후 RETRY할 수 있습니다. 별도의 순위로 집계됩니다. 정말 아쉽게 고득점을 놓친 판이 있다면 리플레이 저장 후 더 높은 점수에 도전해 보세요.",
     "hiddenDesc": "Hidden 스테이지는 Basic Game에서 500점 이상을 기록하면 도전할 수 있는 시간 무제한 게임입니다.",
-    "rank": "#",
-    "name": "NAME",
-    "score": "SCORE",
-    "bestHand": "BEST HAND",
     "error": "오류: ${msg}",
-    "noRecords": "아직 기록이 없습니다"
+    "noRecords": "아직 기록이 없습니다",
+    "title": "LEADERBOARD",
+    "period": {
+      "all_time": "누적",
+      "daily": "일간",
+      "weekly": "주간",
+      "monthly": "월간"
+    },
+    "board": {
+      "basic": "일반",
+      "infinite": "인피니트",
+      "hidden": "히든",
+      "retry": "RETRY"
+    },
+    "sort": {
+      "label": "정렬:",
+      "best": "베스트",
+      "sum": "누적",
+      "avg": "평균"
+    },
+    "metrics": {
+      "best": "BEST",
+      "total": "TOTAL",
+      "avg": "AVG"
+    },
+    "myRankBar": "📍 내 순위 ${rank}, ${score}점",
+    "mystats": {
+      "title": "📊 내 ${period} 전체 종합",
+      "noRecord": "─ 기록 없음"
+    },
+    "nextReset": "다음 리셋: ${time}",
+    "list": {
+      "gameCountShort": "${n}게임",
+      "avgShort": "avg ${n}",
+      "moreButton": "더 보기"
+    },
+    "state": {
+      "loading": "로딩 중...",
+      "errorTitle": "데이터를 불러오지 못했습니다",
+      "emptyList": "아직 기록이 없습니다",
+      "retry": "다시 시도"
+    },
+    "rank": {
+      "exact": "${n}위",
+      "percentile": "상위 ${n}%"
+    }
   },
   "stageSelect": {
     "title": "CHALLENGE MODE",
