@@ -266,7 +266,7 @@
     "noRecords": "아직 기록이 없습니다",
     "title": "LEADERBOARD",
     "period": {
-      "all_time": "누적",
+      "all_time": "올타임",
       "daily": "일간",
       "weekly": "주간",
       "monthly": "월간"
@@ -280,7 +280,7 @@
     "sort": {
       "label": "정렬:",
       "best": "베스트",
-      "sum": "누적",
+      "sum": "합계",
       "avg": "평균"
     },
     "metrics": {
