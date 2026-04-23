@@ -30,6 +30,9 @@ const {
 // [REUSE] 싱글플레이 세션 API (Phase 1-8)
 const { registerSessionRoutes } = require('./api/session')
 
+// [REUSE] 리더보드 조회 API (Phase 1-10)
+const { registerLeaderboardRoutes } = require('./api/leaderboard')
+
 const app = express()
 const server = http.createServer(app)
 
@@ -196,6 +199,9 @@ app.get('/health', (req, res) => {
 
 // Phase 1-8: 싱글플레이 세션 API 등록
 registerSessionRoutes(app)
+
+// Phase 1-10: 리더보드 조회 API 등록
+registerLeaderboardRoutes(app)
 
 // =============================================
 // [ADAPTER] 골드 싱크 API
