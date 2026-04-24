@@ -55,6 +55,13 @@
   <div id="myStatsArea" class="my-stats-area"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Phase 1-11.1 fix: auth.js가 sb 전역을 참조하므로 먼저 초기화
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
