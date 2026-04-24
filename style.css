@@ -1620,10 +1620,13 @@ body.hidden-stage .game-container {
 #leaderboardPage {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh; /* 모바일 Safari 주소창 대응 */
+  /* body가 flex + align-items:center 라서 flex item이 cross-axis에서 콘텐츠 폭으로 수렴.
+     width:100% 명시로 부모 가로폭을 꽉 채운 뒤 max-width로 제한 (Phase 1-11.3 2차) */
+  width: 100%;
   max-width: 640px;
   margin: 0 auto;
+  height: 100vh;
+  height: 100dvh; /* 모바일 Safari 주소창 대응 */
   overflow: hidden;
   box-sizing: border-box;
   /* iOS safe-area: 노치·홈 인디케이터 영역 확보 (Phase 1-11.3) */
