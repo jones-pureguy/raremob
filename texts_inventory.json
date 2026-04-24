@@ -135,6 +135,7 @@
       "leaderboard.list.gameCountShort",
       "leaderboard.list.avgShort",
       "leaderboard.list.moreButton",
+      "leaderboard.list.playReplay",
       "leaderboard.state.loading",
       "leaderboard.state.errorTitle",
       "leaderboard.state.emptyList",

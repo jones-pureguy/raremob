@@ -1763,7 +1763,7 @@ body.hidden-stage .game-container {
 }
 .lb-row {
   display: grid;
-  grid-template-columns: 36px 1fr auto auto;
+  grid-template-columns: 36px 1fr auto auto 28px; /* Phase 1-11.3: 맨 뒤 리플레이 컬럼 */
   gap: 10px;
   align-items: center;
   padding: 10px 14px;
@@ -1964,4 +1964,29 @@ body.hidden-stage .game-container {
   padding: 2px 5px;
   letter-spacing: 0.03em;
   pointer-events: none;
+}
+
+/* Phase 1-11.3: 리더보드 리플레이 버튼 */
+.btn-replay {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--gold, #C9A84C);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-replay:hover { background: rgba(201,168,76,0.12); }
+.btn-replay:active { transform: scale(0.92); }
+.btn-replay-placeholder {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
 }

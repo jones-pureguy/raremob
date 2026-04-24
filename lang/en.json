@@ -219,7 +219,8 @@
     "list": {
       "gameCountShort": "${n} games",
       "avgShort": "avg ${n}",
-      "moreButton": "Load more"
+      "moreButton": "Load more",
+      "playReplay": "Play replay"
     },
     "state": {
       "loading": "Loading...",

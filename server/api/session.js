@@ -305,21 +305,13 @@ function registerSessionRoutes(app) {
         });
       }
 
-      // DB 저장
-      const dbResult = await saveSessionToDb(session, replayResult, extraData, dragLog);
-      if (dbResult.error) {
-        console.error(`[session/submit] db error:`, dbResult.error);
-        return res.status(500).json({ error: 'DB_ERROR', detail: dbResult.error });
-      }
-
-      // DB 성공 후 중복 제출 방지 플래그 — 실패 시 클라 재시도 가능
-      session.submitted = true;
-
-      // [Phase 1-8] player_period_stats UPSERT (UTC 기준 period_key)
-      //   실패해도 응답은 영향 없음 — 이미 원장 INSERT 성공. 에러 로그만 남김.
+      // [Phase 1-11.3] player_period_stats UPSERT를 saveSessionToDb 이전으로 이동 —
+      //   basic 모드에서 isNewRecord를 신 테이블 기반으로 판정해 game_replays INSERT 게이트에 사용.
+      //   infinite/hidden은 isNewRecord 미사용이나 일관성을 위해 같은 위치에서 호출.
+      let ppsResult = { ok: false, isNewRecord: false };
       try {
         const board = mapModeToBoard(session.mode);
-        const ppsResult = await upsertPlayerPeriodStats(supabase, {
+        ppsResult = await upsertPlayerPeriodStats(supabase, {
           playerId: session.userId,
           board,
           score: replayResult.score,
@@ -335,6 +327,18 @@ function registerSessionRoutes(app) {
           playerId: session.userId, mode: session.mode, error: e.message,
         });
       }
+
+      // DB 저장 (isNewRecord를 넘겨 basic 분기에서 replay INSERT 게이트로 사용)
+      const dbResult = await saveSessionToDb(session, replayResult, extraData, dragLog, {
+        isNewRecord: ppsResult.isNewRecord,
+      });
+      if (dbResult.error) {
+        console.error(`[session/submit] db error:`, dbResult.error);
+        return res.status(500).json({ error: 'DB_ERROR', detail: dbResult.error });
+      }
+
+      // DB 성공 후 중복 제출 방지 플래그 — 실패 시 클라 재시도 가능
+      session.submitted = true;
 
       console.log(`[session/submit] accepted: user=${String(session.userId).slice(0, 8)}, mode=${session.mode}, score=${replayResult.score}, hands=${replayResult.hands.length}`);
 
@@ -396,9 +400,31 @@ function registerSessionRoutes(app) {
         return res.status(500).json({ error: 'DB_ERROR', detail: sessErr.message });
       }
 
-      // [Phase 1-7.5-prep] 신기록 판정 후 조건부 replay INSERT (구조 A 형식)
-      const isNewRecord = await upsertLeaderboardR(userId, score, bestHand);
+      // [Phase 1-11.3] player_period_stats UPSERT를 replay 이전으로 이동 — isNewRecord로 게이트.
+      //   RETRY는 all_time만 (getPeriodKeys에서 처리됨).
+      let ppsResult = { ok: false, isNewRecord: false };
+      try {
+        ppsResult = await upsertPlayerPeriodStats(supabase, {
+          playerId: userId,
+          board: 'basic_retry',
+          score,
+          playedAt: new Date(),
+        });
+        if (!ppsResult.ok) {
+          console.error('[player_period_stats UPSERT partial fail]', {
+            playerId: userId, board: 'basic_retry', score, errors: ppsResult.errors,
+          });
+        }
+      } catch (e) {
+        console.error('[player_period_stats UPSERT exception]', {
+          playerId: userId, mode: 'basic_retry', error: e.message,
+        });
+      }
 
+      // [Phase 1-11.3] 구 leaderboard_r 이중 쓰기 (반환값 무시, Phase 1-13까지 유지)
+      await upsertLeaderboardR(userId, score, bestHand);
+
+      const isNewRecord = ppsResult.isNewRecord;
       let replayRow = null;
       if (isNewRecord) {
         const replayDataObj = await buildRetryReplayData({
@@ -425,33 +451,21 @@ function registerSessionRoutes(app) {
           console.error('[retry/submit] game_replays insert error:', replayErr);
         } else {
           replayRow = row;
-          // [Phase 1-7.5-prep] 신기록 row에 replay_id 연결 (leaderboard와 동일 패턴)
           if (replayRow?.id) {
+            // [Phase 1-11.3] 신 테이블: player_period_stats.basic_retry/all_time에 replay_id 연결
+            await supabase
+              .from('player_period_stats')
+              .update({ replay_id: replayRow.id })
+              .eq('player_id', userId)
+              .eq('board', 'basic_retry')
+              .eq('period_type', 'all_time');
+            // 구 leaderboard_r 이중 쓰기
             await supabase
               .from('leaderboard_r')
               .update({ replay_id: replayRow.id })
               .eq('player_id', userId);
           }
         }
-      }
-
-      // [Phase 1-8] player_period_stats UPSERT — RETRY는 all_time만
-      try {
-        const ppsResult = await upsertPlayerPeriodStats(supabase, {
-          playerId: userId,
-          board: 'basic_retry',
-          score,
-          playedAt: new Date(),
-        });
-        if (!ppsResult.ok) {
-          console.error('[player_period_stats UPSERT partial fail]', {
-            playerId: userId, board: 'basic_retry', score, errors: ppsResult.errors,
-          });
-        }
-      } catch (e) {
-        console.error('[player_period_stats UPSERT exception]', {
-          playerId: userId, mode: 'basic_retry', error: e.message,
-        });
       }
 
       console.log(`[retry/submit] recorded: user=${String(userId).slice(0, 8)}, score=${score}, hands=${handsCollected}, isNewRecord=${isNewRecord}`);
@@ -480,9 +494,11 @@ function registerSessionRoutes(app) {
 // =============================================
 // DB 저장 — 모드별 테이블 분기
 // =============================================
-async function saveSessionToDb(session, replayResult, extraData, dragLog) {
+async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFlags = {}) {
   const { userId, mode, seed, gridSize, gameTime, startedAt } = session;
   const { score, hands, remainingCards } = replayResult;
+  // [Phase 1-11.3] 신기록 판정을 player_period_stats 기반(호출자가 전달)으로 이전
+  const { isNewRecord: ppsIsNewRecord = false } = gateFlags;
 
   let bestRank = 0;
   for (const h of hands) {
@@ -517,11 +533,12 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
 
       if (error) return { error };
 
-      // [Phase 1-7.5-prep] 신기록 판정 후 조건부 replay INSERT
-      const isNewRecord = await upsertLeaderboard(userId, score, bestHandLabel, null);
+      // [Phase 1-11.3] 신기록 판정은 player_period_stats 기반(ppsIsNewRecord).
+      //   구 leaderboard는 이중 쓰기로만 유지 (반환값 무시) — Phase 1-13에서 폐기.
+      await upsertLeaderboard(userId, score, bestHandLabel, null);
 
       let replayRow = null;
-      if (isNewRecord) {
+      if (ppsIsNewRecord) {
         const replayData = await buildLegacyReplayData({
           userId,
           hands,
@@ -548,8 +565,15 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog) {
           console.warn('[replay insert] warning:', replayErr.message);
         } else {
           replayRow = row;
-          // 신기록 row에 replay_id 연결
           if (replayRow?.id) {
+            // [Phase 1-11.3] 신 테이블: player_period_stats.basic/all_time에 replay_id 연결
+            await supabase
+              .from('player_period_stats')
+              .update({ replay_id: replayRow.id })
+              .eq('player_id', userId)
+              .eq('board', 'basic')
+              .eq('period_type', 'all_time');
+            // 구 leaderboard에도 이중 쓰기 (Phase 1-13까지)
             await supabase
               .from('leaderboard')
               .update({ replay_id: replayRow.id })

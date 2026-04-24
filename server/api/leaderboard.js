@@ -152,6 +152,7 @@ function registerLeaderboardRoutes(app) {
           sum: sumNum,
           game_count: row.game_count,
           avg: row.avg_score,
+          replay_id: row.replay_id || null, // [Phase 1-11.3]
 
           rank_best: exactBest ? row.rank_best : null,
           rank_sum:  exactSum  ? row.rank_sum  : null,
@@ -303,7 +304,7 @@ function registerLeaderboardRoutes(app) {
       // === Top N 조회 ===
       let query = supabase
         .from('player_period_stats')
-        .select('player_id, best_score, sum_score, game_count, updated_at')
+        .select('player_id, best_score, sum_score, game_count, updated_at, replay_id')
         .eq('board', board)
         .eq('period_type', period)
         .eq('period_key', periodKey);
@@ -377,6 +378,7 @@ function registerLeaderboardRoutes(app) {
           game_count: row.game_count,
           avg_score: avg,
           updated_at: row.updated_at,
+          replay_id: row.replay_id || null, // [Phase 1-11.3]
         };
       });
 

@@ -126,15 +126,21 @@
     }
 
     const myId = getUserId();
+    const playReplayLabel = escapeHTML(i18n.t('leaderboard.list.playReplay') || 'Play replay');
     const rowsHTML = data.rows.map(row => {
       const meCls = (row.player_id && row.player_id === myId) ? ' me' : '';
       const meta = metaForSort(row, state.sort);
+      // [Phase 1-11.3] replay_id 있으면 ▶ 버튼, 없으면 같은 폭의 placeholder (grid 정렬 유지)
+      const replayHTML = row.replay_id
+        ? `<button class="btn-replay" type="button" data-action="replay" data-replay-id="${escapeHTML(row.replay_id)}" aria-label="${playReplayLabel}" title="${playReplayLabel}">▶</button>`
+        : `<span class="btn-replay-placeholder" aria-hidden="true"></span>`;
       return `
         <div class="lb-row${meCls}">
           <span class="rank">${row.rank}</span>
           <span class="username">${escapeHTML(row.username)}</span>
           <span class="score">${formatNumber(row.score)}</span>
           <span class="meta">${meta}</span>
+          ${replayHTML}
         </div>
       `;
     }).join('');
@@ -330,16 +336,21 @@
 
   function bindListEvents() {
     document.getElementById('listArea').addEventListener('click', async (e) => {
-      const action = e.target && e.target.dataset && e.target.dataset.action;
+      // 가장 가까운 data-action 요소까지 타고 올라감 (아이콘 span 클릭 대응)
+      const trg = e.target.closest && e.target.closest('[data-action]');
+      const action = trg && trg.dataset && trg.dataset.action;
       if (!action) return;
       if (action === 'retry') {
         await loadTopData();
         renderList();
       } else if (action === 'more') {
-        // 교체 모드 (단순화)
         state.offset += state.limit;
         await loadTopData();
         renderList();
+      } else if (action === 'replay') {
+        // [Phase 1-11.3] 리플레이 이동
+        const id = trg.dataset.replayId;
+        if (id) window.location.href = `replay.html?id=${encodeURIComponent(id)}`;
       }
     });
   }

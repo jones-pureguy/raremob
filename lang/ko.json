@@ -297,7 +297,8 @@
     "list": {
       "gameCountShort": "${n}게임",
       "avgShort": "avg ${n}",
-      "moreButton": "더 보기"
+      "moreButton": "더 보기",
+      "playReplay": "리플레이 보기"
     },
     "state": {
       "loading": "로딩 중...",
