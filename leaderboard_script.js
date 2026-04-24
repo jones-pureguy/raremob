@@ -26,12 +26,18 @@
 
   // ───────── Boot ─────────
   applyStaticI18n();
-  try {
-    await loadMeData();
-  } catch (err) {
+
+  // [Phase 1-11.2] 진입 즉시 스피너 — /me /top 응답 대기 중 빈 화면 제거
+  showLoading();
+
+  // [Phase 1-11.2] /me와 /top 병렬 호출. /me 실패해도 /top은 계속 진행.
+  const mePromise = loadMeData().catch(err => {
     console.warn('[leaderboard] /me load failed:', err.message);
-  }
-  await loadTopData();
+  });
+  const topPromise = loadTopData();
+
+  await Promise.all([mePromise, topPromise]);
+
   renderAll();
   bindTabEvents();
   bindSortEvents();
