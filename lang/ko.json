@@ -329,6 +329,7 @@
     "actionPrompt": "위 그리드에서 드래그 해보세요!",
     "skipConfirm": "튜토리얼을 건너뛰시겠습니까?",
     "tapContinue": "▼ 터치하여 계속",
+    "retry": "재시도",
     "step1": {
       "title": "DragON POKER에 오신 것을 환영합니다",
       "body": "7×7 그리드에서 인접한 카드 5장을 드래그해 포커 패를 만드세요."
