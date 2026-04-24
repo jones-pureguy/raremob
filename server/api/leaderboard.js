@@ -114,9 +114,18 @@ function registerLeaderboardRoutes(app) {
     }
 
     try {
-      const currentKeys = getCurrentKeys();
+      // [Phase 1-11 최적화] RPC 단일 호출로 13 row 일괄 반환 (~4-50ms)
+      //   기존 for-loop 방식(조합별 Promise.all 쿼리 13회 왕복)은 아래에 주석 보존 — 운영 안정화 후 Phase 1-13에서 제거.
+      const t0 = Date.now();
+      const { data: rows, error: rpcErr } = await supabase.rpc('get_my_stats_all', {
+        p_player_id: userId,
+      });
+      if (rpcErr) {
+        console.error('[/me] rpc error:', rpcErr);
+        return res.status(500).json({ error: 'RPC_ERROR', message: rpcErr.message });
+      }
 
-      // 응답 객체 초기화 (board별 지원 period만 키로 가짐)
+      // 응답 객체 초기화 (board별 지원 period만 키)
       const response = {};
       for (const board of BOARDS) {
         response[board] = {};
@@ -125,144 +134,121 @@ function registerLeaderboardRoutes(app) {
         }
       }
 
-      // 본인 데이터 일괄 조회
-      const { data: myStats, error: myErr } = await supabase
-        .from('player_period_stats')
-        .select('board, period_type, period_key, best_score, sum_score, game_count')
-        .eq('player_id', userId);
-
-      if (myErr) {
-        console.error('[/me] player_period_stats query error:', myErr);
-        return res.status(500).json({ error: 'DB_ERROR', message: myErr.message });
-      }
-
-      // 현재 period_key에 해당하는 row만 응답에 채움 (Phase 1-11: 3지표 필드 확장)
-      for (const row of myStats || []) {
-        const expectedKey = currentKeys[row.period_type];
-        if (!expectedKey || row.period_key !== expectedKey) continue;
+      // RPC row → response 조립 + percentile 필요 항목 수집
+      const needPercentile = []; // { board, period_type, period_key, entry }
+      for (const row of rows || []) {
+        // 본인 데이터 없는 조합은 null 유지 (이미 초기화됨)
+        if (row.score == null) continue;
         if (!response[row.board] || !(row.period_type in response[row.board])) continue;
 
+        const totalCount = row.total_count || 0;
+        const exactBest = totalCount < 100 || (row.rank_best != null && row.rank_best <= 100);
+        const exactSum  = totalCount < 100 || (row.rank_sum  != null && row.rank_sum  <= 100);
+        const exactAvg  = row.rank_avg != null && (totalCount < 100 || row.rank_avg <= 100);
+
         const sumNum = Number(row.sum_score);
-        const avgNum = row.game_count > 0 ? Math.round(sumNum / row.game_count) : 0;
-        response[row.board][row.period_type] = {
-          score: row.best_score,
+        const entry = {
+          score: row.score,
           sum: sumNum,
           game_count: row.game_count,
-          avg: avgNum,
-          // 3지표 rank/exact (Phase 1-11)
-          rank_best: null, rank_sum: null, rank_avg: null,
-          exact_best: false, exact_sum: false, exact_avg: false,
-          percentile_best: null, percentile_sum: null, percentile_avg: null,
+          avg: row.avg_score,
+
+          rank_best: exactBest ? row.rank_best : null,
+          rank_sum:  exactSum  ? row.rank_sum  : null,
+          rank_avg:  exactAvg  ? row.rank_avg  : null,
+          exact_best: exactBest,
+          exact_sum:  exactSum,
+          exact_avg:  exactAvg,
+
+          percentile_best: null,
+          percentile_sum:  null,
+          percentile_avg:  null,
+
           // 하위 호환 alias — rank_best, exact_best와 동일
-          rank: null,
-          exact: false,
+          rank:  exactBest ? row.rank_best : null,
+          exact: exactBest,
         };
-      }
+        response[row.board][row.period_type] = entry;
 
-      // rank + percentile 계산 — best/sum/avg 3지표 각각
-      for (const board of BOARDS) {
-        for (const period of getSupportedPeriods(board)) {
-          const entry = response[board][period];
-          if (!entry) continue;
-
-          const periodKey = currentKeys[period];
-
-          // total_count + 3지표 rank 쿼리 병렬 실행
-          const myAvg = entry.game_count > 0 ? entry.sum / entry.game_count : 0;
-
-          const totalQ = supabase
-            .from('player_period_stats')
-            .select('*', { count: 'exact', head: true })
-            .eq('board', board).eq('period_type', period).eq('period_key', periodKey);
-
-          const higherBestQ = supabase
-            .from('player_period_stats')
-            .select('*', { count: 'exact', head: true })
-            .eq('board', board).eq('period_type', period).eq('period_key', periodKey)
-            .gt('best_score', entry.score);
-
-          const higherSumQ = supabase
-            .from('player_period_stats')
-            .select('*', { count: 'exact', head: true })
-            .eq('board', board).eq('period_type', period).eq('period_key', periodKey)
-            .gt('sum_score', entry.sum);
-
-          // avg 비교는 Supabase 표현식으로 불가 — game_count>0 row 전체 가져와서 메모리 필터
-          //   현재 스케일 (<수천 명) 기준 허용. Phase 1-12에서 RPC로 최적화 고려.
-          const avgRowsQ = supabase
-            .from('player_period_stats')
-            .select('sum_score, game_count')
-            .eq('board', board).eq('period_type', period).eq('period_key', periodKey)
-            .gt('game_count', 0);
-
-          const [totalR, bestR, sumR, avgR] = await Promise.all([totalQ, higherBestQ, higherSumQ, avgRowsQ]);
-
-          if (totalR.error) {
-            console.error(`[/me] count query error for ${board}/${period}:`, totalR.error);
-            continue;
-          }
-          if (bestR.error || sumR.error) {
-            console.error(`[/me] rank query error for ${board}/${period}:`, bestR.error || sumR.error);
-            continue;
-          }
-
-          const totalCount = totalR.count || 0;
-          const rankBest = (bestR.count || 0) + 1;
-          const rankSum  = (sumR.count  || 0) + 1;
-          let rankAvg = null;
-          if (entry.game_count > 0 && !avgR.error && Array.isArray(avgR.data)) {
-            const higherAvg = avgR.data.filter(r => {
-              const gc = r.game_count || 0;
-              if (gc <= 0) return false;
-              return (Number(r.sum_score) / gc) > myAvg;
-            }).length;
-            rankAvg = higherAvg + 1;
-          }
-
-          // 100-rule 분기 (지표별 독립)
-          const exactBest = totalCount < 100 || rankBest <= 100;
-          const exactSum  = totalCount < 100 || rankSum  <= 100;
-          const exactAvg  = rankAvg != null && (totalCount < 100 || rankAvg <= 100);
-
-          entry.rank_best = exactBest ? rankBest : null;
-          entry.rank_sum  = exactSum  ? rankSum  : null;
-          entry.rank_avg  = exactAvg  ? rankAvg  : null;
-          entry.exact_best = exactBest;
-          entry.exact_sum  = exactSum;
-          entry.exact_avg  = exactAvg;
-
-          // alias (하위 호환)
-          entry.rank  = entry.rank_best;
-          entry.exact = entry.exact_best;
-
-          // percentile: 100위 밖인 지표만 leaderboard_stats lookup
-          if (!exactBest || !exactSum || !exactAvg) {
-            const { data: stats, error: statsErr } = await supabase
-              .from('leaderboard_stats')
-              .select('best_at_p01, best_at_p05, best_at_p10, best_at_p25, best_at_p50, ' +
-                      'sum_at_p01, sum_at_p05, sum_at_p10, sum_at_p25, sum_at_p50, ' +
-                      'avg_at_p01, avg_at_p05, avg_at_p10, avg_at_p25, avg_at_p50')
-              .eq('board', board)
-              .eq('period_type', period)
-              .eq('period_key', periodKey)
-              .maybeSingle();
-
-            if (statsErr) {
-              console.warn(`[/me] leaderboard_stats error for ${board}/${period}/${periodKey}:`, statsErr.message);
-            } else if (stats) {
-              if (!exactBest) entry.percentile_best = estimatePercentile(entry.score, stats, 'best');
-              if (!exactSum)  entry.percentile_sum  = estimatePercentile(entry.sum,   stats, 'sum');
-              if (!exactAvg)  entry.percentile_avg  = estimatePercentile(myAvg,       stats, 'avg');
-            }
-          }
+        if (!exactBest || !exactSum || !exactAvg) {
+          needPercentile.push({
+            board: row.board,
+            period_type: row.period_type,
+            period_key: row.period_key,
+            entry,
+            myAvg: row.game_count > 0 ? sumNum / row.game_count : 0,
+          });
         }
       }
 
+      // percentile 일괄 lookup (100위 밖인 지표가 있는 조합만)
+      if (needPercentile.length > 0) {
+        const queries = needPercentile.map(({ board, period_type, period_key }) =>
+          supabase
+            .from('leaderboard_stats')
+            .select('best_at_p01, best_at_p05, best_at_p10, best_at_p25, best_at_p50, ' +
+                    'sum_at_p01, sum_at_p05, sum_at_p10, sum_at_p25, sum_at_p50, ' +
+                    'avg_at_p01, avg_at_p05, avg_at_p10, avg_at_p25, avg_at_p50')
+            .eq('board', board).eq('period_type', period_type).eq('period_key', period_key)
+            .maybeSingle()
+        );
+        const results = await Promise.all(queries);
+        results.forEach((r, i) => {
+          const ctx = needPercentile[i];
+          if (r.error) {
+            console.warn(`[/me] leaderboard_stats error for ${ctx.board}/${ctx.period_type}/${ctx.period_key}:`, r.error.message);
+            return;
+          }
+          if (!r.data) return;
+          const { entry, myAvg } = ctx;
+          if (!entry.exact_best) entry.percentile_best = estimatePercentile(entry.score, r.data, 'best');
+          if (!entry.exact_sum)  entry.percentile_sum  = estimatePercentile(entry.sum,   r.data, 'sum');
+          if (!entry.exact_avg)  entry.percentile_avg  = estimatePercentile(myAvg,       r.data, 'avg');
+        });
+      }
+
+      console.log(`[/me] took ${Date.now() - t0}ms (rows=${(rows || []).length}, percentile=${needPercentile.length})`);
       return res.json(response);
     } catch (e) {
       console.error('[/me] unexpected error:', e);
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: e.message });
     }
+
+    /* ---------------------------------------------------------------------
+     * [Phase 1-11 이전 구현 — RPC 전환으로 대체됨, 롤백용 보존. Phase 1-13에서 제거]
+     *
+     *   for-loop로 13 조합 순회, 조합마다 4개 쿼리 Promise.all → ~1.15초.
+     *   get_my_stats_all RPC 전환 후 ~50ms 내.
+     *
+     * const currentKeys = getCurrentKeys();
+     * const response = {};
+     * for (const board of BOARDS) {
+     *   response[board] = {};
+     *   for (const period of getSupportedPeriods(board)) response[board][period] = null;
+     * }
+     * const { data: myStats, error: myErr } = await supabase
+     *   .from('player_period_stats')
+     *   .select('board, period_type, period_key, best_score, sum_score, game_count')
+     *   .eq('player_id', userId);
+     * if (myErr) { ... return DB_ERROR ... }
+     * for (const row of myStats || []) {
+     *   const expectedKey = currentKeys[row.period_type];
+     *   if (!expectedKey || row.period_key !== expectedKey) continue;
+     *   response[row.board][row.period_type] = { score, sum, game_count, avg, rank_*, exact_*, percentile_*, rank, exact };
+     * }
+     * for (const board of BOARDS) for (const period of getSupportedPeriods(board)) {
+     *   const entry = response[board][period];
+     *   if (!entry) continue;
+     *   const periodKey = currentKeys[period];
+     *   const totalQ = supabase.from('player_period_stats').select('*', { count:'exact', head:true }).eq('board', board)...
+     *   const higherBestQ = ... .gt('best_score', entry.score);
+     *   const higherSumQ  = ... .gt('sum_score',  entry.sum);
+     *   const avgRowsQ    = ... .select('sum_score, game_count').gt('game_count', 0);
+     *   const [totalR, bestR, sumR, avgR] = await Promise.all([totalQ, higherBestQ, higherSumQ, avgRowsQ]);
+     *   // ... rank 계산, 100-rule 분기, percentile lookup ...
+     * }
+     * return res.json(response);
+     */
   });
 
   // ─── GET /api/leaderboard/top ───
