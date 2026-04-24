@@ -212,7 +212,7 @@
     },
     "myRankBar": "📍 Your rank: ${rank}, ${score} pts",
     "mystats": {
-      "title": "📊 My ${period} Summary",
+      "title": "📊 My ${period} Records",
       "noRecord": "─ No record"
     },
     "nextReset": "Next reset: ${time}",

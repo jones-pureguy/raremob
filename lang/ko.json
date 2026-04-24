@@ -290,7 +290,7 @@
     },
     "myRankBar": "📍 내 순위 ${rank}, ${score}점",
     "mystats": {
-      "title": "📊 내 ${period} 전체 종합",
+      "title": "📊 내 ${period} 기록",
       "noRecord": "─ 기록 없음"
     },
     "nextReset": "다음 리셋: ${time}",
