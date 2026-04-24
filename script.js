@@ -1165,19 +1165,24 @@ function onHiddenEnter(finalScore) {
 // ─── Game Reset ───
 // [ADAPTER] Phase 1-7.4: 리스타트 — 서버 세션 재발급 통합
 async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
+  // [Phase 1-11.1] 중복 실행 방지 — 응답 대기 중 연타 차단
+  if (window._resetInProgress) return;
+
   const currentGold = parseInt(loadLocal('poker_gold') || '0');
   if (currentGold < 1) {
     showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
     return;
   }
 
-  // PvP / 오프라인 / RETRY 모드: 기존 레거시 경로
+  // PvP / 오프라인 / RETRY 모드: 기존 레거시 경로 (오버레이 불필요 — 즉시 실행)
   if (window._pvpMode || window._offlineMode || isRetryMode) {
     _resetGameLegacy();
     return;
   }
 
   // 온라인 싱글플레이: 새 서버 세션 발급 후 리스타트
+  window._resetInProgress = true;
+  showRestartOverlay();
   const prevSessionId = window._serverSession?.sessionId;
   try {
     const sessionData = await requestServerSession('basic');
@@ -1209,7 +1214,32 @@ async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
         _resetGameLegacy();
       }
     );
+  } finally {
+    hideRestartOverlay();
+    window._resetInProgress = false;
   }
+}
+
+// [REUSE] Phase 1-11.1: 리스타트 응답 대기 오버레이
+function showRestartOverlay() {
+  let overlay = document.getElementById('restartOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'restartOverlay';
+    overlay.className = 'restart-overlay';
+    overlay.innerHTML = '<div class="restart-spinner"></div>';
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.add('active');
+  const btn = document.getElementById('restartBtn');
+  if (btn) btn.style.pointerEvents = 'none';
+}
+
+function hideRestartOverlay() {
+  const overlay = document.getElementById('restartOverlay');
+  if (overlay) overlay.classList.remove('active');
+  const btn = document.getElementById('restartBtn');
+  if (btn) btn.style.pointerEvents = '';
 }
 
 // [REUSE] 레거시 리스타트 (PvP / 오프라인 / RETRY 전용)
@@ -1480,6 +1510,7 @@ async function requestServerSession(mode) {
   const userId = loadLocal('poker_player_id');
   if (!userId) throw new Error('NO_USER_ID');
 
+  const t0 = Date.now();
   const res = await fetch(`${SERVER_URL}/api/session/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1500,7 +1531,7 @@ async function requestServerSession(mode) {
     mode,
     submitted: false,
   };
-  console.log('[session/start] received:', { sessionId: data.sessionId.slice(0, 8), seed: data.seed });
+  console.log(`[session/start] took ${Date.now() - t0}ms (mode=${mode}):`, { sessionId: data.sessionId.slice(0, 8), seed: data.seed });
   return data;
 }
 
