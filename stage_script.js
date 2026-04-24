@@ -1450,20 +1450,22 @@ function resetGame() {
 }
 
 // [REWRITE] 리셋 버튼 상태 업데이트
+// Phase 1-11.1: 1G 칩을 보존하기 위해 innerHTML 사용 + escapeHTML 금지 (내부 값이 상수)
 function updateResetButton() {
   const btn = document.getElementById('restartBtn');
   if (!btn || !stageConfig) return;
   const limit = stageConfig.constraints.resetLimit;
+  const chip = '<span class="btn-cost-chip">1G</span>';
   if (limit === null) {
-    btn.textContent = '↺';
+    btn.innerHTML = '↺' + chip;
     btn.disabled = false;
   } else if (limit === 0) {
-    btn.textContent = '↺';
+    btn.innerHTML = '↺' + chip;
     btn.disabled = true;
     btn.style.opacity = '0.3';
   } else {
     const remaining = limit - resetUsed;
-    btn.textContent = `↺ (${remaining})`;
+    btn.innerHTML = `↺ (${remaining})` + chip;
     btn.disabled = remaining <= 0;
     if (remaining <= 0) btn.style.opacity = '0.3';
   }
