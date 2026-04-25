@@ -282,7 +282,17 @@ function registerSessionRoutes(app) {
       }
 
       if (replayResult.score !== claimedScore) {
-        console.warn(`[session/submit] score mismatch: claimed=${claimedScore}, calculated=${replayResult.score}, session=${sessionId.slice(0, 8)}`);
+        console.warn('[mismatch DETAIL]', JSON.stringify({
+          session: sessionId.slice(0, 8),
+          diff: replayResult.score - claimedScore,
+          claimed: claimedScore,
+          calculated: replayResult.score,
+          server_breakdown: replayResult.breakdown,
+          server_remainingCards: replayResult.remainingCards,
+          server_handCount: replayResult.hands.length,
+          timeRemaining_received: timeRemaining,
+          dragLog_count: dragLog.length,
+        }, null, 2));
         return res.status(400).json({
           accepted: false,
           reason: 'SCORE_MISMATCH',

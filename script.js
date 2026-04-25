@@ -1542,6 +1542,27 @@ async function submitSessionToServer(claimedScore, reason) {
 
   const timeRemaining = Math.max(0, state.timer || 0);
 
+  const remainingCards = countRemainingCards();
+  const c_handSum = state.hands.reduce((s, h) => s + getRankScore(h.rank), 0);
+  const c_bonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
+  const c_penalty = ScorePolicy.getPenalty(remainingCards);
+  const c_rawTotal = c_handSum + c_bonus - c_penalty;
+
+  console.log('[submit DETAIL]', JSON.stringify({
+    claimedScore,
+    timeRemaining: state.timer,
+    hands_count: state.hands.length,
+    hand_ranks: state.hands.map(h => h.rank),
+    remaining_in_grid: state.grid.flat().filter(c => c?.card).length,
+    remaining_cards_authoritative: remainingCards,
+    client_breakdown: {
+      handSum: c_handSum,
+      bonus: c_bonus,
+      penalty: c_penalty,
+      rawTotal: c_rawTotal,
+    },
+  }, null, 2));
+
   try {
     const res = await fetch(`${SERVER_URL}/api/session/submit`, {
       method: 'POST',
