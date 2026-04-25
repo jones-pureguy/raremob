@@ -111,6 +111,7 @@ function initState() { // [REUSE]
     hands: [],
     selectedPath: [],
     isDragging: false,
+    gameOver: false,
     timer: TIMER_SECONDS,
     phase: 'playing',
     timerInterval: null,
@@ -707,6 +708,12 @@ function finalizePath() { // [REWRITE]
   if (!state.isDragging) return;
   state.isDragging = false;
 
+  // [Phase 1-11.3] endGame 후 race-late mouseup 차단
+  if (state.gameOver) {
+    clearSelection();
+    return;
+  }
+
   if (state.selectedPath.length < HAND_SIZE) {
     showToast(i18n.t('toast.selectFiveCards'));
     clearSelection();
@@ -988,6 +995,17 @@ function updateHandPanel() { // [REWRITE]
 
 // ─── Game End ───
 function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
+  // [Phase 1-11.3] 진행 중 드래그 처리 — gameOver 플래그 세팅 전에 finalize
+  if (state.isDragging) {
+    if (state.selectedPath.length === HAND_SIZE) {
+      finalizePath();
+    } else {
+      state.isDragging = false;
+      clearSelection();
+    }
+  }
+  state.gameOver = true;
+
   WakeLock.release();
   state.phase = reason === 'complete' ? 'complete' : (reason === 'nomoves' ? 'nomoves' : 'gameover');
   clearInterval(state.timerInterval);
@@ -1541,27 +1559,6 @@ async function submitSessionToServer(claimedScore, reason) {
   if (!session || !session.sessionId || session.submitted) return;
 
   const timeRemaining = Math.max(0, state.timer || 0);
-
-  const remainingCards = countRemainingCards();
-  const c_handSum = state.hands.reduce((s, h) => s + getRankScore(h.rank), 0);
-  const c_bonus = ScorePolicy.getTimeBonus(Math.max(0, state.timer));
-  const c_penalty = ScorePolicy.getPenalty(remainingCards);
-  const c_rawTotal = c_handSum + c_bonus - c_penalty;
-
-  console.log('[submit DETAIL]', JSON.stringify({
-    claimedScore,
-    timeRemaining: state.timer,
-    hands_count: state.hands.length,
-    hand_ranks: state.hands.map(h => h.rank),
-    remaining_in_grid: state.grid.flat().filter(c => c?.card).length,
-    remaining_cards_authoritative: remainingCards,
-    client_breakdown: {
-      handSum: c_handSum,
-      bonus: c_bonus,
-      penalty: c_penalty,
-      rawTotal: c_rawTotal,
-    },
-  }, null, 2));
 
   try {
     const res = await fetch(`${SERVER_URL}/api/session/submit`, {
