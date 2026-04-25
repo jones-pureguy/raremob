@@ -5,3 +5,6 @@ docs/
 .claude/
 .DS_Store
 CLAUDE.md
+
+# Phase 1-13: dev-only debug pages (do not deploy to GitHub Pages)
+dbtest.html

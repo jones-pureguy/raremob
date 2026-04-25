@@ -982,17 +982,20 @@ function endGame(reason) {
     });
   }
 
-  // All User High Score 표시 (SELECT는 RLS 열려있음)
+  // [Phase 1-13] All User High Score: leaderboard_infinite DROP됨.
+  // 서버 /top API 경유 (sort=best, limit=1).
   (async () => {
     try {
-      const { data: topRow } = await sb
-        .from('leaderboard_infinite')
-        .select('score')
-        .order('score', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const url = `${SERVER_URL}/api/leaderboard/top?board=infinite&period=all_time&sort=best&limit=1`;
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const json = await res.json();
+      const top = json?.rows?.[0];
+      const score = top?.best_score ?? top?.score;
       const topEl = document.getElementById('infTopScoreRow');
-      if (topEl && topRow) topEl.textContent = i18n.t('modal.allUserHighScore', { score: topRow.score });
+      if (topEl && score != null) {
+        topEl.textContent = i18n.t('modal.allUserHighScore', { score });
+      }
     } catch (e) { /* ignore */ }
   })();
 }
