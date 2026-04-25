@@ -157,6 +157,9 @@ function replaySession({
   dragLog = [],
   constraints = {},
   timeRemaining = 0,
+  // [REUSE for Expo] Phase 1-11.3.1: timestamp cutoff용 — RN 환경에서도 동일 보장
+  startedAt = null,
+  gameTime = null,
   scoringOptions = { applyTimeBonus: true, applyPenalty: true, applyCombo: false },
 }) {
   // 1. 초기 그리드 복원
@@ -174,10 +177,24 @@ function replaySession({
   let handIndex = 0;
   let shuffleIndex = 0;
 
+  // [REUSE for Expo] Phase 1-11.3.1: dragLog timestamp cutoff (race-late event 차단)
+  //   gameTime null (hidden) 이거나 startedAt 부재 시 cutoff 미적용
+  //   TOLERANCE_MS = 500: 정상 race 흡수 + 어뷰징 방어 균형
+  const TOLERANCE_MS = 500;
+  const cutoffTs = (gameTime !== null && startedAt)
+    ? startedAt + gameTime * 1000 + TOLERANCE_MS
+    : null;
+
   // 2. 이벤트 재생
   for (let i = 0; i < dragLog.length; i++) {
     const event = dragLog[i];
     const eventType = event.type || 'hand'; // 하위 호환: 구 베이직 형식 { cards:[...] }
+
+    // [REUSE for Expo] Phase 1-11.3.1: cutoff 이후 이벤트 무시 (race condition 방어)
+    if (cutoffTs && event.ts && event.ts > cutoffTs) {
+      console.log(`[replay] event ${i} (type=${eventType}, ts=${event.ts}) after cutoff ${cutoffTs}, ignoring`);
+      continue;
+    }
 
     if (eventType === 'shuffle') {
       if (mode !== 'infinite' && mode !== 'hidden') {

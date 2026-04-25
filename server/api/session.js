@@ -269,6 +269,9 @@ function registerSessionRoutes(app) {
         dragLog,
         constraints: {},
         timeRemaining,
+        // [REUSE for Expo] Phase 1-11.3.1: cutoff 검증용
+        startedAt: session.startedAt,
+        gameTime: session.gameTime,
         scoringOptions: getScoringOptions(session.mode),
       });
 
