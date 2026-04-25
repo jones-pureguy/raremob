@@ -421,9 +421,6 @@ function registerSessionRoutes(app) {
         });
       }
 
-      // [Phase 1-11.3] 구 leaderboard_r 이중 쓰기 (반환값 무시, Phase 1-13까지 유지)
-      await upsertLeaderboardR(userId, score, bestHand);
-
       const isNewRecord = ppsResult.isNewRecord;
       let replayRow = null;
       if (isNewRecord) {
@@ -452,18 +449,12 @@ function registerSessionRoutes(app) {
         } else {
           replayRow = row;
           if (replayRow?.id) {
-            // [Phase 1-11.3] 신 테이블: player_period_stats.basic_retry/all_time에 replay_id 연결
             await supabase
               .from('player_period_stats')
               .update({ replay_id: replayRow.id })
               .eq('player_id', userId)
               .eq('board', 'basic_retry')
               .eq('period_type', 'all_time');
-            // 구 leaderboard_r 이중 쓰기
-            await supabase
-              .from('leaderboard_r')
-              .update({ replay_id: replayRow.id })
-              .eq('player_id', userId);
           }
         }
       }
@@ -533,10 +524,6 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
 
       if (error) return { error };
 
-      // [Phase 1-11.3] 신기록 판정은 player_period_stats 기반(ppsIsNewRecord).
-      //   구 leaderboard는 이중 쓰기로만 유지 (반환값 무시) — Phase 1-13에서 폐기.
-      await upsertLeaderboard(userId, score, bestHandLabel, null);
-
       let replayRow = null;
       if (ppsIsNewRecord) {
         const replayData = await buildLegacyReplayData({
@@ -566,18 +553,12 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
         } else {
           replayRow = row;
           if (replayRow?.id) {
-            // [Phase 1-11.3] 신 테이블: player_period_stats.basic/all_time에 replay_id 연결
             await supabase
               .from('player_period_stats')
               .update({ replay_id: replayRow.id })
               .eq('player_id', userId)
               .eq('board', 'basic')
               .eq('period_type', 'all_time');
-            // 구 leaderboard에도 이중 쓰기 (Phase 1-13까지)
-            await supabase
-              .from('leaderboard')
-              .update({ replay_id: replayRow.id })
-              .eq('player_id', userId);
           }
         }
       }
@@ -602,8 +583,6 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
         .single();
 
       if (error) return { error };
-
-      await upsertLeaderboardInfinite(userId, score, bestHandLabel);
 
       return { sessionRecordId: data?.id };
     }
@@ -644,140 +623,12 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
 
       if (error) return { error };
 
-      await upsertLeaderboardHidden(userId, score, bestHandLabel);
-
       return { sessionRecordId: data?.id };
     }
 
     return { error: 'UNKNOWN_MODE' };
   } catch (err) {
     return { error: err.message };
-  }
-}
-
-// =============================================
-// 리더보드 UPSERT 헬퍼 (기존 호환)
-// =============================================
-async function upsertLeaderboard(userId, score, bestHand, replayId) {
-  try {
-    const { data: player } = await supabase
-      .from('players')
-      .select('username')
-      .eq('id', userId)
-      .single();
-
-    const username = player?.username || 'Unknown';
-
-    const { data: existing } = await supabase
-      .from('leaderboard')
-      .select('score')
-      .eq('player_id', userId)
-      .maybeSingle();
-
-    if (!existing || existing.score < score) {
-      await supabase.from('leaderboard').upsert({
-        player_id: userId,
-        username,
-        score,
-        best_hand: bestHand,
-        replay_id: replayId,
-      }, { onConflict: 'player_id' });
-      return true; // [Phase 1-7.5-prep] 신기록
-    }
-    return false; // [Phase 1-7.5-prep] 비신기록
-  } catch (err) {
-    console.warn('[leaderboard upsert] error:', err.message);
-    return false;
-  }
-}
-
-async function upsertLeaderboardR(userId, score, bestHand) {
-  try {
-    const { data: player } = await supabase
-      .from('players')
-      .select('username')
-      .eq('id', userId)
-      .single();
-
-    const username = player?.username || 'Unknown';
-
-    const { data: existing } = await supabase
-      .from('leaderboard_r')
-      .select('score')
-      .eq('player_id', userId)
-      .maybeSingle();
-
-    if (!existing || existing.score < score) {
-      await supabase.from('leaderboard_r').upsert({
-        player_id: userId,
-        username,
-        score,
-        best_hand: bestHand,
-      }, { onConflict: 'player_id' });
-      return true; // [Phase 1-7.5-prep] 신기록
-    }
-    return false; // [Phase 1-7.5-prep] 비신기록
-  } catch (err) {
-    console.warn('[leaderboard_r upsert] error:', err.message);
-    return false;
-  }
-}
-
-async function upsertLeaderboardInfinite(userId, score, bestHand) {
-  try {
-    const { data: player } = await supabase
-      .from('players')
-      .select('username')
-      .eq('id', userId)
-      .single();
-
-    const username = player?.username || 'Unknown';
-
-    const { data: existing } = await supabase
-      .from('leaderboard_infinite')
-      .select('score')
-      .eq('player_id', userId)
-      .maybeSingle();
-
-    if (!existing || existing.score < score) {
-      await supabase.from('leaderboard_infinite').upsert({
-        player_id: userId,
-        username,
-        score,
-        best_hand: bestHand || null,
-      }, { onConflict: 'player_id' });
-    }
-  } catch (err) {
-    console.warn('[leaderboard_infinite upsert] error:', err.message);
-  }
-}
-
-async function upsertLeaderboardHidden(userId, score, bestHand) {
-  try {
-    const { data: player } = await supabase
-      .from('players')
-      .select('username')
-      .eq('id', userId)
-      .single();
-
-    const username = player?.username || 'Unknown';
-
-    const { data: existing } = await supabase
-      .from('leaderboard_hidden')
-      .select('score')
-      .eq('player_id', userId)
-      .maybeSingle();
-
-    if (!existing || existing.score < score) {
-      await supabase.from('leaderboard_hidden').upsert({
-        player_id: userId,
-        username,
-        score,
-        best_hand: bestHand,
-      }, { onConflict: 'player_id' });
-    }
-  } catch (err) {
-    console.warn('[leaderboard_hidden upsert] error:', err.message);
   }
 }
 
