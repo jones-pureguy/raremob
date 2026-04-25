@@ -305,6 +305,7 @@ function registerSessionRoutes(app) {
           sessionRecordId: null,
           replayId: null,
           skipped: true,
+          isNewRecord: false, // [Phase 1-13 후속] score=0이면 항상 false (일관성)
         });
       }
 
@@ -351,6 +352,7 @@ function registerSessionRoutes(app) {
         breakdown: replayResult.breakdown,
         sessionRecordId: dbResult.sessionRecordId,
         replayId: dbResult.replayId,
+        isNewRecord: ppsResult.isNewRecord, // [Phase 1-13 후속] basic 응답에도 추가 (retry와 일관성)
       });
     } catch (err) {
       console.error('[session/submit] error:', err);

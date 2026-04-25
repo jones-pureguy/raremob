@@ -462,92 +462,60 @@ async function getOrCreatePlayer() { // [REUSE] (uses ADAPTER: loadLocal)
 }
 
 // Returns { leaderboardUpdated: boolean, topScore: number }
-async function saveSessionAndGetStatus(data) { // [REUSE]
+// [REUSE] [Phase 1-13 후속] 클라 leaderboard 직접 호출 제거 + game_sessions 중복 INSERT 제거.
+// 서버 /api/session/submit이 game_sessions INSERT + player_period_stats UPSERT 처리.
+// 여기서는 골드 싱크 + Top score 조회만.
+async function saveSessionAndGetStatus(data) {
   console.log('[DragON] Saving session...', data);
-  let leaderboardUpdated = false;
   let topScore = 0;
 
   try {
     const playerId = await getOrCreatePlayer(data.username);
-    if (!playerId) { console.error('[DragON] No player ID, skipping save'); return { leaderboardUpdated, topScore }; }
+    if (!playerId) {
+      console.error('[DragON] No player ID, skipping save');
+      return { leaderboardUpdated: false, topScore };
+    }
 
-    // Sync pending gold deductions before DB write
+    // 골드 싱크 (게임 종료 시점)
     await syncGoldToDB('game_end');
 
-    // Insert game session
-    const { data: sessionData, error: sessionError } = await sb
-      .from('game_sessions')
-      .insert({
-        player_id: playerId,
-        score: data.score,
-        best_hand: data.best_hand || null,
-        hands_collected: data.hands_collected || 0,
-        time_remaining: data.time_remaining || 0,
-        completed: true,
-        is_retry: !!isRetryMode, // [Phase 1-7.5-prep] 이슈 1 수정: RETRY 게임 식별 (서버 INSERT와 정합성 유지)
-      })
-      .select();
-    if (sessionError) {
-      console.error('[DragON] Session save error:', sessionError);
-    } else {
-      console.log('[DragON] Session saved:', sessionData);
-    }
-
-    // Upsert leaderboard — keep highest score per player
-    const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
-    const { data: existing, error: fetchError } = await sb
-      .from(lbTable)
-      .select('score')
-      .eq('player_id', playerId)
-      .maybeSingle();
-
-    if (fetchError) console.error('[DragON] Leaderboard fetch error:', fetchError);
-
-    if (!existing || data.score > existing.score) {
-      const { data: lbData, error: lbError } = await sb
-        .from(lbTable)
-        .upsert({
-          player_id: playerId,
-          username: data.username,
-          score: data.score,
-          best_hand: data.best_hand || null,
-        }, { onConflict: 'player_id' })
-        .select();
-      if (lbError) {
-        console.error('[DragON] Leaderboard upsert error:', lbError);
-      } else {
-        console.log(`[DragON] ${lbTable} updated:`, lbData);
-        leaderboardUpdated = true;
+    // Top score 조회 (서버 /top API)
+    const board = isRetryMode ? 'basic_retry' : 'basic';
+    try {
+      const url = `${SERVER_URL}/api/leaderboard/top?board=${board}&period=all_time&sort=best&limit=1`;
+      const apiRes = await fetch(url);
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        const top = json?.rows?.[0];
+        topScore = top?.best_score ?? top?.score ?? 0;
       }
+    } catch (e) {
+      console.warn('[DragON] Top score fetch error:', e);
     }
-
-    // Fetch #1 score from same table
-    const { data: topRow } = await sb
-      .from(lbTable)
-      .select('score')
-      .order('score', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (topRow) topScore = topRow.score;
 
   } catch (err) {
     console.error('[DragON] Save error:', err);
   }
-  return { leaderboardUpdated, topScore };
+
+  // leaderboardUpdated는 현재 호출자에서 사용 안 함 (죽은 변수).
+  // Phase 2D-pre에서 서버 /api/session/submit 응답의 isNewRecord와 통합 시 정식 처리.
+  return { leaderboardUpdated: false, topScore };
 }
 
 // Fetch only the #1 leaderboard score (no save)
-async function fetchTopScore() { // [REUSE]
+// [REUSE] [Phase 1-13 후속] /top API 호출로 교체 (구 leaderboard 테이블 DROP됨)
+async function fetchTopScore() {
   try {
-    const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
-    const { data: topRow } = await sb
-      .from(lbTable)
-      .select('score')
-      .order('score', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    return topRow ? topRow.score : 0;
-  } catch (err) { return 0; }
+    const board = isRetryMode ? 'basic_retry' : 'basic';
+    const url = `${SERVER_URL}/api/leaderboard/top?board=${board}&period=all_time&sort=best&limit=1`;
+    const apiRes = await fetch(url);
+    if (!apiRes.ok) return 0;
+    const json = await apiRes.json();
+    const top = json?.rows?.[0];
+    return top?.best_score ?? top?.score ?? 0;
+  } catch (err) {
+    return 0;
+  }
 }
 
 // [Phase 1-8-prep] saveReplayToDB 함수 제거 — 클라 game_replays INSERT 경로 차단.
@@ -1446,28 +1414,33 @@ async function saveReplayFromButton() { // [REWRITE]
 async function showLeaderboard(currentUser) { // [REWRITE] (uses ADAPTER: loadLocal)
   if (!currentUser) currentUser = (loadLocal('poker_username') || '').trim();
   try {
-    const lbTable = isRetryMode ? 'leaderboard_r' : 'leaderboard';
+    const board = isRetryMode ? 'basic_retry' : 'basic';
     const lbTitle = isRetryMode ? i18n.t('modal.leaderboardRetry') : i18n.t('modal.leaderboard');
-    const { data: rows, error } = await sb
-      .from(lbTable)
-      .select('username, score, best_hand, replay_id')
-      .order('score', { ascending: false })
-      .limit(10);
 
-    if (error) { console.error('Leaderboard error:', error); return; }
+    // [Phase 1-13 후속] /top API 호출로 교체. best_hand 컬럼은 응답 스키마에 없어서 모달에서 제외.
+    const url = `${SERVER_URL}/api/leaderboard/top?board=${board}&period=all_time&sort=best&limit=10`;
+    const apiRes = await fetch(url);
+    if (!apiRes.ok) {
+      console.error('Leaderboard API error:', apiRes.status);
+      return;
+    }
+    const json = await apiRes.json();
+    const rows = json?.rows || [];
 
     let tableHTML = `<table class="leaderboard-table">
-      <thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BEST HAND</th><th></th></tr></thead><tbody>`;
-    (rows || []).forEach((row, i) => {
-      const hl = currentUser && row.username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
+      <thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th></th></tr></thead><tbody>`;
+    rows.forEach((row, i) => {
+      const username = row.username || 'Anonymous';
+      const score = row.best_score ?? row.score ?? 0;
+      const hl = currentUser && username.toLowerCase() === currentUser.toLowerCase() ? ' class="highlight"' : '';
       const replayBtn = row.replay_id
         ? `<a href="replay.html?id=${row.replay_id}" class="lb-replay-btn" title="Replay">▶</a>`
         : '';
-      tableHTML += `<tr${hl}><td>${i + 1}</td><td>${escapeHTML(row.username)}</td><td>${row.score}</td><td>${escapeHTML(row.best_hand || '-')}</td><td>${replayBtn}</td></tr>`;
+      tableHTML += `<tr${hl}><td>${i + 1}</td><td>${escapeHTML(username)}</td><td>${score}</td><td>${replayBtn}</td></tr>`;
     });
     tableHTML += '</tbody></table>';
 
-    if (!rows || rows.length === 0) {
+    if (rows.length === 0) {
       tableHTML = '<div style="padding:16px;color:rgba(255,255,255,0.5);">' + i18n.t('modal.noScores') + '</div>';
     }
 
