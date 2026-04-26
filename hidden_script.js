@@ -145,13 +145,18 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
 
 // ─── 셔플 ───
 // [REUSE] Phase 1-7.5-B: seed 파생 PRNG로 결정론적 in-place 셔플. 서버 shuffleHiddenInPlace와 일치.
-function doHiddenShuffle() {
+// [PHASE_2A_NEW bundle 6] async 변환 + RPC 마이그레이션 (D6 가드)
+async function doHiddenShuffle() {
   if (state.phase !== 'playing') return;
-  if (!deductGoldLocal(SHUFFLE_COST, 'hidden_shuffle')) {
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[hidden.shuffle] spendGold not available');
+    return;
+  }
+  const ok = await window.spendGold(SHUFFLE_COST, 'hidden_shuffle');
+  if (!ok) {
     showToast(i18n.t('hidden.notEnoughGold'));
     return;
   }
-  syncGoldToDB('hidden_shuffle').catch(e => console.warn('[Hidden] 골드 싱크 실패:', e));
 
   // seed 파생 PRNG (hgShuffleCount = 현재 shuffleIndex, 서버와 동일 규칙)
   const session = window._hiddenSession;
@@ -197,10 +202,16 @@ async function doHiddenRestart() {
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
   document.getElementById('noMovesOverlay').classList.remove('active');
 
-  // 오프라인은 기존 경로
+  // [PHASE_2A_NEW bundle 6] D6 가드 (오프라인/온라인 공통)
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[hidden.restart] spendGold not available');
+    return;
+  }
+
+  // 오프라인은 기존 경로 — 단 RPC 차감 (네트워크 필요하지만 _offlineMode flag 신뢰)
   if (window._offlineMode) {
-    if (!deductGoldLocal(RESTART_COST, 'hidden_restart')) return;
-    syncGoldToDB('hidden_restart').catch(e => console.warn('[Hidden] 골드 싱크 실패:', e));
+    const okOff = await window.spendGold(RESTART_COST, 'hidden_restart');
+    if (!okOff) return;
     hgResetCount++;
     initState();
     initGrid();
@@ -216,8 +227,8 @@ async function doHiddenRestart() {
   // 온라인: 세션 발급 성공 후 골드 차감
   try {
     const session = await requestHiddenServerSession();
-    if (!deductGoldLocal(RESTART_COST, 'hidden_restart')) return;
-    syncGoldToDB('hidden_restart').catch(e => console.warn('[Hidden] 골드 싱크 실패:', e));
+    const okOn = await window.spendGold(RESTART_COST, 'hidden_restart');
+    if (!okOn) return;
 
     hgShuffleCount = 0;
     hgResetCount = 0;

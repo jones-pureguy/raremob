@@ -94,9 +94,10 @@
    * 골드 차감 (Optimistic UI + 롤백 + idempotency).
    * @param {number} amount  양수 정수
    * @param {string} reason  RPC 화이트리스트의 reason
+   * @param {object} [meta]  부가 정보 (puzzle_id, stage_id 등) — RPC p_meta로 전달
    * @returns {Promise<boolean>}  성공 시 true. 실패 시 false (UI 롤백 완료된 상태).
    */
-  async function spendGold(amount, reason) {
+  async function spendGold(amount, reason, meta) {
     if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
       console.warn('[gold_client.spendGold] invalid amount:', amount);
       return false;
@@ -139,7 +140,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ amount, reason, idempotencyKey })
+        body: JSON.stringify({ amount, reason, idempotencyKey, meta: meta || null })
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) {

@@ -1076,7 +1076,7 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
         <a href="mode_select.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
-        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">50</span></button>
+        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">${(typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('replay', 'save') : 50}</span></button>
       </div>`;
 
     // Show modal immediately (no DB delay)
@@ -1174,9 +1174,16 @@ async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
     const sessionData = await requestServerSession('basic');
     console.log('[restart] new session:', sessionData.sessionId.slice(0, 8), 'seed:', sessionData.seed, '(was:', prevSessionId?.slice(0, 8) || 'none', ')');
 
-    // 세션 발급 성공 후 골드 차감
-    deductGoldLocal(1, 'restart');
-    syncGoldToDB('restart').catch(e => console.warn('골드 싱크 실패:', e));
+    // [PHASE_2A_NEW bundle 6] 세션 발급 성공 후 RPC 차감 (D6 가드 + D7 헬퍼 캐싱)
+    if (typeof window.spendGold !== 'function') {
+      console.warn('[basic.restart] spendGold not available');
+      return;
+    }
+    const restartCost = (typeof ScorePolicy !== 'undefined')
+      ? ScorePolicy.getGoldCost('basic', 'restart')
+      : 1;
+    const ok = await window.spendGold(restartCost, 'restart');
+    if (!ok) return;
 
     document.getElementById('modalOverlay').classList.remove('active');
     document.getElementById('gridContainer').classList.remove('no-moves-dim');
@@ -1229,9 +1236,17 @@ function hideRestartOverlay() {
 }
 
 // [REUSE] 레거시 리스타트 (PvP / 오프라인 / RETRY 전용)
-function _resetGameLegacy() {
-  deductGoldLocal(1, 'restart');
-  syncGoldToDB('restart').catch(e => console.warn('골드 싱크 실패:', e));
+// [PHASE_2A_NEW bundle 6] async 변환 + D6 가드 (PvP 컨텍스트에서 spendGold 미정의 시 안전 차단)
+async function _resetGameLegacy() {
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[basic.restart legacy] spendGold not available — likely PvP context, blocking restart');
+    return;
+  }
+  const restartCost = (typeof ScorePolicy !== 'undefined')
+    ? ScorePolicy.getGoldCost('basic', 'restart')
+    : 1;
+  const ok = await window.spendGold(restartCost, 'restart');
+  if (!ok) return;
 
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
@@ -1377,17 +1392,21 @@ async function saveReplayFromButton() { // [REWRITE]
   const btn = document.getElementById('btnSaveReplay');
   if (!btn) return;
 
-  // 골드 확인 및 차감
-  const hasGold = deductGoldLocal(50, 'replay_save');
+  // [PHASE_2A_NEW bundle 6] RPC 차감 (D6 가드 + D7 헬퍼 캐싱)
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[replay_save] spendGold not available');
+    return;
+  }
+  const saveCost = (typeof ScorePolicy !== 'undefined')
+    ? ScorePolicy.getGoldCost('replay', 'save')
+    : 50;
+  const hasGold = await window.spendGold(saveCost, 'replay_save');
   if (!hasGold) return;
 
   btn.disabled = true;
   btn.textContent = i18n.t('ui.saving');
 
   try {
-    // DB 즉시 싱크
-    await syncGoldToDB('replay_save');
-
     // [Phase 1-8-prep] 100골드 박제 시 localStorage에 저장 (기존 박제 덮어쓰기)
     // DB INSERT는 제거 — localStorage 전용 박제.
     // replayLog.result 는 endGame에서 설정됨. 없으면 박제 불가 (방어).

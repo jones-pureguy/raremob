@@ -944,8 +944,18 @@ function onHintButtonClick() { // [REWRITE]
   document.getElementById('modalOverlay').classList.add('active');
 }
 
-function confirmHint(level, cost) { // [REWRITE]
-  if (!deductGold(cost, 'puzzle_hint_' + puzzleConfig.id + '_lv' + level)) return;
+// [PHASE_2A_NEW bundle 6] async 변환 + spendGold (D2=P3: reason='puzzle_hint_<level>', meta에 puzzle_id)
+async function confirmHint(level, cost) { // [REWRITE]
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[puzzle.hint] spendGold not available');
+    return;
+  }
+  const hintCost = (typeof ScorePolicy !== 'undefined')
+    ? ScorePolicy.getGoldCost('puzzle', `hintLv${level}`)
+    : cost;
+  const reason = `puzzle_hint_${level}`;
+  const ok = await window.spendGold(hintCost, reason, { puzzle_id: puzzleConfig.id });
+  if (!ok) return;
   hintLevel = level;
   const hintText = i18n.tField(puzzleConfig.hint['level' + level]);
   showHintDisplayModal(level, hintText);
@@ -969,24 +979,11 @@ function closeHintModal() { // [REWRITE]
   document.getElementById('modalOverlay').classList.remove('active');
 }
 
-// ─── Gold ─── // [REWRITE] (localStorage + DB sync)
-function deductGold(amount, reason) { // [REWRITE]
-  const current = parseInt(loadLocal('poker_gold') || '0');
-  if (current < amount) {
-    showToast(i18n.t('toast.goldInsufficient'));
-    return false;
-  }
-  const newGold = current - amount;
-  saveLocal('poker_gold', newGold);
-  renderCurrencyBar();
-
-  // [ADAPTER] 골드 차감 싱크 — Render 서버 경유
-  syncGoldToDB('puzzle_deduct').catch(e => console.warn('[Puzzle] Gold deduct sync error:', e));
-  return true;
-}
+// [PHASE_2A_NEW bundle 6] deductGold 자체 헬퍼 정의 제거 — confirmHint가 window.spendGold 직접 사용
 
 // ─── Save Progress ─── // [REWRITE] (localStorage + DB sync)
-function savePuzzleResult(puzzleId, cleared, goldEarned) { // [REWRITE]
+// [PHASE_2A_NEW bundle 6] async 변환 + awardGold RPC (이전 INSERT 누락 보강 효과)
+async function savePuzzleResult(puzzleId, cleared, goldEarned) { // [REWRITE]
   const progress = JSON.parse(loadLocal('poker_puzzle_progress') || '{}');
   if (!progress.clearedPuzzles) progress.clearedPuzzles = [];
   if (!progress.hintUsed) progress.hintUsed = {};
@@ -1000,13 +997,18 @@ function savePuzzleResult(puzzleId, cleared, goldEarned) { // [REWRITE]
   saveLocal('poker_puzzle_progress', JSON.stringify(progress));
 
   if (isFirstClear && goldEarned > 0) {
-    const currentGold = parseInt(loadLocal('poker_gold') || '0');
-    const newGold = currentGold + goldEarned;
-    saveLocal('poker_gold', newGold);
-    renderCurrencyBar();
-
-    // [ADAPTER] 골드 적립 싱크 — Render 서버 경유
-    syncGoldToDB('puzzle_clear').catch(e => console.warn('[Puzzle] Gold sync error:', e));
+    // [PHASE_2A_NEW bundle 6] awardGold RPC — gold_transactions INSERT 신규 추가 (이전 누락 상태)
+    if (typeof window.awardGold !== 'function') {
+      console.warn('[puzzle_clear] awardGold not available');
+    } else {
+      const ok = await window.awardGold(goldEarned, 'puzzle_clear_reward', {
+        puzzle_id: puzzleId,
+        hintLevel: hintLevel,
+      });
+      if (!ok) {
+        console.error('[puzzle_clear] awardGold failed');
+      }
+    }
   }
 }
 

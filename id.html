@@ -130,8 +130,8 @@
         sb.from('players').select('id, gold').eq('id', uid).maybeSingle()
       );
 
+      // [PHASE_2A_NEW bundle 6] gold는 awardGold RPC가 적립 (클라 직접 UPDATE 제거)
       const upsertObj = { id: uid, username: username };
-      if (!existingPlayer || !existingPlayer.gold) upsertObj.gold = INITIAL_GOLD;
 
       const { error: upsertErr } = await sbRetry(() =>
         sb.from('players').upsert(upsertObj, { onConflict: 'id' })
@@ -142,17 +142,16 @@
       localStorage.setItem('poker_username', username);
       localStorage.setItem('poker_player_id', uid);
 
-      // 신규 계정 골드 지급
+      // [PHASE_2A_NEW bundle 6] 신규 계정 골드 지급 — awardGold RPC (gold_transactions INSERT + players.gold UPDATE + localStorage 정정 자동)
       if (!existingPlayer || !existingPlayer.gold) {
-        localStorage.setItem('poker_gold', INITIAL_GOLD);
-        const { error: txErr } = await sb.from('gold_transactions').insert({
-          player_id: uid,
-          amount: INITIAL_GOLD,
-          reason: 'initial_grant',
-          meta: { note: '신규 계정 초기 지급' }
-        });
-        if (txErr) console.error('Transaction log failed:', txErr);
-
+        if (typeof window.awardGold !== 'function') {
+          console.error('[initial_grant] awardGold not available — gold_client.js 로드 누락');
+        } else {
+          const ok = await window.awardGold(INITIAL_GOLD, 'initial_grant', { source: 'signup' });
+          if (!ok) {
+            console.error('[initial_grant] awardGold failed — 신규 가입 보상 적립 실패');
+          }
+        }
         // [PHASE_2A_NEW v3.1 §10-1] 신규 계정 칩 지급 제거 — 신규는 0칩 (ensurePlayer chip:0 default)
         // 칩은 PvP 보상 / $9.99 패스(우편함) / 환전(gold→chip)으로만 획득
       }

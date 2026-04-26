@@ -79,7 +79,10 @@ let infiniteScore = 0;
 // ─── Shuffle system ───
 // [REUSE]
 const SHUFFLE_MAX_COUNT  = 10;
-const SHUFFLE_GOLD_COST  = 5;
+// [PHASE_2A_NEW bundle 6] D7 헬퍼 캐싱 + fallback (scorepolicy.json 동기)
+const SHUFFLE_GOLD_COST  = (typeof ScorePolicy !== 'undefined')
+  ? ScorePolicy.getGoldCost('infinite', 'shuffle')
+  : 5;
 let   shuffleRemaining   = SHUFFLE_MAX_COUNT;
 
 // [REUSE] — suit lookup tables
@@ -857,11 +860,17 @@ function renderOutsideCards() {
 
 // ─── Shuffle ───
 // [REWRITE] — Phase 1-7.5: 서버 shuffleInfinite와 PRNG 파생 일치
-function doShuffle() {
+// [PHASE_2A_NEW bundle 6] async 변환 + RPC 마이그레이션 (D6 가드)
+async function doShuffle() {
   if (state.phase !== 'playing') return;
 
   if (shuffleRemaining <= 0) {
     showToast(i18n.t('toast.shuffleLimit') || '셔플 횟수를 모두 사용했습니다.');
+    return;
+  }
+
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[infinite.shuffle] spendGold not available');
     return;
   }
 
@@ -871,7 +880,8 @@ function doShuffle() {
     return;
   }
 
-  deductGoldLocal(SHUFFLE_GOLD_COST, 'infinite_shuffle');
+  const ok = await window.spendGold(SHUFFLE_GOLD_COST, 'infinite_shuffle');
+  if (!ok) return;
 
   shuffleRemaining--;
   updateShuffleUI();

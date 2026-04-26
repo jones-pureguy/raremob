@@ -541,12 +541,17 @@ function showConfirmModal({ message, confirmText, onConfirm }) {
 }
 
 // ─── Game Retry ───
+// [PHASE_2A_NEW bundle 6] RPC 마이그레이션 (D6 가드 + D7 헬퍼 캐싱)
 function gameRetry() {
   if (!replay || !replay.initialDeck) return;
 
+  const retryCost = (typeof ScorePolicy !== 'undefined')
+    ? ScorePolicy.getGoldCost('retry', 'game')
+    : 200;
+
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-  if (currentGold < 200) {
-    alert(i18n.t('toast.goldInsufficientN', { n: 200 }));
+  if (currentGold < retryCost) {
+    alert(i18n.t('toast.goldInsufficientN', { n: retryCost }));
     return;
   }
 
@@ -554,8 +559,12 @@ function gameRetry() {
     message: i18n.t('modal.retryConfirm'),
     confirmText: i18n.t('modal.retryConfirmBtn'),
     onConfirm: async () => {
-      deductGoldLocal(200, 'game_retry');
-      try { await syncGoldToDB('game_retry'); } catch(e) { console.error('Gold sync error:', e); }
+      if (typeof window.spendGold !== 'function') {
+        console.warn('[game_retry] spendGold not available');
+        return;
+      }
+      const ok = await window.spendGold(retryCost, 'game_retry');
+      if (!ok) return;
       localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
       window.location.href = 'game.html';
     }

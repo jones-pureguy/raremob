@@ -449,25 +449,7 @@
 <script src="server_client.js"></script>
 <script src="pvp_utils.js"></script>
 <script src="header.js"></script>
-<script>
-  async function syncGoldToServer(playerId, gold) {
-    const username = localStorage.getItem('poker_username') || null;
-    try {
-      // Phase 2D-pre: JWT 토큰 첨부
-      const authSession = (await sb.auth.getSession()).data.session;
-      const token = authSession?.access_token;
-      if (!token) return;
-      await fetch(`${SERVER_URL}/api/gold-sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ userId: playerId, gold, username })
-      });
-    } catch(e) {}
-  }
-</script>
+<!-- [PHASE_2A_NEW bundle 6] 자체 정의 syncGoldToServer 제거 — dead code (호출처 0건) + server_client.js 전역 함수와 중복 -->
 <script>
 // =============================================
 // 상태 관리

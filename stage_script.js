@@ -1388,13 +1388,22 @@ window.addEventListener('popstate', () => {
 
 // ─── Game Reset (stage version) ───
 // [REWRITE] 게임 리셋
-function resetGame() {
+// [PHASE_2A_NEW bundle 6] async 변환 + RPC 마이그레이션 (D6 가드 + D7 헬퍼 캐싱)
+async function resetGame() {
   if (stageFailed || stageCleared) return;
+
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[stage.restart] spendGold not available');
+    return;
+  }
+  const restartCost = (typeof ScorePolicy !== 'undefined')
+    ? ScorePolicy.getGoldCost('basic', 'restart')
+    : 1;
 
   // 골드 확인
   const currentGold = parseInt(loadLocal('poker_gold') || '0');
-  if (currentGold < 1) {
-    showToast(i18n.t('toast.goldInsufficientN', { n: 1 }));
+  if (currentGold < restartCost) {
+    showToast(i18n.t('toast.goldInsufficientN', { n: restartCost }));
     return;
   }
 
@@ -1406,10 +1415,9 @@ function resetGame() {
     updateResetButton();
   }
 
-  // 골드 차감
-  deductGoldLocal(1, 'restart');
-  // [ADAPTER] 리스타트 즉시 골드 싱크 — 중간 이탈 시 유실 방지
-  syncGoldToDB('restart').catch(e => console.warn('골드 싱크 실패:', e));
+  // [PHASE_2A_NEW bundle 6] 골드 차감 — RPC 경유
+  const ok = await window.spendGold(restartCost, 'restart');
+  if (!ok) return;
 
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
@@ -1540,21 +1548,21 @@ async function saveStageResult(stageId, result, goldEarned) {
     }, { onConflict: 'player_id,stage_id' });
 
     if (goldEarned > 0) {
-      // [LOGIC] localStorage가 source of truth (rules.md 준수)
-      // DB에서 gold 읽어서 덮어쓰기 금지
-      const currentGold = parseInt(loadLocal('poker_gold') || '0');
-      const newGold = currentGold + goldEarned;
-      saveLocal('poker_gold', newGold);
-
-      await sb.from('gold_transactions').insert({
-        player_id: playerId,
-        amount: goldEarned,
-        reason: `stage_clear_${stageId}`,
-        meta: { stageId, finalScore: result.finalScore, firstClear: true },
-      });
-
-      // DB 싱크 — localStorage 값 기준
-      await syncGoldToDB('stage_clear');
+      // [PHASE_2A_NEW bundle 6] D3=S1: reason='stage_clear_reward' (RPC 화이트리스트), meta에 stage_id
+      // awardGold가 gold_transactions INSERT + players.gold UPDATE + localStorage 정정 모두 처리
+      // base/bonus 분리는 향후 saveStageResult 시그니처 확장 시
+      if (typeof window.awardGold !== 'function') {
+        console.warn('[stage_clear] awardGold not available');
+      } else {
+        const ok = await window.awardGold(goldEarned, 'stage_clear_reward', {
+          stage_id: stageId,
+          finalScore: result.finalScore,
+          firstClear: true,
+        });
+        if (!ok) {
+          console.error('[stage_clear] awardGold failed — 보상 적립 실패, 진도는 정상 기록');
+        }
+      }
     }
 
     // Update local cache
