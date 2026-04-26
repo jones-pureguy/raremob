@@ -43,6 +43,7 @@ function registerGoldRoutes(app, requireAuth) {
         return res.status(500).json({ ok: false, error: 'RPC_ERROR', message: error.message });
       }
 
+      console.log(`[/api/gold/deduct] success: userId=${req.userId}, amount=${amount}, reason=${reason}, balance=${data.balance}, duplicated=${data.duplicated}`);
       return res.json({
         ok: true,
         data: {
@@ -90,6 +91,7 @@ function registerGoldRoutes(app, requireAuth) {
         return res.status(500).json({ ok: false, error: 'RPC_ERROR', message: error.message });
       }
 
+      console.log(`[/api/gold/grant] success: userId=${req.userId}, amount=${amount}, reason=${reason}, balance=${data.balance}, duplicated=${data.duplicated}`);
       return res.json({
         ok: true,
         data: {

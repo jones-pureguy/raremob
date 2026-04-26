@@ -37,6 +37,7 @@ function registerExchangeRoutes(app, requireAuth) {
         return res.status(500).json({ ok: false, error: 'RPC_ERROR', message: error.message });
       }
 
+      console.log(`[/api/exchange/gold-to-chip] success: userId=${req.userId}, chipAmount=${chipAmount}, goldDeducted=${data.gold_spent}, chipReceived=${data.chip_received}, duplicated=${data.duplicated}`);
       return res.json({
         ok: true,
         data: {

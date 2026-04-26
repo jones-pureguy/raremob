@@ -44,6 +44,7 @@ function registerPlayerRoutes(app, requireAuth) {
         return res.status(500).json({ ok: false, error: 'RPC_ERROR', message: msg });
       }
 
+      console.log(`[/api/player/register] success: userId=${req.userId}, username=${username}`);
       return res.json({ ok: true, data });
     } catch (e) {
       console.error('[/api/player/register] error:', e);
