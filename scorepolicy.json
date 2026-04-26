@@ -33,7 +33,7 @@
     "basic":    { "restart": 1 },
     "hidden":   { "restart": 20, "shuffle": 100 },
     "infinite": { "shuffle": 5 },
-    "puzzle":   { "hintLv1": 30, "hintLv2": 60, "hintLv3": 90 },
+    "puzzle":   { "hintLv1": 10, "hintLv2": 20, "hintLv3": 30 },
     "replay":   { "save": 50 },
     "retry":    { "game": 200 }
   }

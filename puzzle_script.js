@@ -52,7 +52,7 @@ function getFailMessage(reason) { // [REUSE]
   return messages[reason];
 }
 
-const HINT_COSTS = { 1: 30, 2: 30, 3: 30 }; // [REUSE]
+// [PHASE_2A_NEW bundle 8-2.8] HINT_COSTS 상수 제거 — UI/차감 모두 ScorePolicy.getGoldCost('puzzle', 'hintLv${n}') 경유
 
 // ─── Game State ─── // [REUSE]
 let state = {};
@@ -924,7 +924,9 @@ function onHintButtonClick() { // [REWRITE]
     return;
   }
 
-  const cost = HINT_COSTS[nextLevel];
+  const cost = (typeof ScorePolicy !== 'undefined')
+    ? ScorePolicy.getGoldCost('puzzle', 'hintLv' + nextLevel)
+    : 10;
   const currentGold = parseInt(loadLocal('poker_gold') || '0');
 
   const modal = document.getElementById('modal');
@@ -1152,7 +1154,7 @@ initPuzzle();
 //   - isValidPuzzleMove, scanForValidMoves, getReachableCards, dfsScan
 //   - checkAllConditionsMet, checkCondition
 //   - getHandTier, getFailMessage
-//   - 상수: GRID_SIZE, RANK, RANK_BY_NAME, HINT_COSTS 등
+//   - 상수: GRID_SIZE, RANK, RANK_BY_NAME 등
 // ADAPTER : 4개 함수 (내부 구현 교체 필요)
 //   - saveLocal(key, value)  → AsyncStorage.setItem(key, value)
 //   - loadLocal(key)         → await AsyncStorage.getItem(key)
