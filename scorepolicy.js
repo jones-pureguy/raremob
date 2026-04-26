@@ -5,14 +5,15 @@
 const ScorePolicy = (() => {
   let policy = null;
 
-  // [REUSE] 기본 점수 정책
+  // [REUSE] 기본 점수 정책 — scorepolicy.json과 동기화 (fetch 실패 시 fallback)
+  // 갱신 시 scorepolicy.json도 함께 변경. 둘 사이 drift 금지.
   const DEFAULTS = {
     handScores: {
-      HIGH_CARD: 0, ONE_PAIR: 1, TWO_PAIR: 2,
-      THREE_KIND: 5, STRAIGHT: 10, FLUSH: 15,
-      FULL_HOUSE: 20, FOUR_KIND: 50,
+      HIGH_CARD: 0, ONE_PAIR: 1, TWO_PAIR: 5,
+      THREE_KIND: 10, STRAIGHT: 15, FLUSH: 20,
+      FULL_HOUSE: 30, FOUR_KIND: 50,
       STRAIGHT_FLUSH: 75, ROYAL_FLUSH: 100,
-      ROYAL_FLUSH_PLUS: 250
+      ROYAL_FLUSH_PLUS: 200
     },
     penalty: { freeCards: 4, perCard: 10 },
     timeBonus: { enabled: true, perSecond: 1 },
@@ -20,9 +21,9 @@ const ScorePolicy = (() => {
       basic:    { restart: 1 },
       hidden:   { restart: 20, shuffle: 100 },
       infinite: { shuffle: 5 },
-      puzzle:   { hintLv1: 30, hintLv2: 60, hintLv3: 90 },
-      replay:   { save: 100 },
-      retry:    { game: 500 }
+      puzzle:   { hintLv1: 10, hintLv2: 20, hintLv3: 30 },
+      replay:   { save: 50 },
+      retry:    { game: 200 }
     }
   };
 

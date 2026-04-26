@@ -122,7 +122,7 @@
   }
 </script>
 <script>
-(async () => { if (!requireRegistration()) return; await i18n.init(); initHeader(); })().then(() => {
+(async () => { if (!requireRegistration()) return; await i18n.init(); initHeader(); await ScorePolicy.load(); })().then(() => {
   const s = document.createElement('script');
   s.src = 'puzzle_script.js';
   document.body.appendChild(s);
