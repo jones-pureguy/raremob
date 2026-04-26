@@ -1400,6 +1400,14 @@ async function saveReplayFromButton() { // [REWRITE]
   const saveCost = (typeof ScorePolicy !== 'undefined')
     ? ScorePolicy.getGoldCost('replay', 'save')
     : 50;
+
+  // [PHASE_2A_NEW bundle 8-2.10] 사전 잔액 체크 + 토스트 (gameRetry 패턴 차용)
+  const currentGold = parseInt(loadLocal('poker_gold') || '0');
+  if (currentGold < saveCost) {
+    showToast(i18n.t('toast.goldInsufficientN', { n: saveCost }));
+    return;
+  }
+
   const hasGold = await window.spendGold(saveCost, 'replay_save');
   if (!hasGold) return;
 

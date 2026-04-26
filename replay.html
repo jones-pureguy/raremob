@@ -556,8 +556,8 @@ function gameRetry() {
   }
 
   showConfirmModal({
-    message: i18n.t('modal.retryConfirm'),
-    confirmText: i18n.t('modal.retryConfirmBtn'),
+    message: i18n.t('modal.retryConfirm', { n: retryCost }),
+    confirmText: i18n.t('modal.retryConfirmBtn', { n: retryCost }),
     onConfirm: async () => {
       if (typeof window.spendGold !== 'function') {
         console.warn('[game_retry] spendGold not available');

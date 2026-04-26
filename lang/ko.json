@@ -147,7 +147,10 @@
     "checking": "확인 중...",
     "nicknameRequired": "닉네임을 입력하세요",
     "nicknameDuplicate": "이미 사용 중인 닉네임입니다.",
-    "shuffleLimit": "셔플 횟수를 모두 사용했습니다."
+    "shuffleLimit": "셔플 횟수를 모두 사용했습니다.",
+    "offlineNoSpend": "오프라인 상태에서는 골드를 차감할 수 없습니다.",
+    "authMissing": "로그인이 필요합니다.",
+    "goldSyncFailed": "골드 동기화에 실패했습니다."
   },
   "modal": {
     "complete": "COMPLETE!",
@@ -182,8 +185,8 @@
     "nextStageLabel": "NEXT STAGE",
     "nextPuzzleLabel": "NEXT PUZZLE",
     "stageReward": "보상: ${n} Gold",
-    "retryConfirm": "500 골드를 사용하여 리트라이하시겠습니까?",
-    "retryConfirmBtn": "리트라이 (-500G)",
+    "retryConfirm": "${n} 골드를 사용하여 리트라이하시겠습니까?",
+    "retryConfirmBtn": "리트라이 (-${n}G)",
     "hintConfirmTitle": "힌트 Lv.${n} 보기",
     "hintCost": "골드 ${n} 소모",
     "hintCurrentGold": "현재 보유: ${n} Gold",

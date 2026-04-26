@@ -128,7 +128,7 @@
 
     const before = _getLocalGold();
     if (before < amount) {
-      _showToast('toast.insufficientGold', '골드가 부족합니다.');
+      _showToast('toast.goldInsufficient', '골드가 부족합니다.');
       return false;
     }
 
