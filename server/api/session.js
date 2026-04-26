@@ -176,13 +176,16 @@ async function verifyHiddenEntry(userId, basicSessionId) {
 // =============================================
 // 엔드포인트 등록
 // =============================================
-function registerSessionRoutes(app) {
+// Phase 2D-pre 묶음 1: requireAuth 인자 추가 (본 묶음에서는 미사용 — 묶음 2부터 핸들러에 적용)
+function registerSessionRoutes(app, requireAuth) {
   // ─── POST /api/session/start ───
-  app.post('/api/session/start', async (req, res) => {
+  // [PHASE_2D_PRE] 인증 적용 — req.userId 신뢰, body.userId 무시
+  app.post('/api/session/start', requireAuth, async (req, res) => {
     try {
-      const { userId, mode, basicSessionId } = req.body || {};
+      const userId = req.userId;
+      const { mode, basicSessionId } = req.body || {};
 
-      if (!userId || !mode) {
+      if (!mode) {
         return res.status(400).json({ error: 'MISSING_PARAMS' });
       }
       if (!MODE_CONFIG[mode]) {
@@ -230,8 +233,10 @@ function registerSessionRoutes(app) {
   });
 
   // ─── POST /api/session/submit — 검증 포함 ───
-  app.post('/api/session/submit', async (req, res) => {
+  // [PHASE_2D_PRE] 인증 적용 + 세션 소유자 검증 (남의 sessionId 제출 차단)
+  app.post('/api/session/submit', requireAuth, async (req, res) => {
     try {
+      const userId = req.userId;
       const {
         sessionId,
         dragLog,
@@ -246,7 +251,19 @@ function registerSessionRoutes(app) {
 
       const session = activeSessions.get(sessionId);
       if (!session) {
-        return res.status(404).json({ error: 'SESSION_NOT_FOUND' });
+        return res.status(404).json({
+          ok: false,
+          error: 'NOT_FOUND_SESSION',
+          message: 'Session not found or expired',
+        });
+      }
+      if (session.userId !== userId) {
+        console.warn(`[/api/session/submit] forbidden: session.userId=${session.userId} req.userId=${userId}`);
+        return res.status(403).json({
+          ok: false,
+          error: 'AUTH_FORBIDDEN',
+          message: 'Session does not belong to you',
+        });
       }
       if (session.submitted) {
         return res.status(409).json({ error: 'ALREADY_SUBMITTED' });
@@ -361,10 +378,11 @@ function registerSessionRoutes(app) {
   });
 
   // ─── POST /api/session/retry/submit — 검증 없이 서버 경유만 ───
-  app.post('/api/session/retry/submit', async (req, res) => {
+  // [PHASE_2D_PRE] 인증 적용 + parentSession 소유자 검증 (살아있을 때만)
+  app.post('/api/session/retry/submit', requireAuth, async (req, res) => {
     try {
+      const userId = req.userId;
       const {
-        userId,
         parentSessionId,
         grid,
         moves,
@@ -376,8 +394,22 @@ function registerSessionRoutes(app) {
         reason,    // [Phase 1-7.5-prep] 'complete' | 'nomoves' | 'gameover'
       } = req.body || {};
 
-      if (!userId || !Array.isArray(grid) || !Array.isArray(moves) || typeof score !== 'number') {
+      if (!Array.isArray(grid) || !Array.isArray(moves) || typeof score !== 'number') {
         return res.status(400).json({ error: 'MISSING_PARAMS' });
+      }
+
+      // parentSession이 활성 메모리에 살아있을 때만 소유자 검증.
+      // 만료된 게임의 retry는 activeSessions에 없을 수 있음 → 검증 스킵.
+      if (parentSessionId) {
+        const parentSession = activeSessions.get(parentSessionId);
+        if (parentSession && parentSession.userId !== userId) {
+          console.warn(`[/api/session/retry/submit] forbidden: parent.userId=${parentSession.userId} req.userId=${userId}`);
+          return res.status(403).json({
+            ok: false,
+            error: 'AUTH_FORBIDDEN',
+            message: 'Parent session does not belong to you',
+          });
+        }
       }
 
       const rl = checkRateLimit(userId);
@@ -479,7 +511,11 @@ function registerSessionRoutes(app) {
   });
 
   // ─── GET /api/session/debug/count ───
+  // [PHASE_2D_PRE] 운영(production)에선 404, 로컬에선 동작
   app.get('/api/session/debug/count', (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
+    }
     res.json({
       activeSessions: activeSessions.size,
       rateLimits: rateLimits.size,

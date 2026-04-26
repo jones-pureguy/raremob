@@ -33,6 +33,9 @@ const { registerSessionRoutes } = require('./api/session')
 // [REUSE] 리더보드 조회 API (Phase 1-10)
 const { registerLeaderboardRoutes } = require('./api/leaderboard')
 
+// [REUSE] Phase 2D-pre 묶음 1: JWT 인증 미들웨어 (라우트 적용은 묶음 2~3)
+const requireAuth = require('./middleware/requireAuth')
+
 const app = express()
 const server = http.createServer(app)
 
@@ -193,25 +196,30 @@ async function ensurePlayer(userId, username = null) {
 // =============================================
 // [LOGIC] 헬스체크 — Render 슬립 방지용
 // =============================================
+// [PHASE_2D_PRE] 인증 면제 — UptimeRobot 외부 핑, 데이터 변경/조회 없음
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })
 })
 
 // Phase 1-8: 싱글플레이 세션 API 등록
-registerSessionRoutes(app)
+// Phase 2D-pre 묶음 1: requireAuth 인자 추가 (실제 라우트 적용은 묶음 2)
+registerSessionRoutes(app, requireAuth)
 
 // Phase 1-10: 리더보드 조회 API 등록
-registerLeaderboardRoutes(app)
+// Phase 2D-pre 묶음 1: requireAuth 인자 추가 (실제 라우트 적용은 묶음 2)
+registerLeaderboardRoutes(app, requireAuth)
 
 // =============================================
 // [ADAPTER] 골드 싱크 API
 // 기존 syncGoldToDB() 대체
 // Expo 전환 시: 동일하게 재활용
 // =============================================
-app.post('/api/gold-sync', async (req, res) => {
-  const { userId, gold, username } = req.body
+// [PHASE_2D_PRE] 인증 적용 — req.userId 신뢰, body.userId 무시. Phase 2A-new에서 RPC로 폐기 예정.
+app.post('/api/gold-sync', requireAuth, async (req, res) => {
+  const userId = req.userId
+  const { gold, username } = req.body || {}
   console.log(`[gold-sync] 요청: userId=${userId}, gold=${gold}`)
-  if (!userId || gold === undefined) {
+  if (gold === undefined) {
     console.log('[gold-sync] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
@@ -234,36 +242,36 @@ app.post('/api/gold-sync', async (req, res) => {
 // =============================================
 // [ADAPTER] 칩 잔액 조회 API
 // =============================================
-app.get('/chip/balance', async (req, res) => {
-  const { playerId, username } = req.query
-  console.log(`[chip/balance] 요청: playerId=${playerId}`)
-  if (!playerId) {
-    console.log('[chip/balance] 파라미터 오류')
-    return res.status(400).json({ error: 'invalid params' })
-  }
+// [PHASE_2D_PRE] 인증 적용 + playerId → userId 키 정리. Phase 2A-new에서 정리 예정.
+app.get('/chip/balance', requireAuth, async (req, res) => {
+  const userId = req.userId
+  const { username } = req.query
+  console.log(`[chip/balance] 요청: userId=${userId}`)
 
-  const player = await ensurePlayer(playerId, username)
+  const player = await ensurePlayer(userId, username)
   if (!player) {
     console.log(`[chip/balance] DB 오류: ensurePlayer 실패`)
     return res.status(500).json({ error: 'ensurePlayer failed' })
   }
 
-  console.log(`[chip/balance] 성공: playerId=${playerId}, chip=${player.chip}`)
+  console.log(`[chip/balance] 성공: userId=${userId}, chip=${player.chip}`)
   res.json({ chip: player.chip || 0 })
 })
 
 // =============================================
 // [ADAPTER] 칩 지급 API (신규 가입 시 최초 지급)
 // =============================================
-app.post('/chip/grant', async (req, res) => {
-  const { playerId, amount, reason, username } = req.body
-  console.log(`[chip/grant] 요청: playerId=${playerId}, amount=${amount}, reason=${reason}`)
-  if (!playerId || !amount || !reason) {
+// [PHASE_2D_PRE] 인증 적용 + playerId → userId 키 정리. Phase 2A-new에서 grant_chip RPC로 통합 예정.
+app.post('/chip/grant', requireAuth, async (req, res) => {
+  const userId = req.userId
+  const { amount, reason, username } = req.body || {}
+  console.log(`[chip/grant] 요청: userId=${userId}, amount=${amount}, reason=${reason}`)
+  if (!amount || !reason) {
     console.log('[chip/grant] 파라미터 오류')
     return res.status(400).json({ error: 'invalid params' })
   }
 
-  const player = await ensurePlayer(playerId, username)
+  const player = await ensurePlayer(userId, username)
   if (!player) {
     console.log(`[chip/grant] DB 조회 오류: ensurePlayer 실패`)
     return res.status(500).json({ error: 'ensurePlayer failed' })
@@ -276,7 +284,7 @@ app.post('/chip/grant', async (req, res) => {
   const { error: updateErr } = await supabase
     .from('players')
     .update({ chip: newBalance })
-    .eq('id', playerId)
+    .eq('id', userId)
 
   if (updateErr) {
     console.log(`[chip/grant] DB 업데이트 오류:`, updateErr)
@@ -286,26 +294,24 @@ app.post('/chip/grant', async (req, res) => {
   // 트랜잭션 로그
   const { error: txErr } = await supabase
     .from('chip_transactions')
-    .insert({ player_id: playerId, amount, reason, balance_after: newBalance })
+    .insert({ player_id: userId, amount, reason, balance_after: newBalance })
 
   if (txErr) console.log(`[chip/grant] 트랜잭션 로그 오류:`, txErr)
 
-  console.log(`[chip/grant] 성공: playerId=${playerId}, balance=${newBalance}`)
+  console.log(`[chip/grant] 성공: userId=${userId}, balance=${newBalance}`)
   res.json({ success: true, balance: newBalance })
 })
 
 // =============================================
 // [ADAPTER] 칩 데일리 리셋 API (매일 첫 로그인 시 100칩 복구)
 // =============================================
-app.post('/chip/daily-reset', async (req, res) => {
-  const { playerId, username } = req.body
-  console.log(`[chip/daily-reset] 요청: playerId=${playerId}`)
-  if (!playerId) {
-    console.log('[chip/daily-reset] 파라미터 오류')
-    return res.status(400).json({ error: 'invalid params' })
-  }
+// [PHASE_2D_PRE] 인증 적용 + playerId → userId 키 정리. Phase 2A-new에서 ❌ 즉시 제거 예정 (v3.1 §10-1).
+app.post('/chip/daily-reset', requireAuth, async (req, res) => {
+  const userId = req.userId
+  const { username } = req.body || {}
+  console.log(`[chip/daily-reset] 요청: userId=${userId}`)
 
-  const player = await ensurePlayer(playerId, username)
+  const player = await ensurePlayer(userId, username)
   if (!player) {
     console.log(`[chip/daily-reset] DB 조회 오류: ensurePlayer 실패`)
     return res.status(500).json({ error: 'ensurePlayer failed' })
@@ -315,7 +321,7 @@ app.post('/chip/daily-reset', async (req, res) => {
 
   // 100 이상이면 복구 불필요
   if (currentChip >= 100) {
-    console.log(`[chip/daily-reset] 복구 불필요: playerId=${playerId}, chip=${currentChip}`)
+    console.log(`[chip/daily-reset] 복구 불필요: userId=${userId}, chip=${currentChip}`)
     return res.json({ success: true, restored: false })
   }
 
@@ -324,7 +330,7 @@ app.post('/chip/daily-reset', async (req, res) => {
   const { error: updateErr } = await supabase
     .from('players')
     .update({ chip: 100 })
-    .eq('id', playerId)
+    .eq('id', userId)
 
   if (updateErr) {
     console.log(`[chip/daily-reset] DB 업데이트 오류:`, updateErr)
@@ -334,11 +340,11 @@ app.post('/chip/daily-reset', async (req, res) => {
   // 트랜잭션 로그
   const { error: txErr } = await supabase
     .from('chip_transactions')
-    .insert({ player_id: playerId, amount: restoreAmount, reason: 'daily_reset', balance_after: 100 })
+    .insert({ player_id: userId, amount: restoreAmount, reason: 'daily_reset', balance_after: 100 })
 
   if (txErr) console.log(`[chip/daily-reset] 트랜잭션 로그 오류:`, txErr)
 
-  console.log(`[chip/daily-reset] 성공: playerId=${playerId}, restored=${restoreAmount}`)
+  console.log(`[chip/daily-reset] 성공: userId=${userId}, restored=${restoreAmount}`)
   res.json({ success: true, restored: true, balance: 100 })
 })
 

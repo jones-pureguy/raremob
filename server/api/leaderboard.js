@@ -101,10 +101,12 @@ setInterval(() => {
 // =============================================
 // 엔드포인트 등록
 // =============================================
-function registerLeaderboardRoutes(app) {
+// Phase 2D-pre 묶음 1: requireAuth 인자 추가 (본 묶음에서는 미사용 — 묶음 2부터 핸들러에 적용)
+function registerLeaderboardRoutes(app, requireAuth) {
   // ─── GET /api/leaderboard/me ───
-  app.get('/api/leaderboard/me', async (req, res) => {
-    const userId = req.query.userId;
+  // [PHASE_2D_PRE] 인증 적용 — JWT의 sub만 신뢰, query.userId 무시
+  app.get('/api/leaderboard/me', requireAuth, async (req, res) => {
+    const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json({
@@ -253,6 +255,7 @@ function registerLeaderboardRoutes(app) {
   });
 
   // ─── GET /api/leaderboard/top ───
+  // [PHASE_2D_PRE] 인증 면제 — 전체 랭킹은 공개 정보
   app.get('/api/leaderboard/top', async (req, res) => {
     const board  = req.query.board;
     const period = req.query.period;
