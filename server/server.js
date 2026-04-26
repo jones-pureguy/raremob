@@ -37,6 +37,9 @@ const { registerLeaderboardRoutes } = require('./api/leaderboard')
 const { registerGoldRoutes } = require('./api/gold')
 const { registerExchangeRoutes } = require('./api/exchange')
 
+// [REUSE] Phase 2A-new 묶음 8-0: 플레이어 등록 API
+const { registerPlayerRoutes } = require('./api/player')
+
 // [REUSE] Phase 2A-new: PvP 정산 idempotency_key 헬퍼
 const { pvpMatchKey } = require('./utils/idempotency')
 
@@ -220,6 +223,9 @@ registerLeaderboardRoutes(app, requireAuth)
 // Phase 2A-new: 골드 + 환전 API 등록
 registerGoldRoutes(app, requireAuth)
 registerExchangeRoutes(app, requireAuth)
+
+// Phase 2A-new 묶음 8-0: 플레이어 등록 API 등록
+registerPlayerRoutes(app, requireAuth)
 
 // =============================================
 // [ADAPTER] 골드 싱크 API

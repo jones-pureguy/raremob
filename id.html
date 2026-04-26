@@ -124,26 +124,27 @@
         return;
       }
 
-      // auth.uid()로 players 레코드 생성 또는 업데이트
+      // [PHASE_2A_NEW bundle 8-0] players upsert → /api/player/register RPC 경유
+      // 묶음 8-4 RLS 잠금 (players_update/insert 차단) 전 선행
       const INITIAL_GOLD = 200;
-      const { data: existingPlayer } = await sbRetry(() =>
-        sb.from('players').select('id, gold').eq('id', uid).maybeSingle()
-      );
+      const reg = await callApi('/api/player/register', { username });
 
-      // [PHASE_2A_NEW bundle 6] gold는 awardGold RPC가 적립 (클라 직접 UPDATE 제거)
-      const upsertObj = { id: uid, username: username };
-
-      const { error: upsertErr } = await sbRetry(() =>
-        sb.from('players').upsert(upsertObj, { onConflict: 'id' })
-      );
-
-      if (upsertErr) { msgEl.textContent = i18n.t('toast.networkError'); msgEl.style.color = '#ff5252'; return; }
+      if (!reg || !reg.ok) {
+        if (reg?.error === 'USERNAME_TAKEN') {
+          msgEl.textContent = i18n.t('toast.nicknameDuplicate');
+        } else {
+          msgEl.textContent = i18n.t('toast.networkError');
+        }
+        msgEl.style.color = '#ff5252';
+        return;
+      }
 
       localStorage.setItem('poker_username', username);
       localStorage.setItem('poker_player_id', uid);
 
-      // [PHASE_2A_NEW bundle 6] 신규 계정 골드 지급 — awardGold RPC (gold_transactions INSERT + players.gold UPDATE + localStorage 정정 자동)
-      if (!existingPlayer || !existingPlayer.gold) {
+      // [PHASE_2A_NEW bundle 6/8-0] 신규 계정 골드 지급 — awardGold RPC
+      // register_player 응답의 gold로 신규 여부 판정 (기존 existingPlayer SELECT 제거)
+      if (!reg.data?.gold) {
         if (typeof window.awardGold !== 'function') {
           console.error('[initial_grant] awardGold not available — gold_client.js 로드 누락');
         } else {
