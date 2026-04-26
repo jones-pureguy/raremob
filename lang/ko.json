@@ -8,18 +8,6 @@
     "gold": "골드",
     "chip": "칩"
   },
-  "chip": {
-    "dailyReset": "오늘의 칩 충전 완료 🎰 +100칩",
-    "dailyResetSub": "100칩 미만일 경우 100칩으로 매일 한 번 회복됩니다.",
-    "nextReset": "{time} 후 충전 가능",
-    "granted": "칩 100개가 지급되었습니다 🎰"
-  },
-  "shop": {
-    "title": "SHOP",
-    "testChip": "+100 칩 충전 (테스트)",
-    "success": "칩이 충전되었습니다 🎰",
-    "fail": "충전 실패. 다시 시도해주세요."
-  },
   "pvp": {
     "arcade": {
       "title": "ARCADE BATTLE",

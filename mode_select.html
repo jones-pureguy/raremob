@@ -328,16 +328,11 @@
 </div>
 
 <!-- Shop Modal -->
+<!-- [PHASE_2A_NEW v3.1 §10-1] addTestChip 버튼 제거. 환전 UI는 묶음 7에서 추가 예정. -->
 <div class="settings-overlay" id="shopOverlay">
   <div class="settings-box">
     <div class="settings-title" id="shopTitle">🛒 SHOP</div>
-    <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:12px;">[TEST]</div>
-    <div class="settings-list">
-      <button class="settings-item" onclick="addTestChip(100)">
-        <span class="settings-icon">🎰</span>
-        <span class="settings-label" id="shopChipLabel">+100 칩 충전</span>
-      </button>
-    </div>
+    <div style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin:16px 0;">준비 중</div>
     <button class="settings-close" onclick="closeShop()" id="shopCloseBtn">닫기</button>
   </div>
 </div>
@@ -402,27 +397,7 @@
     setTimeout(() => { t.style.opacity = '0'; }, 2500);
   }
 
-  // [TEST] 테스트용 칩 충전 — Expo 전환 시 실제 샵으로 교체
-  // [PHASE_2D_PRE] callApi 사용 — JWT 자동 첨부, playerId는 서버에서 req.userId로 대체됨
-  async function addTestChip(amount) {
-    const playerId = localStorage.getItem('poker_player_id');
-    if (!playerId) return;
-    const username = localStorage.getItem('poker_username') || null;
-    const data = await callApi('/chip/grant', {
-      amount,
-      reason: 'test_charge',
-      username
-    });
-    if (data && data.success) {
-      localStorage.setItem('userChip', String(data.balance));
-      window.dispatchEvent(new Event('chipUpdated'));
-      showToastMsg(i18n.t('shop.success'));
-      closeShop();
-    } else {
-      console.error('Chip charge failed:', data);
-      showToastMsg(i18n.t('shop.fail'), '#ff5252');
-    }
-  }
+  // [PHASE_2A_NEW v3.1 §10-1] addTestChip 함수 제거. 환전 UI는 묶음 7에서 추가 예정.
 
   // ─── PvP 입장 ───
   function enterArcadePvP() {
@@ -443,39 +418,8 @@
     location.href = 'pvp_newduel_lobby.html';
   }
 
-  // ─── 칩 복구 팝업 (index.html에서 복구된 경우 표시) ───
-  if (localStorage.getItem('poker_chip_restored') === '1') {
-    localStorage.removeItem('poker_chip_restored');
-    // i18n 로드 완료 후 팝업 표시
-    i18n.init().then(() => showChipResetPopup());
-  }
-
-  function getNextResetTimeString() {
-    const now = new Date();
-    const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    const diff = tomorrow - now;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    if (hours > 0) return `${hours}시간 ${minutes}분`;
-    return `${minutes}분`;
-  }
-
-  function showChipResetPopup() {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;justify-content:center;align-items:center;';
-    const box = document.createElement('div');
-    box.style.cssText = 'background:linear-gradient(145deg,#1a3a22,#0d2818);border:2px solid var(--gold);border-radius:16px;padding:28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 0 40px rgba(201,168,76,0.2);';
-    const timeStr = i18n.t('chip.nextReset').replace('{time}', getNextResetTimeString());
-    box.innerHTML = `
-      <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.3rem;margin-bottom:8px;">${i18n.t('chip.dailyReset')}</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:0.82rem;margin-bottom:8px;">${i18n.t('chip.dailyResetSub')}</div>
-      <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:16px;">${timeStr}</div>
-      <button style="width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:0.9rem;cursor:pointer;" onclick="this.closest('div[style]').parentElement.remove()">${i18n.t('ui.confirm')}</button>
-    `;
-    overlay.appendChild(box);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-  }
+  // [PHASE_2A_NEW v3.1 §10-1] 칩 복구 팝업 제거 — /chip/daily-reset 폐지에 따라.
+  // showChipResetPopup, getNextResetTimeString, poker_chip_restored 트리거 모두 제거.
 
   // ─── 사운드 토글 ───
   (function initSoundUI() {

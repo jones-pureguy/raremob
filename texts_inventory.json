@@ -171,13 +171,13 @@
     "dynamic_text": []
   },
   "mode_select.html": {
-    "buttons": ["BASIC GAME", "Ranking", "Replay", "CHALLENGE MODE", "PUZZLE MODE", "vs MODE", "SETTINGS", "🛒", "닫기", "확인", "+100 칩 충전"],
-    "toasts": ["칩이 충전되었습니다 🎰", "충전 실패. 다시 시도해주세요."],
-    "modals": ["오늘의 칩 충전 완료 🎰 +100칩", "100칩 미만일 경우 100칩으로 매일 한 번 회복됩니다.", "{time} 후 충전 가능"],
+    "buttons": ["BASIC GAME", "Ranking", "Replay", "CHALLENGE MODE", "PUZZLE MODE", "vs MODE", "SETTINGS", "🛒", "닫기", "확인"],
+    "toasts": [],
+    "modals": ["준비 중"],
     "alerts": ["DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones"],
     "labels": ["SETTINGS", "닉네임 관리", "구글 계정 연동", "튜토리얼", "사운드 설정", "언어 설정", "앱 정보", "준비 중", "DragON POKER"],
     "placeholders": [],
-    "dynamic_text": ["X시간 Y분 후 충전 가능", "Y분 후 충전 가능"]
+    "dynamic_text": []
   },
   "script.js": {
     "buttons": ["Play Again", "게임종료", "Save Replay", "CLOSE"],

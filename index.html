@@ -72,40 +72,22 @@
   let syncDone = false;
 
   // ─── Gold sync on start ───
+  // [PHASE_2A_NEW v3.1 §10-1 + N2] 클라 직접 players.update + poker_gold_pending_deduct 제거.
+  // 서버 권위 잔액(/api/gold/balance)으로 localStorage 정정.
   async function syncGoldOnStart() {
-    const playerId = localStorage.getItem('poker_player_id');
-    if (!playerId) return;
-
-    const { data } = await sb
-      .from('players')
-      .select('gold')
-      .eq('id', playerId)
-      .single();
-
-    if (data) {
-      const dbGold = data.gold || 0;
-      const localRaw = localStorage.getItem('poker_gold');
-      const localGold = parseInt(localRaw || '0');
-
-      let resolvedGold;
-      if (localRaw === null) {
-        resolvedGold = dbGold;
-      } else {
-        resolvedGold = localGold;
+    try {
+      if (typeof window.syncGoldFromServer === 'function') {
+        await window.syncGoldFromServer();
       }
-
-      localStorage.setItem('poker_gold', resolvedGold);
-      if (resolvedGold !== dbGold) {
-        sb.from('players').update({ gold: resolvedGold }).eq('id', playerId)
-          .then(({ error }) => { if (error) console.error('Gold sync error:', error); });
-      }
-
-      localStorage.removeItem('poker_gold_pending_deduct');
+    } catch (e) {
+      console.warn('[syncGoldOnStart] failed (non-fatal):', e);
     }
   }
 
   // ─── Chip sync on start ───
-  // [PHASE_2D_PRE] getApi/callApi 사용 — JWT 자동 첨부, playerId 서버에서 req.userId로 대체
+  // [PHASE_2A_NEW v3.1 §10-1] /chip/daily-reset 자동 충전 제거.
+  // 칩 일일 충전은 $9.99 패스 보유자만 (우편함 경유, 별도 시스템).
+  // 본 함수는 잔액 조회만 (DB 진실 → localStorage 캐시 갱신).
   async function syncChipOnStart() {
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
@@ -120,29 +102,6 @@
       }
     } catch (e) {
       console.error('Chip balance fetch failed:', e);
-    }
-
-    const today = new Date().toISOString().slice(0, 10);
-    const lastReset = localStorage.getItem('chipLastReset');
-
-    if (lastReset === today) return;
-
-    const currentChip = parseInt(localStorage.getItem('userChip') || '0');
-
-    if (currentChip < 100) {
-      try {
-        const data = await callApi('/chip/daily-reset', { username: username || null });
-        if (data && data.success) {
-          localStorage.setItem('userChip', '100');
-          localStorage.setItem('chipLastReset', today);
-          window.dispatchEvent(new Event('chipUpdated'));
-          localStorage.setItem('poker_chip_restored', '1');
-        }
-      } catch (e) {
-        console.error('Chip daily reset failed:', e);
-      }
-    } else {
-      localStorage.setItem('chipLastReset', today);
     }
   }
 
