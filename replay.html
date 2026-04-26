@@ -136,7 +136,7 @@
 </div>
 
 <div style="text-align:center;padding:12px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
-  <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">500</span></button>
+  <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">200</span></button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -545,8 +545,8 @@ function gameRetry() {
   if (!replay || !replay.initialDeck) return;
 
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-  if (currentGold < 500) {
-    alert(i18n.t('toast.goldInsufficientN', { n: 500 }));
+  if (currentGold < 200) {
+    alert(i18n.t('toast.goldInsufficientN', { n: 200 }));
     return;
   }
 
@@ -554,7 +554,7 @@ function gameRetry() {
     message: i18n.t('modal.retryConfirm'),
     confirmText: i18n.t('modal.retryConfirmBtn'),
     onConfirm: async () => {
-      deductGoldLocal(500, 'game_retry');
+      deductGoldLocal(200, 'game_retry');
       try { await syncGoldToDB('game_retry'); } catch(e) { console.error('Gold sync error:', e); }
       localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
       window.location.href = 'game.html';

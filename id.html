@@ -125,7 +125,7 @@
       }
 
       // auth.uid()로 players 레코드 생성 또는 업데이트
-      const INITIAL_GOLD = 1000;
+      const INITIAL_GOLD = 200;
       const { data: existingPlayer } = await sbRetry(() =>
         sb.from('players').select('id, gold').eq('id', uid).maybeSingle()
       );

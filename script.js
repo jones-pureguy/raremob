@@ -520,7 +520,7 @@ async function fetchTopScore() {
 
 // [Phase 1-8-prep] saveReplayToDB 함수 제거 — 클라 game_replays INSERT 경로 차단.
 //   · 신기록 자동 저장: 서버 saveSessionToDb / retry/submit이 처리
-//   · 100골드 박제: localStorage 전용 (saveReplayFromButton 참조)
+//   · 50골드 박제: localStorage 전용 (saveReplayFromButton 참조)
 
 // =============================================
 // [UI] DOM / 렌더링 — Expo 전환 시 재작성
@@ -1076,7 +1076,7 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
         <a href="mode_select.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
-        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">100</span></button>
+        <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">50</span></button>
       </div>`;
 
     // Show modal immediately (no DB delay)
@@ -1378,7 +1378,7 @@ async function saveReplayFromButton() { // [REWRITE]
   if (!btn) return;
 
   // 골드 확인 및 차감
-  const hasGold = deductGoldLocal(100, 'replay_save');
+  const hasGold = deductGoldLocal(50, 'replay_save');
   if (!hasGold) return;
 
   btn.disabled = true;
