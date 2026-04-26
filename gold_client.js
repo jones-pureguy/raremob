@@ -85,7 +85,16 @@
   }
 
   function _serverBase() {
-    return (typeof window.RENDER_SERVER === 'string' && window.RENDER_SERVER) || window.RENDER_SERVER || '';
+    // TODO (post-bundle-8): migrate to callApi/getApi for unified Authorization handling
+    // server_client.js의 const RENDER_SERVER (top-level script scope) 우선.
+    // const는 window에 attach되지 않으므로 bare 식별자로 접근 (typeof 가드 필수).
+    try {
+      if (typeof RENDER_SERVER === 'string' && RENDER_SERVER) return RENDER_SERVER;
+    } catch (_) { /* ReferenceError fallback */ }
+    if (typeof window !== 'undefined' && typeof window.RENDER_SERVER === 'string' && window.RENDER_SERVER) {
+      return window.RENDER_SERVER;
+    }
+    return '';
   }
 
   // ----- 공개 API -----
