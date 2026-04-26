@@ -33,14 +33,19 @@
   }
 
   function _updateGoldUI(value) {
-    // header.js의 갱신 함수가 있으면 호출, 없으면 noop
     try {
+      // 1) 직접 콜백 (외부 페이지가 정의했으면)
       if (typeof window.updateGoldDisplay === 'function') {
         window.updateGoldDisplay(value);
-        return;
       }
-      // fallback: 쿠키컷 #gold-display 등
-      const el = document.getElementById('gold-display') || document.querySelector('[data-gold-display]');
+      // 2) header.js 리스너 트리거 (Option A — 기본 경로)
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('goldUpdated', { detail: { gold: value } }));
+      }
+      // 3) fallback selector (Option C — header.js 미로드 페이지 대비)
+      const el = document.getElementById('goldDisplay')
+              || document.getElementById('gold-display')
+              || document.querySelector('[data-gold-display]');
       if (el) el.textContent = String(value);
     } catch (_) { /* noop */ }
   }
