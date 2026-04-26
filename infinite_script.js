@@ -1010,9 +1010,17 @@ async function requestInfiniteServerSession() {
   const userId = loadLocal('poker_player_id');
   if (!userId) throw new Error('NO_USER_ID');
 
+  // Phase 2D-pre: JWT 토큰 첨부
+  const authSession = (await sb.auth.getSession()).data.session;
+  const token = authSession?.access_token;
+  if (!token) throw new Error('NO_TOKEN');
+
   const res = await fetch(`${SERVER_URL}/api/session/start`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({ userId, mode: 'infinite' }),
   });
 
@@ -1052,9 +1060,20 @@ async function submitInfiniteToServer(claimedScore, reason) {
   }
 
   try {
+    // Phase 2D-pre: JWT 토큰 첨부
+    const authSession = (await sb.auth.getSession()).data.session;
+    const token = authSession?.access_token;
+    if (!token) {
+      console.warn('[infinite/submit] no token, skipping');
+      return;
+    }
+
     const res = await fetch(`${SERVER_URL}/api/session/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         sessionId: session.sessionId,
         dragLog: session.dragLog,

@@ -103,17 +103,17 @@
   }
 
   // ─── Chip sync on start ───
+  // [PHASE_2D_PRE] getApi/callApi 사용 — JWT 자동 첨부, playerId 서버에서 req.userId로 대체
   async function syncChipOnStart() {
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
     const username = localStorage.getItem('poker_username') || '';
 
     try {
-      const qs = `playerId=${encodeURIComponent(playerId)}${username ? `&username=${encodeURIComponent(username)}` : ''}`;
-      const res = await fetch(`${RENDER_SERVER}/chip/balance?${qs}`);
-      if (res.ok) {
-        const { chip } = await res.json();
-        localStorage.setItem('userChip', String(chip));
+      const qs = username ? `?username=${encodeURIComponent(username)}` : '';
+      const data = await getApi(`/chip/balance${qs}`);
+      if (data && typeof data.chip === 'number') {
+        localStorage.setItem('userChip', String(data.chip));
         window.dispatchEvent(new Event('chipUpdated'));
       }
     } catch (e) {
@@ -129,12 +129,8 @@
 
     if (currentChip < 100) {
       try {
-        const res = await fetch(`${RENDER_SERVER}/chip/daily-reset`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerId, username: username || null })
-        });
-        if (res.ok) {
+        const data = await callApi('/chip/daily-reset', { username: username || null });
+        if (data && data.success) {
           localStorage.setItem('userChip', '100');
           localStorage.setItem('chipLastReset', today);
           window.dispatchEvent(new Event('chipUpdated'));

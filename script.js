@@ -1501,10 +1501,18 @@ async function requestServerSession(mode) {
   const userId = loadLocal('poker_player_id');
   if (!userId) throw new Error('NO_USER_ID');
 
+  // Phase 2D-pre: JWT 토큰 첨부
+  const session = (await sb.auth.getSession()).data.session;
+  const token = session?.access_token;
+  if (!token) throw new Error('NO_TOKEN');
+
   const t0 = Date.now();
   const res = await fetch(`${SERVER_URL}/api/session/start`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({ userId, mode }),
   });
 
@@ -1534,9 +1542,20 @@ async function submitSessionToServer(claimedScore, reason) {
   const timeRemaining = Math.max(0, state.timer || 0);
 
   try {
+    // Phase 2D-pre: JWT 토큰 첨부
+    const authSession = (await sb.auth.getSession()).data.session;
+    const token = authSession?.access_token;
+    if (!token) {
+      console.warn('[session/submit] no token, skipping');
+      return null;
+    }
+
     const res = await fetch(`${SERVER_URL}/api/session/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         sessionId: session.sessionId,
         dragLog: session.dragLog,
@@ -1587,9 +1606,20 @@ async function submitRetryToServer(claimedScore, reason) {
   const actions = replayLog?.actions || [];
 
   try {
+    // Phase 2D-pre: JWT 토큰 첨부
+    const authSession = (await sb.auth.getSession()).data.session;
+    const token = authSession?.access_token;
+    if (!token) {
+      console.warn('[retry/submit] no token, skipping');
+      return;
+    }
+
     const res = await fetch(`${SERVER_URL}/api/session/retry/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         userId,
         parentSessionId: null,

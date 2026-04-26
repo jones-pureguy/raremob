@@ -264,9 +264,17 @@ async function requestHiddenServerSession() {
   const userId = localStorage.getItem('poker_player_id');
   if (!userId) throw new Error('NO_USER_ID');
 
+  // Phase 2D-pre: JWT 토큰 첨부
+  const authSession = (await sb.auth.getSession()).data.session;
+  const token = authSession?.access_token;
+  if (!token) throw new Error('NO_TOKEN');
+
   const res = await fetch(`${HG_SERVER_URL}/api/session/start`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     // [Phase 1-7.5-C] basicSessionId 전달 — 서버 진입 가드 통과용
     body: JSON.stringify({ userId, mode: 'hidden', basicSessionId: hgBasicSessionId }),
   });
@@ -318,9 +326,20 @@ async function submitHiddenToServer(claimedScore, reason) {
   }
 
   try {
+    // Phase 2D-pre: JWT 토큰 첨부
+    const authSession = (await sb.auth.getSession()).data.session;
+    const token = authSession?.access_token;
+    if (!token) {
+      console.warn('[hidden/submit] no token, skipping');
+      return;
+    }
+
     const res = await fetch(`${HG_SERVER_URL}/api/session/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         sessionId: session.sessionId,
         dragLog: session.dragLog,

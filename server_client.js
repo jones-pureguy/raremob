@@ -34,16 +34,87 @@ function pingServer() {
   })
 }
 
+// [ADAPTER] Phase 2D-pre — JWT 토큰 자동 첨부 fetch 헬퍼
+// Expo 전환 시: SDK 동일하게 동작. URL 상수만 .env로 분리.
+
+async function getAuthToken() {
+  if (typeof sb === 'undefined' || !sb || !sb.auth) {
+    throw new Error('AUTH_NOT_INITIALIZED')
+  }
+  const { data: { session } } = await sb.auth.getSession()
+  if (!session?.access_token) throw new Error('NOT_AUTHENTICATED')
+  return session.access_token
+}
+
+// [ADAPTER] 인증 필수 POST API 호출 헬퍼
+// 사용: const result = await callApi('/api/session/start', { mode: 'basic' })
+// 실패 시 throw 하지 않고 { ok: false, error, message } 반환 — 호출자가 일관된 형식으로 처리 가능
+async function callApi(path, body) {
+  let token
+  try {
+    token = await getAuthToken()
+  } catch (e) {
+    console.warn('[callApi] auth failed:', e.message)
+    return { ok: false, error: 'AUTH_NOT_READY', message: e.message }
+  }
+
+  try {
+    const res = await fetch(`${RENDER_SERVER}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(body || {})
+    })
+    return await res.json()
+  } catch (e) {
+    console.warn('[callApi] fetch failed:', path, e.message)
+    return { ok: false, error: 'NETWORK_ERROR', message: e.message }
+  }
+}
+
+// [ADAPTER] 인증 필수 GET API 호출 헬퍼
+async function getApi(path) {
+  let token
+  try {
+    token = await getAuthToken()
+  } catch (e) {
+    return { ok: false, error: 'AUTH_NOT_READY', message: e.message }
+  }
+
+  try {
+    const res = await fetch(`${RENDER_SERVER}${path}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    return await res.json()
+  } catch (e) {
+    return { ok: false, error: 'NETWORK_ERROR', message: e.message }
+  }
+}
+
+// 전역 노출 (Vanilla JS 환경 — HTML 인라인 스크립트에서 사용)
+if (typeof window !== 'undefined') {
+  window.callApi = callApi
+  window.getApi = getApi
+}
+
 // [ADAPTER] 골드 싱크 — Render 서버 경유
 // Expo 전환 시: fetch URL만 변경, 로직 동일
+// Phase 2D-pre: getAuthToken으로 JWT 첨부
 async function syncGoldToServer(userId, gold) {
   if (!userId || gold === undefined) return
   try {
+    const token = await getAuthToken()
     const username = (typeof localStorage !== 'undefined' ? localStorage.getItem('poker_username') : null) || null
     const res = await fetch(`${RENDER_SERVER}/api/gold-sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, gold, username })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ userId, gold, username })  // userId는 서버에서 무시되지만 호환 위해 유지
     })
     return await res.json()
   } catch (e) {

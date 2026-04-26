@@ -61,7 +61,19 @@
   async function loadMeData() {
     const userId = getUserId();
     if (!userId) { state.meData = null; return; }
-    const resp = await fetch(`${API_BASE}/api/leaderboard/me?userId=${encodeURIComponent(userId)}`);
+
+    // Phase 2D-pre: JWT 토큰 첨부 — query.userId 제거 (서버는 req.userId만 신뢰)
+    const authSession = (await sb.auth.getSession()).data.session;
+    const token = authSession?.access_token;
+    if (!token) {
+      console.warn('[leaderboard/me] no token');
+      state.meData = null;
+      return;
+    }
+
+    const resp = await fetch(`${API_BASE}/api/leaderboard/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.error || `HTTP_${resp.status}`);

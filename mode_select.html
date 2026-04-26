@@ -346,13 +346,27 @@
 <script src="i18n.js"></script>
 <script src="header.js"></script>
 <script src="sound.js"></script>
+
+<!-- [PHASE_2D_PRE] 인증 인프라 추가 — /chip/grant 호출에 토큰 필요 (server_client.js의 callApi 사용) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // auth.js가 sb 전역을 참조하므로 먼저 초기화
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
+
 <script>
   // ─── BGM 시작 ───
   BGM.init('./audio/Title.mp3');
   BGM.start();
 
-  // ─── i18n + header 초기화 ───
+  // ─── auth + i18n + header 초기화 ───
   (async () => {
+    await initAuth();
     await i18n.init();
     initHeader();
   })();
@@ -364,7 +378,7 @@
   }
 
   // ─── Shop ───
-  const RENDER_SERVER = 'https://dragon-poker-server.onrender.com';
+  // [PHASE_2D_PRE] const RENDER_SERVER 제거 — server_client.js의 정의 사용 (전역)
 
   function openShop() {
     document.getElementById('shopOverlay').style.display = 'flex';
@@ -387,27 +401,23 @@
   }
 
   // [TEST] 테스트용 칩 충전 — Expo 전환 시 실제 샵으로 교체
+  // [PHASE_2D_PRE] callApi 사용 — JWT 자동 첨부, playerId는 서버에서 req.userId로 대체됨
   async function addTestChip(amount) {
     const playerId = localStorage.getItem('poker_player_id');
     if (!playerId) return;
     const username = localStorage.getItem('poker_username') || null;
-    try {
-      const res = await fetch(`${RENDER_SERVER}/chip/grant`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, amount, reason: 'test_charge', username })
-      });
-      if (res.ok) {
-        const { balance } = await res.json();
-        localStorage.setItem('userChip', String(balance));
-        window.dispatchEvent(new Event('chipUpdated'));
-        showToastMsg(i18n.t('shop.success'));
-        closeShop();
-      } else {
-        showToastMsg(i18n.t('shop.fail'), '#ff5252');
-      }
-    } catch (e) {
-      console.error('Chip charge failed:', e);
+    const data = await callApi('/chip/grant', {
+      amount,
+      reason: 'test_charge',
+      username
+    });
+    if (data && data.success) {
+      localStorage.setItem('userChip', String(data.balance));
+      window.dispatchEvent(new Event('chipUpdated'));
+      showToastMsg(i18n.t('shop.success'));
+      closeShop();
+    } else {
+      console.error('Chip charge failed:', data);
       showToastMsg(i18n.t('shop.fail'), '#ff5252');
     }
   }

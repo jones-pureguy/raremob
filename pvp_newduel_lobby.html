@@ -451,7 +451,20 @@
 <script>
   async function syncGoldToServer(playerId, gold) {
     const username = localStorage.getItem('poker_username') || null;
-    try { await fetch(`${SERVER_URL}/api/gold-sync`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:playerId, gold, username}) }); } catch(e) {}
+    try {
+      // Phase 2D-pre: JWT 토큰 첨부
+      const authSession = (await sb.auth.getSession()).data.session;
+      const token = authSession?.access_token;
+      if (!token) return;
+      await fetch(`${SERVER_URL}/api/gold-sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: playerId, gold, username })
+      });
+    } catch(e) {}
   }
 </script>
 <script>

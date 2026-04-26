@@ -152,13 +152,14 @@
         if (txErr) console.error('Transaction log failed:', txErr);
 
         // 신규 계정 칩 지급 — Render 서버 경유
+        // [PHASE_2D_PRE] callApi 사용 — JWT 자동 첨부, playerId는 서버에서 req.userId로 대체됨
         try {
-          const chipRes = await fetch(`${RENDER_SERVER}/chip/grant`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId: uid, amount: 100, reason: 'initial_grant', username })
+          const chipData = await callApi('/chip/grant', {
+            amount: 100,
+            reason: 'initial_grant',
+            username
           });
-          if (chipRes.ok) {
+          if (chipData && chipData.success) {
             localStorage.setItem('userChip', '100');
             const today = new Date().toISOString().slice(0, 10);
             localStorage.setItem('chipLastReset', today);
