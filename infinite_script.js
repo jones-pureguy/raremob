@@ -380,16 +380,7 @@ function getGoldLocal() {
   return parseInt(loadLocal('poker_gold') || '0');
 }
 
-// [ADAPTER]
-function deductGoldLocal(amount, reason) {
-  const current = getGoldLocal();
-  if (current < amount) return false;
-  saveLocal('poker_gold', current - amount);
-  renderCurrencyBar();
-  // [ADAPTER] 골드 차감 즉시 싱크 — 중간 이탈 시 유실 방지
-  syncGoldToDB(reason).catch(e => console.warn('[Infinite] 골드 싱크 실패:', e));
-  return true;
-}
+// [PHASE_2A_NEW bundle 8-5] deductGoldLocal 제거 — bundle 6에서 window.spendGold(RPC)로 마이그레이션됨, dead code (호출 0건).
 
 
 // =====================================================================

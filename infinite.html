@@ -171,16 +171,6 @@
 <script src="server_client.js"></script>
 <script src="gold_client.js"></script>
 <script>
-  // [ADAPTER] 골드 DB 싱크 — Render 서버 경유 (전역 스코프)
-  // server_client.js 로드 후 정의해야 syncGoldToServer 참조 가능
-  async function syncGoldToDB(reason) {
-    const playerId = localStorage.getItem('poker_player_id');
-    if (!playerId) return;
-    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
-    await syncGoldToServer(playerId, gold);
-  }
-</script>
-<script>
 (async () => {
   if (!requireRegistration()) return;
   await i18n.init();

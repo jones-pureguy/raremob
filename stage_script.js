@@ -1485,8 +1485,7 @@ function syncProgressFromDB() {
   const playerId = loadLocal('poker_player_id');
   if (!playerId) return;
 
-  // 골드 싱크 — DB 읽지 않고 localStorage 유지 (세션 중 localStorage가 진실)
-  // DB 싱크는 게임 종료 시 syncGoldToDB에서 처리
+  // 골드 싱크 — spendGold/awardGold RPC가 실시간 동기화 처리 (bundle 8-5 이후)
 
   // 진도 싱크 — DB 데이터가 로컬보다 많을 때만 병합
   sb.from('player_stages').select('*').eq('player_id', playerId)
@@ -1525,8 +1524,7 @@ async function saveStageResult(stageId, result, goldEarned) {
   if (!playerId) return;
 
   try {
-    // Sync pending gold deductions before DB write
-    await syncGoldToDB('stage_end');
+    // [PHASE_2A_NEW bundle 8-5] syncGoldToDB('stage_end') 제거 — spendGold/awardGold RPC가 실시간 동기화 처리
 
     // Check existing record for clear_count increment
     const { data: existing } = await sb.from('player_stages')

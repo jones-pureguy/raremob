@@ -2,7 +2,7 @@
 // Expo 전환 시: import/export 방식 변경, 로직 동일 재활용
 // =============================================
 // EXPO 전환 체크리스트
-// REUSE   : syncGoldToServer 로직, ping 테스트
+// REUSE   : callApi/getApi 헬퍼, ping 테스트
 // ADAPTER : io() 연결, fetch URL
 // REWRITE : 없음
 // =============================================
@@ -100,24 +100,5 @@ if (typeof window !== 'undefined') {
   window.getApi = getApi
 }
 
-// [ADAPTER] 골드 싱크 — Render 서버 경유
-// Expo 전환 시: fetch URL만 변경, 로직 동일
-// Phase 2D-pre: getAuthToken으로 JWT 첨부
-async function syncGoldToServer(userId, gold) {
-  if (!userId || gold === undefined) return
-  try {
-    const token = await getAuthToken()
-    const username = (typeof localStorage !== 'undefined' ? localStorage.getItem('poker_username') : null) || null
-    const res = await fetch(`${RENDER_SERVER}/api/gold-sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ userId, gold, username })  // userId는 서버에서 무시되지만 호환 위해 유지
-    })
-    return await res.json()
-  } catch (e) {
-    console.warn('[Dragon Poker] 골드 싱크 실패, 로컬 유지:', e)
-  }
-}
+// [PHASE_2A_NEW bundle 8-5] syncGoldToServer 제거 — /api/gold-sync 폐기에 따라.
+// 골드 변동은 spendGold/awardGold RPC가 실시간 처리하므로 별도 싱크 불필요.

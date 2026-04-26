@@ -476,8 +476,7 @@ async function saveSessionAndGetStatus(data) {
       return { leaderboardUpdated: false, topScore };
     }
 
-    // 골드 싱크 (게임 종료 시점)
-    await syncGoldToDB('game_end');
+    // [PHASE_2A_NEW bundle 8-5] syncGoldToDB('game_end') 제거 — spendGold/awardGold RPC가 실시간 동기화 처리
 
     // Top score 조회 (서버 /top API)
     const board = isRetryMode ? 'basic_retry' : 'basic';
