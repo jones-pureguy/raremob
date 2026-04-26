@@ -33,6 +33,13 @@ const { registerSessionRoutes } = require('./api/session')
 // [REUSE] 리더보드 조회 API (Phase 1-10)
 const { registerLeaderboardRoutes } = require('./api/leaderboard')
 
+// [REUSE] Phase 2A-new: 골드/환전 API
+const { registerGoldRoutes } = require('./api/gold')
+const { registerExchangeRoutes } = require('./api/exchange')
+
+// [REUSE] Phase 2A-new: PvP 정산 idempotency_key 헬퍼
+const { pvpMatchKey } = require('./utils/idempotency')
+
 // [REUSE] Phase 2D-pre 묶음 1: JWT 인증 미들웨어 (라우트 적용은 묶음 2~3)
 const requireAuth = require('./middleware/requireAuth')
 
@@ -178,9 +185,10 @@ async function ensurePlayer(userId, username = null) {
     return data
   }
 
+  // [PHASE_2A_NEW v3.1 §10-1] 신규 플레이어 chip 기본값 100 → 0 (test_charge / daily-reset 폐지에 맞춤)
   const { data: newPlayer, error: insertErr } = await supabase
     .from('players')
-    .insert({ id: userId, username: username || null, gold: 0, chip: 100 })
+    .insert({ id: userId, username: username || null, gold: 0, chip: 0 })
     .select('id, username, gold, chip')
     .single()
 
@@ -208,6 +216,10 @@ registerSessionRoutes(app, requireAuth)
 // Phase 1-10: 리더보드 조회 API 등록
 // Phase 2D-pre 묶음 1: requireAuth 인자 추가 (실제 라우트 적용은 묶음 2)
 registerLeaderboardRoutes(app, requireAuth)
+
+// Phase 2A-new: 골드 + 환전 API 등록
+registerGoldRoutes(app, requireAuth)
+registerExchangeRoutes(app, requireAuth)
 
 // =============================================
 // [ADAPTER] 골드 싱크 API
@@ -1411,28 +1423,26 @@ async function endArcadeGame(room, reason, disconnectedId) {
     const winDelta = chipResult.delta[winnerId]
     const loseDelta = chipResult.delta[loserId]
 
-    // 승자 칩 업데이트
+    // [PHASE_2A_NEW] 승자 정산 — grant_chip RPC (UPDATE + INSERT 원자 처리, idempotency_key 보장)
     if (winnerPlayerId && winDelta !== 0) {
-      const { error } = await supabase.from('players')
-        .update({ chip: chipResult.newChip[winnerId] })
-        .eq('id', winnerPlayerId)
-      if (error) console.log(`[arcade] 승자 칩 DB 오류:`, error)
-
-      const { error: txErr } = await supabase.from('chip_transactions')
-        .insert({ player_id: winnerPlayerId, amount: winDelta, reason: 'pvp_win', balance_after: chipResult.newChip[winnerId] })
-      if (txErr) console.log(`[arcade] 승자 트랜잭션 로그 오류:`, txErr)
+      const { error: grantErr } = await supabase.rpc('grant_chip', {
+        p_player_id: winnerPlayerId,
+        p_amount: winDelta,
+        p_reason: 'pvp_arcade_win',
+        p_idempotency_key: pvpMatchKey(room.roomId, 'win')
+      })
+      if (grantErr) console.log(`[arcade] 승자 grant_chip RPC 오류:`, grantErr)
     }
 
-    // 패자 칩 업데이트
+    // [PHASE_2A_NEW] 패자 정산 — deduct_chip RPC (양수만 받음 → Math.abs)
     if (loserPlayerId && loseDelta !== 0) {
-      const { error } = await supabase.from('players')
-        .update({ chip: chipResult.newChip[loserId] })
-        .eq('id', loserPlayerId)
-      if (error) console.log(`[arcade] 패자 칩 DB 오류:`, error)
-
-      const { error: txErr } = await supabase.from('chip_transactions')
-        .insert({ player_id: loserPlayerId, amount: loseDelta, reason: 'pvp_lose', balance_after: chipResult.newChip[loserId] })
-      if (txErr) console.log(`[arcade] 패자 트랜잭션 로그 오류:`, txErr)
+      const { error: deductErr } = await supabase.rpc('deduct_chip', {
+        p_player_id: loserPlayerId,
+        p_amount: Math.abs(loseDelta),
+        p_reason: 'pvp_arcade_bet',
+        p_idempotency_key: pvpMatchKey(room.roomId, 'lose')
+      })
+      if (deductErr) console.log(`[arcade] 패자 deduct_chip RPC 오류:`, deductErr)
     }
   }
 
@@ -1723,21 +1733,35 @@ function calculateDuelChips(winner, pot, tableFee,
 }
 
 // [REUSE] 칩 DB 업데이트
-async function updateChipDB(socketId, playerId, chipResult, mode) {
+// [PHASE_2A_NEW] grant_chip / deduct_chip RPC 마이그레이션 + roomId 인자 추가
+// mode 값은 호출자가 모두 'duel'을 넘기는 상황 (Old Duel 비활성, 실제로는 New Duel 정산) → pvp_newduel_*로 매핑
+async function updateChipDB(socketId, playerId, chipResult, mode, roomId) {
   if (!playerId) return
   const delta = chipResult.delta[socketId]
-  const newChip = chipResult.newChip[socketId]
   if (delta === 0) return
 
-  const reason = delta > 0 ? `${mode}_win` : `${mode}_lose`
-  const { error } = await supabase.from('players')
-    .update({ chip: newChip }).eq('id', playerId)
-  if (error) console.log(`[${mode}] 칩 DB 오류:`, error)
+  const role = delta > 0 ? 'win' : 'lose'
+  const idempotencyKey = pvpMatchKey(roomId, role)
 
-  const { error: txErr } = await supabase.from('chip_transactions')
-    .insert({ player_id: playerId, amount: delta,
-      reason, balance_after: newChip })
-  if (txErr) console.log(`[${mode}] 트랜잭션 오류:`, txErr)
+  if (delta > 0) {
+    const reason = mode === 'arcade' ? 'pvp_arcade_win' : 'pvp_newduel_win'
+    const { error } = await supabase.rpc('grant_chip', {
+      p_player_id: playerId,
+      p_amount: delta,
+      p_reason: reason,
+      p_idempotency_key: idempotencyKey
+    })
+    if (error) console.log(`[${mode}] grant_chip RPC 오류:`, error)
+  } else {
+    const reason = mode === 'arcade' ? 'pvp_arcade_bet' : 'pvp_newduel_bet'
+    const { error } = await supabase.rpc('deduct_chip', {
+      p_player_id: playerId,
+      p_amount: Math.abs(delta),
+      p_reason: reason,
+      p_idempotency_key: idempotencyKey
+    })
+    if (error) console.log(`[${mode}] deduct_chip RPC 오류:`, error)
+  }
 }
 
 // [REUSE] GAMBLE DUEL 전적 업데이트
@@ -1832,8 +1856,8 @@ async function endDuelGame(room, reason, foldedId) {
   const playerIdA = infoA.playerId
   const playerIdB = infoB.playerId
 
-  await updateChipDB(socketIdA, playerIdA, chipResult, 'duel')
-  await updateChipDB(socketIdB, playerIdB, chipResult, 'duel')
+  await updateChipDB(socketIdA, playerIdA, chipResult, 'duel', room.roomId)
+  await updateChipDB(socketIdB, playerIdB, chipResult, 'duel', room.roomId)
 
   if (reason === 'disconnect' && foldedId) {
     const foldedInfo = room.playerInfo[foldedId]
@@ -2444,8 +2468,8 @@ async function newDuel_endGame(room, reason, foldedId) {
   const playerIdA = infoA.playerId
   const playerIdB = infoB.playerId
 
-  await updateChipDB(socketIdA, playerIdA, chipResult, 'duel')
-  await updateChipDB(socketIdB, playerIdB, chipResult, 'duel')
+  await updateChipDB(socketIdA, playerIdA, chipResult, 'duel', room.roomId)
+  await updateChipDB(socketIdB, playerIdB, chipResult, 'duel', room.roomId)
 
   if (reason === 'disconnect' && foldedId) {
     const foldedInfo = room.playerInfo[foldedId]
