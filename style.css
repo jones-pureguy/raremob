@@ -932,7 +932,7 @@ body.debug-mode .card .debug-info { display: block; }
   padding: 8px 20px;
   border-radius: 8px;
   font-size: 0.85rem;
-  z-index: 50;
+  z-index: 1000;  /* above .modal-overlay (z:100) so toast remains visible during modals */
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
