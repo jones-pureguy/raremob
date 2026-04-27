@@ -286,6 +286,20 @@
     "newRecord": "New Record!",
     "leaderboardTitle": "Hidden Game Leaderboard"
   },
+  "maniac": {
+    "title": "MANIAC GAME",
+    "locked": "Unlocks when you score 400+ in Basic Game",
+    "combo": {
+      "x2": "×2 COMBO",
+      "x3": "×3 COMBO",
+      "x4": "×4 COMBO",
+      "x5": "×5 COMBO",
+      "x6": "×6 COMBO",
+      "x7": "×7 COMBO",
+      "x8": "×8 COMBO",
+      "x9": "×9 MAX COMBO"
+    }
+  },
   "quickRef": {
     "title": "Hand Rankings",
     "scorePolicy": "Score Policy",

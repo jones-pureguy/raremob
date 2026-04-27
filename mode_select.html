@@ -99,6 +99,21 @@
     background: linear-gradient(160deg, #0e2a1a 0%, #091c11 100%);
     border: 1px solid rgba(201,168,76,0.25);
   }
+  /* MANIAC MODE — Basic 옆 40% 폭, 매니악 색상 (딥 마젠타) */
+  .btn-maniac {
+    background: linear-gradient(160deg, #4a0e2a 0%, #2a081a 100%);
+    border: 1px solid rgba(255, 79, 203, 0.4);
+    color: #ff6ba3;
+  }
+  .btn-maniac.locked {
+    opacity: 0.55;
+    border-color: rgba(255, 79, 203, 0.18);
+  }
+  .btn-maniac .lock-icon {
+    font-size: 0.85em;
+    margin-right: 4px;
+    opacity: 0.85;
+  }
   .btn-settings {
     background: linear-gradient(160deg, #1a2e20 0%, #111e16 100%);
     border: 1px solid rgba(201,168,76,0.2);
@@ -218,10 +233,13 @@
   <div class="menu-player" id="menuPlayer"></div>
 
   <div class="main-menu">
-    <!-- Row 1: BASIC GAME + Ranking/Replay -->
+    <!-- Row 1: BASIC GAME (60%) + MANIAC GAME (40%) + Ranking/Replay -->
     <div class="menu-row">
-      <button class="m-btn btn-large btn-basic" onclick="location.href='game.html'">
+      <button class="m-btn btn-large btn-basic" style="flex:6;" onclick="location.href='game.html'">
         BASIC<br>GAME
+      </button>
+      <button class="m-btn btn-large btn-maniac" id="btnManiac" style="flex:4;" onclick="enterManiac()">
+        <span class="lock-icon" id="maniacLockIcon" style="display:none;">🔒</span>MANIAC<br>GAME
       </button>
       <div class="menu-col-small">
         <button class="m-btn btn-small btn-sub" onclick="location.href='leaderboard.html'">
@@ -417,6 +435,68 @@
     }
     location.href = 'pvp_newduel_lobby.html';
   }
+
+  // ─── MANIAC MODE ───
+  // [LOGIC] 잠금 상태 (페이지 로드 시 player_period_stats 조회 후 갱신)
+  // 베이직 all_time best_score >= 400 시 해금. 미만이면 클릭 시 토스트 안내.
+  const MANIAC_UNLOCK_SCORE = 400;
+  let _maniacUnlocked = false;
+
+  // [ADAPTER] 매니악 진입 — 잠금 시 토스트, 해금 시 maniac.html 이동 (단계 2 미구현 시 404)
+  function enterManiac() {
+    if (!_maniacUnlocked) {
+      const msg = (typeof i18n !== 'undefined' && i18n.t)
+        ? i18n.t('maniac.locked')
+        : '베이직 게임 400점 이상 달성시 플레이 해제';
+      showToastMsg(msg, '#ff6ba3');
+      return;
+    }
+    location.href = 'maniac.html';
+  }
+
+  // [REUSE] 잠금 상태 초기화 — player_period_stats SELECT (RLS: 본인 row만 SELECT)
+  async function initManiacLockState() {
+    const btn = document.getElementById('btnManiac');
+    const lockIcon = document.getElementById('maniacLockIcon');
+    if (!btn || !lockIcon) return;
+
+    // 기본: 잠금 (best_score 조회 실패 / 미로그인 시도 동일 처리)
+    btn.classList.add('locked');
+    lockIcon.style.display = 'inline';
+    _maniacUnlocked = false;
+
+    try {
+      const playerId = localStorage.getItem('poker_player_id');
+      if (!playerId) return;
+
+      const { data, error } = await sb
+        .from('player_period_stats')
+        .select('best_score')
+        .eq('player_id', playerId)
+        .eq('board', 'basic')
+        .eq('period_type', 'all_time')
+        .maybeSingle();
+
+      if (error) {
+        console.warn('[maniac.lockCheck] query error:', error);
+        return;
+      }
+      const bestScore = data?.best_score ?? 0;
+      if (bestScore >= MANIAC_UNLOCK_SCORE) {
+        btn.classList.remove('locked');
+        lockIcon.style.display = 'none';
+        _maniacUnlocked = true;
+      }
+    } catch (e) {
+      console.warn('[maniac.lockCheck] exception:', e);
+    }
+  }
+
+  // 페이지 로드 시 1회 — initAuth 완료 후 실행
+  (async () => {
+    // initAuth가 이미 위 IIFE에서 호출됨. 100ms 마진 후 실행 (auth race-late 방지).
+    setTimeout(initManiacLockState, 100);
+  })();
 
   // [PHASE_2A_NEW v3.1 §10-1] 칩 복구 팝업 제거 — /chip/daily-reset 폐지에 따라.
   // showChipResetPopup, getNextResetTimeString, poker_chip_restored 트리거 모두 제거.

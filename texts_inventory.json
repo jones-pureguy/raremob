@@ -171,13 +171,14 @@
     "dynamic_text": []
   },
   "mode_select.html": {
-    "buttons": ["BASIC GAME", "Ranking", "Replay", "CHALLENGE MODE", "PUZZLE MODE", "vs MODE", "SETTINGS", "🛒", "닫기", "확인"],
-    "toasts": [],
+    "buttons": ["BASIC GAME", "MANIAC GAME", "Ranking", "Replay", "CHALLENGE MODE", "PUZZLE MODE", "vs MODE", "SETTINGS", "🛒", "닫기", "확인"],
+    "toasts": ["베이직 게임 400점 이상 달성시 플레이 해제"],
     "modals": ["준비 중"],
     "alerts": ["DragON POKER\nVersion 0.1.0 (Beta)\n\nDeveloped by Jones"],
-    "labels": ["SETTINGS", "닉네임 관리", "구글 계정 연동", "튜토리얼", "사운드 설정", "언어 설정", "앱 정보", "준비 중", "DragON POKER"],
+    "labels": ["SETTINGS", "닉네임 관리", "구글 계정 연동", "튜토리얼", "사운드 설정", "언어 설정", "앱 정보", "준비 중", "DragON POKER", "🔒"],
     "placeholders": [],
-    "dynamic_text": []
+    "dynamic_text": [],
+    "i18n_keys": ["maniac.title", "maniac.locked"]
   },
   "script.js": {
     "buttons": ["Play Again", "게임종료", "Save Replay", "CLOSE"],

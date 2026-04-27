@@ -355,6 +355,20 @@
     "newRecord": "신기록!",
     "leaderboardTitle": "히든 게임 랭킹"
   },
+  "maniac": {
+    "title": "MANIAC GAME",
+    "locked": "베이직 게임 400점 이상 달성시 플레이 해제",
+    "combo": {
+      "x2": "×2 COMBO",
+      "x3": "×3 COMBO",
+      "x4": "×4 COMBO",
+      "x5": "×5 COMBO",
+      "x6": "×6 COMBO",
+      "x7": "×7 COMBO",
+      "x8": "×8 COMBO",
+      "x9": "×9 MAX COMBO"
+    }
+  },
   "quickRef": {
     "title": "족보 랭킹",
     "scorePolicy": "점수 정책",
