@@ -390,5 +390,25 @@
     "labels": [],
     "placeholders": [],
     "dynamic_text": []
+  },
+  "maniac.html": {
+    "buttons": ["▶ START", "↺", "?", "Play Again", "게임종료", "← BACK"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["DragON POKER", "MANIAC GAME", "COLLECTED", "REMOVED", "NO MORE MOVES", "MAX COMBO", "HI"],
+    "placeholders": [],
+    "dynamic_text": ["×N COMBO", "MAX COMBO ×N"],
+    "i18n_keys": ["maniac.title", "maniac.entryDenied", "maniac.start", "maniac.timeUp", "maniac.noMoreMoves", "maniac.combo.x2", "maniac.combo.x3", "maniac.combo.x4", "maniac.combo.x5", "maniac.combo.x6", "maniac.combo.x7", "maniac.combo.x8", "maniac.combo.x9", "ui.playAgain", "ui.gameEnd", "modal.complete", "modal.timeUp", "modal.noMoreMoves", "modal.handsCompleted", "modal.best", "modal.score", "modal.cardPenalty", "modal.timeBonus", "modal.newHighScore", "modal.myHighScore", "toast.selectFiveCards", "toast.needHigherPair", "toast.goldInsufficientN"]
+  },
+  "maniac_script.js": {
+    "buttons": [],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": [],
+    "placeholders": [],
+    "dynamic_text": ["${hand.label} ${mark}", "×N COMBO", "Pair of ${VALUE_NAMES[pv]}s", "Four ${VALUE_NAMES[v]}s", "Three ${VALUE_NAMES[v]}s"],
+    "i18n_keys": ["maniac.entryDenied", "maniac.combo.x2~x9", "ui.playAgain", "ui.gameEnd", "modal.*", "toast.*"]
   }
 }

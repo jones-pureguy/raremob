@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>DragON POKER - Maniac</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* MANIAC 정체성 — 마젠타/핑크 액센트 (mode_select btn-maniac과 일관) */
+  body.maniac-page .back-fixed a { color: #ff6ba3; }
+  body.maniac-page .header { border-bottom: 1px solid rgba(255, 79, 203, 0.2); }
+  body.maniac-page .status-bar { border-color: rgba(255, 79, 203, 0.18); }
+
+  /* 콤보 ×N 배지 — 그리드 상단 floating overlay (드래그 중에만 표시) */
+  .mn-combo-badge {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1.5px solid #ff4fcb;
+    border-radius: 20px;
+    color: #ff6ba3;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    box-shadow: 0 0 18px rgba(255, 79, 203, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    pointer-events: none;
+    display: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .mn-combo-badge.active { display: block; animation: mn-badge-pop 0.18s ease-out; }
+  .mn-combo-badge.rainbow {
+    border-color: transparent;
+    background-image: conic-gradient(from 0deg, #FFD700, #00D4FF, #FF6BAA, #39E58B, #FF9F1C, #B47CFF, #C8FF5C, #FF4FCB, #FFD700);
+    background-clip: padding-box;
+    -webkit-background-clip: padding-box;
+    color: #fff;
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+  @keyframes mn-badge-pop {
+    0% { transform: translateX(-50%) scale(0.7); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  }
+
+  /* MANIAC 9단계 글로우 컬러 — 카드 셀 (selected 상태 위에 덧입힘) */
+  .grid > div.mn-glow-1 { box-shadow: 0 0 0 2px #FFD700, 0 0 12px rgba(255, 215, 0, 0.6); border-color: #FFD700; }
+  .grid > div.mn-glow-2 { box-shadow: 0 0 0 2px #00D4FF, 0 0 12px rgba(0, 212, 255, 0.6); border-color: #00D4FF; }
+  .grid > div.mn-glow-3 { box-shadow: 0 0 0 2px #FF6BAA, 0 0 12px rgba(255, 107, 170, 0.6); border-color: #FF6BAA; }
+  .grid > div.mn-glow-4 { box-shadow: 0 0 0 2px #39E58B, 0 0 12px rgba(57, 229, 139, 0.6); border-color: #39E58B; }
+  .grid > div.mn-glow-5 { box-shadow: 0 0 0 2px #FF9F1C, 0 0 12px rgba(255, 159, 28, 0.6); border-color: #FF9F1C; }
+  .grid > div.mn-glow-6 { box-shadow: 0 0 0 2px #B47CFF, 0 0 12px rgba(180, 124, 255, 0.6); border-color: #B47CFF; }
+  .grid > div.mn-glow-7 { box-shadow: 0 0 0 2px #C8FF5C, 0 0 12px rgba(200, 255, 92, 0.6); border-color: #C8FF5C; }
+  .grid > div.mn-glow-8 { box-shadow: 0 0 0 2px #FF4FCB, 0 0 12px rgba(255, 79, 203, 0.6); border-color: #FF4FCB; }
+  .grid > div.mn-glow-9 {
+    box-shadow: 0 0 0 2px #fff, 0 0 14px rgba(255, 255, 255, 0.6);
+    border-color: #fff;
+    background-image: conic-gradient(from 0deg, #FFD700, #00D4FF, #FF6BAA, #39E58B, #FF9F1C, #B47CFF, #C8FF5C, #FF4FCB, #FFD700);
+    background-size: 200% 200%;
+  }
+
+  /* COLLECTED 콤보 ×N 배지 (작은 액센트) */
+  .hand-slot .mn-combo-mark {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 5px;
+    background: rgba(255, 79, 203, 0.18);
+    border: 1px solid rgba(255, 79, 203, 0.45);
+    border-radius: 3px;
+    color: #ff6ba3;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+
+  /* 하단 정보 영역 — 누적 패 표시 (드래그 중) */
+  .hand-preview.mn-cumulative {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 4px 8px;
+    text-align: center;
+  }
+  .hand-preview.mn-cumulative .mn-slice-result {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+  }
+  .hand-preview.mn-cumulative .mn-slice-sep {
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 700;
+    margin: 0 2px;
+  }
+  .hand-preview.mn-cumulative .mn-slice-pending {
+    color: #ff9bcb;
+    opacity: 0.85;
+  }
+
+  /* MANIAC START overlay 톤 차별화 */
+  body.maniac-page .start-overlay .start-box { border-color: rgba(255, 79, 203, 0.4); }
+  body.maniac-page .start-overlay .start-title { color: #ff6ba3; }
+</style>
+</head>
+<body class="game-page maniac-page">
+<div class="landscape-block"><div class="rotate-icon">📱</div><div class="rotate-text">세로 모드로 회전해주세요</div></div>
+
+<div class="back-fixed"><a href="mode_select.html" data-flush-exit><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></a></div>
+
+<div class="header">
+  <div id="global-header"></div>
+</div>
+
+<div class="status-bar">
+  <div class="timer-wrap">
+    <svg class="timer-ring" viewBox="0 0 40 40">
+      <circle class="timer-ring-bg" cx="20" cy="20" r="16" />
+      <circle class="timer-ring-fg" id="timerRing" cx="20" cy="20" r="16"
+        stroke-dasharray="100.53" stroke-dashoffset="0"
+        transform="rotate(-90 20 20)" />
+    </svg>
+    <div class="timer-num" id="timerNum">200</div>
+  </div>
+  <div class="score-display">
+    <div class="current-score" id="currentScore">0</div>
+    <div class="high-score">HI <span id="highScoreDisplay">0</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <button class="qr-btn">?</button>
+    <button class="restart-btn" id="restartBtn" title="재시작">↺<span class="btn-cost-chip">1G</span></button>
+  </div>
+</div>
+
+<div class="grid-container" id="gridContainer">
+  <div class="grid" id="grid"></div>
+  <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+  <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
+  <div class="mn-combo-badge" id="mnComboBadge"></div>
+</div>
+
+<div class="hand-preview" id="handPreview"></div>
+
+<div class="hand-panel">
+  <div class="hand-panel-title">COLLECTED <span>[ <span id="handCount">0</span> / 9 ]</span></div>
+  <div class="hand-slots" id="handSlots"></div>
+</div>
+
+<div class="removed-panel">
+  <div class="removed-panel-title">REMOVED</div>
+  <div class="removed-cards" id="removedCards"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="qr-overlay" id="qrOverlay" style="display:none">
+  <div class="qr-modal" onclick="event.stopPropagation()">
+    <div class="qr-scroll">
+      <div id="qrHandList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_2NckQv-JOwvcgrebVMmNsQ_x5Z9AxWA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script src="auth.js"></script>
+<script src="i18n.js"></script>
+<script src="header.js"></script>
+<script src="sound.js"></script>
+<script src="scorepolicy.js"></script>
+<script src="prng.js"></script>
+<script src="quickref.js"></script>
+<script>
+  function renderCurrencyBar() {
+    _updateHeaderValues(true);
+    updateRestartButtonState();
+  }
+  function updateRestartButtonState() {
+    const gold = parseInt(localStorage.getItem('poker_gold') || '0');
+    const btn = document.getElementById('restartBtn');
+    if (!btn) return;
+    btn.style.opacity = gold < 1 ? '0.4' : '1';
+    btn.style.cursor = gold < 1 ? 'not-allowed' : 'pointer';
+  }
+</script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="server_client.js"></script>
+<script src="gold_client.js"></script>
+<script>
+(async () => {
+  if (!requireRegistration()) return;
+  await i18n.init();
+  initHeader();
+  await ScorePolicy.load();
+})().then(() => {
+  // [MANIAC] script.js 로드 안 함 — maniac_script.js가 자체 로직 보유
+  const s = document.createElement('script');
+  s.src = 'maniac_script.js';
+  document.body.appendChild(s);
+});
+</script>
+<div class="start-overlay" id="startOverlay">
+  <div class="start-box">
+    <div class="start-title">DragON POKER</div>
+    <div class="start-subtitle">MANIAC GAME</div>
+    <button class="start-btn" id="startBtn">▶ START</button>
+  </div>
+</div>
+</body>
+</html>

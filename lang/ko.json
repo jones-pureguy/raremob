@@ -358,6 +358,10 @@
   "maniac": {
     "title": "MANIAC GAME",
     "locked": "베이직 게임 400점 이상 달성시 플레이 해제",
+    "entryDenied": "베이직 400점 미달성으로 입장할 수 없습니다",
+    "start": "MANIAC START",
+    "timeUp": "TIME UP",
+    "noMoreMoves": "NO MORE MOVES",
     "combo": {
       "x2": "×2 COMBO",
       "x3": "×3 COMBO",

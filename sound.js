@@ -77,11 +77,26 @@ const Sound = (() => {
 
   // [REUSE] 카드 선택 음계 매핑
   const SELECT_NOTES = [N.C4, N.D4, N.E4, N.F4];
+  // [REUSE] MANIAC 모드 5음 매핑 (도-레-미-파-솔)
+  const SELECT_NOTES_MN = [N.C4, N.D4, N.E4, N.F4, N.G4];
 
   // [ADAPTER] 카드 선택 효과음
   function cardSelect(cardIndex) {
     const freq = SELECT_NOTES[Math.min(cardIndex, 3)];
     playTone(freq, 0.08, { type: 'triangle', volume: 0.65 });
+  }
+
+  // [ADAPTER] MANIAC 카드 선택 효과음 (5음, 5n 단위 반복)
+  function cardSelectMn(cardIndex) {
+    const freq = SELECT_NOTES_MN[Math.min(cardIndex, 4)];
+    playTone(freq, 0.08, { type: 'triangle', volume: 0.65 });
+  }
+
+  // [ADAPTER] MANIAC 5장 패 확정 "딩" 효과음 (짧은 high ping)
+  function handLock() {
+    // 두 음 stack: 높은 음 + 짧은 sustain
+    playTone(N.E5, 0.05, { type: 'sine', volume: 0.5 });
+    playTone(N.G5, 0.12, { type: 'sine', volume: 0.55 });
   }
 
   // [ADAPTER] 핸드 완성 효과음
@@ -189,7 +204,7 @@ const Sound = (() => {
     }
   }
 
-  return { cardSelect, handComplete, cardDrop, dialogTyping, stageClear, stageFail, setEnabled, setVolume, loadSettings, isEnabled, warmup };
+  return { cardSelect, cardSelectMn, handComplete, handLock, cardDrop, dialogTyping, stageClear, stageFail, setEnabled, setVolume, loadSettings, isEnabled, warmup };
 })();
 
 Sound.loadSettings();

@@ -289,6 +289,10 @@
   "maniac": {
     "title": "MANIAC GAME",
     "locked": "Unlocks when you score 400+ in Basic Game",
+    "entryDenied": "Score 400+ in Basic Game first to unlock",
+    "start": "MANIAC START",
+    "timeUp": "TIME UP",
+    "noMoreMoves": "NO MORE MOVES",
     "combo": {
       "x2": "×2 COMBO",
       "x3": "×3 COMBO",
