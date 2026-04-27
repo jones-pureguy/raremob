@@ -49,6 +49,12 @@ let mn_serverSession = { sessionId: null, seed: null, dragLog: [], serverStarted
 let mn_gameStarted = false;
 
 function mn_initState() {
+  // [HOTFIX] 이전 timer interval 정리 (RESTART/Play Again 시 timer 누적 방지)
+  // mn_state = {...}로 새 객체를 만들면 이전 timerInterval 핸들이 분실되어
+  // setInterval이 GC되지 않고 계속 fire — N회 재시작 시 1초에 N씩 떨어지는 버그.
+  if (mn_state && mn_state.timerInterval) {
+    clearInterval(mn_state.timerInterval);
+  }
   mn_state = {
     grid: [],
     hands: [],                  // 모든 슬라이스 누적 (콤보 그룹별 group_id 포함)
