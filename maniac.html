@@ -11,45 +11,57 @@
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* MANIAC 정체성 — 마젠타/핑크 액센트 (mode_select btn-maniac과 일관) */
+  /* MANIAC 정체성 — 딥 퍼플 배경 + 마젠타/핑크 액센트
+     베이직(그린 felt) / 히든(버건디) 둘 다와 시각 차별화 */
+  body.maniac-page {
+    --bg: #100a1f;
+    --felt-dark: #1a0d2e;
+    --felt-mid: #3a1352;
+    --gold: #ff6ba3;          /* 매니악은 골드 대신 핑크를 메인 액센트로 */
+    --gold-glow: rgba(255, 79, 203, 0.45);
+  }
   body.maniac-page .back-fixed a { color: #ff6ba3; }
   body.maniac-page .header { border-bottom: 1px solid rgba(255, 79, 203, 0.2); }
   body.maniac-page .status-bar { border-color: rgba(255, 79, 203, 0.18); }
+  body.maniac-page .high-score { color: rgba(255, 107, 163, 0.65); }
+  body.maniac-page .current-score { color: #ff6ba3; }
 
-  /* 콤보 ×N 배지 — 그리드 상단 floating overlay (드래그 중에만 표시) */
+  /* 콤보 ×N 배지 — COLLECTED 상단 고정 슬롯 (그리드 가림 없음) */
+  .mn-combo-slot {
+    height: 36px;
+    margin: 4px 0 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
   .mn-combo-badge {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 6px 14px;
-    background: rgba(0, 0, 0, 0.78);
+    padding: 5px 14px;
+    background: rgba(0, 0, 0, 0.55);
     border: 1.5px solid #ff4fcb;
-    border-radius: 20px;
+    border-radius: 18px;
     color: #ff6ba3;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 700;
     letter-spacing: 0.06em;
-    box-shadow: 0 0 18px rgba(255, 79, 203, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
-    z-index: 50;
-    pointer-events: none;
-    display: none;
+    box-shadow: 0 0 14px rgba(255, 79, 203, 0.4);
+    visibility: hidden;
     text-transform: uppercase;
     white-space: nowrap;
   }
-  .mn-combo-badge.active { display: block; animation: mn-badge-pop 0.18s ease-out; }
+  .mn-combo-badge.active { visibility: visible; animation: mn-badge-pop 0.18s ease-out; }
   .mn-combo-badge.rainbow {
     border-color: transparent;
     background-image: conic-gradient(from 0deg, #FFD700, #00D4FF, #FF6BAA, #39E58B, #FF9F1C, #B47CFF, #C8FF5C, #FF4FCB, #FFD700);
     background-clip: padding-box;
     -webkit-background-clip: padding-box;
     color: #fff;
-    box-shadow: 0 0 24px rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
   }
   @keyframes mn-badge-pop {
-    0% { transform: translateX(-50%) scale(0.7); opacity: 0; }
-    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
   }
 
   /* MANIAC 9단계 글로우 컬러 — 카드 셀 (selected 상태 위에 덧입힘) */
@@ -147,10 +159,14 @@
   <div class="grid" id="grid"></div>
   <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
   <div class="no-moves-overlay" id="noMovesOverlay">NO MORE MOVES</div>
-  <div class="mn-combo-badge" id="mnComboBadge"></div>
 </div>
 
 <div class="hand-preview" id="handPreview"></div>
+
+<!-- MANIAC: 콤보 ×N 배지 전용 슬롯 (그리드 가림 없음, 항상 고정 높이) -->
+<div class="mn-combo-slot">
+  <div class="mn-combo-badge" id="mnComboBadge"></div>
+</div>
 
 <div class="hand-panel">
   <div class="hand-panel-title">COLLECTED <span>[ <span id="handCount">0</span> / 9 ]</span></div>

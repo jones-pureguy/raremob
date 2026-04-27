@@ -393,6 +393,7 @@ function mn_updateComboBadge() {
   const completed = mn_state.completedSlices.length;
   if (completed < 2) {
     badge.classList.remove('active', 'rainbow');
+    badge.textContent = '';
     return;
   }
   const key = `maniac.combo.x${completed}`;
@@ -403,7 +404,10 @@ function mn_updateComboBadge() {
 }
 function mn_hideComboBadge() {
   const badge = document.getElementById('mnComboBadge');
-  if (badge) badge.classList.remove('active', 'rainbow');
+  if (badge) {
+    badge.classList.remove('active', 'rainbow');
+    badge.textContent = '';
+  }
 }
 
 // =============== [REWRITE] 드래그 핸들러 ===============
