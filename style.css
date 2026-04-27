@@ -1990,3 +1990,39 @@ body.hidden-stage .game-container {
   width: 28px;
   height: 28px;
 }
+
+/* M2: Batch 차감 flush 로딩 오버레이 (gold_client.js _showLoadingOverlay 동적 생성)
+   구조: <div id="goldFlushLoadingOverlay" class="m2-loading-overlay">
+           <div class="m2-loading-spinner"></div>
+           <div class="m2-loading-text">저장 중...</div>
+         </div>
+   토글: JS에서 element.style.display = 'flex' / 'none' (inline style 우선) */
+.m2-loading-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;  /* toast (1000) 위, restart-overlay (9999)보다는 아래 */
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.m2-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(201, 168, 76, 0.2);
+  border-top-color: var(--gold, #C9A84C);
+  border-radius: 50%;
+  animation: m2-spin 0.8s linear infinite;
+}
+.m2-loading-text {
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.03em;
+}
+@keyframes m2-spin { to { transform: rotate(360deg); } }

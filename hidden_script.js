@@ -87,13 +87,23 @@ window.endGame = function endGame(reason) {
   }
 
   // [REUSE] Phase 1-7.5-B: 서버 검증 경유 제출 (0점은 서버에서 skip)
+  // [M2] .finally()에서 batch 차감 flush (성공/실패 무관). 오프라인은 직접 flush 시도.
   if (!window._offlineMode) {
-    submitHiddenToServer(finalScore, reason).catch(err => {
-      console.error('[HiddenGame] submit background error:', err);
-    });
-  } else if (finalScore > 0) {
-    // 오프라인 모드: 기록 안 남김 (베이직과 동일 정책)
-    console.log('[HiddenGame] 오프라인 — DB 저장 건너뜀');
+    submitHiddenToServer(finalScore, reason)
+      .catch(err => { console.error('[HiddenGame] submit background error:', err); })
+      .finally(() => {
+        if (typeof window.flushAllAccumulated === 'function') {
+          window.flushAllAccumulated().catch(e => console.warn('[hidden/end] flush error:', e));
+        }
+      });
+  } else {
+    if (finalScore > 0) {
+      // 오프라인 모드: 기록 안 남김 (베이직과 동일 정책)
+      console.log('[HiddenGame] 오프라인 — DB 저장 건너뜀');
+    }
+    if (typeof window.flushAllAccumulated === 'function') {
+      window.flushAllAccumulated().catch(e => console.warn('[hidden/end-offline] flush error:', e));
+    }
   }
 };
 
@@ -136,11 +146,16 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
     ${hiHTML}
     <div class="hand-list">${handListHTML}</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-      <a href="mode_select.html" class="btn-play-again" style="text-decoration:none;text-align:center;">${i18n.t('ui.gameEnd')}</a>
+      <a href="mode_select.html" data-flush-exit class="btn-play-again" style="text-decoration:none;text-align:center;">${i18n.t('ui.gameEnd')}</a>
       <button class="btn-play-again" style="background:rgba(255,77,143,0.12);border-color:rgba(255,77,143,0.4);color:#ff6ba3;" onclick="hgViewLeaderboard()">${i18n.t('hidden.leaderboardTitle')}</button>
     </div>
   `;
   overlay.classList.add('active');
+
+  // [M2] 모달 내 data-flush-exit <a>에 click → flushAndNavigate 부착
+  if (typeof window.initFlushExitHandlers === 'function') {
+    window.initFlushExitHandlers(modal);
+  }
 }
 
 // ─── 셔플 ───
@@ -148,12 +163,12 @@ function showHiddenEndModal(score, highScore, best, sorted, penalty, remainingCa
 // [PHASE_2A_NEW bundle 6] async 변환 + RPC 마이그레이션 (D6 가드)
 async function doHiddenShuffle() {
   if (state.phase !== 'playing') return;
-  if (typeof window.spendGold !== 'function') {
-    console.warn('[hidden.shuffle] spendGold not available');
+  // [M2] batch 누적 차감 (RPC 호출 X — 게임 종료/나가기 시 flush)
+  if (typeof window.accumulateSpend !== 'function') {
+    console.warn('[hidden.shuffle] accumulateSpend not available');
     return;
   }
-  const ok = await window.spendGold(SHUFFLE_COST, 'hidden_shuffle');
-  if (!ok) {
+  if (!window.accumulateSpend(SHUFFLE_COST, 'hidden_shuffle_batch')) {
     showToast(i18n.t('hidden.notEnoughGold'));
     return;
   }
@@ -202,16 +217,15 @@ async function doHiddenRestart() {
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
   document.getElementById('noMovesOverlay').classList.remove('active');
 
-  // [PHASE_2A_NEW bundle 6] D6 가드 (오프라인/온라인 공통)
-  if (typeof window.spendGold !== 'function') {
-    console.warn('[hidden.restart] spendGold not available');
+  // [M2] batch 누적 차감 가드 (오프라인/온라인 공통)
+  if (typeof window.accumulateSpend !== 'function') {
+    console.warn('[hidden.restart] accumulateSpend not available');
     return;
   }
 
-  // 오프라인은 기존 경로 — 단 RPC 차감 (네트워크 필요하지만 _offlineMode flag 신뢰)
+  // 오프라인 분기 — accumulateSpend는 오프라인 시 false 반환 (정책 §3-3)
   if (window._offlineMode) {
-    const okOff = await window.spendGold(RESTART_COST, 'hidden_restart');
-    if (!okOff) return;
+    if (!window.accumulateSpend(RESTART_COST, 'hidden_restart_batch')) return;
     hgResetCount++;
     initState();
     initGrid();
@@ -224,11 +238,10 @@ async function doHiddenRestart() {
     return;
   }
 
-  // 온라인: 세션 발급 성공 후 골드 차감
+  // 온라인: 세션 발급 성공 후 batch 누적 차감
   try {
     const session = await requestHiddenServerSession();
-    const okOn = await window.spendGold(RESTART_COST, 'hidden_restart');
-    if (!okOn) return;
+    if (!window.accumulateSpend(RESTART_COST, 'hidden_restart_batch')) return;
 
     hgShuffleCount = 0;
     hgResetCount = 0;
@@ -458,10 +471,15 @@ function showHiddenSubmitErrorModal(errorData, claimedScore, reason) {
     overlay.classList.remove('active');
     await submitHiddenToServer(claimedScore, reason);
   };
-  document.getElementById('_hgAbandonBtn').onclick = () => {
+  document.getElementById('_hgAbandonBtn').onclick = async () => {
     if (window._hiddenSession) window._hiddenSession.submitted = true;
     overlay.classList.remove('active');
-    location.href = './mode_select.html';
+    // [M2] 사용자 의도 종료 → flush + navigate (로딩 오버레이 + await)
+    if (typeof window.flushAndNavigate === 'function') {
+      await window.flushAndNavigate(null, './mode_select.html');
+    } else {
+      location.href = './mode_select.html';
+    }
   };
 }
 

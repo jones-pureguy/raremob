@@ -1081,9 +1081,14 @@ function triggerStageComplete() {
   showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, isFirstClear });
 
   // Save to DB in background
-  saveStageResult(stageConfig.id, { success: true, finalScore }, actualGold).catch(err => {
-    console.error('Stage save failed:', err);
-  });
+  saveStageResult(stageConfig.id, { success: true, finalScore }, actualGold)
+    .catch(err => { console.error('Stage save failed:', err); })
+    .finally(() => {
+      // [M2] 클리어 처리 완료(성공/실패 무관) 후 batch 차감 flush
+      if (typeof window.flushAllAccumulated === 'function') {
+        window.flushAllAccumulated().catch(e => console.warn('[stage/clear] flush error:', e));
+      }
+    });
 }
 
 // ─── Stage Fail ───
@@ -1098,6 +1103,11 @@ function triggerStageFail(reason, customMessage) {
   clearInterval(stageTimerInterval);
 
   showStageFailPopup(reason, customMessage);
+
+  // [M2] 실패 시점 batch 차감 flush (DB 저장 없으므로 fire-and-forget)
+  if (typeof window.flushAllAccumulated === 'function') {
+    window.flushAllAccumulated().catch(e => console.warn('[stage/fail] flush error:', e));
+  }
 }
 
 // ─── Popups ───
@@ -1168,11 +1178,16 @@ function showStageClearPopup({ finalScore, best, goldBase, bonuses, totalGold, i
     ${rewardHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       ${nextStage ? `<button class="btn-play-again" onclick="goNextStage()">${i18n.t('ui.nextStage')}</button>` : ''}
-      <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.stageSelect')}</a>
+      <a href="stage_select.html" data-flush-exit class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.stageSelect')}</a>
     </div>
     ${nextStageHTML}
   `;
   document.getElementById('modalOverlay').classList.add('active');
+
+  // [M2] 모달 내 data-flush-exit <a>에 click → flushAndNavigate 부착
+  if (typeof window.initFlushExitHandlers === 'function') {
+    window.initFlushExitHandlers(modal);
+  }
 }
 
 // [REWRITE] 점수 분석 HTML 생성
@@ -1248,10 +1263,15 @@ function showStageFailPopup(reason, customMessage) {
     ${breakdownHTML}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn-play-again" onclick="retryStage()">${i18n.t('ui.retry')}</button>
-      <a href="stage_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.stageSelect')}</a>
+      <a href="stage_select.html" data-flush-exit class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.stageSelect')}</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
+
+  // [M2] 모달 내 data-flush-exit <a>에 click → flushAndNavigate 부착
+  if (typeof window.initFlushExitHandlers === 'function') {
+    window.initFlushExitHandlers(modal);
+  }
 }
 
 // ─── Navigation (in-place for BGM continuity) ───
@@ -1392,15 +1412,15 @@ window.addEventListener('popstate', () => {
 async function resetGame() {
   if (stageFailed || stageCleared) return;
 
-  if (typeof window.spendGold !== 'function') {
-    console.warn('[stage.restart] spendGold not available');
+  if (typeof window.accumulateSpend !== 'function') {
+    console.warn('[stage.restart] accumulateSpend not available');
     return;
   }
   const restartCost = (typeof ScorePolicy !== 'undefined')
     ? ScorePolicy.getGoldCost('basic', 'restart')
     : 1;
 
-  // 골드 확인
+  // 골드 확인 (사전 체크 — accumulateSpend 내부 체크와 이중 안전망)
   const currentGold = parseInt(loadLocal('poker_gold') || '0');
   if (currentGold < restartCost) {
     showToast(i18n.t('toast.goldInsufficientN', { n: restartCost }));
@@ -1415,9 +1435,8 @@ async function resetGame() {
     updateResetButton();
   }
 
-  // [PHASE_2A_NEW bundle 6] 골드 차감 — RPC 경유
-  const ok = await window.spendGold(restartCost, 'restart');
-  if (!ok) return;
+  // [M2] batch 누적 차감 (RPC 호출 X — 클리어/실패/나가기 시 flush)
+  if (!window.accumulateSpend(restartCost, 'stage_restart_batch')) return;
 
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');

@@ -860,19 +860,18 @@ async function doShuffle() {
     return;
   }
 
-  if (typeof window.spendGold !== 'function') {
-    console.warn('[infinite.shuffle] spendGold not available');
-    return;
-  }
-
   const gold = getGoldLocal();
   if (gold < SHUFFLE_GOLD_COST) {
     showToast(i18n.t('toast.goldInsufficient'));
     return;
   }
 
-  const ok = await window.spendGold(SHUFFLE_GOLD_COST, 'infinite_shuffle');
-  if (!ok) return;
+  // [M2] batch 누적 차감 (RPC 호출 X — 게임 종료/나가기 시 flush)
+  if (typeof window.accumulateSpend !== 'function') {
+    console.warn('[infinite.shuffle] accumulateSpend not available');
+    return;
+  }
+  if (!window.accumulateSpend(SHUFFLE_GOLD_COST, 'infinite_shuffle_batch')) return;
 
   shuffleRemaining--;
   updateShuffleUI();
@@ -971,16 +970,28 @@ function endGame(reason) {
     <div id="infTopScoreRow" style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:8px;"></div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn-play-again" onclick="restartGame()">${i18n.t('ui.playAgain')}</button>
-      <a href="mode_select.html" class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+      <a href="mode_select.html" data-flush-exit class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
 
+  // [M2] 모달 내 data-flush-exit <a>에 click → flushAndNavigate 부착
+  if (typeof window.initFlushExitHandlers === 'function') {
+    window.initFlushExitHandlers(modal);
+  }
+
   // [REUSE] Phase 1-7.5: 서버 제출 (백그라운드) — 오프라인 모드는 기록 안 함
+  // [M2] .finally()에서 batch 차감 flush (성공/실패 무관). 오프라인은 직접 flush 시도.
   if (!window._offlineMode) {
-    submitInfiniteToServer(finalScore, reason).catch(err => {
-      console.error('[infinite/submit] background error:', err);
-    });
+    submitInfiniteToServer(finalScore, reason)
+      .catch(err => { console.error('[infinite/submit] background error:', err); })
+      .finally(() => {
+        if (typeof window.flushAllAccumulated === 'function') {
+          window.flushAllAccumulated().catch(e => console.warn('[infinite/end] flush error:', e));
+        }
+      });
+  } else if (typeof window.flushAllAccumulated === 'function') {
+    window.flushAllAccumulated().catch(e => console.warn('[infinite/end-offline] flush error:', e));
   }
 
   // [Phase 1-13] All User High Score: leaderboard_infinite DROP됨.
@@ -1191,10 +1202,15 @@ function showInfiniteSubmitErrorModal(errorData, claimedScore, reason) {
     overlay.classList.remove('active');
     await submitInfiniteToServer(claimedScore, reason);
   };
-  document.getElementById('_infAbandonBtn').onclick = () => {
+  document.getElementById('_infAbandonBtn').onclick = async () => {
     if (window._infiniteSession) window._infiniteSession.submitted = true;
     overlay.classList.remove('active');
-    navigateTo('./mode_select.html');
+    // [M2] 사용자 의도 종료 → flush + navigate (로딩 오버레이 + await)
+    if (typeof window.flushAndNavigate === 'function') {
+      await window.flushAndNavigate(null, './mode_select.html');
+    } else {
+      navigateTo('./mode_select.html');
+    }
   };
 }
 

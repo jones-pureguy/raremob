@@ -1074,7 +1074,7 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       ${hiddenBtnHTML}
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
-        <a href="mode_select.html" class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+        <a href="mode_select.html" data-flush-exit class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
         <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">${(typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('replay', 'save') : 50}</span></button>
       </div>`;
 
@@ -1091,6 +1091,11 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       ${buttonsHTML}
     `;
     document.getElementById('modalOverlay').classList.add('active');
+
+    // [M2] 모달 내 data-flush-exit <a>에 click → flushAndNavigate 부착
+    if (typeof window.initFlushExitHandlers === 'function') {
+      window.initFlushExitHandlers(modal);
+    }
 
     // Save to server in background and update modal when done (skip leaderboard if score is 0)
     const dbPromise = (username && score > 0)
@@ -1112,6 +1117,11 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
       console.error('Session save failed:', err);
       const topScoreEl = document.getElementById('allUserTopScoreRow');
       if (topScoreEl) topScoreEl.textContent = i18n.t('modal.allUserHighScoreNone');
+    }).finally(() => {
+      // [M2] 점수 등록 완료(성공/실패 무관) 후 batch 차감 flush
+      if (typeof window.flushAllAccumulated === 'function') {
+        window.flushAllAccumulated().catch(e => console.warn('[basic/end] flush error:', e));
+      }
     });
 
     // [REUSE] Phase 1-7: 서버 세션 제출 (싱글플레이만, 백그라운드)
@@ -1173,16 +1183,15 @@ async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
     const sessionData = await requestServerSession('basic');
     console.log('[restart] new session:', sessionData.sessionId.slice(0, 8), 'seed:', sessionData.seed, '(was:', prevSessionId?.slice(0, 8) || 'none', ')');
 
-    // [PHASE_2A_NEW bundle 6] 세션 발급 성공 후 RPC 차감 (D6 가드 + D7 헬퍼 캐싱)
-    if (typeof window.spendGold !== 'function') {
-      console.warn('[basic.restart] spendGold not available');
+    // [M2] 세션 발급 성공 후 batch 누적 차감 (RPC 호출 X — 게임 종료/나가기 시 flush)
+    if (typeof window.accumulateSpend !== 'function') {
+      console.warn('[basic.restart] accumulateSpend not available');
       return;
     }
     const restartCost = (typeof ScorePolicy !== 'undefined')
       ? ScorePolicy.getGoldCost('basic', 'restart')
       : 1;
-    const ok = await window.spendGold(restartCost, 'restart');
-    if (!ok) return;
+    if (!window.accumulateSpend(restartCost, 'restart_batch')) return;
 
     document.getElementById('modalOverlay').classList.remove('active');
     document.getElementById('gridContainer').classList.remove('no-moves-dim');
@@ -1235,17 +1244,16 @@ function hideRestartOverlay() {
 }
 
 // [REUSE] 레거시 리스타트 (PvP / 오프라인 / RETRY 전용)
-// [PHASE_2A_NEW bundle 6] async 변환 + D6 가드 (PvP 컨텍스트에서 spendGold 미정의 시 안전 차단)
+// [M2] batch 누적 차감 (PvP 컨텍스트에서 accumulateSpend 미정의 시 안전 차단)
 async function _resetGameLegacy() {
-  if (typeof window.spendGold !== 'function') {
-    console.warn('[basic.restart legacy] spendGold not available — likely PvP context, blocking restart');
+  if (typeof window.accumulateSpend !== 'function') {
+    console.warn('[basic.restart legacy] accumulateSpend not available — likely PvP context, blocking restart');
     return;
   }
   const restartCost = (typeof ScorePolicy !== 'undefined')
     ? ScorePolicy.getGoldCost('basic', 'restart')
     : 1;
-  const ok = await window.spendGold(restartCost, 'restart');
-  if (!ok) return;
+  if (!window.accumulateSpend(restartCost, 'restart_batch')) return;
 
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('gridContainer').classList.remove('no-moves-dim');
