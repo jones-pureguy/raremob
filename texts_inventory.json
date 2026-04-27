@@ -391,6 +391,16 @@
     "placeholders": [],
     "dynamic_text": []
   },
+  "infinite.html": {
+    "buttons": ["▶ START", "← BACK", "⇄"],
+    "toasts": [],
+    "modals": [],
+    "alerts": [],
+    "labels": ["DragON POKER - Infinite", "INFINITE MODE", "COLLECTED", "REMOVED"],
+    "placeholders": [],
+    "dynamic_text": [],
+    "i18n_keys": ["infinite.startTitle", "infinite.startDesc", "infinite.startComboHint", "infinite.startShufflePrefix", "infinite.startShuffleSuffix"]
+  },
   "maniac.html": {
     "buttons": ["▶ START", "↺", "?", "Play Again", "게임종료", "← BACK"],
     "toasts": [],
@@ -399,7 +409,7 @@
     "labels": ["DragON POKER", "MANIAC GAME", "COLLECTED", "REMOVED", "NO MORE MOVES", "MAX COMBO", "HI"],
     "placeholders": [],
     "dynamic_text": ["×N COMBO", "MAX COMBO ×N"],
-    "i18n_keys": ["maniac.title", "maniac.entryDenied", "maniac.start", "maniac.timeUp", "maniac.noMoreMoves", "maniac.combo.x2", "maniac.combo.x3", "maniac.combo.x4", "maniac.combo.x5", "maniac.combo.x6", "maniac.combo.x7", "maniac.combo.x8", "maniac.combo.x9", "ui.playAgain", "ui.gameEnd", "modal.complete", "modal.timeUp", "modal.noMoreMoves", "modal.handsCompleted", "modal.best", "modal.score", "modal.cardPenalty", "modal.timeBonus", "modal.newHighScore", "modal.myHighScore", "toast.selectFiveCards", "toast.needHigherPair", "toast.goldInsufficientN"]
+    "i18n_keys": ["maniac.title", "maniac.startDesc", "maniac.entryDenied", "maniac.start", "maniac.timeUp", "maniac.noMoreMoves", "maniac.combo.x2", "maniac.combo.x3", "maniac.combo.x4", "maniac.combo.x5", "maniac.combo.x6", "maniac.combo.x7", "maniac.combo.x8", "maniac.combo.x9", "ui.playAgain", "ui.gameEnd", "modal.complete", "modal.timeUp", "modal.noMoreMoves", "modal.handsCompleted", "modal.best", "modal.score", "modal.cardPenalty", "modal.timeBonus", "modal.newHighScore", "modal.myHighScore", "toast.selectFiveCards", "toast.needHigherPair", "toast.goldInsufficientN"]
   },
   "maniac_script.js": {
     "buttons": [],

@@ -176,6 +176,21 @@
   await i18n.init();
   initHeader();
   await ScorePolicy.load();
+
+  // [i18n] START 모달 텍스트 적용 — 셔플 힌트는 prefix + img + suffix(${cost}) 로 구성
+  const titleEl = document.getElementById('infStartTitle');
+  const descEl = document.getElementById('infStartDesc');
+  const comboHintEl = document.getElementById('infStartComboHint');
+  const shufflePrefixEl = document.getElementById('infStartShufflePrefix');
+  const shuffleSuffixEl = document.getElementById('infStartShuffleSuffix');
+  if (titleEl) titleEl.textContent = i18n.t('infinite.startTitle');
+  if (descEl) descEl.textContent = i18n.t('infinite.startDesc');
+  if (comboHintEl) comboHintEl.textContent = i18n.t('infinite.startComboHint');
+  if (shufflePrefixEl) shufflePrefixEl.textContent = i18n.t('infinite.startShufflePrefix');
+  if (shuffleSuffixEl) {
+    const cost = ScorePolicy.getGoldCost('infinite', 'shuffle');
+    shuffleSuffixEl.textContent = i18n.t('infinite.startShuffleSuffix', { cost });
+  }
 })().then(() => {
   const s = document.createElement('script');
   s.src = 'infinite_script.js';
@@ -184,10 +199,10 @@
 </script>
 <div class="start-overlay" id="startOverlay">
   <div class="start-box">
-    <div class="start-title">INFINITE MODE</div>
-    <div class="start-subtitle">600초 동안 최고 점수를 노려라!</div>
-    <div class="start-combo-hint">✦ 포카드 이상 패를 연속하면 콤보 점수!</div>
-    <div class="start-combo-hint" style="margin-top:4px;">⇄ 셔플 <img src="./images/coin.png" alt="gold" style="width:14px;height:14px;vertical-align:-2px;">5 — 카드 전체 재배치, 최대 10회</div>
+    <div class="start-title" id="infStartTitle">INFINITE MODE</div>
+    <div class="start-subtitle" id="infStartDesc"></div>
+    <div class="start-combo-hint" id="infStartComboHint"></div>
+    <div class="start-combo-hint" style="margin-top:4px;"><span id="infStartShufflePrefix"></span><img src="./images/coin.png" alt="gold" style="width:14px;height:14px;vertical-align:-2px;"><span id="infStartShuffleSuffix"></span></div>
     <button class="start-btn" id="startBtn">▶ START</button>
   </div>
 </div>

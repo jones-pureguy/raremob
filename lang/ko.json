@@ -360,6 +360,7 @@
     "locked": "베이직 게임 400점 이상 달성시 플레이 해제",
     "entryDenied": "베이직 400점 미달성으로 입장할 수 없습니다",
     "start": "MANIAC START",
+    "startDesc": "한번 드래그로 여러개의 패를 이어서 완성하자\n한번에 완성한 패의 갯수만큼 곱해지는 콤보점수에 도전",
     "timeUp": "TIME UP",
     "noMoreMoves": "NO MORE MOVES",
     "combo": {
@@ -372,6 +373,13 @@
       "x8": "×8 COMBO",
       "x9": "×9 MAX COMBO"
     }
+  },
+  "infinite": {
+    "startTitle": "INFINITE MODE",
+    "startDesc": "600초 동안 최고 점수를 노려라!",
+    "startComboHint": "✦ 포카드 이상 패를 연속하면 콤보 점수!",
+    "startShufflePrefix": "⇄ 셔플 ",
+    "startShuffleSuffix": "${cost} — 카드 전체 재배치, 최대 10회"
   },
   "quickRef": {
     "title": "족보 랭킹",

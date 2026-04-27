@@ -291,6 +291,7 @@
     "locked": "Unlocks when you score 400+ in Basic Game",
     "entryDenied": "Score 400+ in Basic Game first to unlock",
     "start": "MANIAC START",
+    "startDesc": "Chain multiple hands in a single drag\nCombo multiplier × the number of hands completed at once",
     "timeUp": "TIME UP",
     "noMoreMoves": "NO MORE MOVES",
     "combo": {
@@ -303,6 +304,13 @@
       "x8": "×8 COMBO",
       "x9": "×9 MAX COMBO"
     }
+  },
+  "infinite": {
+    "startTitle": "INFINITE MODE",
+    "startDesc": "Aim for the highest score in 600 seconds!",
+    "startComboHint": "✦ Chain Four-of-a-Kind+ for combo bonus!",
+    "startShufflePrefix": "⇄ Shuffle ",
+    "startShuffleSuffix": "${cost} — full grid reshuffle, max 10 times"
   },
   "quickRef": {
     "title": "Hand Rankings",

@@ -121,9 +121,13 @@
     opacity: 0.85;
   }
 
-  /* MANIAC START overlay 톤 차별화 */
+  /* MANIAC START overlay 톤 차별화 + 멀티라인 설명 텍스트 지원 */
   body.maniac-page .start-overlay .start-box { border-color: rgba(255, 79, 203, 0.4); }
   body.maniac-page .start-overlay .start-title { color: #ff6ba3; }
+  body.maniac-page .start-overlay .start-subtitle {
+    white-space: pre-line;
+    line-height: 1.55;
+  }
 </style>
 </head>
 <body class="game-page maniac-page">
@@ -227,6 +231,12 @@
   await i18n.init();
   initHeader();
   await ScorePolicy.load();
+
+  // [MANIAC] START 모달 텍스트 i18n 적용 (멀티라인 설명은 white-space:pre-line)
+  const titleEl = document.getElementById('mnStartTitle');
+  const descEl = document.getElementById('mnStartDesc');
+  if (titleEl) titleEl.textContent = i18n.t('maniac.title');
+  if (descEl) descEl.textContent = i18n.t('maniac.startDesc');
 })().then(() => {
   // [MANIAC] script.js 로드 안 함 — maniac_script.js가 자체 로직 보유
   const s = document.createElement('script');
@@ -236,8 +246,8 @@
 </script>
 <div class="start-overlay" id="startOverlay">
   <div class="start-box">
-    <div class="start-title">DragON POKER</div>
-    <div class="start-subtitle">MANIAC GAME</div>
+    <div class="start-title" id="mnStartTitle">MANIAC GAME</div>
+    <div class="start-subtitle" id="mnStartDesc"></div>
     <button class="start-btn" id="startBtn">▶ START</button>
   </div>
 </div>
