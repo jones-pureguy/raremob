@@ -6,7 +6,7 @@
 
 const { randomUUID } = require('crypto');
 const { generateSeed } = require('../engine/prng');
-const { replaySession, buildInitialGrid } = require('../engine/replay');
+const { replaySession, replayManiacSession, buildInitialGrid } = require('../engine/replay');
 const supabase = require('../supabase');
 const { upsertPlayerPeriodStats } = require('../lib/playerPeriodStats');
 
@@ -88,6 +88,12 @@ const MODE_CONFIG = {
     gameTime: null,
     sessionsTable: 'hidden_sessions',
   },
+  // [STEP 6] MANIAC 모드 — 검증만, DB 저장은 단계 8+ (sessionsTable=null)
+  maniac: {
+    gridSize: 7,
+    gameTime: 200,
+    sessionsTable: null,
+  },
 };
 
 // [REUSE] 모드별 스코어링 옵션
@@ -99,6 +105,10 @@ function getScoringOptions(mode) {
       return { applyTimeBonus: false, applyPenalty: false, applyCombo: true };
     case 'hidden':
       return { applyTimeBonus: false, applyPenalty: true, applyCombo: false };
+    case 'maniac':
+      // [STEP 6] 매니악은 자체 콤보 멀티 로직 (replayManiacSession)을 사용.
+      //   getScoringOptions는 호출되지 않지만 안전을 위해 베이직 동일 값으로 박음.
+      return { applyTimeBonus: true, applyPenalty: true, applyCombo: false };
     default:
       return { applyTimeBonus: true, applyPenalty: true, applyCombo: false };
   }
@@ -278,22 +288,35 @@ function registerSessionRoutes(app, requireAuth) {
         }
       }
 
-      // 리플레이 재생 + 검증
-      const replayResult = replaySession({
-        seed: session.seed,
-        gridSize: session.gridSize,
-        mode: session.mode,
-        dragLog,
-        constraints: {},
-        timeRemaining,
-        // [REUSE for Expo] Phase 1-11.3.1: cutoff 검증용
-        startedAt: session.startedAt,
-        gameTime: session.gameTime,
-        scoringOptions: getScoringOptions(session.mode),
-      });
+      // 리플레이 재생 + 검증 — 모드별 분기
+      // [STEP 6] 매니악은 별도 함수 (콤보 멀티 + 그룹 단위 그리드 변경)
+      let replayResult;
+      if (session.mode === 'maniac') {
+        replayResult = replayManiacSession({
+          seed: session.seed,
+          gridSize: session.gridSize,
+          dragLog,
+          timeRemaining,
+          startedAt: session.startedAt,
+          gameTime: session.gameTime,
+        });
+      } else {
+        replayResult = replaySession({
+          seed: session.seed,
+          gridSize: session.gridSize,
+          mode: session.mode,
+          dragLog,
+          constraints: {},
+          timeRemaining,
+          // [REUSE for Expo] Phase 1-11.3.1: cutoff 검증용
+          startedAt: session.startedAt,
+          gameTime: session.gameTime,
+          scoringOptions: getScoringOptions(session.mode),
+        });
+      }
 
       if (!replayResult.valid) {
-        console.warn(`[session/submit] replay invalid: ${replayResult.reason}, session=${sessionId.slice(0, 8)}`);
+        console.warn(`[session/submit] replay invalid: ${replayResult.reason}, session=${sessionId.slice(0, 8)}, mode=${session.mode}`);
         return res.status(400).json({
           accepted: false,
           reason: replayResult.reason,
@@ -302,12 +325,27 @@ function registerSessionRoutes(app, requireAuth) {
       }
 
       if (replayResult.score !== claimedScore) {
-        console.warn(`[session/submit] score mismatch: claimed=${claimedScore}, calculated=${replayResult.score}, session=${sessionId.slice(0, 8)}`);
+        console.warn(`[session/submit] score mismatch: claimed=${claimedScore}, calculated=${replayResult.score}, session=${sessionId.slice(0, 8)}, mode=${session.mode}`);
         return res.status(400).json({
           accepted: false,
           reason: 'SCORE_MISMATCH',
           expected: replayResult.score,
           claimed: claimedScore,
+        });
+      }
+
+      // [STEP 6] 매니악은 검증 통과 후 즉시 응답 (DB 저장은 단계 8+로 deferred)
+      if (session.mode === 'maniac') {
+        session.submitted = true;
+        console.log(`[session/submit/maniac] accepted (no DB write — step 6): user=${String(session.userId).slice(0, 8)}, score=${replayResult.score}, hands=${replayResult.hands.length}`);
+        return res.json({
+          accepted: true,
+          score: replayResult.score,
+          breakdown: replayResult.breakdown,
+          sessionRecordId: null,
+          replayId: null,
+          isNewRecord: false,
+          skipped: true,
         });
       }
 

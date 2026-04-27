@@ -2,9 +2,9 @@
 
 const { createDeck, shuffleDeckWithSeed } = require('./deck');
 const { evaluateHand, isRoyalFlushPlus, RANK } = require('./handRank');
-const { validatePath, HAND_SIZE } = require('./pathValidator');
+const { validatePath, HAND_SIZE, isValidMove, isJumpMove, isJumpPathClear } = require('./pathValidator');
 const { applyGravity, countCards } = require('./gravity');
-const { calculateTotalScore } = require('./scorer');
+const { calculateTotalScore, getHandScore, getTimeBonus, getPenalty } = require('./scorer');
 const { mulberry32, shuffleWithRng } = require('./prng');
 
 // [REUSE] Phase 1-7.5-A: 이벤트별 seed 파생 상수 (골든 레이시오 기반)
@@ -306,6 +306,187 @@ function replaySession({
   };
 }
 
+// =============================================
+// [REWRITE] 매니악 모드 dragLog 재생 + 콤보 멀티 점수 검증
+// =============================================
+// dragLog 형식 (클라 maniac_script.js mn_endDrag 참조):
+//   각 슬라이스가 별도 event로 push됨. 같은 한 번의 드래그(콤보)는
+//   동일 comboGroupId + 동일 comboSize 공유. 슬라이스 cards는 5장 좌표.
+//   예: 2-콤보 → 2 events, 9-콤보 → 9 events.
+//
+// 검증 흐름:
+//   1) consecutive comboGroupId로 그룹핑
+//   2) 그룹별 fullPath = concat(slice cards) → 5n장 path
+//   3) fullPath 전체에 대해 인접성 + 중복 + 카드 존재 검증
+//   4) 슬라이스별 evaluateHand → 매니악 룰 (10 이상 원페어 이상) 검증
+//   5) 콤보 멀티 점수 = sum(슬라이스 점수) × n
+//   6) 그룹의 모든 카드를 한 번에 제거 + 중력 (콤보 단위, 베이직과 다름)
+//   7) timeBonus + penalty 베이직 동일 적용
+function replayManiacSession({
+  seed,
+  gridSize = 7,
+  dragLog = [],
+  timeRemaining = 0,
+  startedAt = null,
+  gameTime = 200,
+}) {
+  // 1. 초기 그리드 (베이직 동일 — 7×7, removedCards 3장 스킵)
+  let grid = buildInitialGrid(seed, gridSize);
+
+  // 2. dragLog cutoff (race-late 방어, baseline 패턴 동일)
+  const TOLERANCE_MS = 500;
+  const cutoffTs = (gameTime !== null && startedAt)
+    ? startedAt + gameTime * 1000 + TOLERANCE_MS
+    : null;
+
+  const filteredLog = [];
+  for (let i = 0; i < dragLog.length; i++) {
+    const event = dragLog[i];
+    if (cutoffTs && event.ts && event.ts > cutoffTs) {
+      console.log(`[replayManiac] event ${i} (ts=${event.ts}) after cutoff ${cutoffTs}, ignoring`);
+      continue;
+    }
+    filteredLog.push(event);
+  }
+
+  // 3. consecutive comboGroupId로 그룹핑 + 사전 검증 (event type)
+  const groups = [];
+  let currentGroup = null;
+  for (let i = 0; i < filteredLog.length; i++) {
+    const event = filteredLog[i];
+    const eventType = event.type || 'hand';
+    if (eventType !== 'hand') {
+      return { valid: false, reason: 'INVALID_EVENT_TYPE_FOR_MANIAC', step: i, eventType };
+    }
+    const groupId = event.comboGroupId;
+    if (currentGroup && currentGroup.id === groupId) {
+      currentGroup.events.push(event);
+    } else {
+      currentGroup = { id: groupId, events: [event] };
+      groups.push(currentGroup);
+    }
+  }
+
+  // 4. 각 그룹 검증 + 점수 계산
+  let handSum = 0;
+  let totalHandCount = 0;
+  const allHands = [];
+
+  for (let gi = 0; gi < groups.length; gi++) {
+    const group = groups[gi];
+    const expectedSize = group.events[0].comboSize;
+    if (typeof expectedSize === 'number' && expectedSize !== group.events.length) {
+      return { valid: false, reason: 'COMBO_SIZE_MISMATCH', step: gi, expected: expectedSize, actual: group.events.length };
+    }
+
+    // fullPath = concat of all slice cards
+    const fullPath = [];
+    for (const event of group.events) {
+      if (!Array.isArray(event.cards) || event.cards.length !== 5) {
+        return { valid: false, reason: 'INVALID_SLICE_LENGTH', step: gi, sliceLen: event.cards ? event.cards.length : 0 };
+      }
+      for (const cell of event.cards) {
+        if (!Array.isArray(cell) || cell.length !== 2) {
+          return { valid: false, reason: 'INVALID_CELL_FORMAT', step: gi };
+        }
+        fullPath.push(cell);
+      }
+    }
+
+    if (fullPath.length === 0 || fullPath.length % HAND_SIZE !== 0 || fullPath.length > HAND_SIZE * 9) {
+      return { valid: false, reason: 'INVALID_PATH_LENGTH_IN_COMBO', step: gi, pathLen: fullPath.length };
+    }
+
+    // fullPath 전체 검증
+    // 4-1) 중복 셀
+    const seen = new Set();
+    for (const [r, c] of fullPath) {
+      const key = `${r},${c}`;
+      if (seen.has(key)) {
+        return { valid: false, reason: 'DUPLICATE_CELL_IN_COMBO', step: gi, cell: [r, c] };
+      }
+      seen.add(key);
+    }
+    // 4-2) 각 셀에 카드 존재
+    for (const [r, c] of fullPath) {
+      if (!grid[r] || !grid[r][c]) {
+        return { valid: false, reason: 'EMPTY_CELL_IN_COMBO', step: gi, cell: [r, c] };
+      }
+    }
+    // 4-3) 인접성 + 점프 (cross-slice 포함)
+    for (let i = 1; i < fullPath.length; i++) {
+      const [fromR, fromC] = fullPath[i - 1];
+      const [toR, toC] = fullPath[i];
+      if (!isValidMove(fromR, fromC, toR, toC, {}, fullPath.slice(0, i))) {
+        return { valid: false, reason: 'INVALID_DIRECTION_IN_COMBO', step: gi, subStep: i };
+      }
+      if (isJumpMove(fromR, fromC, toR, toC)) {
+        if (!isJumpPathClear(grid, fromR, fromC, toR, toC)) {
+          return { valid: false, reason: 'JUMP_BLOCKED_IN_COMBO', step: gi, subStep: i };
+        }
+      }
+    }
+
+    // 4-4) 슬라이스별 evaluateHand (베이직 룰 동일: 10 이상 원페어 이상)
+    const sliceScores = [];
+    const sliceHands = [];
+    for (let si = 0; si < group.events.length; si++) {
+      const slicePath = fullPath.slice(si * HAND_SIZE, (si + 1) * HAND_SIZE);
+      const sliceCards = slicePath.map(([r, c]) => grid[r][c]);
+      const hand = evaluateHand(sliceCards);
+
+      if (hand.rank === RANK.HIGH_CARD) {
+        return { valid: false, reason: 'INVALID_HAND_HIGH_CARD', step: gi, sliceIdx: si };
+      }
+      // 10 미만 원페어 reject (매니악 룰 = 베이직 isValidHand 동일)
+      if (hand.rank === RANK.ONE_PAIR && hand.pairValue < 10) {
+        return { valid: false, reason: 'INVALID_HAND_LOW_PAIR', step: gi, sliceIdx: si, pairValue: hand.pairValue };
+      }
+
+      // RF+ 특수 (경로 순서 기반)
+      let finalRank = hand.rank;
+      if (isRoyalFlushPlus(sliceCards)) {
+        finalRank = RANK.ROYAL_FLUSH_PLUS;
+      }
+
+      sliceScores.push(getHandScore(finalRank));
+      sliceHands.push({ rank: finalRank, cards: sliceCards, pathCells: slicePath });
+    }
+
+    // 4-5) 콤보 멀티 적용
+    const n = sliceHands.length;
+    const sliceSum = sliceScores.reduce((a, b) => a + b, 0);
+    const groupScore = sliceSum * n;
+    handSum += groupScore;
+    totalHandCount += n;
+    allHands.push(...sliceHands);
+
+    // 4-6) 9패 초과 검증
+    if (totalHandCount > 9) {
+      return { valid: false, reason: 'EXCEED_MAX_HANDS', step: gi, totalHandCount };
+    }
+
+    // 4-7) 그룹의 모든 카드를 한 번에 제거 + 중력 (베이직과 다름: 콤보 단위)
+    grid = applyGravity(grid, fullPath);
+  }
+
+  // 5. 최종 점수 (timeBonus + penalty)
+  const remainingCards = countCards(grid);
+  const timeBonus = getTimeBonus(timeRemaining);
+  const penalty = getPenalty(remainingCards);
+  const rawTotal = handSum + timeBonus - penalty;
+  const total = Math.max(0, rawTotal);
+
+  return {
+    valid: true,
+    score: total,
+    breakdown: { handSum, bonus: timeBonus, penalty, rawTotal, total },
+    hands: allHands,
+    remainingCards,
+    finalGrid: grid,
+  };
+}
+
 module.exports = {
   buildInitialGrid,
   buildInitialGridInfinite,
@@ -313,15 +494,16 @@ module.exports = {
   shuffleInfinite,
   shuffleHiddenInPlace,
   replaySession,
+  replayManiacSession,
   SEED_MIX,
   SHUFFLE_INDEX_OFFSET,
 };
 
 // =============================================
 // EXPO 전환 체크리스트
-// REUSE   : 5개 함수 + 2개 상수 (buildInitialGrid, buildInitialGridInfinite,
-//           refillInfinite, shuffleInfinite, replaySession, SEED_MIX, SHUFFLE_INDEX_OFFSET)
-//           — 서버 전용, 클라에선 불필요
+// REUSE   : 6개 함수 + 2개 상수 (buildInitialGrid, buildInitialGridInfinite,
+//           refillInfinite, shuffleInfinite, replaySession, replayManiacSession,
+//           SEED_MIX, SHUFFLE_INDEX_OFFSET) — 서버 전용, 클라에선 불필요
 // ADAPTER : 0개
 // REWRITE : 0개
 // =============================================
