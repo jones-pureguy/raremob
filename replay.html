@@ -918,7 +918,9 @@ function mn_replay_applyCardGlow(r, c, sliceIdx, comboSize) {
   }
 }
 
-// [Step 3-fix] 드래그 라인 — 카드 좌표 누적해서 SVG polyline 그림 (베이직 updateDragLine 패턴 차용)
+// [Step 3-fix4] 드래그 라인 — 박스 외관선과 동일 색 + drop-shadow 글로우로 강조
+//   기본 .drag-line은 stroke-width 3, opacity 0.8. 카드 글로우(z-index 5)에 가려 약함.
+//   매니악 재생 시 svg에 .mn-replay-active 박아 z-index 8 + stroke-width 5 + glow.
 function mn_replay_updateDragLine(coords, color) {
   const line = document.getElementById('dragLine');
   if (!line) return;
@@ -939,7 +941,10 @@ function mn_replay_updateDragLine(coords, color) {
     return `${x},${y}`;
   }).join(' ');
   line.setAttribute('points', points);
-  if (color) line.style.stroke = color;
+  if (color) {
+    line.style.stroke = color;
+    line.style.filter = `drop-shadow(0 0 6px ${color}cc)`;
+  }
 }
 
 function mn_replay_clearDragLine() {
@@ -947,6 +952,7 @@ function mn_replay_clearDragLine() {
   if (line) {
     line.setAttribute('points', '');
     line.style.stroke = '';
+    line.style.filter = '';
   }
 }
 
@@ -1177,6 +1183,10 @@ async function playManiacReplay(replayData) {
   if (mnCtl) mnCtl.style.display = 'flex';
   const mnLog = document.getElementById('mnReplayActionLog');
   if (mnLog) mnLog.style.display = 'grid';
+
+  // [Step 3-fix4] 드래그 라인 SVG 강조 — z-index ↑ + stroke ↑ + glow
+  const svg = document.getElementById('dragSvg');
+  if (svg) svg.classList.add('mn-replay-active');
 
   // 이전 재생 중단 (restart 호출 시)
   if (mn_replay_state) mn_replay_state.aborted = true;

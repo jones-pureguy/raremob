@@ -2009,6 +2009,16 @@ body.hidden-stage .game-container {
   transition: box-shadow 120ms ease-out, border-color 120ms ease-out;
   z-index: 5;
 }
+/* [Step 3-fix4] 매니악 재생 시 드래그 라인 강조 — 카드 글로우(z-index 5) 위로 올림 */
+.drag-svg.mn-replay-active {
+  z-index: 8;
+}
+.drag-svg.mn-replay-active .drag-line {
+  stroke-width: 5;
+  opacity: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .mn-replay-glow.mn-replay-glow-rainbow {
   background-image: conic-gradient(from 0deg, #FFD700, #00D4FF, #FF6BAA, #39E58B, #FF9F1C, #B47CFF, #C8FF5C, #FF4FCB, #FFD700);
   background-size: 200% 200%;
