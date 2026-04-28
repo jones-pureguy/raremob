@@ -2061,8 +2061,30 @@ body.hidden-stage .game-container {
   padding: 20px;
 }
 .slot-selection-content {
+  position: relative;
   width: 100%;
   max-width: 480px;
+}
+/* [Step 3-fix] 모달 안 BACK 버튼 — back-fixed가 모달 z-index에 가려져 별도 필요 */
+.slot-modal-close {
+  position: absolute;
+  top: -10px;
+  left: -4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms;
+}
+.slot-modal-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
 }
 .slot-selection-content h2 {
   text-align: center;
