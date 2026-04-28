@@ -266,7 +266,8 @@
       "basic": "베이직",
       "infinite": "인피니트",
       "hidden": "히든",
-      "retry": "RETRY"
+      "retry": "RETRY",
+      "maniac": "매니악"
     },
     "sort": {
       "label": "정렬:",
@@ -354,6 +355,13 @@
     "gameOver": "게임 종료",
     "newRecord": "신기록!",
     "leaderboardTitle": "히든 게임 랭킹"
+  },
+  "replay": {
+    "selectSlot": {
+      "title": "어떤 리플레이를 볼까요?",
+      "basic": "BASIC",
+      "maniac": "MANIAC"
+    }
   },
   "maniac": {
     "title": "MANIAC GAME",

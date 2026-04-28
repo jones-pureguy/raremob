@@ -13,7 +13,7 @@ const {
   getAllTimeKey,
 } = require('../lib/periodKeys');
 
-const BOARDS = ['basic', 'basic_retry', 'infinite', 'hidden'];
+const BOARDS = ['basic', 'basic_retry', 'infinite', 'hidden', 'maniac'];
 const PERIODS = ['all_time', 'daily', 'weekly', 'monthly'];
 
 /**

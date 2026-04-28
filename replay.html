@@ -117,6 +117,8 @@
 <div class="grid-container" id="gridContainer">
   <div class="grid" id="grid"></div>
   <svg class="drag-svg" id="dragSvg"><polyline class="drag-line" id="dragLine" points="" /></svg>
+  <!-- [Phase 2 Maniac Step 3-5] 매니악 콤보 ×N 배지 (그리드 상단 floating, 베이직 재생엔 비활성) -->
+  <div class="mn-replay-badge" id="mnReplayBadge"></div>
 </div>
 
 <div class="replay-controls">
@@ -139,6 +141,25 @@
   <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">200</span></button>
 </div>
 
+<!-- [Phase 2 Maniac Step 3-4] 슬롯 선택 모달 (basic + maniac 양쪽 박제 시) -->
+<div id="slotSelectionModal" class="slot-selection-modal" style="display:none;">
+  <div class="slot-selection-content">
+    <h2 data-i18n="replay.selectSlot.title">어떤 리플레이를 볼까요?</h2>
+    <div class="slot-cards">
+      <button class="slot-card slot-basic" type="button" data-mode="basic">
+        <div class="slot-mode" data-i18n="replay.selectSlot.basic">BASIC</div>
+        <div class="slot-score">-</div>
+        <div class="slot-meta">-</div>
+      </button>
+      <button class="slot-card slot-maniac" type="button" data-mode="maniac">
+        <div class="slot-mode" data-i18n="replay.selectSlot.maniac">MANIAC</div>
+        <div class="slot-score">-</div>
+        <div class="slot-meta">-</div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://guuqhfxuxwpicneitwvw.supabase.co';
@@ -147,6 +168,9 @@
 </script>
 <script src="auth.js"></script>
 <script src="i18n.js"></script>
+<!-- [Phase 2 Maniac Step 3-5] 매니악 재생용 — PRNG (seed 기반 그리드) + ScorePolicy (콤보 점수) -->
+<script src="prng.js"></script>
+<script src="scorepolicy.js"></script>
 <script>
 // ─── Replay Engine ───
 const GRID_SIZE = 7;
@@ -572,47 +596,448 @@ function gameRetry() {
 }
 
 // ─── Init: load from URL param or localStorage ───
+// [Phase 2 Maniac Step 3-4] 진입 분기 재구성:
+//   경로 A — URL ?id=<game_replays.id>: DB 진입 (mode 분기는 replay_data.mode)
+//   경로 B — URL 파라미터 없음 (또는 ?source=local):
+//     * 슬롯 0개 → "리플레이 없음" 안내
+//     * 슬롯 1개 → 자동 재생
+//     * 슬롯 2개 → 슬롯 선택 모달
+
 (async () => {
   if (!requireRegistration()) return;
   await i18n.init();
+  // [Step 3-5] ScorePolicy 로드 — 매니악 콤보 점수 산출 + retry 비용 정확화
+  if (typeof ScorePolicy !== 'undefined' && ScorePolicy.load) {
+    try { await ScorePolicy.load(); } catch (e) { console.warn('[Replay] ScorePolicy load failed:', e); }
+  }
 
   const params = new URLSearchParams(window.location.search);
   const replayId = params.get('id');
-  const source = params.get('source');
 
-  if (source === 'local' || (!source && !replayId)) {
-    const raw = localStorage.getItem('poker_last_replay');
-    if (raw) {
-      try { loadReplay(JSON.parse(raw)); } catch(e) { console.error('Invalid replay data', e); }
-    } else {
-      // [Phase 1-8-prep] DB fallback 제거 — localStorage 전용. 없으면 "리플레이 없음" 안내.
-      document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
+  if (replayId) {
+    return loadReplayFromDB(replayId);
+  }
+  return loadReplayFromLocal();
+})();
+
+async function loadReplayFromDB(replayId) {
+  document.getElementById('replayInfo').textContent = i18n.t('ui.loading');
+  try {
+    console.log('[Replay] Loading from DB, id:', replayId);
+    const { data, error } = await sb
+      .from('game_replays')
+      .select('replay_data')
+      .eq('id', replayId)
+      .single();
+    console.log('[Replay] DB result:', { data: !!data, error });
+    if (error || !data) {
+      console.warn('[Replay] Not found or error:', error);
+      document.getElementById('replayInfo').textContent = i18n.t('toast.replayNotFound');
+      return;
     }
-  } else if (replayId) {
-    document.getElementById('replayInfo').textContent = i18n.t('ui.loading');
-    try {
-      console.log('[Replay] Loading from DB, id:', replayId);
-      const { data, error } = await sb
-        .from('game_replays')
-        .select('replay_data')
-        .eq('id', replayId)
-        .single();
-      console.log('[Replay] DB result:', { data: !!data, error });
-      if (error || !data) {
-        console.warn('[Replay] Not found or error:', error);
-        document.getElementById('replayInfo').textContent = i18n.t('toast.replayNotFound');
-        return;
-      }
-      loadReplay(data.replay_data, { fromUrl: true });
-    } catch(e) {
-      console.error('[Replay] Load error:', e);
-      document.getElementById('replayInfo').textContent = i18n.t('toast.errorOccurred');
+    const replayData = data.replay_data;
+    if (replayData?.mode === 'maniac') {
+      return playManiacReplay(replayData);
+    }
+    return loadReplay(replayData, { fromUrl: true });
+  } catch (e) {
+    console.error('[Replay] Load error:', e);
+    document.getElementById('replayInfo').textContent = i18n.t('toast.errorOccurred');
+  }
+}
+
+function loadReplayFromLocal() {
+  if (typeof window.ReplayArchive === 'undefined') {
+    showNoReplayMessage();
+    return;
+  }
+  const slots = window.ReplayArchive.listSlots();
+  if (slots.length === 0) {
+    showNoReplayMessage();
+    return;
+  }
+  if (slots.length === 1) {
+    return loadReplayFromSlot(slots[0]);
+  }
+  // 2개 → 선택 모달
+  return showSlotSelectionUI(slots);
+}
+
+function loadReplayFromSlot(mode) {
+  const slot = window.ReplayArchive.loadSlot(mode);
+  if (!slot) { showNoReplayMessage(); return; }
+  const playMode = slot.mode || mode;
+  if (playMode === 'maniac') {
+    return playManiacReplay(slot);
+  }
+  // 베이직 박제 데이터는 legacy 구조 A (initialDeck + actions)
+  loadReplay(slot);
+}
+
+function showNoReplayMessage() {
+  document.getElementById('replayInfo').textContent = i18n.t('toast.replayNoData');
+}
+
+function showSlotSelectionUI(availableSlots) {
+  const modal = document.getElementById('slotSelectionModal');
+  if (!modal) {
+    console.warn('[Replay] slot selection modal missing — fallback to last available');
+    return loadReplayFromSlot(availableSlots[availableSlots.length - 1]);
+  }
+  for (const mode of ['basic', 'maniac']) {
+    const card = modal.querySelector(`.slot-card[data-mode="${mode}"]`);
+    if (!card) continue;
+    const isAvailable = availableSlots.includes(mode);
+    card.style.display = isAvailable ? 'flex' : 'none';
+    if (!isAvailable) continue;
+
+    const slot = window.ReplayArchive.loadSlot(mode);
+    const scoreEl = card.querySelector('.slot-score');
+    const metaEl = card.querySelector('.slot-meta');
+    if (scoreEl) scoreEl.textContent = (slot.score || 0).toLocaleString();
+    if (metaEl) metaEl.textContent = formatSlotMeta(slot);
+
+    card.onclick = () => {
+      modal.style.display = 'none';
+      loadReplayFromSlot(mode);
+    };
+  }
+  modal.style.display = 'flex';
+}
+
+function formatSlotMeta(slot) {
+  const parts = [];
+  if (slot.bestHand) parts.push(slot.bestHand);
+  if (slot.savedAt) {
+    try { parts.push(new Date(slot.savedAt).toLocaleDateString()); } catch (_) {}
+  }
+  if (slot.maxComboSize && slot.maxComboSize > 1) parts.push(`×${slot.maxComboSize}`);
+  return parts.join(' · ');
+}
+
+// =============================================
+// [Phase 2 Maniac Step 3-5] 매니악 리플레이 본격 구현
+// 정합성: 본 플레이 mn_initGrid (PRNG.shuffleFromSeed) byte 단위 일치.
+// dragLog 옵션 A 형식 (comboGroupId/comboSize per slice) 그대로 활용.
+// 점수: ScorePolicy.getHandScore × comboSize (본 플레이 mn_endDrag와 동일).
+// =============================================
+
+const MN_REPLAY_RANK = {
+  HIGH_CARD:0, ONE_PAIR:1, TWO_PAIR:2, THREE_KIND:3, STRAIGHT:4,
+  FLUSH:5, FULL_HOUSE:6, FOUR_KIND:7, STRAIGHT_FLUSH:8,
+  ROYAL_FLUSH:9, ROYAL_FLUSH_PLUS:10
+};
+const MN_REPLAY_RANK_NAME = ['HIGH_CARD','ONE_PAIR','TWO_PAIR','THREE_KIND','STRAIGHT','FLUSH','FULL_HOUSE','FOUR_KIND','STRAIGHT_FLUSH','ROYAL_FLUSH','ROYAL_FLUSH_PLUS'];
+const MN_REPLAY_GLOW_STROKE = ['#FFD700','#00D4FF','#FF6BAA','#39E58B','#FF9F1C','#B47CFF','#C8FF5C','#FF4FCB','#ffffff'];
+const MN_REPLAY_SUITS = ['♠','♥','♦','♣'];
+const MN_REPLAY_SUIT_NAMES = { '♠':'s','♥':'h','♦':'d','♣':'c' };
+const MN_REPLAY_VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
+
+const MN_REPLAY_GRID_SIZE = 7;
+const MN_REPLAY_HAND_SIZE = 5;
+const MN_REPLAY_SLICE_DELAY_MS = 350;   // 슬라이스별 글로우 시간
+const MN_REPLAY_GROUP_GAP_MS = 250;      // 그룹 사이 간격
+const MN_REPLAY_REMOVE_MS = 280;         // 카드 제거 애니메이션
+
+let mn_replay_state = null;
+
+// [REUSE] 매니악 본 플레이 mn_createDeck과 byte 단위 일치
+function mn_replay_createDeck() {
+  const deck = [];
+  for (const suit of MN_REPLAY_SUITS) {
+    for (let v = 2; v <= 14; v++) {
+      deck.push({ suit, value: v, id: MN_REPLAY_VALUE_NAMES[v] + MN_REPLAY_SUIT_NAMES[suit] });
     }
   }
-})();
+  return deck;
+}
+
+// [REUSE] 매니악 본 플레이 mn_initGrid와 byte 단위 일치 (PRNG.shuffleFromSeed)
+function mn_replay_buildGrid(seed) {
+  let deck;
+  if (seed != null && window.PRNG && window.PRNG.shuffleFromSeed) {
+    deck = window.PRNG.shuffleFromSeed(mn_replay_createDeck(), seed);
+  } else {
+    console.warn('[mn_replay] PRNG missing or seed null — using random shuffle (will mismatch)');
+    deck = mn_replay_createDeck();
+  }
+  const removed = deck.splice(0, 3);
+  const cards = deck.slice(0, 49);
+  const grid = [];
+  let idx = 0;
+  for (let r = 0; r < MN_REPLAY_GRID_SIZE; r++) {
+    const row = [];
+    for (let c = 0; c < MN_REPLAY_GRID_SIZE; c++) row.push({ card: cards[idx++] });
+    grid.push(row);
+  }
+  return { grid, removed };
+}
+
+// [REUSE] 매니악 본 플레이 mn_evaluateHand 본질 동일 (베이직 evaluateHand와도 동일)
+function mn_replay_evaluateHand(cards) {
+  if (!cards || cards.length < 5) return { rank: MN_REPLAY_RANK.HIGH_CARD, pairValue: 0 };
+  const values = cards.map(c => c.value).sort((a,b) => a - b);
+  const suits = cards.map(c => c.suit);
+  const isFlush = suits.every(s => s === suits[0]);
+  let isStraight = false;
+  const unique = [...new Set(values)];
+  if (unique.length === 5) {
+    if (unique[4] - unique[0] === 4) isStraight = true;
+    if (unique[0] === 2 && unique[1] === 3 && unique[2] === 4 && unique[3] === 5 && unique[4] === 14) isStraight = true; // A-low
+  }
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const cv = Object.values(counts).sort((a,b) => b - a);
+  const ck = Object.entries(counts).sort((a,b) => b[1] - a[1] || b[0] - a[0]);
+  const isRoyal = (values[0] === 10 && values[1] === 11 && values[2] === 12 && values[3] === 13 && values[4] === 14);
+  let rank;
+  if (isFlush && isStraight) rank = isRoyal ? MN_REPLAY_RANK.ROYAL_FLUSH : MN_REPLAY_RANK.STRAIGHT_FLUSH;
+  else if (cv[0] === 4) rank = MN_REPLAY_RANK.FOUR_KIND;
+  else if (cv[0] === 3 && cv[1] === 2) rank = MN_REPLAY_RANK.FULL_HOUSE;
+  else if (isFlush) rank = MN_REPLAY_RANK.FLUSH;
+  else if (isStraight) rank = MN_REPLAY_RANK.STRAIGHT;
+  else if (cv[0] === 3) rank = MN_REPLAY_RANK.THREE_KIND;
+  else if (cv[0] === 2 && cv[1] === 2) rank = MN_REPLAY_RANK.TWO_PAIR;
+  else if (cv[0] === 2) rank = MN_REPLAY_RANK.ONE_PAIR;
+  else rank = MN_REPLAY_RANK.HIGH_CARD;
+  // RF+ (드래그 순서 10→J→Q→K→A)
+  if (rank === MN_REPLAY_RANK.ROYAL_FLUSH) {
+    const dv = cards.map(c => c.value);
+    if (dv[0] === 10 && dv[1] === 11 && dv[2] === 12 && dv[3] === 13 && dv[4] === 14) {
+      rank = MN_REPLAY_RANK.ROYAL_FLUSH_PLUS;
+    }
+  }
+  return { rank, pairValue: cv[0] === 2 ? parseInt(ck[0][0]) : 0 };
+}
+
+function mn_replay_getRankScore(rank) {
+  if (typeof ScorePolicy !== 'undefined' && ScorePolicy.getHandScore) {
+    return ScorePolicy.getHandScore(MN_REPLAY_RANK_NAME[rank] || 'HIGH_CARD');
+  }
+  // fallback hardcode (scorepolicy.json handScores)
+  const fallback = [0, 1, 5, 10, 15, 20, 30, 50, 75, 100, 200];
+  return fallback[rank] || 0;
+}
+
+// dragLog → 콤보 그룹 배열
+function mn_replay_groupByComboId(dragLog) {
+  const groups = [];
+  let current = null;
+  for (const event of dragLog || []) {
+    if (event.type !== 'hand') continue;
+    const id = event.comboGroupId ?? 0;
+    if (current && current.id === id) {
+      current.slices.push(event);
+    } else {
+      current = { id, size: event.comboSize || 1, slices: [event] };
+      groups.push(current);
+    }
+  }
+  return groups;
+}
+
+// 매니악 그리드 렌더 (베이직 renderGrid 패턴 — data-row/data-col 셀렉터)
+function mn_replay_renderGrid() {
+  const gridEl = document.getElementById('grid');
+  if (!gridEl) return;
+  gridEl.innerHTML = '';
+  const grid = mn_replay_state.grid;
+  for (let r = 0; r < MN_REPLAY_GRID_SIZE; r++) {
+    for (let c = 0; c < MN_REPLAY_GRID_SIZE; c++) {
+      const cell = grid[r][c];
+      const div = document.createElement('div');
+      div.dataset.row = r;
+      div.dataset.col = c;
+      if (cell.card) {
+        const card = cell.card;
+        const suitClass = 'suit-' + MN_REPLAY_SUIT_NAMES[card.suit];
+        div.className = 'card ' + suitClass;
+        const vn = MN_REPLAY_VALUE_NAMES[card.value];
+        div.innerHTML = `<span class="card-value">${vn}</span><span class="card-suit">${card.suit}</span>`;
+      } else {
+        div.className = 'card empty';
+      }
+      gridEl.appendChild(div);
+    }
+  }
+}
+
+function mn_replay_renderRemoved() {
+  const container = document.getElementById('removedCards');
+  if (!container || !mn_replay_state.removed) return;
+  container.innerHTML = mn_replay_state.removed.map(card => {
+    const suitClass = 'suit-' + MN_REPLAY_SUIT_NAMES[card.suit];
+    return `<div class="removed-card ${suitClass}"><span class="card-value">${MN_REPLAY_VALUE_NAMES[card.value]}</span><span class="card-suit">${card.suit}</span></div>`;
+  }).join('');
+}
+
+function mn_replay_applyComboGlow(coords, comboSize) {
+  const gridEl = document.getElementById('grid');
+  const tier = Math.min(Math.max(comboSize, 1), 9) - 1;   // 1콤보=index 0
+  const color = MN_REPLAY_GLOW_STROKE[tier];
+  for (const [r, c] of coords) {
+    const el = gridEl.querySelector(`div[data-row="${r}"][data-col="${c}"]`);
+    if (!el) continue;
+    el.classList.add('mn-replay-glow');
+    if (comboSize >= 9) {
+      el.classList.add('mn-replay-glow-rainbow');
+    } else {
+      el.style.boxShadow = `0 0 0 2px ${color}, 0 0 14px ${color}aa`;
+      el.style.borderColor = color;
+    }
+  }
+}
+
+function mn_replay_clearGlow() {
+  const gridEl = document.getElementById('grid');
+  gridEl.querySelectorAll('.mn-replay-glow').forEach(el => {
+    el.classList.remove('mn-replay-glow', 'mn-replay-glow-rainbow');
+    el.style.boxShadow = '';
+    el.style.borderColor = '';
+  });
+}
+
+function mn_replay_showBadge(comboSize) {
+  const badge = document.getElementById('mnReplayBadge');
+  if (!badge) return;
+  if (comboSize < 2) { badge.classList.remove('active', 'rainbow'); return; }
+  badge.textContent = `×${comboSize} COMBO${comboSize >= 9 ? ' MAX' : ''}`;
+  badge.classList.add('active');
+  badge.classList.toggle('rainbow', comboSize >= 9);
+}
+function mn_replay_hideBadge() {
+  const badge = document.getElementById('mnReplayBadge');
+  if (badge) badge.classList.remove('active', 'rainbow');
+}
+
+function mn_replay_applyGravityCol(col) {
+  const grid = mn_replay_state.grid;
+  const cards = [];
+  for (let r = MN_REPLAY_GRID_SIZE - 1; r >= 0; r--) {
+    if (grid[r][col].card) cards.push(grid[r][col].card);
+  }
+  for (let r = MN_REPLAY_GRID_SIZE - 1; r >= 0; r--) {
+    const idx = MN_REPLAY_GRID_SIZE - 1 - r;
+    grid[r][col].card = idx < cards.length ? cards[idx] : null;
+  }
+}
+
+function mn_replay_removeGroup(allCoords) {
+  const grid = mn_replay_state.grid;
+  for (const [r, c] of allCoords) grid[r][c].card = null;
+  const cols = [...new Set(allCoords.map(p => p[1]))];
+  cols.forEach(col => mn_replay_applyGravityCol(col));
+}
+
+function mn_replay_updateInfo() {
+  const infoEl = document.getElementById('replayInfo');
+  if (!infoEl) return;
+  const s = mn_replay_state;
+  infoEl.innerHTML = `<span style="color:#ff6ba3;font-weight:700;">MANIAC</span> · ${s.cumulativeScore.toLocaleString()}pts`
+    + (s.bestHand ? ` · <span style="color:#ff6ba3;">${s.bestHand}</span>` : '')
+    + (s.maxComboSize > 1 ? ` · MAX ×${s.maxComboSize}` : '');
+}
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function mn_replay_playGroup(group) {
+  // 1) 슬라이스별 순차 글로우 (group.size 컬러 모두 동일 — 같은 콤보)
+  const allCoords = [];
+  let groupSliceScoreSum = 0;
+  for (let i = 0; i < group.slices.length; i++) {
+    const slice = group.slices[i];
+    const sliceCoords = slice.cards;
+    allCoords.push(...sliceCoords);
+    mn_replay_applyComboGlow(sliceCoords, group.size);
+    if (i === 0 && group.size >= 2) mn_replay_showBadge(group.size);
+
+    // 점수 산출 (현재 그리드 카드로 evaluateHand)
+    const sliceCards = sliceCoords.map(([r, c]) => mn_replay_state.grid[r][c]?.card).filter(Boolean);
+    const hand = mn_replay_evaluateHand(sliceCards);
+    groupSliceScoreSum += mn_replay_getRankScore(hand.rank);
+
+    await sleep(MN_REPLAY_SLICE_DELAY_MS);
+  }
+
+  // 2) 콤보 멀티 점수 누적 (sum × size)
+  const groupScore = groupSliceScoreSum * group.size;
+  mn_replay_state.cumulativeScore += groupScore;
+  mn_replay_updateInfo();
+
+  // 3) 카드 제거 + 중력
+  await sleep(MN_REPLAY_REMOVE_MS);
+  mn_replay_clearGlow();
+  mn_replay_removeGroup(allCoords);
+  mn_replay_renderGrid();
+  mn_replay_hideBadge();
+
+  await sleep(MN_REPLAY_GROUP_GAP_MS);
+}
+
+async function playManiacReplay(replayData) {
+  console.log('[Replay/Maniac] start — replay_data:', replayData);
+
+  // 베이직 컨트롤 영역 비활성화 (매니악은 자동 재생만)
+  ['btnPrev', 'btnPlay', 'btnNext', 'speedBtn1', 'speedBtn2', 'speedBtn4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // GAME RETRY 매니악은 미지원 (Step 8+ 별도 단계)
+  const btnRetry = document.getElementById('btnRetry');
+  if (btnRetry) btnRetry.style.display = 'none';
+
+  // 그리드 빌드
+  const { grid, removed } = mn_replay_buildGrid(replayData.seed);
+  mn_replay_state = {
+    grid,
+    removed,
+    cumulativeScore: 0,
+    finalScore: replayData.score || 0,
+    bestHand: replayData.bestHand || '',
+    handCount: replayData.handCount || 0,
+    maxComboSize: replayData.maxComboSize || 1,
+  };
+
+  // REMOVED + 그리드 첫 렌더 + REMOVED 패널 표시
+  const removedPanel = document.getElementById('removedPanel');
+  if (removedPanel) removedPanel.style.display = '';
+  mn_replay_renderGrid();
+  mn_replay_renderRemoved();
+  mn_replay_updateInfo();
+
+  // username 표시 (베이직과 동일 위치 재활용)
+  const userEl = document.getElementById('replayUser');
+  if (userEl) userEl.textContent = replayData.username || '';
+
+  // dragLog → 그룹핑
+  const groups = mn_replay_groupByComboId(replayData.dragLog);
+  console.log(`[Replay/Maniac] ${groups.length} combo groups (sizes: ${groups.map(g => g.size).join(',')})`);
+
+  // 자동 재생
+  for (const group of groups) {
+    if (mn_replay_state.aborted) return;
+    await mn_replay_playGroup(group);
+  }
+
+  // 종료 — 정합성 검증
+  const calcedScore = mn_replay_state.cumulativeScore;
+  const expectedHandSum = replayData.score
+    - (replayData.timeRemaining || 0)   // timeBonus = perSecond 1
+    + Math.max(0, ((49 - replayData.handCount * 5)) - 4) * 10;   // penalty 추정
+  console.log(`[Replay/Maniac] done — calculated handSum=${calcedScore}, expected handSum≈${expectedHandSum}, replayData.score=${replayData.score}`);
+
+  // 종료 화면: 최종 점수 표시
+  const infoEl = document.getElementById('replayInfo');
+  if (infoEl) {
+    infoEl.innerHTML = `<span style="color:#ff6ba3;font-weight:700;">MANIAC</span> · FINAL ${replayData.score.toLocaleString()}pts`
+      + (replayData.bestHand ? ` · <span style="color:#ff6ba3;">${replayData.bestHand}</span>` : '')
+      + (replayData.maxComboSize > 1 ? ` · MAX ×${replayData.maxComboSize}` : '');
+  }
+}
 </script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="server_client.js"></script>
 <script src="gold_client.js"></script>
+<script src="replay_archive.js"></script>
 </body>
 </html>

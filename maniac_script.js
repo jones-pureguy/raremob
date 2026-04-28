@@ -732,6 +732,16 @@ function mn_endGame(reason) {
   const isNewHi = mn_saveHighScore(finalScore);
   const highScore = Math.max(mn_getHighScore(), finalScore);
 
+  // [Phase 2 Maniac Step 3-2] 박제 버튼용: 종료 결과 메타 저장 (mn_archiveReplay에서 활용)
+  mn_state.lastEndResult = {
+    finalScore,
+    bestHand: best ? best.label : null,
+    handCount: mn_state.hands.length,
+    maxComboSize: maxCombo,
+    timeRemaining: Math.max(0, mn_state.timer),
+    reason,
+  };
+
   // 모달
   const title = reason === 'complete' ? i18n.t('modal.complete')
               : reason === 'nomoves' ? i18n.t('modal.noMoreMoves')
@@ -766,6 +776,7 @@ function mn_endGame(reason) {
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
       <button class="btn-play-again" onclick="mn_replay()">${i18n.t('ui.playAgain')}</button>
       <a href="mode_select.html" data-flush-exit class="btn-play-again" style="background:rgba(255,255,255,0.1);color:#e0e0e0;text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
+      <button class="btn-play-again btn-gold-cost" id="mnBtnSaveReplay" style="background:rgba(255,255,255,0.1);color:#e0e0e0;" onclick="mn_archiveReplay()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">${(typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('replay', 'save') : 50}</span></button>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('active');
@@ -787,6 +798,72 @@ function mn_endGame(reason) {
 async function mn_replay() {
   document.getElementById('modalOverlay').classList.remove('active');
   await mn_startWithServerSession();
+}
+
+// =============== [ADAPTER] Phase 2 Maniac Step 3-2: 박제 (replay 저장) ===============
+// 베이직 saveReplayFromButton과 동일 정책 — 50G (scorepolicy 'replay_save').
+// dragLog는 mn_serverSession.dragLog (옵션 A 형식, comboGroupId/comboSize 보존).
+// finalScore/bestHand/maxComboSize는 mn_endGame에서 mn_state.lastEndResult에 저장됨.
+async function mn_archiveReplay() {
+  const btn = document.getElementById('mnBtnSaveReplay');
+  if (btn && btn.disabled) return;
+
+  if (typeof window.spendGold !== 'function') {
+    console.warn('[mn_archiveReplay] spendGold not available');
+    return;
+  }
+  const saveCost = (typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('replay', 'save') : 50;
+  const ok = await window.spendGold(saveCost, 'replay_save');
+  if (!ok) return;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = i18n.t('ui.saving');
+  }
+
+  try {
+    const end = mn_state.lastEndResult || {};
+    const replayData = {
+      version: 1,
+      mode: 'maniac',
+      // 그리드 재구성용
+      seed: mn_serverSession?.seed ?? null,
+      dragLog: mn_serverSession?.dragLog ? [...mn_serverSession.dragLog] : [],
+      // 메타
+      score: end.finalScore ?? mn_state.currentScore ?? 0,
+      bestHand: end.bestHand ?? null,
+      handCount: end.handCount ?? mn_state.hands.length,
+      maxComboSize: end.maxComboSize ?? 1,
+      timeRemaining: end.timeRemaining ?? Math.max(0, mn_state.timer || 0),
+      gameTime: MN_TIMER_SECONDS,
+      startedAt: mn_serverSession?.serverStartedAt ?? null,
+      username: (mn_loadLocal('poker_username') || '').trim(),
+    };
+
+    if (typeof window.ReplayArchive !== 'undefined' && window.ReplayArchive.saveSlot) {
+      window.ReplayArchive.saveSlot('maniac', replayData);
+      console.log('[mn_archiveReplay] saved to archive.maniac (50-gold paid)');
+      if (btn) {
+        btn.textContent = i18n.t('ui.saved');
+        btn.style.color = '#4CAF50';
+        btn.style.borderColor = '#4CAF50';
+      }
+    } else {
+      console.warn('[mn_archiveReplay] ReplayArchive missing — slot save skipped');
+      if (btn) {
+        btn.textContent = i18n.t('ui.saveFailed');
+        btn.style.color = '#ff5252';
+        btn.disabled = false;
+      }
+    }
+  } catch (err) {
+    console.error('[mn_archiveReplay] error:', err);
+    if (btn) {
+      btn.textContent = i18n.t('ui.saveFailed');
+      btn.style.color = '#ff5252';
+      btn.disabled = false;
+    }
+  }
 }
 
 // =============== [REWRITE] Reset (RESTART, 1G batch) ===============

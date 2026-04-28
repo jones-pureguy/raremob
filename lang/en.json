@@ -197,7 +197,8 @@
       "basic": "BASIC",
       "infinite": "Infinite",
       "hidden": "Hidden",
-      "retry": "RETRY"
+      "retry": "RETRY",
+      "maniac": "MANIAC"
     },
     "sort": {
       "label": "Sort:",
@@ -285,6 +286,13 @@
     "gameOver": "Game Over",
     "newRecord": "New Record!",
     "leaderboardTitle": "Hidden Game Leaderboard"
+  },
+  "replay": {
+    "selectSlot": {
+      "title": "Which replay?",
+      "basic": "BASIC",
+      "maniac": "MANIAC"
+    }
   },
   "maniac": {
     "title": "MANIAC GAME",

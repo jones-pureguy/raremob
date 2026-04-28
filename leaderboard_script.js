@@ -213,7 +213,7 @@
 
     let html = `<h2>${escapeHTML(title)}</h2>`;
 
-    const boards = ['basic', 'infinite', 'hidden', 'basic_retry'];
+    const boards = ['basic', 'maniac', 'infinite', 'hidden', 'basic_retry'];
     for (const board of boards) {
       // RETRY는 all_time에서만 노출
       if (board === 'basic_retry' && state.period !== 'all_time') continue;

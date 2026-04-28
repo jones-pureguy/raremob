@@ -1422,12 +1422,18 @@ async function saveReplayFromButton() { // [REWRITE]
   btn.textContent = i18n.t('ui.saving');
 
   try {
-    // [Phase 1-8-prep] 100골드 박제 시 localStorage에 저장 (기존 박제 덮어쓰기)
-    // DB INSERT는 제거 — localStorage 전용 박제.
-    // replayLog.result 는 endGame에서 설정됨. 없으면 박제 불가 (방어).
+    // [Phase 2 Maniac Step 3-2] 박제 슬롯 분리 — basic 슬롯에 저장
+    //   ReplayArchive.saveSlot('basic', ...) 경유 (replay_archive.js)
+    //   옛 'poker_last_replay' 키는 자동 마이그레이션됨 (replay_archive.js DOMContentLoaded)
     if (replayLog && replayLog.result) {
-      saveLocal('poker_last_replay', JSON.stringify(replayLog));
-      console.log('[DragON] Replay saved to localStorage (100-gold paid)');
+      if (typeof window.ReplayArchive !== 'undefined' && window.ReplayArchive.saveSlot) {
+        window.ReplayArchive.saveSlot('basic', replayLog);
+      } else {
+        // fallback (replay_archive.js 미로드 시 — 안전망)
+        saveLocal('poker_last_replay', JSON.stringify(replayLog));
+        console.warn('[DragON] ReplayArchive missing, used legacy key');
+      }
+      console.log('[DragON] Replay saved to archive.basic (50-gold paid)');
       btn.textContent = i18n.t('ui.saved');
       btn.style.color = '#4CAF50';
       btn.style.borderColor = '#4CAF50';
