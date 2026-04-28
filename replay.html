@@ -751,12 +751,13 @@ const MN_REPLAY_VALUE_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',
 
 const MN_REPLAY_GRID_SIZE = 7;
 const MN_REPLAY_HAND_SIZE = 5;
-// [Step 3-fix2] 더 느린 페이싱 + 5장 단위 명확한 분리
-const MN_REPLAY_PER_CARD_MS = 280;       // 카드 1장당
-const MN_REPLAY_SLICE_END_MS = 700;      // 5장 슬라이스 완성 직후 (분리감 확보)
-const MN_REPLAY_GROUP_END_MS = 500;      // 그룹 완성 직후 (제거 직전)
-const MN_REPLAY_REMOVE_MS = 280;         // 카드 제거 애니메이션
-const MN_REPLAY_GROUP_GAP_MS = 350;      // 다음 그룹 시작 전
+// [Step 3-fix5] 1배속 기준 절반 속도 + 포즈 2배 — 패 확인 충분한 시간 보장
+//   빠르게 보고 싶으면 2x/4x 배속 활용
+const MN_REPLAY_PER_CARD_MS = 560;       // 카드 1장당 (was 280)
+const MN_REPLAY_SLICE_END_MS = 1400;     // 5장 슬라이스 완성 직후 (was 700)
+const MN_REPLAY_GROUP_END_MS = 1000;     // 그룹 완성 직후 (was 500)
+const MN_REPLAY_REMOVE_MS = 560;         // 카드 제거 애니메이션 (was 280)
+const MN_REPLAY_GROUP_GAP_MS = 700;      // 다음 그룹 시작 전 (was 350)
 
 // 액션 로그용 라벨 (replay.html에 RANK_LABELS 정의 안 됨)
 const MN_REPLAY_RANK_LABELS_INLINE = [
