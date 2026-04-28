@@ -758,9 +758,6 @@ const MN_REPLAY_GROUP_END_MS = 500;      // 그룹 완성 직후 (제거 직전)
 const MN_REPLAY_REMOVE_MS = 280;         // 카드 제거 애니메이션
 const MN_REPLAY_GROUP_GAP_MS = 350;      // 다음 그룹 시작 전
 
-// [Step 3-fix2] 슬라이스 내 5장 카드 순서 시각화 — 1번~5번 각기 다른 색
-const MN_REPLAY_SLICE_CARD_COLORS = ['#FFD700', '#00D4FF', '#FF6BAA', '#39E58B', '#FF9F1C'];
-
 // 액션 로그용 라벨 (replay.html에 RANK_LABELS 정의 안 됨)
 const MN_REPLAY_RANK_LABELS_INLINE = [
   'High Card', 'One Pair', 'Two Pair', 'Three of a Kind',
@@ -903,18 +900,19 @@ function mn_replay_renderRemoved() {
   }).join('');
 }
 
-// [Step 3-fix2] 슬라이스 내 카드 인덱스 (0~4)에 따라 5색 시퀀스 적용
-//   콤보 size와 별개로 슬라이스 내 카드 순서 (1, 2, 3, 4, 5번)를 시각화.
-//   group.size ≥ 9면 rainbow class 우선 적용.
-function mn_replay_applyCardGlow(r, c, sliceCardIdx, comboSize) {
+// [Step 3-fix3] 슬라이스 인덱스(그룹 내) 기반 — 5장 묶음 = 같은 색.
+//   1번 슬라이스(1~5장): gold, 2번 슬라이스(6~10장): cyan, ... 9번 슬라이스: rainbow.
+//   group.size 9의 9번째 슬라이스 또는 sliceIdx 8 도달 시 rainbow.
+function mn_replay_applyCardGlow(r, c, sliceIdx, comboSize) {
   const gridEl = document.getElementById('grid');
   const el = gridEl.querySelector(`div[data-row="${r}"][data-col="${c}"]`);
   if (!el) return;
   el.classList.add('mn-replay-glow');
-  if (comboSize >= 9) {
+  // 9번째 슬라이스 (인덱스 8) → 무지개 (9콤보 RF+ 등 특별 연출)
+  if (sliceIdx >= 8) {
     el.classList.add('mn-replay-glow-rainbow');
   } else {
-    const color = MN_REPLAY_SLICE_CARD_COLORS[Math.min(sliceCardIdx, 4)];
+    const color = MN_REPLAY_GLOW_STROKE[Math.min(sliceIdx, 7)];
     el.style.boxShadow = `0 0 0 2px ${color}, 0 0 14px ${color}aa`;
     el.style.borderColor = color;
   }
@@ -1011,35 +1009,35 @@ function mn_replay_sleep(ms) {
 }
 
 async function mn_replay_playGroup(group, groupIdx) {
-  const tier = Math.min(Math.max(group.size, 1), 9) - 1;
-  const tierColor = MN_REPLAY_GLOW_STROKE[tier];
   const allCoords = [];
   let groupSliceScoreSum = 0;
 
   if (group.size >= 2) mn_replay_showBadge(group.size);
 
-  // 액션 로그 — 현재 그룹 진행 표시
-  mn_replay_state.currentGroupIdx = groupIdx;
-  mn_replay_renderActionLog();
-
   for (let i = 0; i < group.slices.length; i++) {
     const slice = group.slices[i];
     const sliceCoords = slice.cards;
 
-    // 슬라이스 내 카드 1장씩 — 5색 시퀀스 + 드래그 라인 갱신
+    // [Step 3-fix3] 슬라이스 단위로 색 교체 — 1번:gold, 2번:cyan, ... 9번:rainbow
+    const sliceColor = (i >= 8) ? '#ffffff' : MN_REPLAY_GLOW_STROKE[Math.min(i, 7)];
+
+    // 액션 로그 — 현재 슬라이스 진행 표시
+    mn_replay_state.currentGroupIdx = groupIdx;
+    mn_replay_state.currentSliceIdx = i;
+    mn_replay_renderActionLog();
+
+    // 슬라이스 내 5장 — 모두 같은 색 (sliceColor) + 드래그 라인 갱신
     for (let j = 0; j < sliceCoords.length; j++) {
       if (mn_replay_state.aborted) return;
       const [r, c] = sliceCoords[j];
       allCoords.push([r, c]);
-      mn_replay_applyCardGlow(r, c, j, group.size);
-      mn_replay_updateDragLine(allCoords, tierColor);
+      mn_replay_applyCardGlow(r, c, i, group.size);   // i = sliceIdx
+      mn_replay_updateDragLine(allCoords, sliceColor);
       await mn_replay_sleep(MN_REPLAY_PER_CARD_MS);
     }
 
     // 슬라이스 완성 — 평가 + 점수 누적
-    const sliceCards = sliceCoords.map(([r, c]) => mn_replay_state.grid[r][c]?.card).filter(Boolean);
-    const hand = mn_replay_evaluateHand(sliceCards);
-    groupSliceScoreSum += mn_replay_getRankScore(hand.rank);
+    groupSliceScoreSum += group.sliceScores[i] || 0;
 
     // 5장 단위 명확한 분리 — 슬라이스 끝 멈춤
     await mn_replay_sleep(MN_REPLAY_SLICE_END_MS);
@@ -1062,24 +1060,48 @@ async function mn_replay_playGroup(group, groupIdx) {
   await mn_replay_sleep(MN_REPLAY_GROUP_GAP_MS);
 }
 
-// [Step 3-fix2] 매니악 액션 로그 — 콤보 그룹 단위 (1행/그룹, 슬라이스 라벨 인라인)
+// [Step 3-fix3] 매니악 액션 로그 — 슬라이스마다 1줄.
+//   그룹 첫 슬라이스 앞에만 번호 + ×N (size ≥ 2시).
+//   그룹 안 다음 슬라이스들은 들여쓰기. 베이직처럼 "라벨 (+점수)" 형식.
+//   드래그 라인 진행 중인 슬라이스 = current 강조.
 function mn_replay_renderActionLog() {
   const el = document.getElementById('mnReplayActionLog');
   if (!el || !mn_replay_state || !mn_replay_state.groups) return;
   const groups = mn_replay_state.groups;
-  const cur = mn_replay_state.currentGroupIdx;
-  let leftHtml = '';
-  let rightHtml = '';
+  const curGroup = mn_replay_state.currentGroupIdx;
+  const curSlice = (typeof mn_replay_state.currentSliceIdx === 'number') ? mn_replay_state.currentSliceIdx : -1;
+
+  // 슬라이스 평탄화 (1줄/슬라이스) — played/current/future 분류
+  const lines = [];
   groups.forEach((group, gi) => {
-    let cls = 'action-entry';
-    if (gi === cur) cls += ' current';
-    else if (gi < cur) cls += ' played';
-    const sizeMark = group.size > 1 ? ` <span style="color:#ff6ba3;">×${group.size}</span>` : '';
-    const labels = (group.sliceLabels || []).join(' · ');
-    const entry = `<div class="${cls}">${gi + 1}.${sizeMark} ${labels}</div>`;
-    if (gi < 5) leftHtml += entry;
-    else rightHtml += entry;
+    (group.sliceLabels || []).forEach((label, si) => {
+      const score = group.sliceScores?.[si] || 0;
+
+      let cls = 'action-entry';
+      if (gi < curGroup) cls += ' played';
+      else if (gi === curGroup) {
+        if (si < curSlice) cls += ' played';
+        else if (si === curSlice) cls += ' current';
+      }
+
+      // 그룹 첫 슬라이스에만 번호 + (size ≥ 2일 때) ×N
+      let prefix;
+      if (si === 0) {
+        const sizeMark = group.size >= 2
+          ? ` <span style="color:#ff6ba3;font-weight:700;">×${group.size}</span>`
+          : '';
+        prefix = `${gi + 1}.${sizeMark}`;
+      } else {
+        prefix = '<span style="display:inline-block;width:1.4em;"></span>';
+      }
+      lines.push(`<div class="${cls}">${prefix} ${label} (+${score})</div>`);
+    });
   });
+
+  // 베이직 패턴 — 2-col split (절반씩)
+  const half = Math.ceil(lines.length / 2);
+  const leftHtml = lines.slice(0, half).join('');
+  const rightHtml = lines.slice(half).join('');
   el.innerHTML = `<div class="action-col">${leftHtml}</div><div class="action-col">${rightHtml}</div>`;
 }
 
@@ -1107,11 +1129,13 @@ function mn_replay_evaluateAllGroups(seed, dragLog) {
 
   for (const group of groups) {
     group.sliceLabels = [];
+    group.sliceScores = [];
     const allCoords = [];
     for (const slice of group.slices) {
       const sliceCards = slice.cards.map(([r, c]) => grid[r]?.[c]?.card).filter(Boolean);
       const hand = mn_replay_evaluateHand(sliceCards);
       group.sliceLabels.push(MN_REPLAY_RANK_LABELS_INLINE[hand.rank] || '?');
+      group.sliceScores.push(mn_replay_getRankScore(hand.rank));
       allCoords.push(...slice.cards);
     }
     // 그룹 단위 카드 제거 + 중력 (재생과 동일 순서)
