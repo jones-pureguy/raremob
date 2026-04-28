@@ -370,6 +370,7 @@ function registerSessionRoutes(app, requireAuth) {
         // 2) DB 저장 (isNewRecord 전달 → 신기록 시 game_replays INSERT 게이트)
         const dbResult = await saveManiacSession({
           userId: session.userId,
+          sessionId: session.sessionId,    // [단계 2-fix-1] /api/session/start 발급 식별자 (감사용)
           score: replayResult.score,
           bestHand: replayResult.bestHand,
           handCount: replayResult.handCount,
@@ -771,6 +772,7 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
 // =============================================
 async function saveManiacSession({
   userId,
+  sessionId,                  // [단계 2-fix-1] /api/session/start 발급 세션 식별자 (감사용)
   score,
   bestHand,
   handCount,
@@ -788,6 +790,7 @@ async function saveManiacSession({
       .from('maniac_sessions')
       .insert({
         player_id: userId,
+        session_id: sessionId,   // [단계 2-fix-1] /start 발급 식별자 → 감사 컬럼
         score,
         best_hand: bestHand,
         hand_count: handCount,
