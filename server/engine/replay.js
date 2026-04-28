@@ -1,7 +1,7 @@
 // [REUSE] dragLog 재생 → 최종 점수 재계산 (Phase 1-8 세션 검증 코어)
 
 const { createDeck, shuffleDeckWithSeed } = require('./deck');
-const { evaluateHand, isRoyalFlushPlus, RANK } = require('./handRank');
+const { evaluateHand, isRoyalFlushPlus, RANK, RANK_LABELS } = require('./handRank');
 const { validatePath, HAND_SIZE, isValidMove, isJumpMove, isJumpPathClear } = require('./pathValidator');
 const { applyGravity, countCards } = require('./gravity');
 const { calculateTotalScore, getHandScore, getTimeBonus, getPenalty } = require('./scorer');
@@ -370,6 +370,7 @@ function replayManiacSession({
   // 4. 각 그룹 검증 + 점수 계산
   let handSum = 0;
   let totalHandCount = 0;
+  let maxComboSize = 0;             // [STEP 8+] saveManiacSession용 메타
   const allHands = [];
 
   for (let gi = 0; gi < groups.length; gi++) {
@@ -459,6 +460,7 @@ function replayManiacSession({
     const groupScore = sliceSum * n;
     handSum += groupScore;
     totalHandCount += n;
+    if (n > maxComboSize) maxComboSize = n;
     allHands.push(...sliceHands);
 
     // 4-6) 9패 초과 검증
@@ -477,6 +479,13 @@ function replayManiacSession({
   const rawTotal = handSum + timeBonus - penalty;
   const total = Math.max(0, rawTotal);
 
+  // [STEP 8+] saveManiacSession 메타: 베스트 패 라벨 (최고 rank의 RANK_LABELS)
+  let bestRank = 0;
+  for (const h of allHands) {
+    if (h.rank > bestRank) bestRank = h.rank;
+  }
+  const bestHand = RANK_LABELS[bestRank] || null;
+
   return {
     valid: true,
     score: total,
@@ -484,6 +493,10 @@ function replayManiacSession({
     hands: allHands,
     remainingCards,
     finalGrid: grid,
+    // [STEP 8+] 매니악 메타 — saveManiacSession 호출 시 사용
+    handCount: totalHandCount,
+    maxComboSize,
+    bestHand,
   };
 }
 

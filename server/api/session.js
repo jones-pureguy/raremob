@@ -17,6 +17,7 @@ function mapModeToBoard(mode) {
     case 'basic_retry': return 'basic_retry';
     case 'infinite':    return 'infinite';
     case 'hidden':      return 'hidden';
+    case 'maniac':      return 'maniac';   // [STEP 8+ 단계 2-3]
     default:
       throw new Error(`Unknown mode for board mapping: ${mode}`);
   }
@@ -88,11 +89,11 @@ const MODE_CONFIG = {
     gameTime: null,
     sessionsTable: 'hidden_sessions',
   },
-  // [STEP 6] MANIAC 모드 — 검증만, DB 저장은 단계 8+ (sessionsTable=null)
+  // [STEP 8+ 단계 2-5] MANIAC 모드 — DB 저장 활성화 (saveManiacSession 경유)
   maniac: {
     gridSize: 7,
     gameTime: 200,
-    sessionsTable: null,
+    sessionsTable: 'maniac_sessions',
   },
 };
 
@@ -334,18 +335,68 @@ function registerSessionRoutes(app, requireAuth) {
         });
       }
 
-      // [STEP 6] 매니악은 검증 통과 후 즉시 응답 (DB 저장은 단계 8+로 deferred)
+      // [STEP 8+ 단계 2-3] 매니악 DB 저장 흐름 — 베이직 패턴(L394-438)과 동일 순서:
+      //   1) upsertPlayerPeriodStats → ppsResult.isNewRecord 산출
+      //   2) saveManiacSession(..., isNewRecord) → maniac_sessions INSERT + 신기록 시 game_replays + replay_id link
+      //   3) 응답: { accepted, score, breakdown, sessionRecordId, replayId, isNewRecord }
       if (session.mode === 'maniac') {
+        const timeRemainingForSave = session.gameTime !== null
+          ? Math.max(0, session.gameTime - Math.floor((Date.now() - session.startedAt) / 1000))
+          : 0;
+
+        // 1) player_period_stats UPSERT (베이직 패턴 차용 — 헬퍼 그대로 호출)
+        let ppsResult = { ok: false, isNewRecord: false };
+        try {
+          const board = mapModeToBoard(session.mode);   // = 'maniac'
+          ppsResult = await upsertPlayerPeriodStats(supabase, {
+            playerId: session.userId,
+            board,
+            score: replayResult.score,
+            playedAt: new Date(),
+            // replayId는 saveManiacSession 안에서 game_replays INSERT 후 직접 UPDATE
+            // (베이직 동일 패턴 — 호출 시점엔 모름)
+          });
+          if (!ppsResult.ok) {
+            console.error('[player_period_stats UPSERT partial fail] (maniac)', {
+              playerId: session.userId, board, score: replayResult.score, errors: ppsResult.errors,
+            });
+          }
+        } catch (e) {
+          console.error('[player_period_stats UPSERT exception] (maniac)', {
+            playerId: session.userId, mode: session.mode, error: e.message,
+          });
+        }
+
+        // 2) DB 저장 (isNewRecord 전달 → 신기록 시 game_replays INSERT 게이트)
+        const dbResult = await saveManiacSession({
+          userId: session.userId,
+          score: replayResult.score,
+          bestHand: replayResult.bestHand,
+          handCount: replayResult.handCount,
+          maxComboSize: replayResult.maxComboSize,
+          timeRemaining: timeRemainingForSave,
+          seed: session.seed,
+          startedAt: session.startedAt,
+          gameTime: session.gameTime,
+          dragLog,
+          isNewRecord: ppsResult.isNewRecord,
+        });
+
+        if (dbResult.error) {
+          console.error('[session/submit/maniac] db error:', dbResult.error);
+          return res.status(500).json({ error: 'DB_ERROR', detail: dbResult.error });
+        }
+
         session.submitted = true;
-        console.log(`[session/submit/maniac] accepted (no DB write — step 6): user=${String(session.userId).slice(0, 8)}, score=${replayResult.score}, hands=${replayResult.hands.length}`);
+        console.log(`[session/submit/maniac] accepted: user=${String(session.userId).slice(0, 8)}, score=${replayResult.score}, hands=${replayResult.handCount}, maxCombo=${replayResult.maxComboSize}, isNewRecord=${ppsResult.isNewRecord}, sessionRecordId=${dbResult.sessionRecordId?.slice(0, 8)}`);
+
         return res.json({
           accepted: true,
           score: replayResult.score,
           breakdown: replayResult.breakdown,
-          sessionRecordId: null,
-          replayId: null,
-          isNewRecord: false,
-          skipped: true,
+          sessionRecordId: dbResult.sessionRecordId,
+          replayId: dbResult.replayId,
+          isNewRecord: ppsResult.isNewRecord,
         });
       }
 
@@ -707,6 +758,100 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
 
     return { error: 'UNKNOWN_MODE' };
   } catch (err) {
+    return { error: err.message };
+  }
+}
+
+// =============================================
+// [REUSE] Phase 2 Maniac 단계 8+: maniac_sessions INSERT + 신기록 시 game_replays INSERT
+// 베이직 saveSessionToDb basic 분기(L589~647) 패턴 그대로 차용:
+//   1) maniac_sessions INSERT → sessionRecordId
+//   2) isNewRecord 시 game_replays INSERT → replayId
+//   3) replayId를 player_period_stats(board='maniac', period_type='all_time') UPDATE
+// =============================================
+async function saveManiacSession({
+  userId,
+  score,
+  bestHand,
+  handCount,
+  maxComboSize,
+  timeRemaining,
+  seed,
+  startedAt,
+  gameTime,
+  dragLog,
+  isNewRecord,
+}) {
+  try {
+    // 1) maniac_sessions INSERT
+    const { data, error } = await supabase
+      .from('maniac_sessions')
+      .insert({
+        player_id: userId,
+        score,
+        best_hand: bestHand,
+        hand_count: handCount,
+        max_combo_size: maxComboSize,
+        time_remaining: timeRemaining,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[saveManiacSession] insert failed:', error);
+      return { error };
+    }
+
+    // 2) 신기록일 때만 game_replays INSERT (베이직 패턴 동일)
+    let replayRow = null;
+    if (isNewRecord) {
+      // 매니악 replay_data: dragLog 자체 + 메타 (콤보 정보는 dragLog의 comboGroupId/comboSize로 보존)
+      const replayData = {
+        version: 1,
+        mode: 'maniac',
+        seed,
+        gameTime,
+        startedAt,
+        dragLog,
+        score,
+        bestHand,
+        handCount,
+        maxComboSize,
+        timeRemaining,
+      };
+
+      const { data: row, error: replayErr } = await supabase
+        .from('game_replays')
+        .insert({
+          player_id: userId,
+          score,
+          replay_data: replayData,
+        })
+        .select()
+        .single();
+
+      if (replayErr) {
+        console.warn('[saveManiacSession] game_replays insert failed:', replayErr.message);
+      } else {
+        replayRow = row;
+        // 3) player_period_stats(board='maniac', period_type='all_time')에 replay_id 연결
+        if (replayRow?.id) {
+          const { error: linkErr } = await supabase
+            .from('player_period_stats')
+            .update({ replay_id: replayRow.id })
+            .eq('player_id', userId)
+            .eq('board', 'maniac')
+            .eq('period_type', 'all_time');
+          if (linkErr) {
+            console.warn('[saveManiacSession] replay_id link failed:', linkErr.message);
+          }
+        }
+      }
+    }
+
+    return { sessionRecordId: data?.id, replayId: replayRow?.id || null };
+  } catch (err) {
+    console.error('[saveManiacSession] exception:', err);
     return { error: err.message };
   }
 }
