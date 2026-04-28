@@ -996,8 +996,8 @@ document.querySelector('.qr-btn')?.addEventListener('click', () => {
   mn_updateScoreDisplay();
   mn_renderRemovedCards();
 
-  // BGM (베이직 임시 재활용 — 정식 Maniac_Theme.mp3는 별도 도착 시 교체)
-  if (typeof BGM !== 'undefined' && BGM.init) BGM.init('./audio/Main_Theme.mp3');
+  // BGM — 정식 매니악 테마
+  if (typeof BGM !== 'undefined' && BGM.init) BGM.init('./audio/Maniac_Theme.mp3');
   mn_initStartOverlay();
 })();
 
