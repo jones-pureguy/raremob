@@ -34,6 +34,12 @@
 
   function _updateGoldUI(value) {
     try {
+      // [BUGFIX] header.js의 toLocaleString 포맷 ("X,XXX") 일관 유지.
+      // 옛 fallback은 String(value) raw 출력으로 header listener가 적용한 콤마를 덮어씀.
+      const formatted = (typeof value === 'number' && Number.isFinite(value))
+        ? value.toLocaleString()
+        : String(value);
+
       // 1) 직접 콜백 (외부 페이지가 정의했으면)
       if (typeof window.updateGoldDisplay === 'function') {
         window.updateGoldDisplay(value);
@@ -43,10 +49,11 @@
         window.dispatchEvent(new CustomEvent('goldUpdated', { detail: { gold: value } }));
       }
       // 3) fallback selector (Option C — header.js 미로드 페이지 대비)
+      //    header listener가 이미 갱신했어도 동일 포맷으로 덮어쓰기 → 시각 일관성.
       const el = document.getElementById('goldDisplay')
               || document.getElementById('gold-display')
               || document.querySelector('[data-gold-display]');
-      if (el) el.textContent = String(value);
+      if (el) el.textContent = formatted;
     } catch (_) { /* noop */ }
   }
 
