@@ -1411,6 +1411,8 @@ window.addEventListener('popstate', () => {
 // [PHASE_2A_NEW bundle 6] async 변환 + RPC 마이그레이션 (D6 가드 + D7 헬퍼 캐싱)
 async function resetGame() {
   if (stageFailed || stageCleared) return;
+  // 응답 대기 중 연타 차단 (베이직 Phase 1-11.1 패턴)
+  if (window.RestartGuard.busy()) return;
 
   if (typeof window.accumulateSpend !== 'function') {
     console.warn('[stage.restart] accumulateSpend not available');
@@ -1438,26 +1440,28 @@ async function resetGame() {
   // [M2] batch 누적 차감 (RPC 호출 X — 클리어/실패/나가기 시 flush)
   if (!window.accumulateSpend(restartCost, 'stage_restart_batch')) return;
 
-  document.getElementById('modalOverlay').classList.remove('active');
-  document.getElementById('gridContainer').classList.remove('no-moves-dim');
-  document.getElementById('noMovesOverlay').classList.remove('active');
-  clearInterval(state.timerInterval);
+  if (!window.RestartGuard.begin()) return;
+  try {
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.getElementById('gridContainer').classList.remove('no-moves-dim');
+    document.getElementById('noMovesOverlay').classList.remove('active');
+    clearInterval(state.timerInterval);
 
-  // Reset game state but keep stage timer
-  initState();
-  initGrid();
-  renderGrid();
-  updateHandPanel();
-  updateHandPreview();
-  updateScoreDisplay();
-  renderScoreProgress();
-  renderRemovedCards();
-  startTimer();
-  ascendingStreak = 0;
-  orderedStraightCount = 0;
+    // Reset game state but keep stage timer
+    initState();
+    initGrid();
+    renderGrid();
+    updateHandPanel();
+    updateHandPreview();
+    updateScoreDisplay();
+    renderScoreProgress();
+    renderRemovedCards();
+    startTimer();
+    ascendingStreak = 0;
+    orderedStraightCount = 0;
 
-  // Sanity check (reshuffle without extra gold cost)
-  setTimeout(() => {
+    // Sanity check (reshuffle without extra gold cost)
+    await new Promise(resolve => setTimeout(resolve, 100));
     if (!scanForValidMoves()) {
       document.getElementById('modalOverlay').classList.remove('active');
       document.getElementById('gridContainer').classList.remove('no-moves-dim');
@@ -1473,7 +1477,9 @@ async function resetGame() {
       renderRemovedCards();
       startTimer();
     }
-  }, 100);
+  } finally {
+    window.RestartGuard.end();
+  }
 }
 
 // [REWRITE] 리셋 버튼 상태 업데이트

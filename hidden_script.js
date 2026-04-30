@@ -207,6 +207,9 @@ async function doHiddenShuffle() {
 // [REUSE] Phase 1-7.5-B: 리스타트 = 새 서버 세션 발급 + 그리드 초기화 (베이직 Phase 1-7.4 패턴)
 //   골드 차감은 세션 성공 후 — 네트워크 실패 시 골드 유실 방지
 async function doHiddenRestart() {
+  // 응답 대기 중 연타 차단
+  if (window.RestartGuard.busy()) return;
+
   const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
   if (currentGold < RESTART_COST) {
     showToast(i18n.t('hidden.notEnoughGold'));
@@ -239,6 +242,7 @@ async function doHiddenRestart() {
   }
 
   // 온라인: 세션 발급 성공 후 batch 누적 차감
+  if (!window.RestartGuard.begin()) return;
   try {
     const session = await requestHiddenServerSession();
     if (!window.accumulateSpend(RESTART_COST, 'hidden_restart_batch')) return;
@@ -264,6 +268,8 @@ async function doHiddenRestart() {
         doHiddenRestart();
       }
     );
+  } finally {
+    window.RestartGuard.end();
   }
 }
 

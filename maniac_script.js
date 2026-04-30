@@ -869,6 +869,8 @@ async function mn_archiveReplay() {
 // =============== [REWRITE] Reset (RESTART, 1G batch) ===============
 async function mn_resetGame() {
   if (mn_state.phase !== 'playing') return;
+  // 응답 대기 중 연타 차단
+  if (window.RestartGuard.busy()) return;
   if (typeof window.accumulateSpend !== 'function') {
     console.warn('[maniac.restart] accumulateSpend not available');
     return;
@@ -881,8 +883,13 @@ async function mn_resetGame() {
   }
   if (!window.accumulateSpend(restartCost, 'maniac_restart_batch')) return;
 
-  // 새 서버 세션 발급 → 새 시드로 초기화
-  await mn_startWithServerSession({ skipOverlay: true });
+  // 새 서버 세션 발급 → 새 시드로 초기화 (응답 대기 가드)
+  if (!window.RestartGuard.begin()) return;
+  try {
+    await mn_startWithServerSession({ skipOverlay: true });
+  } finally {
+    window.RestartGuard.end();
+  }
 }
 
 // =============== Server session (옵션 B) ===============

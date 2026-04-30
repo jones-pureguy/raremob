@@ -1161,7 +1161,7 @@ function onHiddenEnter(finalScore) {
 // [ADAPTER] Phase 1-7.4: 리스타트 — 서버 세션 재발급 통합
 async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
   // [Phase 1-11.1] 중복 실행 방지 — 응답 대기 중 연타 차단
-  if (window._resetInProgress) return;
+  if (window.RestartGuard.busy()) return;
 
   const currentGold = parseInt(loadLocal('poker_gold') || '0');
   if (currentGold < 1) {
@@ -1176,8 +1176,7 @@ async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
   }
 
   // 온라인 싱글플레이: 새 서버 세션 발급 후 리스타트
-  window._resetInProgress = true;
-  showRestartOverlay();
+  if (!window.RestartGuard.begin()) return;
   const prevSessionId = window._serverSession?.sessionId;
   try {
     const sessionData = await requestServerSession('basic');
@@ -1216,31 +1215,8 @@ async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
       }
     );
   } finally {
-    hideRestartOverlay();
-    window._resetInProgress = false;
+    window.RestartGuard.end();
   }
-}
-
-// [REUSE] Phase 1-11.1: 리스타트 응답 대기 오버레이
-function showRestartOverlay() {
-  let overlay = document.getElementById('restartOverlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'restartOverlay';
-    overlay.className = 'restart-overlay';
-    overlay.innerHTML = '<div class="restart-spinner"></div>';
-    document.body.appendChild(overlay);
-  }
-  overlay.classList.add('active');
-  const btn = document.getElementById('restartBtn');
-  if (btn) btn.style.pointerEvents = 'none';
-}
-
-function hideRestartOverlay() {
-  const overlay = document.getElementById('restartOverlay');
-  if (overlay) overlay.classList.remove('active');
-  const btn = document.getElementById('restartBtn');
-  if (btn) btn.style.pointerEvents = '';
 }
 
 // [REUSE] 레거시 리스타트 (PvP / 오프라인 / RETRY 전용)
