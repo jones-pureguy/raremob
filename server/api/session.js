@@ -340,6 +340,21 @@ function registerSessionRoutes(app, requireAuth) {
       //   2) saveManiacSession(..., isNewRecord) → maniac_sessions INSERT + 신기록 시 game_replays + replay_id link
       //   3) 응답: { accepted, score, breakdown, sessionRecordId, replayId, isNewRecord }
       if (session.mode === 'maniac') {
+        // 0점 세션은 DB 저장 skip (베이직 가드 동일 — maniac_sessions 0점 row 누적 방어)
+        if (replayResult.score <= 0) {
+          session.submitted = true;
+          console.log(`[session/submit/maniac] accepted but skipping DB (score=0): user=${String(session.userId).slice(0, 8)}`);
+          return res.json({
+            accepted: true,
+            score: 0,
+            breakdown: replayResult.breakdown,
+            sessionRecordId: null,
+            replayId: null,
+            skipped: true,
+            isNewRecord: false,
+          });
+        }
+
         const timeRemainingForSave = session.gameTime !== null
           ? Math.max(0, session.gameTime - Math.floor((Date.now() - session.startedAt) / 1000))
           : 0;
