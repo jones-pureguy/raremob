@@ -30,8 +30,8 @@
   },
 
   "goldCosts": {
-    "basic":    { "restart": 1 },
-    "maniac":   { "restart": 1, "retry": 200 },
+    "basic":    { "restart": 1, "retry": 500 },
+    "maniac":   { "restart": 1, "retry": 500 },
     "hidden":   { "restart": 20, "shuffle": 100 },
     "infinite": { "shuffle": 5 },
     "puzzle":   { "hintLv1": 10, "hintLv2": 20, "hintLv3": 30 },

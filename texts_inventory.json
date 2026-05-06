@@ -228,6 +228,13 @@
       "저장 중...",
       "저장 완료",
       "저장 실패"
+    ],
+    "i18n_keys": [
+      "endgame.retry.label",
+      "endgame.retry.confirmTitle",
+      "endgame.retry.confirmDesc",
+      "endgame.retry.expiredOrInvalid",
+      "endgame.retry.failed"
     ]
   },
   "stage_script.js": {
@@ -425,6 +432,6 @@
     "labels": [],
     "placeholders": [],
     "dynamic_text": ["${hand.label} ${mark}", "×N COMBO", "Pair of ${VALUE_NAMES[pv]}s", "Four ${VALUE_NAMES[v]}s", "Three ${VALUE_NAMES[v]}s"],
-    "i18n_keys": ["maniac.entryDenied", "maniac.combo.x2~x9", "ui.playAgain", "ui.gameEnd", "modal.*", "toast.*"]
+    "i18n_keys": ["maniac.entryDenied", "maniac.combo.x2~x9", "ui.playAgain", "ui.gameEnd", "modal.*", "toast.*", "endgame.retry.label", "endgame.retry.confirmTitle", "endgame.retry.confirmDesc", "endgame.retry.expiredOrInvalid", "endgame.retry.failed"]
   }
 }

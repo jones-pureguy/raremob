@@ -4,6 +4,15 @@
     "name": "English",
     "dir": "ltr"
   },
+  "endgame": {
+    "retry": {
+      "label": "RE-TRY",
+      "confirmTitle": "Replay with same seed",
+      "confirmDesc": "Start again with the same grid. ${n} gold will be deducted.",
+      "expiredOrInvalid": "RE-TRY window expired or session not found.",
+      "failed": "Failed to start RE-TRY."
+    }
+  },
   "ui": {
     "basicGame": "BASIC GAME",
     "challengeMode": "CHALLENGE MODE",

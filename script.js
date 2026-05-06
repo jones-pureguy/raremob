@@ -1070,12 +1070,14 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     const hiddenBtnHTML = (score >= HIDDEN_UNLOCK_SCORE && !isRetryMode)
       ? `<button class="btn-play-again btn-hidden-enter" onclick="onHiddenEnter(${score})" style="width:100%;margin-bottom:8px;">${i18n.t('hidden.enterButton') || '🎴 Hidden Game 시작'}</button>`
       : '';
+    const retrySessionCost = (typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('basic', 'retry') : 500;
     let buttonsHTML = `
       ${hiddenBtnHTML}
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-play-again" onclick="resetGame()">${i18n.t('ui.playAgain')}</button>
         <a href="mode_select.html" data-flush-exit class="btn-play-again" style="${btnSecondary}text-decoration:none;display:flex;align-items:center;">${i18n.t('ui.gameEnd')}</a>
         <button class="btn-play-again btn-gold-cost" id="btnSaveReplay" style="${btnSecondary}" onclick="saveReplayFromButton()">${i18n.t('ui.saveReplay')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">${(typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('replay', 'save') : 50}</span></button>
+        <button class="btn-play-again btn-gold-cost" id="btnRetrySession" style="${btnSecondary}" onclick="onRetrySessionClick('basic')">${i18n.t('endgame.retry.label')}<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">${retrySessionCost}</span></button>
       </div>`;
 
     // Show modal immediately (no DB delay)
@@ -1514,6 +1516,31 @@ const SERVER_URL = window._serverUrl || 'https://dragon-poker-server.onrender.co
 
 // [ADAPTER] 서버에서 세션 발급 받기 (basic)
 async function requestServerSession(mode) {
+  // RE-TRY: 종료 모달에서 발급된 pending session 사용 (페이지 리로드 직후 1회용)
+  try {
+    const raw = localStorage.getItem('poker_pending_session');
+    if (raw) {
+      localStorage.removeItem('poker_pending_session');
+      const data = JSON.parse(raw);
+      if (data?.mode === mode && data.sessionId && data.seed != null) {
+        window._serverSession = {
+          sessionId: data.sessionId,
+          seed: data.seed,
+          dragLog: [],
+          serverStartedAt: Date.now(),
+          mode,
+          submitted: false,
+          isRetry: data.isRetry === true,
+        };
+        console.log(`[session] RE-TRY pending adopted: sessionId=${data.sessionId.slice(0, 8)}, seed=${data.seed}`);
+        return { sessionId: data.sessionId, seed: data.seed, gameTime: data.gameTime, isRetry: data.isRetry === true };
+      }
+    }
+  } catch (e) {
+    console.warn('[session] pending session parse failed:', e);
+    localStorage.removeItem('poker_pending_session');
+  }
+
   const userId = loadLocal('poker_player_id');
   if (!userId) throw new Error('NO_USER_ID');
 
@@ -1549,6 +1576,82 @@ async function requestServerSession(mode) {
   console.log(`[session/start] took ${Date.now() - t0}ms (mode=${mode}):`, { sessionId: data.sessionId.slice(0, 8), seed: data.seed });
   return data;
 }
+
+// [ADAPTER] RE-TRY (same-seed replay) — 종료 모달에서 호출.
+// sourceSessionId(현재 살아있는 _serverSession.sessionId) 전달 → 서버가 500골드 차감 후
+// 같은 seed로 새 세션 발급. localStorage('poker_pending_session')에 저장 후 페이지 리로드.
+window.onRetrySessionClick = async function onRetrySessionClick(mode) {
+  const cost = (typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost(mode, 'retry') : 500;
+  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
+  if (currentGold < cost) {
+    showToast(i18n.t('toast.goldInsufficientN', { n: cost }));
+    return;
+  }
+  const sourceSessionId = window._serverSession?.sessionId;
+  if (!sourceSessionId) {
+    showToast(i18n.t('endgame.retry.expiredOrInvalid'));
+    return;
+  }
+
+  const confirmed = await new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;justify-content:center;align-items:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:linear-gradient(145deg,#1a3a22,#0d2818);border:2px solid var(--gold);border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;font-family:\'IBM Plex Mono\',monospace;';
+    box.innerHTML = `
+      <div style="color:var(--gold);font-size:1rem;font-weight:700;margin-bottom:10px;">${i18n.t('endgame.retry.confirmTitle')}</div>
+      <div style="color:#e0e0e0;font-size:0.85rem;margin-bottom:20px;line-height:1.4;">${i18n.t('endgame.retry.confirmDesc', { n: cost })}</div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="_retryYes" style="background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;font-family:inherit;font-weight:700;cursor:pointer;">${i18n.t('ui.confirm')}</button>
+        <button id="_retryNo" style="background:rgba(255,255,255,0.1);color:#e0e0e0;border:1px solid rgba(255,255,255,0.2);padding:10px 20px;border-radius:8px;font-family:inherit;cursor:pointer;">${i18n.t('ui.cancel')}</button>
+      </div>`;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    box.querySelector('#_retryYes').onclick = () => { overlay.remove(); resolve(true); };
+    box.querySelector('#_retryNo').onclick = () => { overlay.remove(); resolve(false); };
+    overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+  });
+  if (!confirmed) return;
+
+  try {
+    const authSession = (await sb.auth.getSession()).data.session;
+    const token = authSession?.access_token;
+    if (!token) {
+      showToast(i18n.t('toast.authMissing') || 'Login required');
+      return;
+    }
+    const res = await fetch(`${SERVER_URL}/api/session/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ mode, sourceSessionId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = data?.error;
+      if (err === 'INSUFFICIENT_GOLD') showToast(i18n.t('toast.goldInsufficientN', { n: cost }));
+      else if (err === 'PARENT_NOT_FOUND' || err === 'AUTH_FORBIDDEN') showToast(i18n.t('endgame.retry.expiredOrInvalid'));
+      else showToast(i18n.t('endgame.retry.failed'));
+      console.warn('[RE-TRY] server reject:', res.status, data);
+      return;
+    }
+
+    if (typeof window.syncGoldFromServer === 'function') {
+      try { await window.syncGoldFromServer(); } catch (e) { console.warn('[RE-TRY] gold sync failed:', e); }
+    }
+
+    localStorage.setItem('poker_pending_session', JSON.stringify({
+      sessionId: data.sessionId,
+      seed: data.seed,
+      gameTime: data.gameTime,
+      mode,
+      isRetry: data.isRetry === true,
+    }));
+    window.location.reload();
+  } catch (e) {
+    console.error('[RE-TRY] error:', e);
+    showToast(i18n.t('endgame.retry.failed'));
+  }
+};
 
 // [ADAPTER] 서버에 세션 제출 (검증 포함)
 async function submitSessionToServer(claimedScore, reason) {

@@ -69,6 +69,15 @@
   "splash": {
     "touchToStart": "TOUCH TO START"
   },
+  "endgame": {
+    "retry": {
+      "label": "RE-TRY",
+      "confirmTitle": "동일 시드로 다시 도전",
+      "confirmDesc": "같은 그리드로 다시 시작합니다. ${n} 골드가 차감됩니다.",
+      "expiredOrInvalid": "RE-TRY 가능 시간이 지났거나 세션이 만료되었습니다.",
+      "failed": "RE-TRY 시작에 실패했습니다."
+    }
+  },
   "ui": {
     "basicGame": "BASIC GAME",
     "challengeMode": "CHALLENGE MODE",
