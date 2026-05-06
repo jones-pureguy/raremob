@@ -9,6 +9,10 @@ const { generateSeed } = require('../engine/prng');
 const { replaySession, replayManiacSession, buildInitialGrid } = require('../engine/replay');
 const supabase = require('../supabase');
 const { upsertPlayerPeriodStats } = require('../lib/playerPeriodStats');
+const { retryKey } = require('../utils/idempotency');
+
+// RE-TRY (same-seed replay) 비용 — D1: 500골드 (basic/maniac 공통)
+const RETRY_COST = 500;
 
 // [REUSE] Phase 1-8: submit mode → player_period_stats.board 매핑
 function mapModeToBoard(mode) {
@@ -194,7 +198,7 @@ function registerSessionRoutes(app, requireAuth) {
   app.post('/api/session/start', requireAuth, async (req, res) => {
     try {
       const userId = req.userId;
-      const { mode, basicSessionId } = req.body || {};
+      const { mode, basicSessionId, sourceSessionId } = req.body || {};
 
       if (!mode) {
         return res.status(400).json({ error: 'MISSING_PARAMS' });
@@ -208,27 +212,92 @@ function registerSessionRoutes(app, requireAuth) {
         return res.status(429).json({ error: rl.reason });
       }
 
-      // [Phase 1-7.5-C] 히든 진입 자격 검증
-      if (mode === 'hidden') {
-        const guardResult = await verifyHiddenEntry(userId, basicSessionId);
-        if (!guardResult.ok) {
-          console.warn(`[hidden-guard] denied user=${String(userId).slice(0, 8)}, reason=${guardResult.reason}, basicSessionId=${String(basicSessionId || '').slice(0, 8)}`);
-          return res.status(403).json({
-            error: 'HIDDEN_ENTRY_DENIED',
-            reason: guardResult.reason,
+      // RE-TRY (same-seed replay) 분기 — sourceSessionId 검증 + 골드 차감 후 seed 재사용
+      let seed;
+      let isRetry = false;
+      if (sourceSessionId) {
+        // basic/maniac만 허용 (infinite/hidden은 RE-TRY 비대상)
+        if (mode !== 'basic' && mode !== 'maniac') {
+          return res.status(400).json({
+            ok: false,
+            error: 'RETRY_MODE_NOT_SUPPORTED',
+            message: `RE-TRY is only available for basic/maniac (got ${mode})`,
           });
         }
+
+        const parent = activeSessions.get(sourceSessionId);
+        if (!parent) {
+          return res.status(404).json({
+            ok: false,
+            error: 'PARENT_NOT_FOUND',
+            message: 'Source session not found or expired',
+          });
+        }
+        if (parent.userId !== userId) {
+          console.warn(`[/api/session/start RE-TRY] forbidden: parent.userId=${parent.userId} req.userId=${userId}`);
+          return res.status(403).json({
+            ok: false,
+            error: 'AUTH_FORBIDDEN',
+            message: 'Source session does not belong to you',
+          });
+        }
+        if (parent.mode !== mode) {
+          return res.status(400).json({
+            ok: false,
+            error: 'MODE_MISMATCH',
+            message: `Source session mode (${parent.mode}) does not match (${mode})`,
+          });
+        }
+
+        // 골드 차감 — deduct_gold RPC, reason='same_seed_replay'
+        // idempotency_key는 sourceSessionId 단독 deterministic UUID v5
+        //   → 같은 source로 더블클릭 시 두 번째는 duplicated:true (멱등)
+        const idempotencyKey = retryKey(sourceSessionId);
+        const { data: deductResult, error: deductErr } = await supabase.rpc('deduct_gold', {
+          p_player_id: userId,
+          p_amount: RETRY_COST,
+          p_reason: 'same_seed_replay',
+          p_idempotency_key: idempotencyKey,
+          p_meta: { sourceSessionId, mode },
+        });
+        if (deductErr || !deductResult?.balance) {
+          const isInsufficient = deductErr?.message?.includes('Insufficient gold');
+          console.warn(`[session/start RE-TRY] deduct failed: user=${String(userId).slice(0, 8)}, source=${sourceSessionId.slice(0, 8)}, err=${deductErr?.message}`);
+          return res.status(isInsufficient ? 402 : 500).json({
+            ok: false,
+            error: isInsufficient ? 'INSUFFICIENT_GOLD' : 'DEDUCT_FAILED',
+            message: deductErr?.message || 'Gold deduction failed',
+          });
+        }
+
+        seed = parent.seed;
+        isRetry = true;
+        console.log(`[session/start RE-TRY] user=${String(userId).slice(0, 8)}, mode=${mode}, source=${sourceSessionId.slice(0, 8)}, balance=${deductResult.balance}, duplicated=${deductResult.duplicated === true}`);
+      } else {
+        // [Phase 1-7.5-C] 히든 진입 자격 검증 (RE-TRY가 아닐 때만)
+        if (mode === 'hidden') {
+          const guardResult = await verifyHiddenEntry(userId, basicSessionId);
+          if (!guardResult.ok) {
+            console.warn(`[hidden-guard] denied user=${String(userId).slice(0, 8)}, reason=${guardResult.reason}, basicSessionId=${String(basicSessionId || '').slice(0, 8)}`);
+            return res.status(403).json({
+              error: 'HIDDEN_ENTRY_DENIED',
+              reason: guardResult.reason,
+            });
+          }
+        }
+
+        seed = generateSeed();
       }
 
-      const seed = generateSeed();
       const session = createSession({ userId, mode, seed });
+      if (isRetry) session.isRetry = true;
 
       // [Phase 1-7.5-C] 히든 세션에 basic_session_id 연결 (submit 시 저장용)
       if (mode === 'hidden') {
         session.basicSessionId = basicSessionId;
       }
 
-      console.log(`[session] start: user=${String(userId).slice(0, 8)}, mode=${mode}, sessionId=${session.sessionId.slice(0, 8)}, seed=${seed}`);
+      console.log(`[session] start: user=${String(userId).slice(0, 8)}, mode=${mode}, sessionId=${session.sessionId.slice(0, 8)}, seed=${seed}${isRetry ? ' [RE-TRY]' : ''}`);
 
       return res.json({
         sessionId: session.sessionId,
@@ -236,6 +305,7 @@ function registerSessionRoutes(app, requireAuth) {
         gridSize: session.gridSize,
         gameTime: session.gameTime,
         startedAt: session.startedAt,
+        isRetry,
       });
     } catch (err) {
       console.error('[session/start] error:', err);
