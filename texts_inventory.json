@@ -13,7 +13,7 @@
     "toasts": ["골드가 부족합니다."],
     "modals": [],
     "alerts": [],
-    "labels": ["(RETRY)", "HI", "NO MORE MOVES", "BEST HANDS", "REMOVED", "DragON POKER"],
+    "labels": ["HI", "NO MORE MOVES", "BEST HANDS", "REMOVED", "DragON POKER"],
     "placeholders": [],
     "dynamic_text": ["/9 🃏"]
   },
@@ -85,10 +85,10 @@
     "dynamic_text": []
   },
   "replay.html": {
-    "buttons": ["◀", "▶ Play", "⏸ Pause", "▶▏", "1x", "2x", "4x", "GAME RETRY", "← BACK"],
+    "buttons": ["◀", "▶ Play", "⏸ Pause", "▶▏", "1x", "2x", "4x", "← BACK"],
     "toasts": [],
     "modals": ["어떤 리플레이를 볼까요?"],
-    "alerts": ["골드가 부족합니다. (필요: 500 골드)"],
+    "alerts": [],
     "labels": ["REPLAY", "REMOVED", "DragON POKER - Replay", "BASIC", "MANIAC"],
     "placeholders": [],
     "dynamic_text": [
@@ -96,9 +96,6 @@
       "불러오는 중...",
       "리플레이를 찾을 수 없습니다",
       "오류 발생",
-      "500 골드를 사용하여 리트라이하시겠습니까?",
-      "리트라이 (-500G)",
-      "취소",
       "${replay.result.reason.toUpperCase()} — Final: ${replay.result.finalScore}",
       "${speed}x"
     ],
@@ -126,7 +123,6 @@
       "leaderboard.board.maniac",
       "leaderboard.board.infinite",
       "leaderboard.board.hidden",
-      "leaderboard.board.retry",
       "leaderboard.sort.label",
       "leaderboard.sort.best",
       "leaderboard.sort.sum",

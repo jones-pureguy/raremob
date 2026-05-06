@@ -107,7 +107,6 @@
     renderMyRankBar();
     renderMyStats();
     renderNextResetHint();
-    updateBoardTabsVisibility();
   }
 
   function showLoading() {
@@ -213,12 +212,10 @@
 
     let html = `<h2>${escapeHTML(title)}</h2>`;
 
-    const boards = ['basic', 'maniac', 'infinite', 'hidden', 'basic_retry'];
+    const boards = ['basic', 'maniac', 'infinite', 'hidden'];
     for (const board of boards) {
-      // RETRY는 all_time에서만 노출
-      if (board === 'basic_retry' && state.period !== 'all_time') continue;
       const data = state.meData && state.meData[board] ? state.meData[board][state.period] : null;
-      const labelKey = board === 'basic_retry' ? 'leaderboard.board.retry' : `leaderboard.board.${board}`;
+      const labelKey = `leaderboard.board.${board}`;
       const boardLabel = i18n.t(labelKey);
 
       if (!data) {
@@ -282,20 +279,6 @@
     hint.hidden = false;
   }
 
-  function updateBoardTabsVisibility() {
-    const retryTab = document.querySelector('[data-board="basic_retry"]');
-    if (!retryTab) return;
-    if (state.period === 'all_time') {
-      retryTab.hidden = false;
-    } else {
-      retryTab.hidden = true;
-      if (state.board === 'basic_retry') {
-        // 현재 선택이 RETRY였으면 basic으로 강제 복귀
-        selectBoard('basic');
-      }
-    }
-  }
-
   function selectBoard(board) {
     state.board = board;
     state.offset = 0;
@@ -310,7 +293,6 @@
         state.period = btn.dataset.period;
         state.offset = 0;
         updateTabUI('.tab-period', btn);
-        updateBoardTabsVisibility();
         renderNextResetHint();
         renderMyStats();
         renderMyRankBar();

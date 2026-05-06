@@ -35,7 +35,6 @@
     "hidden":   { "restart": 20, "shuffle": 100 },
     "infinite": { "shuffle": 5 },
     "puzzle":   { "hintLv1": 10, "hintLv2": 20, "hintLv3": 30 },
-    "replay":   { "save": 50 },
-    "retry":    { "game": 200 }
+    "replay":   { "save": 50 }
   }
 }

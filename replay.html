@@ -145,10 +145,6 @@
   <div class="removed-cards" id="removedCards"></div>
 </div>
 
-<div style="text-align:center;padding:12px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
-  <button class="replay-btn btn-gold-cost" id="btnRetry" onclick="gameRetry()" style="display:none;width:160px;padding:8px 0;font-size:14px;font-weight:bold;background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);">GAME RETRY<span class="gold-cost-badge"><img src="./images/coin.png" class="cost-icon" onerror="this.style.display='none'">200</span></button>
-</div>
-
 <!-- [Phase 2 Maniac Step 3-4] 슬롯 선택 모달 (basic + maniac 양쪽 박제 시) -->
 <div id="slotSelectionModal" class="slot-selection-modal" style="display:none;">
   <div class="slot-selection-content">
@@ -218,14 +214,6 @@ function loadReplay(data, opts = {}) {
   const removedPanel = document.getElementById('removedPanel');
   if (removedPanel) removedPanel.style.display = '';
 
-  // [Phase 1-8-prep] GAME RETRY:
-  //   · 본인 리플레이 AND localStorage 경로로 진입한 경우에만 노출
-  //   · 리더보드 경유(?id=xxx)는 본인 리플레이라도 RETRY 숨김 — 시드 재사용 치팅 방지
-  const myUsername = (localStorage.getItem('poker_username') || '').trim().toLowerCase();
-  const replayUsername = (data.username || '').trim().toLowerCase();
-  const isFromUrl = !!opts.fromUrl;
-  const btnRetry = document.getElementById('btnRetry');
-  btnRetry.style.display = (!isFromUrl && myUsername && myUsername === replayUsername) ? 'inline-block' : 'none';
   resetToInitial();
   renderActionLog();
   updateInfo();
@@ -547,64 +535,6 @@ function updateInfo() {
   const el = document.getElementById('replayInfo');
   const date = new Date(replay.timestamp).toLocaleString('ko-KR');
   el.innerHTML = '<span class="gold">' + (replay.username || '?') + '</span> · ' + date + ' · Score: <span class="gold">' + (replay.result ? replay.result.finalScore : '?') + '</span>';
-}
-
-// ─── Gold helpers ───
-function deductGoldLocal(amount, reason) {
-  const current = parseInt(localStorage.getItem('poker_gold') || '0');
-  if (current < amount) return false;
-  localStorage.setItem('poker_gold', current - amount);
-  return true;
-}
-
-// ─── Confirm Modal ───
-function showConfirmModal({ message, confirmText, onConfirm }) {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;justify-content:center;align-items:center;';
-  const box = document.createElement('div');
-  box.style.cssText = 'background:linear-gradient(145deg,#1a3a22,#0d2818);border:2px solid var(--gold);border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;';
-  box.innerHTML = `
-    <div style="color:#e0e0e0;font-size:0.9rem;margin-bottom:20px;font-family:'IBM Plex Mono',monospace;">${message}</div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button id="confirmYes" style="background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;cursor:pointer;">${confirmText}</button>
-      <button id="confirmNo" style="background:rgba(255,255,255,0.1);color:#e0e0e0;border:1px solid rgba(255,255,255,0.2);padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;cursor:pointer;">${i18n.t('ui.cancel')}</button>
-    </div>`;
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  box.querySelector('#confirmYes').onclick = () => { overlay.remove(); onConfirm(); };
-  box.querySelector('#confirmNo').onclick = () => overlay.remove();
-  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-}
-
-// ─── Game Retry ───
-// [PHASE_2A_NEW bundle 6] RPC 마이그레이션 (D6 가드 + D7 헬퍼 캐싱)
-function gameRetry() {
-  if (!replay || !replay.initialDeck) return;
-
-  const retryCost = (typeof ScorePolicy !== 'undefined')
-    ? ScorePolicy.getGoldCost('retry', 'game')
-    : 200;
-
-  const currentGold = parseInt(localStorage.getItem('poker_gold') || '0');
-  if (currentGold < retryCost) {
-    alert(i18n.t('toast.goldInsufficientN', { n: retryCost }));
-    return;
-  }
-
-  showConfirmModal({
-    message: i18n.t('modal.retryConfirm', { n: retryCost }),
-    confirmText: i18n.t('modal.retryConfirmBtn', { n: retryCost }),
-    onConfirm: async () => {
-      if (typeof window.spendGold !== 'function') {
-        console.warn('[game_retry] spendGold not available');
-        return;
-      }
-      const ok = await window.spendGold(retryCost, 'game_retry');
-      if (!ok) return;
-      localStorage.setItem('poker_retry_deck', JSON.stringify(replay.initialDeck));
-      window.location.href = 'game.html';
-    }
-  });
 }
 
 // ─── Init: load from URL param or localStorage ───
@@ -1176,8 +1106,6 @@ async function playManiacReplay(replayData) {
   if (basicCtl) basicCtl.style.display = 'none';
   const basicLog = document.getElementById('actionLog');
   if (basicLog) basicLog.style.display = 'none';
-  const btnRetry = document.getElementById('btnRetry');
-  if (btnRetry) btnRetry.style.display = 'none';
 
   // 매니악 전용 컨트롤 + actionLog 표시
   const mnCtl = document.getElementById('mnReplayControls');

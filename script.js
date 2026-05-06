@@ -93,7 +93,6 @@ const RANK_CSS = { // [REUSE]
 let state = {};
 let currentPlayerId = null; // cached player uuid
 let replayLog = null; // current game replay data
-let isRetryMode = false; // true when game started via GAME RETRY
 
 // [REUSE] Phase 1-7: 서버 세션 상태 (싱글플레이만 사용, PvP는 무시)
 window._serverSession = window._serverSession || {
@@ -161,19 +160,11 @@ function cardFromId(id) { // [REUSE]
 // ─── Grid Init ───
 function initGrid(seed = null) { // [REUSE] (uses ADAPTER: saveLocal/loadLocal/removeLocal)
   let deck;
-  const retryRaw = loadLocal('poker_retry_deck');
-  if (retryRaw) {
-    removeLocal('poker_retry_deck');
-    const deckIds = JSON.parse(retryRaw);
-    deck = deckIds.map(id => cardFromId(id));
-    isRetryMode = true;
-  } else if (seed !== null && window.PRNG) {
+  if (seed !== null && window.PRNG) {
     // [REUSE] Phase 1-7: 서버 seed 기반 결정론적 셔플
     deck = window.PRNG.shuffleFromSeed(createDeck(), seed);
-    isRetryMode = false;
   } else {
     deck = shuffle(createDeck());
-    isRetryMode = false;
   }
 
   // Remove 3 random cards
@@ -479,7 +470,7 @@ async function saveSessionAndGetStatus(data) {
     // [PHASE_2A_NEW bundle 8-5] syncGoldToDB('game_end') 제거 — spendGold/awardGold RPC가 실시간 동기화 처리
 
     // Top score 조회 (서버 /top API)
-    const board = isRetryMode ? 'basic_retry' : 'basic';
+    const board = 'basic';
     try {
       const url = `${SERVER_URL}/api/leaderboard/top?board=${board}&period=all_time&sort=best&limit=1`;
       const apiRes = await fetch(url);
@@ -505,7 +496,7 @@ async function saveSessionAndGetStatus(data) {
 // [REUSE] [Phase 1-13 후속] /top API 호출로 교체 (구 leaderboard 테이블 DROP됨)
 async function fetchTopScore() {
   try {
-    const board = isRetryMode ? 'basic_retry' : 'basic';
+    const board = 'basic';
     const url = `${SERVER_URL}/api/leaderboard/top?board=${board}&period=all_time&sort=best&limit=1`;
     const apiRes = await fetch(url);
     if (!apiRes.ok) return 0;
@@ -1066,8 +1057,8 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     modal.className = 'modal' + modalClass;
 
     const btnSecondary = 'background:rgba(255,255,255,0.1);color:#e0e0e0;';
-    // [Phase 1-7.5-C] Hidden Game 진입 버튼 — NORMAL 500+ 만. RETRY는 시드 재사용 치팅 방지로 제외.
-    const hiddenBtnHTML = (score >= HIDDEN_UNLOCK_SCORE && !isRetryMode)
+    // [Phase 1-7.5-C] Hidden Game 진입 버튼 — NORMAL 500+ 만.
+    const hiddenBtnHTML = (score >= HIDDEN_UNLOCK_SCORE)
       ? `<button class="btn-play-again btn-hidden-enter" onclick="onHiddenEnter(${score})" style="width:100%;margin-bottom:8px;">${i18n.t('hidden.enterButton') || '🎴 Hidden Game 시작'}</button>`
       : '';
     const retrySessionCost = (typeof ScorePolicy !== 'undefined') ? ScorePolicy.getGoldCost('basic', 'retry') : 500;
@@ -1127,14 +1118,9 @@ function endGame(reason) { // [REWRITE] (uses ADAPTER: saveLocal/loadLocal)
     });
 
     // [REUSE] Phase 1-7: 서버 세션 제출 (싱글플레이만, 백그라운드)
-    if (!window._pvpMode && !isRetryMode && window._serverSession && window._serverSession.sessionId && !window._offlineMode) {
+    if (!window._pvpMode && window._serverSession && window._serverSession.sessionId && !window._offlineMode) {
       submitSessionToServer(score, reason).catch(err => {
         console.error('[session/submit] background error:', err);
-      });
-    }
-    if (!window._pvpMode && isRetryMode && !window._offlineMode) {
-      submitRetryToServer(score, reason).catch(err => {
-        console.error('[retry/submit] background error:', err);
       });
     }
   }
@@ -1171,8 +1157,8 @@ async function resetGame() { // [REWRITE] (uses ADAPTER: loadLocal)
     return;
   }
 
-  // PvP / 오프라인 / RETRY 모드: 기존 레거시 경로 (오버레이 불필요 — 즉시 실행)
-  if (window._pvpMode || window._offlineMode || isRetryMode) {
+  // PvP / 오프라인 모드: 기존 레거시 경로 (오버레이 불필요 — 즉시 실행)
+  if (window._pvpMode || window._offlineMode) {
     _resetGameLegacy();
     return;
   }
@@ -1251,8 +1237,6 @@ async function _resetGameLegacy() {
 function updateScoreDisplay() { // [REWRITE]
   document.getElementById('currentScore').textContent = state.currentScore;
   document.getElementById('highScoreDisplay').textContent = getHighScore();
-  const retryLabel = document.getElementById('retryLabel');
-  if (retryLabel) retryLabel.style.display = isRetryMode ? 'inline' : 'none';
 }
 
 function triggerScreenFlash(tier) { // [REWRITE]
@@ -1432,8 +1416,8 @@ async function saveReplayFromButton() { // [REWRITE]
 async function showLeaderboard(currentUser) { // [REWRITE] (uses ADAPTER: loadLocal)
   if (!currentUser) currentUser = (loadLocal('poker_username') || '').trim();
   try {
-    const board = isRetryMode ? 'basic_retry' : 'basic';
-    const lbTitle = isRetryMode ? i18n.t('modal.leaderboardRetry') : i18n.t('modal.leaderboard');
+    const board = 'basic';
+    const lbTitle = i18n.t('modal.leaderboard');
 
     // [Phase 1-13 후속] /top API 호출로 교체. best_hand 컬럼은 응답 스키마에 없어서 모달에서 제외.
     const url = `${SERVER_URL}/api/leaderboard/top?board=${board}&period=all_time&sort=best&limit=10`;
@@ -1706,64 +1690,6 @@ async function submitSessionToServer(claimedScore, reason) {
   }
 }
 
-// [ADAPTER] RETRY 서버 경유 (검증 없음 — leaderboard_r 박제용)
-async function submitRetryToServer(claimedScore, reason) {
-  const userId = loadLocal('poker_player_id');
-  if (!userId) return;
-
-  // 최고 족보
-  let bestHand = null;
-  let bestRank = -1;
-  for (const h of state.hands) {
-    if (h.rankValue > bestRank) { bestRank = h.rankValue; bestHand = h.label; }
-  }
-
-  // 초기 덱 / 드래그 경로 — replayLog에서 추출
-  const grid = replayLog?.initialDeck || [];
-  const moves = (replayLog?.actions || []).map(a => a.path || []);
-  // [Phase 1-7.5-prep] 서버 replay_data.actions 구조 A 통일 — 클라가 가진 정확한 hand/score/t 그대로 전달
-  const actions = replayLog?.actions || [];
-
-  try {
-    // Phase 2D-pre: JWT 토큰 첨부
-    const authSession = (await sb.auth.getSession()).data.session;
-    const token = authSession?.access_token;
-    if (!token) {
-      console.warn('[retry/submit] no token, skipping');
-      return;
-    }
-
-    const res = await fetch(`${SERVER_URL}/api/session/retry/submit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        userId,
-        parentSessionId: null,
-        grid,
-        moves,
-        score: claimedScore,
-        handsCollected: state.hands.length,
-        timeRemaining: Math.max(0, state.timer || 0),
-        bestHand,
-        actions, // [Phase 1-7.5-prep] replay.html 호환을 위한 actions 정보 (서버는 그대로 저장)
-        reason: reason || 'complete', // [Phase 1-7.5-prep] 게임 종료 이유
-      }),
-    });
-
-    const data = await res.json();
-    if (res.ok && data.accepted) {
-      console.log('[retry/submit] recorded:', data);
-    } else {
-      console.warn('[retry/submit] failed:', { status: res.status, data });
-    }
-  } catch (err) {
-    console.error('[retry/submit] network error:', err);
-  }
-}
-
 // [REWRITE] Phase 1-7: 세션 발급 실패 시 모달
 function showSessionStartErrorModal(errorCode, onRetry, onOfflineMode) {
   const overlay = document.getElementById('modalOverlay');
@@ -1850,13 +1776,6 @@ function showSubmitErrorModal(errorData, claimedScore, reason) {
 
 // [REUSE] Phase 1-7: 서버 세션 받아서 게임 시작 (싱글플레이 basic 전용)
 async function startWithServerSession() {
-  // RETRY 모드: 서버 세션 없이 기존 replay_data 복원 경로 유지
-  if (isRetryMode) {
-    console.log('[session] RETRY mode — skipping /api/session/start');
-    startTimerNormal();
-    return;
-  }
-
   try {
     const sessionData = await requestServerSession('basic');
 
@@ -1901,7 +1820,7 @@ function startTimerNormal() {
       clearInterval(state.timerInterval);
 
       // 서버 모드면 새 세션 요청, 오프라인이면 기존 방식
-      if (!window._offlineMode && !isRetryMode) {
+      if (!window._offlineMode) {
         startWithServerSession();
       } else {
         initState();
