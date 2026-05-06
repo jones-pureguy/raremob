@@ -17,7 +17,7 @@ const { getPeriodKeys } = require('./periodKeys');
  * @param {object} supabaseAdmin - service_role 클라이언트
  * @param {object} params
  * @param {string} params.playerId
- * @param {string} params.board     - 'basic' | 'basic_retry' | 'infinite' | 'hidden'
+ * @param {string} params.board     - 'basic' | 'maniac' | 'infinite' | 'hidden'
  * @param {number} params.score     - 이번 게임 점수
  * @param {Date}   [params.playedAt=new Date()] - 게임 종료 시각 (서버 시각 = UTC)
  * @param {string} [params.replayId] - (optional) 신기록 시 all_time row에 연결할 game_replays.id

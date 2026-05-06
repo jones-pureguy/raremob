@@ -68,21 +68,13 @@ function getAllTimeKey() {
 }
 
 /**
- * board별 period 키 일괄 생성
- *
- * - basic / infinite / hidden: 4 period 전부
- * - basic_retry: all_time만 (이슈 ② 결정)
+ * board별 period 키 일괄 생성 (모든 board 동일하게 4 period 전부)
  *
  * @param {string} board
  * @param {Date}   [date=new Date()]
  * @returns {Array<{period_type: string, period_key: string}>}
  */
 function getPeriodKeys(board, date = new Date()) {
-  if (board === 'basic_retry') {
-    return [
-      { period_type: 'all_time', period_key: getAllTimeKey() }
-    ];
-  }
   return [
     { period_type: 'all_time', period_key: getAllTimeKey() },
     { period_type: 'daily',    period_key: getDailyKey(date) },

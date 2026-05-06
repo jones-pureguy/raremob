@@ -1,7 +1,6 @@
 // [REUSE] 싱글플레이 세션 API
-// - POST /api/session/start        : basic/infinite/hidden 세션 발급
+// - POST /api/session/start        : basic/maniac/infinite/hidden 세션 발급 (sourceSessionId로 RE-TRY 진입)
 // - POST /api/session/submit       : 검증 후 리더보드 등재
-// - POST /api/session/retry/submit : RETRY는 검증 없이 서버 경유만
 // - GET  /api/session/debug/count  : 디버그/관측용
 
 const { randomUUID } = require('crypto');
@@ -18,7 +17,6 @@ const RETRY_COST = 500;
 function mapModeToBoard(mode) {
   switch (mode) {
     case 'basic':       return 'basic';
-    case 'basic_retry': return 'basic_retry';
     case 'infinite':    return 'infinite';
     case 'hidden':      return 'hidden';
     case 'maniac':      return 'maniac';   // [STEP 8+ 단계 2-3]
@@ -147,7 +145,7 @@ function createSession({ userId, mode, seed }) {
 }
 
 // [REUSE] Phase 1-7.5-C: 히든 진입 자격 검증
-// 체크: basic_session_id 존재 / 본인 소유 / !is_retry / score>=500 / 미사용(UNIQUE)
+// 체크: basic_session_id 존재 / 본인 소유 / score>=500 / 미사용(UNIQUE)
 async function verifyHiddenEntry(userId, basicSessionId) {
   if (!basicSessionId) {
     return { ok: false, reason: 'basic_session_id_missing' };
@@ -155,7 +153,7 @@ async function verifyHiddenEntry(userId, basicSessionId) {
 
   const { data: basicSession, error } = await supabase
     .from('game_sessions')
-    .select('id, player_id, score, is_retry')
+    .select('id, player_id, score')
     .eq('id', basicSessionId)
     .single();
 
@@ -165,10 +163,6 @@ async function verifyHiddenEntry(userId, basicSessionId) {
 
   if (basicSession.player_id !== userId) {
     return { ok: false, reason: 'basic_session_not_owned' };
-  }
-
-  if (basicSession.is_retry === true) {
-    return { ok: false, reason: 'basic_session_is_retry' };
   }
 
   if ((basicSession.score || 0) < 500) {
@@ -552,139 +546,6 @@ function registerSessionRoutes(app, requireAuth) {
     }
   });
 
-  // ─── POST /api/session/retry/submit — 검증 없이 서버 경유만 ───
-  // [PHASE_2D_PRE] 인증 적용 + parentSession 소유자 검증 (살아있을 때만)
-  app.post('/api/session/retry/submit', requireAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const {
-        parentSessionId,
-        grid,
-        moves,
-        score,
-        handsCollected,
-        timeRemaining = 0,
-        bestHand,
-        actions,   // [Phase 1-7.5-prep] 클라 replayLog.actions[] = { t, path, hand, score }
-        reason,    // [Phase 1-7.5-prep] 'complete' | 'nomoves' | 'gameover'
-      } = req.body || {};
-
-      if (!Array.isArray(grid) || !Array.isArray(moves) || typeof score !== 'number') {
-        return res.status(400).json({ error: 'MISSING_PARAMS' });
-      }
-
-      // parentSession이 활성 메모리에 살아있을 때만 소유자 검증.
-      // 만료된 게임의 retry는 activeSessions에 없을 수 있음 → 검증 스킵.
-      if (parentSessionId) {
-        const parentSession = activeSessions.get(parentSessionId);
-        if (parentSession && parentSession.userId !== userId) {
-          console.warn(`[/api/session/retry/submit] forbidden: parent.userId=${parentSession.userId} req.userId=${userId}`);
-          return res.status(403).json({
-            ok: false,
-            error: 'AUTH_FORBIDDEN',
-            message: 'Parent session does not belong to you',
-          });
-        }
-      }
-
-      const rl = checkRateLimit(userId);
-      if (!rl.ok) {
-        return res.status(429).json({ error: rl.reason });
-      }
-
-      // 검증 스킵 — score, bestHand 그대로 신뢰
-      const { data: sessionData, error: sessErr } = await supabase
-        .from('game_sessions')
-        .insert({
-          player_id: userId,
-          score,
-          best_hand: bestHand || null,
-          hands_collected: handsCollected || 0,
-          time_remaining: timeRemaining,
-          completed: true,
-          is_retry: true,
-        })
-        .select()
-        .single();
-
-      if (sessErr) {
-        console.error('[retry/submit] game_sessions insert error:', sessErr);
-        return res.status(500).json({ error: 'DB_ERROR', detail: sessErr.message });
-      }
-
-      // [Phase 1-11.3] player_period_stats UPSERT를 replay 이전으로 이동 — isNewRecord로 게이트.
-      //   RETRY는 all_time만 (getPeriodKeys에서 처리됨).
-      let ppsResult = { ok: false, isNewRecord: false };
-      try {
-        ppsResult = await upsertPlayerPeriodStats(supabase, {
-          playerId: userId,
-          board: 'basic_retry',
-          score,
-          playedAt: new Date(),
-        });
-        if (!ppsResult.ok) {
-          console.error('[player_period_stats UPSERT partial fail]', {
-            playerId: userId, board: 'basic_retry', score, errors: ppsResult.errors,
-          });
-        }
-      } catch (e) {
-        console.error('[player_period_stats UPSERT exception]', {
-          playerId: userId, mode: 'basic_retry', error: e.message,
-        });
-      }
-
-      const isNewRecord = ppsResult.isNewRecord;
-      let replayRow = null;
-      if (isNewRecord) {
-        const replayDataObj = await buildRetryReplayData({
-          userId,
-          actions,
-          score,
-          bestHand,
-          timeRemaining,
-          grid,
-          reason,
-        });
-
-        const { data: row, error: replayErr } = await supabase
-          .from('game_replays')
-          .insert({
-            player_id: userId,
-            score,
-            replay_data: replayDataObj,
-          })
-          .select()
-          .single();
-
-        if (replayErr) {
-          console.error('[retry/submit] game_replays insert error:', replayErr);
-        } else {
-          replayRow = row;
-          if (replayRow?.id) {
-            await supabase
-              .from('player_period_stats')
-              .update({ replay_id: replayRow.id })
-              .eq('player_id', userId)
-              .eq('board', 'basic_retry')
-              .eq('period_type', 'all_time');
-          }
-        }
-      }
-
-      console.log(`[retry/submit] recorded: user=${String(userId).slice(0, 8)}, score=${score}, hands=${handsCollected}, isNewRecord=${isNewRecord}`);
-
-      return res.json({
-        accepted: true,
-        sessionRecordId: sessionData?.id,
-        replayId: replayRow?.id,
-        isNewRecord,
-      });
-    } catch (err) {
-      console.error('[retry/submit] error:', err);
-      return res.status(500).json({ error: 'INTERNAL', detail: err.message });
-    }
-  });
-
   // ─── GET /api/session/debug/count ───
   // [PHASE_2D_PRE] 운영(production)에선 404, 로컬에선 동작
   app.get('/api/session/debug/count', (req, res) => {
@@ -733,7 +594,6 @@ async function saveSessionToDb(session, replayResult, extraData, dragLog, gateFl
           hands_collected: hands.length,
           time_remaining: timeRemaining,
           completed: true,
-          is_retry: false,
         })
         .select()
         .single();
@@ -1036,35 +896,6 @@ async function buildLegacyReplayData({
     username,
     timestamp: new Date().toISOString(),
     initialDeck: buildInitialDeckString(seed),
-  };
-}
-
-// [REUSE] RETRY 전용: 클라가 보낸 actions 그대로 사용 (검증 없음)
-// 클라 replayLog.actions[] = { t, path, hand, score } 형식 그대로 들어옴
-async function buildRetryReplayData({
-  userId, actions, score, bestHand,
-  timeRemaining, grid, reason,
-}) {
-  const { data: player } = await supabase
-    .from('players')
-    .select('username')
-    .eq('id', userId)
-    .single();
-  const username = player?.username || 'Unknown';
-
-  return {
-    result: {
-      reason: reason || 'complete',
-      bestHand: bestHand || null,
-      finalScore: score,
-      timeRemaining,
-      handsCollected: Array.isArray(actions) ? actions.length : 0,
-    },
-    actions: Array.isArray(actions) ? actions : [],
-    version: 1,
-    username,
-    timestamp: new Date().toISOString(),
-    initialDeck: Array.isArray(grid) ? grid : [],
   };
 }
 

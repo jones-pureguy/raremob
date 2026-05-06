@@ -146,21 +146,6 @@ async function runTests() {
   console.log('  status:', r10.status, 'body:', r10.body);
   results.push(['debug endpoint', r10.status === 200 && typeof r10.body.activeSessions === 'number']);
 
-  // ─── Test 11: RETRY submit ───
-  console.log('\n─── Test 11: RETRY submit ───');
-  const r11 = await request('POST', '/api/session/retry/submit', {
-    userId: TEST_USER_ID,
-    parentSessionId: null,
-    grid: [[{ suit: '♠', value: 10 }, null, null, null, null, null, null]],
-    moves: [[[0, 0]]],
-    score: 500,
-    handsCollected: 1,
-    timeRemaining: 120,
-    bestHand: 'Royal Flush',
-  });
-  console.log('  status:', r11.status, 'body:', r11.body);
-  results.push(['retry submit', r11.status === 200 && r11.body?.accepted === true]);
-
   // 결과 요약
   console.log('\n═══ Test Results ═══');
   for (const [name, ok] of results) {

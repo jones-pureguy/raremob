@@ -13,15 +13,13 @@ const {
   getAllTimeKey,
 } = require('../lib/periodKeys');
 
-const BOARDS = ['basic', 'basic_retry', 'infinite', 'hidden', 'maniac'];
+const BOARDS = ['basic', 'infinite', 'hidden', 'maniac'];
 const PERIODS = ['all_time', 'daily', 'weekly', 'monthly'];
 
 /**
- * board별 지원 period 목록
- * - basic_retry는 all_time만 (이슈 ②)
+ * board별 지원 period 목록 (모든 board 동일)
  */
 function getSupportedPeriods(board) {
-  if (board === 'basic_retry') return ['all_time'];
   return PERIODS;
 }
 
@@ -269,9 +267,6 @@ function registerLeaderboardRoutes(app, requireAuth) {
     }
     if (!PERIODS.includes(period)) {
       return res.status(400).json({ error: 'INVALID_PERIOD', message: `Unknown period: ${period}` });
-    }
-    if (board === 'basic_retry' && period !== 'all_time') {
-      return res.status(400).json({ error: 'RETRY_PERIOD_INVALID', message: 'RETRY supports all_time only' });
     }
     if (!['best', 'sum', 'avg'].includes(sort)) {
       return res.status(400).json({ error: 'INVALID_SORT', message: `sort must be best/sum/avg, got: ${sort}` });
